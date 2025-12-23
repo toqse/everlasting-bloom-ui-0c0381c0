@@ -10,29 +10,30 @@ import Footer from "@/components/Footer";
 const Index = () => {
   useEffect(() => {
     // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a[href^="#"]');
+      if (anchor) {
         e.preventDefault();
-        const href = this.getAttribute('href');
-        if (href) {
-          const target = document.querySelector(href);
-          if (target) {
-            target.scrollIntoView({
+        const href = anchor.getAttribute('href');
+        if (href && href !== "#") {
+          const element = document.querySelector(href);
+          if (element) {
+            element.scrollIntoView({
               behavior: 'smooth',
               block: 'start'
             });
           }
         }
-      });
-    });
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
   }, []);
 
   return (
     <main className="min-h-screen overflow-x-hidden">
-      {/* SEO Meta Tags */}
-      <title>EternalBond - Find Your Forever Love | India's Trusted Matrimony</title>
-      <meta name="description" content="Join India's most trusted matrimony service. Find your perfect life partner with advanced matching, verified profiles, and millions of success stories. Start your journey to forever love today." />
-
       <Navbar />
       <Hero />
       <SearchFilters />

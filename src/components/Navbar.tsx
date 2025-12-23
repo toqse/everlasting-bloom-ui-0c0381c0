@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { Heart, Menu, X, User, Search } from "lucide-react";
+import { Heart, Menu, X, User, Search, LogIn, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,12 +18,13 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Search", href: "#search" },
-    { name: "Profiles", href: "#profiles" },
-    { name: "Success Stories", href: "#stories" },
-    { name: "Membership", href: "#membership" },
+    { name: "Home", href: "/" },
+    { name: "Search", href: "/search" },
+    { name: "Success Stories", href: "/success-stories" },
+    { name: "Membership", href: "/membership" },
   ];
+
+  const isActive = (href: string) => location.pathname === href;
 
   return (
     <nav
@@ -32,46 +36,69 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
-        <a href="#home" className="flex items-center gap-2 group">
+        <Link to="/" className="flex items-center gap-2 group">
           <div className="relative">
-            <Heart className="w-8 h-8 text-primary fill-primary group-hover:animate-heart-beat" />
+            <Heart className="w-8 h-8 text-primary fill-primary group-hover:animate-heart-beat transition-all" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary rounded-full animate-pulse-soft" />
+            <Sparkles className="absolute -bottom-1 -left-1 w-3 h-3 text-secondary animate-sparkle" />
           </div>
           <span className="font-serif text-2xl font-bold text-primary">
             Eternal<span className="text-secondary">Bond</span>
           </span>
-        </a>
+        </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.name}
-              href={link.href}
-              className="relative text-foreground/80 hover:text-primary font-medium transition-colors duration-300 group"
+              to={link.href}
+              className={`relative font-medium transition-all duration-300 group hover-lift ${
+                isActive(link.href) 
+                  ? "text-primary" 
+                  : "text-foreground/80 hover:text-primary"
+              }`}
             >
               {link.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-secondary group-hover:w-full transition-all duration-300" />
-            </a>
+              <span className={`absolute -bottom-1 left-0 h-0.5 bg-secondary transition-all duration-300 ${
+                isActive(link.href) ? "w-full" : "w-0 group-hover:w-full"
+              }`} />
+            </Link>
           ))}
         </div>
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="text-primary hover:text-primary-dark">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-primary hover:text-primary-dark hover:scale-110 transition-transform"
+            onClick={() => navigate("/search")}
+          >
             <Search className="w-5 h-5" />
           </Button>
-          <Button variant="outline" className="gap-2">
-            <User className="w-4 h-4" />
+          <Button 
+            variant="outline" 
+            className="gap-2 hover-lift"
+            onClick={() => navigate("/auth")}
+          >
+            <LogIn className="w-4 h-4" />
             Login
           </Button>
-          <Button variant="hero">Register Free</Button>
+          <Button 
+            variant="hero" 
+            className="gap-2"
+            onClick={() => navigate("/auth")}
+          >
+            <User className="w-4 h-4" />
+            Register Free
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden p-2 text-primary"
+          className="lg:hidden p-2 text-primary hover:scale-110 transition-transform"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -80,23 +107,44 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <div
         className={`lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-elevated transition-all duration-300 overflow-hidden ${
-          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isMobileMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-          {navLinks.map((link) => (
-            <a
+          {navLinks.map((link, index) => (
+            <Link
               key={link.name}
-              href={link.href}
-              className="text-foreground/80 hover:text-primary font-medium py-2 border-b border-accent-rose/30"
+              to={link.href}
+              className={`font-medium py-2 border-b border-accent-rose/30 transition-all duration-300 animate-slide-up ${
+                isActive(link.href) ? "text-primary" : "text-foreground/80"
+              }`}
+              style={{ animationDelay: `${index * 0.1}s` }}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {link.name}
-            </a>
+            </Link>
           ))}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1">Login</Button>
-            <Button variant="hero" className="flex-1">Register</Button>
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => {
+                navigate("/auth");
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              Login
+            </Button>
+            <Button 
+              variant="hero" 
+              className="flex-1"
+              onClick={() => {
+                navigate("/auth");
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              Register
+            </Button>
           </div>
         </div>
       </div>

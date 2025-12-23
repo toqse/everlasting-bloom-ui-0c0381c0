@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, ArrowRight } from "lucide-react";
+import { Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, ArrowRight, Sparkles, Eye } from "lucide-react";
 import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
 
-interface Profile {
+export interface Profile {
   id: number;
   name: string;
   age: number;
@@ -15,7 +16,7 @@ interface Profile {
   compatibility: number;
 }
 
-const profiles: Profile[] = [
+export const profilesData: Profile[] = [
   {
     id: 1,
     name: "Priya Sharma",
@@ -91,27 +92,50 @@ const profiles: Profile[] = [
 ];
 
 const FeaturedProfiles = () => {
+  const navigate = useNavigate();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
 
-  const toggleLike = (id: number) => {
+  const toggleLike = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     setLikedProfiles(prev => 
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
     );
   };
 
+  const handleViewProfile = (id: number) => {
+    navigate(`/profile/${id}`);
+  };
+
   return (
-    <section id="profiles" className="py-20 bg-gradient-romantic relative overflow-hidden">
-      {/* Decorative Elements */}
-      <div className="absolute top-20 left-10 w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 right-10 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+    <section id="profiles" className="py-24 bg-gradient-romantic relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-secondary/15 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float-delayed" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-pink/20 rounded-full blur-3xl animate-pulse-soft" />
+
+      {/* Floating Sparkles */}
+      {[...Array(6)].map((_, i) => (
+        <Sparkles
+          key={i}
+          className="absolute text-secondary/30 animate-sparkle"
+          style={{
+            left: `${15 + i * 15}%`,
+            top: `${20 + (i % 3) * 25}%`,
+            width: `${20 + i * 4}px`,
+            height: `${20 + i * 4}px`,
+            animationDelay: `${i * 0.5}s`,
+          }}
+        />
+      ))}
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-primary/10 mb-4 animate-fade-in-up">
-            <Star className="w-4 h-4 text-secondary fill-secondary" />
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 animate-fade-in-up shadow-soft">
+            <Star className="w-4 h-4 text-secondary fill-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">Featured Profiles</span>
+            <Star className="w-4 h-4 text-secondary fill-secondary animate-sparkle" style={{ animationDelay: "0.5s" }} />
           </div>
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
             Meet Your <span className="text-gradient-gold">Perfect Match</span>
@@ -122,18 +146,19 @@ const FeaturedProfiles = () => {
         </div>
 
         {/* Profiles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {profiles.map((profile, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+          {profilesData.map((profile, index) => (
             <div
               key={profile.id}
-              className="group relative animate-fade-in-up"
+              className="group relative animate-fade-in-up cursor-pointer"
               style={{ animationDelay: `${0.1 * index}s` }}
               onMouseEnter={() => setHoveredId(profile.id)}
               onMouseLeave={() => setHoveredId(null)}
+              onClick={() => handleViewProfile(profile.id)}
             >
               <div className={`bg-white rounded-3xl overflow-hidden shadow-card transition-all duration-500 ${
                 profile.isPremium ? "gold-border" : "border border-primary/10"
-              } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02]" : ""}`}>
+              } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
                 
                 {/* Image Container */}
                 <div className="relative h-72 overflow-hidden">
@@ -144,17 +169,17 @@ const FeaturedProfiles = () => {
                   />
                   
                   {/* Overlay Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   
                   {/* Badges */}
                   <div className="absolute top-4 left-4 flex gap-2">
                     {profile.isPremium && (
-                      <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1">
+                      <span className="px-3 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1 shadow-gold animate-glow">
                         <Star className="w-3 h-3 fill-current" /> Premium
                       </span>
                     )}
                     {profile.isVerified && (
-                      <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                      <span className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-soft">
                         Verified ✓
                       </span>
                     )}
@@ -162,35 +187,55 @@ const FeaturedProfiles = () => {
 
                   {/* Like Button */}
                   <button
-                    onClick={() => toggleLike(profile.id)}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:scale-110"
+                    onClick={(e) => toggleLike(e, profile.id)}
+                    className={`absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-125 ${
+                      likedProfiles.includes(profile.id)
+                        ? "bg-primary shadow-soft"
+                        : "bg-white/90 backdrop-blur-sm hover:bg-white"
+                    }`}
                   >
                     <Heart
-                      className={`w-5 h-5 transition-colors ${
+                      className={`w-5 h-5 transition-all ${
                         likedProfiles.includes(profile.id)
-                          ? "text-primary fill-primary"
-                          : "text-primary/50"
+                          ? "text-white fill-white animate-heart-beat"
+                          : "text-primary"
                       }`}
                     />
                   </button>
 
                   {/* Compatibility Score */}
-                  <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full">
-                    <span className="text-sm font-bold text-primary">{profile.compatibility}% Match</span>
+                  <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full shadow-soft">
+                    <span className="text-sm font-bold text-gradient-primary">{profile.compatibility}% Match</span>
                   </div>
 
-                  {/* Quick Info on Hover */}
-                  <div className={`absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary to-primary/90 transform transition-all duration-500 ${
+                  {/* Hover Actions */}
+                  <div className={`absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary via-primary/95 to-primary/80 transform transition-all duration-500 ${
                     hoveredId === profile.id ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
                   }`}>
                     <div className="flex gap-2">
-                      <Button variant="gold" size="sm" className="flex-1 gap-1">
+                      <Button 
+                        variant="gold" 
+                        size="sm" 
+                        className="flex-1 gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLike(e, profile.id);
+                        }}
+                      >
                         <Heart className="w-4 h-4" />
                         Connect
                       </Button>
-                      <Button variant="glass" size="sm" className="flex-1 gap-1">
-                        <MessageCircle className="w-4 h-4" />
-                        Message
+                      <Button 
+                        variant="glass" 
+                        size="sm" 
+                        className="flex-1 gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewProfile(profile.id);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
                       </Button>
                     </div>
                   </div>
@@ -200,21 +245,22 @@ const FeaturedProfiles = () => {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-serif text-xl font-bold text-foreground">{profile.name}</h3>
+                      <h3 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors">{profile.name}</h3>
                       <p className="text-muted-foreground">{profile.age} years</p>
                     </div>
+                    <Sparkles className="w-5 h-5 text-secondary opacity-0 group-hover:opacity-100 animate-sparkle transition-opacity" />
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <Briefcase className="w-4 h-4 text-primary" />
                       {profile.profession}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <GraduationCap className="w-4 h-4 text-primary" />
                       {profile.education}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <MapPin className="w-4 h-4 text-primary" />
                       {profile.location}
                     </div>
@@ -227,9 +273,14 @@ const FeaturedProfiles = () => {
 
         {/* View More Button */}
         <div className="text-center">
-          <Button variant="hero" size="lg" className="group">
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="group"
+            onClick={() => navigate("/search")}
+          >
             View All Profiles
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
           </Button>
         </div>
       </div>
