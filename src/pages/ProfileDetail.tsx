@@ -1,23 +1,42 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { 
   Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, 
   ArrowLeft, Share2, Shield, Calendar, Ruler, Users, Home, 
-  Sparkles, Check, Phone, Mail, Eye, Crown
+  Sparkles, Check, Phone, Mail, Eye, Crown, Clock, X, Send
 } from "lucide-react";
 import { profilesData } from "@/components/FeaturedProfiles";
+import { useInterestStore, InterestStatus } from "@/stores/interestStore";
 import { toast } from "sonner";
+
+const StatusChip = ({ status }: { status: InterestStatus }) => {
+  const config = {
+    pending: { label: 'Pending', className: 'bg-secondary/20 text-secondary-dark border-secondary/30', icon: Clock },
+    accepted: { label: 'Accepted', className: 'bg-green-500/20 text-green-700 border-green-500/30', icon: Check },
+    rejected: { label: 'Declined', className: 'bg-red-500/20 text-red-700 border-red-500/30', icon: X },
+  };
+  const { label, className, icon: Icon } = config[status];
+  return (
+    <motion.span initial={{ scale: 0.8 }} animate={{ scale: 1 }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${className}`}>
+      <Icon className="w-4 h-4" /> {label}
+    </motion.span>
+  );
+};
 
 const ProfileDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
   const [activeTab, setActiveTab] = useState("about");
-
+  
+  const { favorites, toggleFavorite, sendInterest, getSentInterestStatus, canChat } = useInterestStore();
   const profile = profilesData.find(p => p.id === Number(id));
+  const isFavorite = profile ? favorites.includes(profile.id) : false;
+  const interestStatus = profile ? getSentInterestStatus(profile.id) : null;
+  const chatEnabled = profile ? canChat(profile.id) : false;
 
   if (!profile) {
     return (
@@ -30,20 +49,22 @@ const ProfileDetail = () => {
     );
   }
 
-  const handleConnect = () => {
-    toast.success("Interest sent successfully! 💕", {
-      description: `${profile.name} will be notified about your interest.`,
-    });
+  const handleSendInterest = () => {
+    sendInterest(0, profile.id, "Hi! I'd love to connect with you.");
+    toast.success("Interest sent successfully! 💕", { description: `${profile.name} will be notified about your interest.` });
+  };
+
+  const handleToggleFavorite = () => {
+    toggleFavorite(profile.id);
+    toast.success(isFavorite ? `Removed from favorites` : `Added ${profile.name} to favorites! ❤️`);
   };
 
   const handleMessage = () => {
-    toast.info("Upgrade to Premium to send messages", {
-      description: "Get unlimited messaging with our Premium plan.",
-      action: {
-        label: "Upgrade",
-        onClick: () => navigate("/membership"),
-      },
-    });
+    if (chatEnabled) {
+      navigate(`/chat/${profile.id}`);
+    } else {
+      toast.info("Chat unavailable", { description: "You can chat once your interest is accepted." });
+    }
   };
 
   const handleShare = () => {
@@ -173,19 +194,14 @@ const ProfileDetail = () => {
                   <div>
                     <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2 flex items-center gap-3">
                       {profile.name}
-                      <Heart 
-                        className={`w-8 h-8 cursor-pointer transition-all hover:scale-125 ${
-                          isLiked ? "text-primary fill-primary animate-heart-beat" : "text-primary/30"
-                        }`}
-                        onClick={() => setIsLiked(!isLiked)}
-                      />
+                      <motion.div whileTap={{ scale: 0.8 }} onClick={handleToggleFavorite} className="cursor-pointer">
+                        <Heart className={`w-8 h-8 transition-all hover:scale-125 ${isFavorite ? "text-primary fill-primary animate-heart-beat" : "text-primary/30"}`} />
+                      </motion.div>
                     </h1>
                     <p className="text-muted-foreground text-lg">{profile.age} years • {profileDetails.height}</p>
+                    {interestStatus && <div className="mt-2"><StatusChip status={interestStatus} /></div>}
                   </div>
-                  <button 
-                    onClick={handleShare}
-                    className="p-3 rounded-xl bg-accent-rose hover:bg-primary/10 transition-colors group"
-                  >
+                  <button onClick={handleShare} className="p-3 rounded-xl bg-accent-rose hover:bg-primary/10 transition-colors group">
                     <Share2 className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
                   </button>
                 </div>
@@ -194,47 +210,43 @@ const ProfileDetail = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                   <div className="flex items-center gap-3 p-3 bg-accent-rose/50 rounded-xl">
                     <Briefcase className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Profession</p>
-                      <p className="text-sm font-medium text-foreground">{profile.profession}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Profession</p><p className="text-sm font-medium text-foreground">{profile.profession}</p></div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-accent-gold/50 rounded-xl">
                     <GraduationCap className="w-5 h-5 text-secondary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Education</p>
-                      <p className="text-sm font-medium text-foreground">{profile.education.split(',')[0]}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Education</p><p className="text-sm font-medium text-foreground">{profile.education.split(',')[0]}</p></div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-accent-rose/50 rounded-xl">
                     <MapPin className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Location</p>
-                      <p className="text-sm font-medium text-foreground">{profile.location.split(',')[0]}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium text-foreground">{profile.location.split(',')[0]}</p></div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-accent-gold/50 rounded-xl">
                     <Calendar className="w-5 h-5 text-secondary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Status</p>
-                      <p className="text-sm font-medium text-foreground">{profileDetails.maritalStatus}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Status</p><p className="text-sm font-medium text-foreground">{profileDetails.maritalStatus}</p></div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                  <Button variant="hero" size="lg" className="flex-1 gap-2" onClick={handleConnect}>
-                    <Heart className="w-5 h-5" />
-                    Send Interest
-                  </Button>
-                  <Button variant="gold" size="lg" className="flex-1 gap-2" onClick={handleMessage}>
-                    <MessageCircle className="w-5 h-5" />
-                    Send Message
-                  </Button>
-                  <Button variant="outline" size="lg" className="gap-2" onClick={() => toast.info("Contact details available for Premium members")}>
-                    <Phone className="w-5 h-5" />
-                    Call
+                  {!interestStatus ? (
+                    <Button variant="hero" size="lg" className="flex-1 gap-2" onClick={handleSendInterest}>
+                      <Send className="w-5 h-5" /> Send Interest
+                    </Button>
+                  ) : interestStatus === 'pending' ? (
+                    <Button variant="outline" size="lg" className="flex-1 gap-2" disabled>
+                      <Clock className="w-5 h-5" /> Interest Pending
+                    </Button>
+                  ) : interestStatus === 'accepted' ? (
+                    <Button variant="gold" size="lg" className="flex-1 gap-2" onClick={handleMessage}>
+                      <MessageCircle className="w-5 h-5" /> Chat Now
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="lg" className="flex-1 gap-2" disabled>
+                      <X className="w-5 h-5" /> Interest Declined
+                    </Button>
+                  )}
+                  <Button variant={isFavorite ? "romantic" : "outline"} size="lg" className="gap-2" onClick={handleToggleFavorite}>
+                    <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} /> {isFavorite ? "Favorited" : "Add to Favorites"}
                   </Button>
                 </div>
 
