@@ -58,7 +58,7 @@ export const useInterestStore = create<InterestState>()(
           fromProfileId: 3,
           toProfileId: CURRENT_USER_ID,
           status: 'pending',
-          message: 'Hello! Your hobbies match mine perfectly. Let\'s get to know each other!',
+          message: 'Hello! Your hobbies match mine perfectly. Let\'s get to know each other better!',
           createdAt: new Date(Date.now() - 172800000),
           updatedAt: new Date(Date.now() - 172800000),
         },

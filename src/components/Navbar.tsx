@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Menu, X, User, Search, LogIn, Sparkles } from "lucide-react";
+import { Heart, Menu, X, User, LogIn, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -22,7 +22,7 @@ const Navbar = () => {
     { name: "Search", href: "/search" },
     { name: "Interests Received", href: "/interests/received" },
     { name: "Interests Sent", href: "/interests/sent" },
-    { name: "Favorites", href: "/favorites" },
+    { name: "Success Stories", href: "/success-stories" },
     { name: "Membership", href: "/membership" },
   ];
 
@@ -75,9 +75,9 @@ const Navbar = () => {
             variant="ghost" 
             size="icon" 
             className="text-primary hover:text-primary-dark hover:scale-110 transition-transform"
-            onClick={() => navigate("/search")}
+            onClick={() => navigate("/favorites")}
           >
-            <Search className="w-5 h-5" />
+            <Heart className="w-5 h-5" />
           </Button>
           <Button 
             variant="outline" 
@@ -85,7 +85,7 @@ const Navbar = () => {
             onClick={() => navigate("/auth")}
           >
             <LogIn className="w-4 h-4" />
-            Login
+            Logout
           </Button>
           <Button 
             variant="hero" 

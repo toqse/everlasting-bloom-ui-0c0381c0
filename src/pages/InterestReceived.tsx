@@ -148,35 +148,37 @@ const InterestReceived = () => {
               actionPath="/search"
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
               {filteredInterests.map((interest, index) => {
                 const profile = profilesData.find(p => p.id === interest.fromProfileId);
                 if (!profile) return null;
 
                 return (
-                  <div key={interest.id} className="relative">
+                  <div key={interest.id} className="flex flex-col h-full">
                     {/* Message Preview */}
-                    {interest.message && interest.status === 'pending' && (
+                    {interest.message && (interest.status === 'pending' || interest.status === 'accepted') && (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-3 p-3 bg-white/70 backdrop-blur-sm rounded-xl border border-primary/10 shadow-soft"
+                        className="mb-3 p-3 bg-white/70 backdrop-blur-sm rounded-xl border border-primary/10 shadow-soft flex-shrink-0"
                       >
                         <p className="text-sm text-muted-foreground italic">"{interest.message}"</p>
                       </motion.div>
                     )}
                     
-                    <GlassProfileCard
-                      profile={profile}
-                      index={index}
-                      isFavorite={favorites.includes(profile.id)}
-                      onToggleFavorite={() => toggleFavorite(profile.id)}
-                      interestStatus={interest.status}
-                      onAccept={() => handleAccept(interest.id, profile.name)}
-                      onReject={() => handleReject(interest.id, profile.name)}
-                      canChat={canChat(profile.id)}
-                      onMessage={() => handleChat(profile.id)}
-                    />
+                    <div className="flex-1 flex flex-col">
+                      <GlassProfileCard
+                        profile={profile}
+                        index={index}
+                        isFavorite={favorites.includes(profile.id)}
+                        onToggleFavorite={() => toggleFavorite(profile.id)}
+                        interestStatus={interest.status}
+                        onAccept={() => handleAccept(interest.id, profile.name)}
+                        onReject={() => handleReject(interest.id, profile.name)}
+                        canChat={canChat(profile.id)}
+                        onMessage={() => handleChat(profile.id)}
+                      />
+                    </div>
                   </div>
                 );
               })}

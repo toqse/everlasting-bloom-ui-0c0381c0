@@ -73,10 +73,10 @@ const GlassProfileCard = ({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
       whileHover={{ y: -8, scale: 1.02 }}
-      className="group relative"
+      className="group relative h-full flex flex-col"
     >
       {/* Glassmorphism Card */}
-      <div className={`relative overflow-hidden rounded-3xl backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl transition-all duration-500 ${
+      <div className={`relative overflow-hidden rounded-3xl backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl transition-all duration-500 flex flex-col h-full ${
         profile.isPremium ? "ring-2 ring-secondary/50" : ""
       }`}>
         {/* Animated Background Gradient */}
@@ -167,7 +167,7 @@ const GlassProfileCard = ({
         </div>
 
         {/* Profile Info */}
-        <div className="relative p-5 z-10">
+        <div className="relative p-5 z-10 flex-1 flex flex-col">
           <div className="flex items-start justify-between mb-3">
             <div>
               <h3 
@@ -203,7 +203,7 @@ const GlassProfileCard = ({
 
           {/* Actions */}
           {showActions && (
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap mt-auto">
               {onAccept && onReject && interestStatus === 'pending' && (
                 <>
                   <Button
