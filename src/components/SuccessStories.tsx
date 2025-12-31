@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Heart, Quote, ChevronLeft, ChevronRight, Play, Calendar, MapPin, Star, Sparkles } from "lucide-react";
+import { useState, useRef } from "react";
+import { Heart, ChevronLeft, ChevronRight, Calendar, MapPin, Star, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 export interface Story {
   id: number;
@@ -17,8 +18,8 @@ export const storiesData: Story[] = [
   {
     id: 1,
     couple: "Rahul & Priya",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop",
-    quote: "We found each other on EternalBond and knew instantly that this was meant to be. Our families connected beautifully, and now we're living our dream together.",
+    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
+    quote: "We found each other on EternalBond and knew instantly that this was meant to be.",
     location: "Mumbai, India",
     marriedDate: "December 2023",
     yearsOnPlatform: "6 months",
@@ -26,8 +27,8 @@ export const storiesData: Story[] = [
   {
     id: 2,
     couple: "Arjun & Sneha",
-    image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=600&h=400&fit=crop",
-    quote: "The compatibility matching was spot on! We share the same values, dreams, and even love for travel. Thank you EternalBond for this beautiful journey.",
+    image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
+    quote: "The compatibility matching was spot on! We share the same values and dreams.",
     location: "Delhi NCR",
     marriedDate: "February 2024",
     yearsOnPlatform: "8 months",
@@ -35,28 +36,247 @@ export const storiesData: Story[] = [
   {
     id: 3,
     couple: "Karthik & Meera",
-    image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&h=400&fit=crop",
-    quote: "From the first message to our wedding day, every moment has been magical. EternalBond made finding true love so simple and beautiful.",
+    image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop",
+    quote: "From the first message to our wedding day, every moment has been magical.",
     location: "Chennai, India",
     marriedDate: "January 2024",
     yearsOnPlatform: "1 year",
   },
+  {
+    id: 4,
+    couple: "Vikram & Ananya",
+    image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&h=600&fit=crop",
+    quote: "EternalBond brought us together across continents. Now we're inseparable.",
+    location: "Bangalore, India",
+    marriedDate: "March 2024",
+    yearsOnPlatform: "4 months",
+  },
+  {
+    id: 5,
+    couple: "Aditya & Kavya",
+    image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
+    quote: "Our love story started with a simple hello. Now we're building a life together.",
+    location: "Hyderabad, India",
+    marriedDate: "November 2023",
+    yearsOnPlatform: "10 months",
+  },
 ];
+
+// Flower Bouquet SVG Component
+const FlowerBouquet = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 120 80" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Left flower cluster */}
+    <g className="animate-float" style={{ animationDelay: "0s" }}>
+      <circle cx="25" cy="25" r="8" fill="#FFB020" opacity="0.9" />
+      <circle cx="18" cy="20" r="6" fill="#F8E0E6" />
+      <circle cx="32" cy="20" r="6" fill="#FFE4E1" />
+      <circle cx="20" cy="30" r="5" fill="#8B2252" opacity="0.7" />
+      <circle cx="30" cy="32" r="5" fill="#FFB020" opacity="0.8" />
+    </g>
+    
+    {/* Center flowers */}
+    <g className="animate-float" style={{ animationDelay: "0.3s" }}>
+      <circle cx="60" cy="20" r="10" fill="#8B2252" opacity="0.9" />
+      <circle cx="50" cy="15" r="7" fill="#FFB020" />
+      <circle cx="70" cy="15" r="7" fill="#F8E0E6" />
+      <circle cx="55" cy="28" r="6" fill="#FFE4E1" />
+      <circle cx="65" cy="28" r="6" fill="#FFB020" opacity="0.8" />
+    </g>
+    
+    {/* Right flower cluster */}
+    <g className="animate-float" style={{ animationDelay: "0.6s" }}>
+      <circle cx="95" cy="25" r="8" fill="#F8E0E6" />
+      <circle cx="88" cy="20" r="6" fill="#FFB020" />
+      <circle cx="102" cy="20" r="6" fill="#8B2252" opacity="0.8" />
+      <circle cx="90" cy="32" r="5" fill="#FFE4E1" />
+      <circle cx="100" cy="30" r="5" fill="#FFB020" opacity="0.7" />
+    </g>
+    
+    {/* Small accent flowers */}
+    <circle cx="40" cy="35" r="4" fill="#FFB020" opacity="0.6" className="animate-pulse-soft" />
+    <circle cx="80" cy="35" r="4" fill="#8B2252" opacity="0.5" className="animate-pulse-soft" />
+    
+    {/* Leaves */}
+    <ellipse cx="35" cy="50" rx="8" ry="4" fill="#4a7c59" opacity="0.7" transform="rotate(-30 35 50)" />
+    <ellipse cx="85" cy="50" rx="8" ry="4" fill="#4a7c59" opacity="0.7" transform="rotate(30 85 50)" />
+    <ellipse cx="60" cy="55" rx="10" ry="5" fill="#5a8f69" opacity="0.6" />
+    
+    {/* Sparkles */}
+    <circle cx="15" cy="10" r="2" fill="#FFB020" className="animate-sparkle" />
+    <circle cx="105" cy="10" r="2" fill="#FFB020" className="animate-sparkle" style={{ animationDelay: "0.5s" }} />
+    <circle cx="60" cy="5" r="2.5" fill="#8B2252" className="animate-sparkle" style={{ animationDelay: "1s" }} />
+  </svg>
+);
+
+const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <motion.div
+      className="relative flex-shrink-0 w-[280px] md:w-[320px] lg:w-[360px] h-[400px] md:h-[450px] lg:h-[500px] cursor-pointer overflow-hidden group"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.15, duration: 0.6, ease: "easeOut" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Main Image */}
+      <motion.img
+        src={story.image}
+        alt={story.couple}
+        className="absolute inset-0 w-full h-full object-cover"
+        animate={{ 
+          scale: isHovered ? 1.1 : 1,
+          filter: isHovered ? "brightness(0.7)" : "brightness(1)"
+        }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      />
+      
+      {/* Gradient Overlay */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+        animate={{ opacity: isHovered ? 1 : 0.3 }}
+        transition={{ duration: 0.4 }}
+      />
+
+      {/* Hover Content */}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Flower Bouquet - Top */}
+            <motion.div
+              className="absolute top-4 left-1/2 -translate-x-1/2 w-32 md:w-40"
+              initial={{ y: -50, opacity: 0, scale: 0.5 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -50, opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.5, ease: "backOut" }}
+            >
+              <FlowerBouquet className="w-full h-auto drop-shadow-lg" />
+            </motion.div>
+
+            {/* Center Content */}
+            <motion.div
+              className="text-center px-6 z-10"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              {/* Couple Name */}
+              <motion.h3 
+                className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                {story.couple}
+              </motion.h3>
+
+              {/* Location */}
+              <motion.p 
+                className="text-white/90 text-sm md:text-base tracking-widest uppercase mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {story.location}
+              </motion.p>
+
+              {/* View More Button */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Button
+                  variant="gold"
+                  size="sm"
+                  className="shadow-gold hover:scale-105 transition-transform"
+                  onClick={() => navigate("/success-stories")}
+                >
+                  View More
+                </Button>
+              </motion.div>
+            </motion.div>
+
+            {/* Flower Bouquet - Bottom */}
+            <motion.div
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 md:w-40 rotate-180"
+              initial={{ y: 50, opacity: 0, scale: 0.5 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 50, opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.5, ease: "backOut", delay: 0.1 }}
+            >
+              <FlowerBouquet className="w-full h-auto drop-shadow-lg" />
+            </motion.div>
+
+            {/* Floating Hearts */}
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${20 + i * 15}%`,
+                  top: `${30 + (i % 3) * 20}%`,
+                }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [0.5, 1, 0.5],
+                  y: [0, -30, -60],
+                }}
+                transition={{ 
+                  duration: 2,
+                  delay: 0.5 + i * 0.2,
+                  repeat: Infinity,
+                  repeatDelay: 1
+                }}
+              >
+                <Heart className="w-4 h-4 text-secondary fill-secondary" />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Default State - Bottom Info */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent"
+        animate={{ opacity: isHovered ? 0 : 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <p className="text-white/80 text-sm flex items-center gap-2">
+          <Heart className="w-4 h-4 text-secondary fill-secondary" />
+          {story.marriedDate}
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const SuccessStories = () => {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const nextStory = () => {
-    setCurrentIndex((prev) => (prev + 1) % storiesData.length);
-  };
-
-  const prevStory = () => {
-    setCurrentIndex((prev) => (prev - 1 + storiesData.length) % storiesData.length);
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 380;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
-    <section id="stories" className="py-24 bg-white relative overflow-hidden">
+    <section id="stories" className="py-24 bg-background relative overflow-hidden">
       {/* Decorative Background */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-pink/40 rounded-full blur-3xl animate-float" />
@@ -82,134 +302,64 @@ const SuccessStories = () => {
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent-rose border border-primary/10 mb-4 animate-fade-in-up shadow-soft">
+          <motion.div 
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent-rose border border-primary/10 mb-4 shadow-soft"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
             <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat" />
-            <span className="text-sm font-medium text-primary">Success Stories</span>
+            <span className="text-sm font-medium text-primary">Recent Couples</span>
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
-          </div>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          </motion.div>
+          <motion.h2 
+            className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
             Real Love, <span className="text-gradient-primary">Real Stories</span>
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            Join thousands of couples who found their forever love with EternalBond
-          </p>
+          </motion.h2>
+          <motion.p 
+            className="text-muted-foreground max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            Hover over our beautiful couples to discover their love stories
+          </motion.p>
         </div>
 
-        {/* Main Story Carousel */}
-        <div className="max-w-5xl mx-auto mb-16">
-          <div className="relative">
-            {/* Main Story Card */}
-            <div className="bg-gradient-card rounded-3xl overflow-hidden shadow-elevated border border-primary/5 animate-scale-in">
-              <div className="grid lg:grid-cols-2 gap-0">
-                {/* Image Side */}
-                <div className="relative h-80 lg:h-auto min-h-[420px] overflow-hidden">
-                  <img
-                    src={storiesData[currentIndex].image}
-                    alt={storiesData[currentIndex].couple}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-transparent lg:bg-gradient-to-t" />
-                  
-                  {/* Play Button */}
-                  <button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-white/95 rounded-full flex items-center justify-center shadow-elevated hover:scale-110 transition-all duration-300 group animate-pulse-soft">
-                    <Play className="w-8 h-8 text-primary ml-1 group-hover:text-primary-dark transition-colors" fill="currentColor" />
-                  </button>
+        {/* Couples Carousel */}
+        <div className="relative mb-16">
+          {/* Navigation Arrows */}
+          <motion.button
+            onClick={() => scroll("left")}
+            className="absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white shadow-elevated flex items-center justify-center hover:scale-110 hover:shadow-2xl transition-all z-20 group"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ChevronLeft className="w-6 h-6 text-primary group-hover:text-primary-dark" />
+          </motion.button>
+          <motion.button
+            onClick={() => scroll("right")}
+            className="absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white shadow-elevated flex items-center justify-center hover:scale-110 hover:shadow-2xl transition-all z-20 group"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ChevronRight className="w-6 h-6 text-primary group-hover:text-primary-dark" />
+          </motion.button>
 
-                  {/* Floating decoration */}
-                  <div className="absolute top-6 left-6 w-12 h-12 bg-secondary/80 rounded-full flex items-center justify-center animate-bounce-soft">
-                    <Heart className="w-6 h-6 text-white fill-white" />
-                  </div>
-
-                  {/* Progress Dots - Mobile */}
-                  <div className="absolute bottom-4 left-4 right-4 lg:hidden">
-                    <div className="flex gap-2">
-                      {storiesData.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentIndex(i)}
-                          className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                            i === currentIndex ? "bg-secondary" : "bg-white/50 hover:bg-white/70"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Side */}
-                <div className="p-8 lg:p-12 flex flex-col justify-center relative">
-                  {/* Sparkle decoration */}
-                  <Sparkles className="absolute top-8 right-8 w-6 h-6 text-secondary/40 animate-sparkle" />
-                  
-                  {/* Quote Icon */}
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-secondary-light flex items-center justify-center mb-6 shadow-gold animate-glow">
-                    <Quote className="w-7 h-7 text-white" />
-                  </div>
-
-                  {/* Quote */}
-                  <blockquote className="font-serif text-xl lg:text-2xl text-foreground leading-relaxed mb-8">
-                    "{storiesData[currentIndex].quote}"
-                  </blockquote>
-
-                  {/* Couple Info */}
-                  <div className="border-t border-primary/10 pt-6">
-                    <h3 className="font-serif text-2xl font-bold text-gradient-primary mb-3 flex items-center gap-2">
-                      {storiesData[currentIndex].couple}
-                      <Heart className="w-5 h-5 text-primary fill-primary animate-heart-beat" />
-                    </h3>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1.5 bg-accent-gold/50 px-3 py-1 rounded-full">
-                        <Calendar className="w-4 h-4 text-secondary" />
-                        Married {storiesData[currentIndex].marriedDate}
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-accent-rose/50 px-3 py-1 rounded-full">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        {storiesData[currentIndex].location}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation Arrows */}
-            <button
-              onClick={prevStory}
-              className="absolute left-0 lg:-left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-elevated flex items-center justify-center hover:scale-110 hover:shadow-2xl transition-all z-10 group"
-            >
-              <ChevronLeft className="w-6 h-6 text-primary group-hover:text-primary-dark" />
-            </button>
-            <button
-              onClick={nextStory}
-              className="absolute right-0 lg:-right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-elevated flex items-center justify-center hover:scale-110 hover:shadow-2xl transition-all z-10 group"
-            >
-              <ChevronRight className="w-6 h-6 text-primary group-hover:text-primary-dark" />
-            </button>
-          </div>
-
-          {/* Story Thumbnails - Desktop */}
-          <div className="hidden lg:flex justify-center gap-4 mt-10">
+          {/* Scrollable Container */}
+          <div 
+            ref={scrollContainerRef}
+            className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth px-8 md:px-12"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {storiesData.map((story, index) => (
-              <button
-                key={story.id}
-                onClick={() => setCurrentIndex(index)}
-                className={`relative w-28 h-28 rounded-2xl overflow-hidden transition-all duration-500 hover-lift ${
-                  index === currentIndex
-                    ? "ring-4 ring-secondary scale-110 shadow-gold"
-                    : "opacity-60 hover:opacity-100 shadow-card"
-                }`}
-              >
-                <img
-                  src={story.image}
-                  alt={story.couple}
-                  className="w-full h-full object-cover"
-                />
-                {index === currentIndex && (
-                  <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
-                    <Heart className="w-6 h-6 text-white fill-white animate-heart-beat" />
-                  </div>
-                )}
-              </button>
+              <CoupleCard key={story.id} story={story} index={index} />
             ))}
           </div>
         </div>
@@ -222,21 +372,31 @@ const SuccessStories = () => {
             { value: "98%", label: "Success Rate", icon: Star },
             { value: "4.9★", label: "User Rating", icon: Sparkles },
           ].map((stat, index) => (
-            <div
+            <motion.div
               key={index}
               className="text-center p-5 md:p-6 bg-gradient-card rounded-2xl shadow-card border border-primary/5 hover-lift group cursor-pointer"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
             >
               <div className="w-12 h-12 rounded-full bg-accent-rose flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
                 <stat.icon className="w-6 h-6 text-primary fill-primary/50 group-hover:animate-bounce-soft" />
               </div>
               <div className="font-serif text-2xl md:text-3xl font-bold text-gradient-gold mb-1">{stat.value}</div>
               <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
         {/* CTA */}
-        <div className="text-center">
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
           <Button 
             variant="hero" 
             size="lg" 
@@ -246,7 +406,7 @@ const SuccessStories = () => {
             Read All Stories
             <Heart className="w-5 h-5 group-hover:animate-heart-beat" />
           </Button>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
