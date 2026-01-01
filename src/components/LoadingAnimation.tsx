@@ -212,144 +212,94 @@ const LoadingAnimation = () => {
             <ellipse cx="50" cy="126" rx="6" ry="5" fill="#E8B89D" />
           </motion.svg>
 
-          {/* Woman - Realistic Elegant */}
+          {/* Woman - Flat Realistic Style */}
           <motion.svg
-            viewBox="0 0 160 280"
-            className="w-28 h-56 absolute right-4 bottom-2"
+            viewBox="0 0 100 180"
+            className="w-24 h-48 absolute right-2 bottom-2"
             initial={{ x: 60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 1, delay: 0.5, type: "spring", stiffness: 60 }}
           >
             {/* Shadow */}
-            <ellipse cx="80" cy="272" rx="35" ry="6" fill="rgba(0,0,0,0.08)" />
+            <ellipse cx="50" cy="176" rx="20" ry="4" fill="rgba(0,0,0,0.1)" />
             
-            {/* Dress - Elegant Flowing Gown */}
+            {/* Legs */}
+            <path d="M42 130 L38 172 L44 174 L48 135 Z" fill="#F5C6A7" />
+            <path d="M58 130 L62 172 L56 174 L52 135 Z" fill="#F5C6A7" />
+            
+            {/* Shoes */}
+            <ellipse cx="41" cy="174" rx="6" ry="3" fill="#E8A03A" />
+            <ellipse cx="59" cy="174" rx="6" ry="3" fill="#E8A03A" />
+            
+            {/* Dress - A-line mustard yellow */}
             <motion.g
-              animate={{ scaleX: [1, 1.01, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              style={{ transformOrigin: "80px 180px" }}
+              animate={{ rotate: [-1, 1, -1] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+              style={{ transformOrigin: "50px 100px" }}
             >
-              {/* Main Dress Body */}
-              <path d="M50 105 Q80 100 110 105 Q115 140 130 268 Q80 278 30 268 Q45 140 50 105 Z" fill="url(#dressGradNew)" />
-              {/* Dress Folds - subtle */}
-              <path d="M55 140 Q60 190 50 260" stroke="rgba(180,140,0,0.3)" strokeWidth="1.5" fill="none" />
-              <path d="M80 120 Q82 180 80 260" stroke="rgba(180,140,0,0.3)" strokeWidth="1.5" fill="none" />
-              <path d="M105 140 Q100 190 110 260" stroke="rgba(180,140,0,0.3)" strokeWidth="1.5" fill="none" />
-              {/* Dress shimmer */}
-              <path d="M65 150 Q70 170 68 200" stroke="rgba(255,255,255,0.2)" strokeWidth="2" fill="none" />
-              <path d="M95 150 Q90 170 92 200" stroke="rgba(255,255,255,0.2)" strokeWidth="2" fill="none" />
-              {/* Waist Belt */}
-              <ellipse cx="80" cy="118" rx="32" ry="5" fill="#B8860B" />
-              <circle cx="80" cy="118" r="4" fill="#FFD700" />
-              <defs>
-                <linearGradient id="dressGradNew" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#DAA520" />
-                  <stop offset="30%" stopColor="#FFD700" />
-                  <stop offset="70%" stopColor="#F0C040" />
-                  <stop offset="100%" stopColor="#DAA520" />
-                </linearGradient>
-              </defs>
+              <path d="M35 70 Q50 65 65 70 L75 130 Q50 135 25 130 Z" fill="#E8A03A" />
+              {/* Dress neckline */}
+              <path d="M40 70 Q50 75 60 70" stroke="#D4920A" strokeWidth="1" fill="none" />
             </motion.g>
             
-            {/* Upper Body / Shoulders */}
-            <path d="M58 100 Q80 92 102 100 L102 108 Q80 105 58 108 Z" fill="#F5D5C8" />
-            
-            {/* Neck - Elegant long neck */}
-            <path d="M72 92 Q80 88 88 92 L86 102 Q80 100 74 102 Z" fill="#F5D5C8" />
-            {/* Necklace */}
-            <path d="M70 98 Q80 105 90 98" stroke="#FFD700" strokeWidth="1" fill="none" />
-            <circle cx="80" cy="103" r="2.5" fill="#FFD700" />
-            <circle cx="76" cy="101" r="1.5" fill="#FFD700" opacity="0.7" />
-            <circle cx="84" cy="101" r="1.5" fill="#FFD700" opacity="0.7" />
-            
-            {/* Head - More realistic proportions */}
+            {/* Arms */}
             <motion.g
-              animate={{ y: [0, -3, 0], rotate: [-1, 1, -1] }}
-              transition={{ duration: 2.2, repeat: Infinity, delay: 0.2 }}
-              style={{ transformOrigin: "80px 58px" }}
+              animate={{ rotate: [0, -5, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ transformOrigin: "35px 75px" }}
             >
-              {/* Face - Oval elegant shape */}
-              <ellipse cx="80" cy="58" rx="20" ry="24" fill="#F5D5C8" />
-              
-              {/* Hair - Elegant updo */}
-              <path d="M60 50 Q62 28 80 22 Q98 28 100 50 Q102 65 95 82 Q80 75 65 82 Q58 65 60 50" fill="#3D2314" />
-              {/* Side hair strands */}
-              <path d="M60 50 Q56 62 60 75 L64 60 Z" fill="#3D2314" />
-              <path d="M100 50 Q104 62 100 75 L96 60 Z" fill="#3D2314" />
-              {/* Hair bun detail */}
-              <ellipse cx="80" cy="30" rx="12" ry="8" fill="#3D2314" />
-              <path d="M72 28 Q80 22 88 28" stroke="#2A1A0A" strokeWidth="1" fill="none" />
-              
-              {/* Hair Accessory - Flower */}
-              <circle cx="95" cy="38" r="5" fill="#FFD700" />
-              <circle cx="95" cy="38" r="2.5" fill="#FFF" opacity="0.4" />
-              
-              {/* Eyebrows - Elegant arch */}
-              <path d="M68 48 Q73 45 78 48" stroke="#3D2314" strokeWidth="1.2" fill="none" />
-              <path d="M82 48 Q87 45 92 48" stroke="#3D2314" strokeWidth="1.2" fill="none" />
-              
-              {/* Eyes - Expressive with lashes */}
-              <ellipse cx="73" cy="54" rx="4" ry="3.5" fill="#FFFFFF" />
-              <ellipse cx="87" cy="54" rx="4" ry="3.5" fill="#FFFFFF" />
-              <circle cx="73" cy="55" r="2.2" fill="#4A3728" />
-              <circle cx="87" cy="55" r="2.2" fill="#4A3728" />
-              <circle cx="72" cy="54" r="0.8" fill="#FFFFFF" />
-              <circle cx="86" cy="54" r="0.8" fill="#FFFFFF" />
-              {/* Upper eyelashes */}
-              <path d="M69 51 L67 49" stroke="#3D2314" strokeWidth="0.6" />
-              <path d="M71 50 L70 48" stroke="#3D2314" strokeWidth="0.6" />
-              <path d="M75 50 L76 48" stroke="#3D2314" strokeWidth="0.6" />
-              <path d="M85 50 L84 48" stroke="#3D2314" strokeWidth="0.6" />
-              <path d="M89 50 L90 48" stroke="#3D2314" strokeWidth="0.6" />
-              <path d="M91 51 L93 49" stroke="#3D2314" strokeWidth="0.6" />
-              
-              {/* Subtle blush */}
-              <ellipse cx="67" cy="62" rx="5" ry="2.5" fill="#FFCCCB" opacity="0.35" />
-              <ellipse cx="93" cy="62" rx="5" ry="2.5" fill="#FFCCCB" opacity="0.35" />
-              
-              {/* Nose - Delicate */}
-              <path d="M80 54 Q81 60 80 65 Q78 64 79 65" stroke="#E0B8A8" strokeWidth="0.8" fill="none" />
-              
-              {/* Lips - Full and elegant */}
-              <path d="M75 72 Q80 70 85 72" stroke="#D4726A" strokeWidth="1" fill="none" />
-              <path d="M76 73 Q80 77 84 73 Q80 78 76 73" fill="#E07060" />
-              
-              {/* Ears with elegant earrings */}
-              <ellipse cx="60" cy="58" rx="3" ry="5" fill="#F5D5C8" />
-              <ellipse cx="100" cy="58" rx="3" ry="5" fill="#F5D5C8" />
-              <motion.circle 
-                cx="60" cy="65" r="2.5" fill="#FFD700"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <motion.circle 
-                cx="100" cy="65" r="2.5" fill="#FFD700"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-              />
-            </motion.g>
-            
-            {/* Arms - Graceful surprised gesture */}
-            <motion.g
-              animate={{ rotate: [0, 6, 0] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
-              style={{ transformOrigin: "50px 108px" }}
-            >
-              <path d="M50 108 Q35 95 28 82 L32 78 Q40 90 52 102 Z" fill="#F5D5C8" />
-              {/* Delicate hand */}
-              <ellipse cx="30" cy="80" rx="6" ry="4.5" fill="#F5D5C8" />
-              <path d="M26 78 Q24 74 26 72" stroke="#F5D5C8" strokeWidth="2" fill="none" />
-              <path d="M29 77 Q28 73 29 71" stroke="#F5D5C8" strokeWidth="2" fill="none" />
+              <path d="M35 72 L22 90 L20 88 L30 72 Z" fill="#F5C6A7" />
+              <ellipse cx="20" cy="90" rx="4" ry="3" fill="#F5C6A7" />
             </motion.g>
             <motion.g
-              animate={{ rotate: [0, -6, 0] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: 0.1 }}
-              style={{ transformOrigin: "110px 108px" }}
+              animate={{ rotate: [0, 5, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.1 }}
+              style={{ transformOrigin: "65px 75px" }}
             >
-              <path d="M110 108 Q125 95 132 82 L128 78 Q120 90 108 102 Z" fill="#F5D5C8" />
-              <ellipse cx="130" cy="80" rx="6" ry="4.5" fill="#F5D5C8" />
-              <path d="M134 78 Q136 74 134 72" stroke="#F5D5C8" strokeWidth="2" fill="none" />
-              <path d="M131 77 Q132 73 131 71" stroke="#F5D5C8" strokeWidth="2" fill="none" />
+              <path d="M65 72 L78 90 L80 88 L70 72 Z" fill="#F5C6A7" />
+              <ellipse cx="80" cy="90" rx="4" ry="3" fill="#F5C6A7" />
+            </motion.g>
+            
+            {/* Neck */}
+            <rect x="46" y="58" width="8" height="12" fill="#F5C6A7" />
+            
+            {/* Head - Simple oval */}
+            <motion.g
+              animate={{ y: [0, -2, 0], rotate: [-2, 2, -2] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{ transformOrigin: "50px 40px" }}
+            >
+              <ellipse cx="50" cy="40" rx="16" ry="18" fill="#F5C6A7" />
+              
+              {/* Hair - Coral/Orange bob style */}
+              <path d="M34 38 Q32 22 50 18 Q68 22 66 38 Q68 48 62 55 L38 55 Q32 48 34 38" fill="#E07050" />
+              {/* Hair bangs */}
+              <path d="M36 32 Q42 28 50 30 Q58 28 64 32 Q62 36 50 35 Q38 36 36 32" fill="#E07050" />
+              
+              {/* Face features */}
+              {/* Eyes - simple dots */}
+              <circle cx="44" cy="42" r="2" fill="#4A3728" />
+              <circle cx="56" cy="42" r="2" fill="#4A3728" />
+              <circle cx="44.5" cy="41.5" r="0.6" fill="#FFFFFF" />
+              <circle cx="56.5" cy="41.5" r="0.6" fill="#FFFFFF" />
+              
+              {/* Eyebrows */}
+              <path d="M41 38 Q44 36 47 38" stroke="#C06050" strokeWidth="1" fill="none" />
+              <path d="M53 38 Q56 36 59 38" stroke="#C06050" strokeWidth="1" fill="none" />
+              
+              {/* Nose - simple line */}
+              <path d="M50 44 L50 48" stroke="#E0A090" strokeWidth="1" fill="none" />
+              
+              {/* Mouth - subtle smile */}
+              <path d="M46 52 Q50 55 54 52" stroke="#D07060" strokeWidth="1.5" fill="none" />
+              
+              {/* Blush */}
+              <ellipse cx="40" cy="48" rx="3" ry="1.5" fill="#FFB0A0" opacity="0.4" />
+              <ellipse cx="60" cy="48" rx="3" ry="1.5" fill="#FFB0A0" opacity="0.4" />
+              
+              {/* Ears */}
+              <ellipse cx="34" cy="42" rx="2" ry="4" fill="#F5C6A7" />
+              <ellipse cx="66" cy="42" rx="2" ry="4" fill="#F5C6A7" />
             </motion.g>
           </motion.svg>
 
