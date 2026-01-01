@@ -169,7 +169,7 @@ const GlassProfileCard = ({
         {/* Profile Info */}
         <div className="relative p-5 z-10 flex-1 flex flex-col">
           <div className="flex items-start justify-between mb-3">
-            <div>
+            <div className="flex-1">
               <h3 
                 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer"
                 onClick={() => navigate(`/profile/${profile.id}`)}
@@ -178,26 +178,45 @@ const GlassProfileCard = ({
               </h3>
               <p className="text-muted-foreground">{profile.age} years</p>
             </div>
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            >
-              <Star className="w-5 h-5 text-secondary fill-secondary" />
-            </motion.div>
+            <div className="flex flex-col items-end gap-2">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Star className="w-5 h-5 text-secondary fill-secondary" />
+              </motion.div>
+              {/* Online Status */}
+              <span className="flex items-center gap-1 text-xs text-green-600">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Online
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Briefcase className="w-4 h-4 text-primary" />
-              {profile.profession}
+              <Briefcase className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="truncate">{profile.profession}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <GraduationCap className="w-4 h-4 text-primary" />
-              {profile.education}
+              <span className="w-4 h-4 flex items-center justify-center text-primary flex-shrink-0 text-xs font-bold">⚥</span>
+              <span className="truncate">{profile.age >= 28 ? 'Never Married' : 'Single'}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4 text-primary" />
-              {profile.location}
+              <GraduationCap className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="truncate">{profile.education}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="w-4 h-4 flex items-center justify-center text-primary flex-shrink-0 text-xs">📏</span>
+              <span className="truncate">5'6" / 168 cm</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="truncate">{profile.location}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="w-4 h-4 flex items-center justify-center text-primary flex-shrink-0 text-xs">🏠</span>
+              <span className="truncate">Hindu, Brahmin</span>
             </div>
           </div>
 
