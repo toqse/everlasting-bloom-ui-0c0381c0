@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 
-const LOADER_IMAGES = [
-  "https://rn53themes.net/themes/matrimo/images/loder/1.png",
-  "https://rn53themes.net/themes/matrimo/images/loder/2.png",
-  "https://rn53themes.net/themes/matrimo/images/loder/3.png",
-];
+import loaderBoy from "../assets/matrimo-loader-1.png";
+import loaderLady from "../assets/matrimo-loader-2.png";
+import loaderHeart from "../assets/matrimo-loader-3.png";
 
 const LoadingAnimation = () => {
+  // Matches RN53 Matrimo preloader proportions + motion
+  const cycle = 1.6;
+
   return (
     <motion.div
       initial={{ opacity: 1 }}
@@ -20,31 +21,61 @@ const LoadingAnimation = () => {
       <div className="absolute inset-0 bg-background/40" />
 
       <div className="relative z-10 flex flex-col items-center">
-        {/* Loader scene (matches reference site) */}
-        <div className="relative w-[220px] h-[150px] md:w-[260px] md:h-[170px]">
+        {/* Loader scene (same sizing + positions as reference site) */}
+        <div className="relative w-[137px] h-[122px]">
+          {/* Boy (slides in from left) */}
           <motion.img
-            src={LOADER_IMAGES[0]}
-            alt="Proposal loader character"
+            src={loaderBoy}
+            alt="Proposal loader boy"
             loading="eager"
-            className="absolute left-2 bottom-2 w-[78px] md:w-[92px] select-none pointer-events-none"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute left-0 top-[26px] w-[80px] select-none pointer-events-none"
+            animate={{
+              x: [-50, 0, 0, -50],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: cycle,
+              times: [0, 0.35, 0.7, 1],
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
           />
+
+          {/* Lady (slides in from right) */}
           <motion.img
-            src={LOADER_IMAGES[1]}
+            src={loaderLady}
             alt="Proposal loader lady"
             loading="eager"
-            className="absolute right-2 bottom-2 w-[62px] md:w-[72px] select-none pointer-events-none"
-            animate={{ y: [0, -3, 0], rotate: [0, 1, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute right-0 top-0 w-[40px] select-none pointer-events-none"
+            animate={{
+              x: [50, 0, 0, 50],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: cycle,
+              times: [0, 0.35, 0.7, 1],
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
           />
+
+          {/* Heart (pops in) */}
           <motion.img
-            src={LOADER_IMAGES[2]}
-            alt="Proposal loader hearts"
+            src={loaderHeart}
+            alt="Proposal loader heart"
             loading="eager"
-            className="absolute left-1/2 top-3 -translate-x-1/2 w-[70px] md:w-[82px] select-none pointer-events-none"
-            animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
-            transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute left-[75px] top-0 w-[24px] select-none pointer-events-none"
+            animate={{
+              scale: [0, 1, 1, 0],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: cycle,
+              times: [0, 0.25, 0.7, 1],
+              repeat: Infinity,
+              delay: 0.2,
+              ease: "easeInOut",
+            }}
           />
         </div>
 
@@ -68,7 +99,12 @@ const LoadingAnimation = () => {
                 key={i}
                 className={`w-2 h-2 rounded-full ${i % 2 === 0 ? "bg-primary" : "bg-secondary"}`}
                 animate={{ y: [0, -7, 0], scale: [1, 1.15, 1] }}
-                transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }}
+                transition={{
+                  duration: 0.9,
+                  repeat: Infinity,
+                  delay: i * 0.12,
+                  ease: "easeInOut",
+                }}
               />
             ))}
           </div>
@@ -79,3 +115,4 @@ const LoadingAnimation = () => {
 };
 
 export default LoadingAnimation;
+
