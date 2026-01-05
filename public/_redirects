@@ -1,0 +1,13 @@
+# Netlify redirects file
+# This file should be placed in the public folder or the build output directory
+
+# Handle client-side routing - redirect all requests to index.html
+# This allows React Router to handle routing on the client side
+/*    /index.html   200
+
+# Optional: Handle specific redirects if needed
+# /old-path    /new-path    301
+
+# Optional: Handle API routes (if you have a backend)
+# /api/*    https://your-api-domain.com/api/:splat    200
+
