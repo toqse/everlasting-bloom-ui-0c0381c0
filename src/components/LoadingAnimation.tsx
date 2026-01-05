@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 
-import loaderBoy from "../assets/matrimo-loader-1.png";
-import loaderLady from "../assets/matrimo-loader-2.png";
-import loaderHeart from "../assets/matrimo-loader-3.png";
+const LOADER_IMAGES = {
+  boy: "https://rn53themes.net/themes/matrimo/images/loder/1.png",
+  lady: "https://rn53themes.net/themes/matrimo/images/loder/2.png",
+  heart: "https://rn53themes.net/themes/matrimo/images/loder/3.png",
+} as const;
 
 const LoadingAnimation = () => {
   // Matches RN53 Matrimo preloader proportions + motion
@@ -22,15 +24,15 @@ const LoadingAnimation = () => {
 
       <div className="relative z-10 flex flex-col items-center">
         {/* Loader scene (same sizing + positions as reference site) */}
-        <div className="relative w-[137px] h-[122px]">
+        <div className="relative w-[168px] h-[126px]">
           {/* Boy (slides in from left) */}
           <motion.img
-            src={loaderBoy}
-            alt="Proposal loader boy"
+            src={LOADER_IMAGES.boy}
+            alt="Matrimo loader boy"
             loading="eager"
-            className="absolute left-0 top-[26px] w-[80px] select-none pointer-events-none"
+            className="absolute left-0 bottom-0 w-[92px] select-none pointer-events-none"
             animate={{
-              x: [-50, 0, 0, -50],
+              x: [-55, 0, 0, -55],
               opacity: [0, 1, 1, 0],
             }}
             transition={{
@@ -43,12 +45,12 @@ const LoadingAnimation = () => {
 
           {/* Lady (slides in from right) */}
           <motion.img
-            src={loaderLady}
-            alt="Proposal loader lady"
+            src={LOADER_IMAGES.lady}
+            alt="Matrimo loader lady"
             loading="eager"
-            className="absolute right-0 top-0 w-[40px] select-none pointer-events-none"
+            className="absolute right-0 bottom-0 w-[64px] select-none pointer-events-none"
             animate={{
-              x: [50, 0, 0, 50],
+              x: [55, 0, 0, 55],
               opacity: [0, 1, 1, 0],
             }}
             transition={{
@@ -61,10 +63,10 @@ const LoadingAnimation = () => {
 
           {/* Heart (pops in) */}
           <motion.img
-            src={loaderHeart}
-            alt="Proposal loader heart"
+            src={LOADER_IMAGES.heart}
+            alt="Matrimo loader heart"
             loading="eager"
-            className="absolute left-[75px] top-0 w-[24px] select-none pointer-events-none"
+            className="absolute left-1/2 top-[6px] -translate-x-1/2 w-[78px] select-none pointer-events-none"
             animate={{
               scale: [0, 1, 1, 0],
               opacity: [0, 1, 1, 0],
@@ -73,7 +75,7 @@ const LoadingAnimation = () => {
               duration: cycle,
               times: [0, 0.25, 0.7, 1],
               repeat: Infinity,
-              delay: 0.2,
+              delay: 0.15,
               ease: "easeInOut",
             }}
           />
