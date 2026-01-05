@@ -172,7 +172,10 @@ const GlassProfileCard = ({
             <div className="flex-1">
               <h3 
                 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer"
-                onClick={() => navigate(`/profile/${profile.id}`)}
+                onClick={() => {
+                  window.scrollTo(0, 0);
+                  navigate(`/profile/${profile.id}`);
+                }}
               >
                 {profile.name}
               </h3>
@@ -288,6 +291,7 @@ const GlassProfileCard = ({
                 className="gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
+                  window.scrollTo(0, 0);
                   navigate(`/profile/${profile.id}`);
                 }}
               >

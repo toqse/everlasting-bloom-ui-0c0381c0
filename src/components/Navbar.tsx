@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { Heart, Menu, X, User, LogIn, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLoading } from "@/contexts/LoadingContext";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { setIsLoading } = useLoading();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +30,18 @@ const Navbar = () => {
 
   const isActive = (href: string) => location.pathname === href;
 
+  const handleNavLinkClick = (href: string) => {
+    // Only trigger loading for navbar sections
+    const navbarRoutes = ["/", "/search", "/interests/received", "/interests/sent", "/success-stories", "/membership"];
+    if (navbarRoutes.includes(href)) {
+      setIsLoading(true);
+      // Auto-hide after animation duration
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+    }
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -38,7 +52,11 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
+        <Link 
+          to="/" 
+          onClick={() => handleNavLinkClick("/")}
+          className="flex items-center gap-2 group"
+        >
           <div className="relative">
             <Heart className="w-8 h-8 text-primary fill-primary group-hover:animate-heart-beat transition-all" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary rounded-full animate-pulse-soft" />
@@ -55,6 +73,7 @@ const Navbar = () => {
             <Link
               key={link.name}
               to={link.href}
+              onClick={() => handleNavLinkClick(link.href)}
               className={`relative font-medium transition-all duration-300 group hover-lift ${
                 isActive(link.href) 
                   ? "text-primary" 
@@ -121,7 +140,10 @@ const Navbar = () => {
                 isActive(link.href) ? "text-primary" : "text-foreground/80"
               }`}
               style={{ animationDelay: `${index * 0.1}s` }}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={() => {
+                handleNavLinkClick(link.href);
+                setIsMobileMenuOpen(false);
+              }}
             >
               {link.name}
             </Link>

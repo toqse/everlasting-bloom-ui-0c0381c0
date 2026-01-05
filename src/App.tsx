@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LoadingProvider, useLoading } from "@/contexts/LoadingContext";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import SearchProfiles from "./pages/SearchProfiles";
 import ProfileDetail from "./pages/ProfileDetail";
@@ -25,6 +26,7 @@ const AppContent = () => {
 
   return (
     <>
+      <ScrollToTop />
       <AnimatePresence mode="wait">
         {isLoading && <LoadingAnimation key="loading" />}
       </AnimatePresence>

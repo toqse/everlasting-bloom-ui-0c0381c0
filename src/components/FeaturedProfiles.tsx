@@ -104,6 +104,7 @@ const FeaturedProfiles = () => {
   };
 
   const handleViewProfile = (id: number) => {
+    window.scrollTo(0, 0);
     navigate(`/profile/${id}`);
   };
 
