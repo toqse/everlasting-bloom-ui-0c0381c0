@@ -48,7 +48,7 @@ const LoadingAnimation = () => {
             src={LOADER_IMAGES.lady}
             alt="Matrimo loader lady"
             loading="eager"
-            className="absolute right-0 bottom-0 w-[64px] select-none pointer-events-none"
+            className="absolute right-0 bottom-0 w-[52px] select-none pointer-events-none"
             animate={{
               x: [55, 0, 0, 55],
               opacity: [0, 1, 1, 0],
@@ -66,7 +66,7 @@ const LoadingAnimation = () => {
             src={LOADER_IMAGES.heart}
             alt="Matrimo loader heart"
             loading="eager"
-            className="absolute left-1/2 top-[6px] -translate-x-1/2 w-[78px] select-none pointer-events-none"
+            className="absolute left-1/2 top-[6px] -translate-x-1/2 w-[40px] select-none pointer-events-none"
             animate={{
               scale: [0, 1, 1, 0],
               opacity: [0, 1, 1, 0],
