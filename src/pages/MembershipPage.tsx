@@ -115,7 +115,7 @@ const MembershipPage = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {plansData.map((plan, index) => (
               <div
                 key={plan.name}
@@ -184,7 +184,7 @@ const MembershipPage = () => {
                     className="w-full group/btn"
                     onClick={() => navigate("/auth")}
                   >
-                    {plan.price === "Free" ? "Get Started Free" : "Choose Plan"}
+                    Get Started
                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
                 </div>
@@ -205,29 +205,29 @@ const MembershipPage = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-primary/10">
-                  <th className="py-4 px-4 text-left font-serif text-lg">Feature</th>
-                  <th className="py-4 px-4 text-center font-serif text-lg">Basic</th>
-                  <th className="py-4 px-4 text-center font-serif text-lg text-secondary">Premium</th>
-                  <th className="py-4 px-4 text-center font-serif text-lg">Platinum</th>
+                  <th className="py-4 px-3 text-left font-serif text-sm lg:text-lg">Feature</th>
+                  <th className="py-4 px-3 text-center font-serif text-sm lg:text-lg">Silver</th>
+                  <th className="py-4 px-3 text-center font-serif text-sm lg:text-lg text-secondary">Gold</th>
+                  <th className="py-4 px-3 text-center font-serif text-sm lg:text-lg text-secondary">Premium</th>
+                  <th className="py-4 px-3 text-center font-serif text-sm lg:text-lg">Ultimate</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { feature: "View Profiles", basic: "✓", premium: "✓", platinum: "✓" },
-                  { feature: "Send Interests", basic: "5/day", premium: "Unlimited", platinum: "Unlimited" },
-                  { feature: "View Contact Details", basic: "✗", premium: "✓", platinum: "✓" },
-                  { feature: "Send Messages", basic: "✗", premium: "Unlimited", platinum: "Unlimited" },
-                  { feature: "Profile Boost", basic: "✗", premium: "1/month", platinum: "3/month" },
-                  { feature: "See Profile Views", basic: "✗", premium: "✓", platinum: "✓" },
-                  { feature: "Personal Matchmaker", basic: "✗", premium: "✗", platinum: "✓" },
-                  { feature: "Background Verification", basic: "✗", premium: "✗", platinum: "✓" },
-                  { feature: "Priority Support", basic: "✗", premium: "✓", platinum: "Dedicated" },
+                  { feature: "Horoscope Matches", silver: "15", gold: "30", premium: "60", ultimate: "70" },
+                  { feature: "Send Interests", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
+                  { feature: "Chat with Matches", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
+                  { feature: "Profile Visibility", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
+                  { feature: "Dedicated Support", silver: "✗", gold: "✗", premium: "✓", ultimate: "✓" },
+                  { feature: "Customer Care", silver: "✗", gold: "✗", premium: "✗", ultimate: "✓" },
+                  { feature: "Duration", silver: "3 months", gold: "6 months", premium: "1 Year", ultimate: "1 Year" },
                 ].map((row, i) => (
                   <tr key={i} className="border-b border-primary/5 hover:bg-accent-rose/30 transition-colors">
-                    <td className="py-4 px-4 font-medium">{row.feature}</td>
-                    <td className="py-4 px-4 text-center">{row.basic}</td>
-                    <td className="py-4 px-4 text-center bg-secondary/5 font-medium text-secondary">{row.premium}</td>
-                    <td className="py-4 px-4 text-center">{row.platinum}</td>
+                    <td className="py-4 px-3 font-medium text-sm">{row.feature}</td>
+                    <td className="py-4 px-3 text-center text-sm">{row.silver}</td>
+                    <td className="py-4 px-3 text-center bg-secondary/5 font-medium text-secondary text-sm">{row.gold}</td>
+                    <td className="py-4 px-3 text-center bg-secondary/5 font-medium text-secondary text-sm">{row.premium}</td>
+                    <td className="py-4 px-3 text-center text-sm">{row.ultimate}</td>
                   </tr>
                 ))}
               </tbody>
