@@ -11,58 +11,78 @@ export interface Plan {
   icon: typeof Crown;
   isPopular: boolean;
   variant: "outline" | "hero" | "gold";
+  highlightFeature?: string;
+  commission?: string;
 }
 
 export const plansData: Plan[] = [
   {
-    name: "Basic",
-    price: "Free",
-    period: "",
-    description: "Start your journey",
+    name: "Silver",
+    price: "₹999",
+    period: "/3 months",
+    description: "Perfect to get started",
+    highlightFeature: "15 Horoscope Matching",
     features: [
-      "Create detailed profile",
-      "Browse profiles",
-      "Basic search filters",
-      "5 interests per day",
-      "Email support",
+      "Up to 15 horoscope matches",
+      "Send interests to profiles",
+      "Chat with matches",
+      "Profile visibility",
     ],
-    icon: Heart,
+    icon: Star,
     isPopular: false,
     variant: "outline",
   },
   {
-    name: "Premium",
-    price: "₹2,499",
-    period: "/3 months",
+    name: "Gold",
+    price: "₹1,499",
+    period: "/6 months",
     description: "Most popular choice",
+    highlightFeature: "30 Horoscope Matching",
     features: [
-      "Everything in Basic",
-      "Unlimited messages",
-      "View contact details",
-      "Advanced filters",
-      "Profile boost monthly",
-      "Priority support",
-      "See who viewed you",
+      "Up to 30 horoscope matches",
+      "Send interests to profiles",
+      "Chat with matches",
+      "Profile visibility",
     ],
     icon: Crown,
     isPopular: true,
     variant: "hero",
   },
   {
-    name: "Platinum",
-    price: "₹4,999",
-    period: "/6 months",
-    description: "Ultimate experience",
+    name: "Premium",
+    price: "₹1,999",
+    period: "/1 Year",
+    description: "Most popular choice",
+    highlightFeature: "60 Horoscope Matching",
     features: [
-      "Everything in Premium",
-      "Personal matchmaker",
-      "Relationship counseling",
-      "Profile highlighting",
-      "VIP badge",
+      "Up to 60 horoscope matches",
+      "Send interests to profiles",
+      "Chat with matches",
+      "Profile visibility",
+      "Everything in Gold",
       "Dedicated support",
-      "Background verification",
-      "Premium analytics",
+      "Best value for 1 year",
     ],
+    icon: Sparkles,
+    isPopular: true,
+    variant: "hero",
+  },
+  {
+    name: "Ultimate",
+    price: "₹2,999",
+    period: "/1 Year",
+    description: "Best value for serious seekers",
+    highlightFeature: "70 Horoscope Matching",
+    features: [
+      "Up to 70 horoscope matches",
+      "Send interests to profiles",
+      "Chat with matches",
+      "Profile visibility",
+      "Everything in Premium",
+      "Dedicated support",
+      "Customer care Assistance",
+    ],
+    commission: "Commission includes Male Rs. 15,000 / Female Rs. 10,000",
     icon: Sparkles,
     isPopular: false,
     variant: "gold",
@@ -74,13 +94,10 @@ const Membership = () => {
 
   return (
     <section id="membership" className="py-24 bg-gradient-romantic relative overflow-hidden">
-      {/* Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-32 bg-white" style={{ clipPath: "ellipse(70% 100% at 50% 0%)" }} />
       <div className="absolute top-20 right-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 left-10 w-72 h-72 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/20 rounded-full blur-3xl animate-pulse-soft" />
 
-      {/* Floating Sparkles */}
       {[...Array(8)].map((_, i) => (
         <Sparkles
           key={i}
@@ -96,7 +113,6 @@ const Membership = () => {
       ))}
 
       <div className="container mx-auto px-4 relative z-10 pt-16">
-        {/* Section Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 animate-fade-in-up shadow-soft">
             <Crown className="w-4 h-4 text-secondary animate-bounce-soft" />
@@ -111,71 +127,68 @@ const Membership = () => {
           </p>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {plansData.map((plan, index) => (
             <div
               key={plan.name}
-              className={`relative animate-fade-in-up ${plan.isPopular ? "md:-mt-6 md:mb-6" : ""}`}
+              className={`relative animate-fade-in-up ${plan.isPopular ? "md:-mt-4 md:mb-4" : ""}`}
               style={{ animationDelay: `${0.1 * index}s` }}
             >
-              {/* Popular Badge */}
               {plan.isPopular && (
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10">
-                  <div className="px-5 py-2 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-sm font-bold rounded-full shadow-gold flex items-center gap-1.5 animate-glow">
-                    <Star className="w-4 h-4 fill-current animate-sparkle" />
-                    Most Popular
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                  <div className="px-4 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-xs font-bold rounded-full shadow-gold flex items-center gap-1 animate-glow">
+                    <Star className="w-3 h-3 fill-current animate-sparkle" />
+                    MOST POPULAR
                   </div>
                 </div>
               )}
 
               <div
-                className={`h-full bg-white rounded-3xl p-8 transition-all duration-500 hover-lift group ${
+                className={`h-full bg-white rounded-3xl p-6 transition-all duration-500 hover-lift group ${
                   plan.isPopular
                     ? "shadow-elevated border-2 border-secondary"
+                    : plan.variant === "gold"
+                    ? "shadow-elevated border-2 border-secondary/60"
                     : "shadow-card border border-primary/10 hover:border-primary/20"
                 }`}
               >
-                {/* Plan Icon */}
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${
                   plan.isPopular
+                    ? "bg-gradient-to-br from-secondary to-secondary-light shadow-gold"
+                    : plan.variant === "gold"
                     ? "bg-gradient-to-br from-secondary to-secondary-light shadow-gold"
                     : "bg-accent-rose group-hover:bg-primary/10"
                 }`}>
-                  <plan.icon className={`w-8 h-8 ${plan.isPopular ? "text-white" : "text-primary"} ${plan.isPopular ? "animate-bounce-soft" : ""}`} />
+                  <plan.icon className={`w-6 h-6 ${plan.isPopular || plan.variant === "gold" ? "text-white" : "text-primary"}`} />
                 </div>
 
-                {/* Plan Name & Price */}
-                <h3 className="font-serif text-2xl font-bold text-foreground mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
+                <h3 className={`font-serif text-xl font-bold mb-1 ${plan.isPopular || plan.variant === "gold" ? "text-secondary" : "text-foreground"}`}>{plan.name}</h3>
+                <p className="text-muted-foreground text-xs mb-3">{plan.description}</p>
                 
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="font-serif text-4xl font-bold text-gradient-primary">{plan.price}</span>
-                  {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="font-serif text-3xl font-bold text-gradient-primary">{plan.price}</span>
+                  {plan.period && <span className="text-muted-foreground text-sm">{plan.period}</span>}
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 group/item">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-                        plan.isPopular ? "bg-secondary/20 group-hover/item:bg-secondary/30" : "bg-accent-rose group-hover/item:bg-primary/10"
-                      }`}>
-                        <Check className={`w-3 h-3 ${plan.isPopular ? "text-secondary" : "text-primary"}`} />
-                      </div>
-                      <span className="text-sm text-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                {plan.highlightFeature && (
+                  <p className="text-sm font-medium text-foreground mb-4 underline decoration-primary/30 underline-offset-2">
+                    {plan.highlightFeature}
+                  </p>
+                )}
 
-                {/* CTA Button */}
+                {plan.commission && (
+                  <p className="text-xs text-primary font-medium mb-4 leading-relaxed">
+                    {plan.commission}
+                  </p>
+                )}
+
                 <Button 
                   variant={plan.variant} 
-                  size="lg" 
-                  className="w-full group/btn"
+                  size="default" 
+                  className="w-full group/btn mt-auto"
                   onClick={() => navigate("/auth")}
                 >
-                  {plan.price === "Free" ? "Get Started" : "Choose Plan"}
+                  Get Started
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                 </Button>
               </div>
@@ -183,7 +196,6 @@ const Membership = () => {
           ))}
         </div>
 
-        {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-6 mt-16">
           {[
             { icon: Shield, text: "Secure Payments" },
@@ -197,7 +209,6 @@ const Membership = () => {
           ))}
         </div>
 
-        {/* View All Plans Link */}
         <div className="text-center mt-10">
           <Button 
             variant="outline" 
