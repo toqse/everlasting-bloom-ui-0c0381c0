@@ -25,6 +25,7 @@ const stepVariants = {
 const AuthPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -47,11 +48,15 @@ const AuthPage = () => {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email) {
+    if (loginMethod === "phone" && !formData.phone) {
+      toast.error("Please enter your phone number");
+      return;
+    }
+    if (loginMethod === "email" && !formData.email) {
       toast.error("Please enter your email address");
       return;
     }
-    toast.success("OTP sent to your email! 💕");
+    toast.success(`OTP sent to your ${loginMethod === "phone" ? "phone" : "email"}! 💕`);
   };
 
   const handleSignupNext = () => {
@@ -123,11 +128,31 @@ const AuthPage = () => {
               <p className="text-muted-foreground text-sm">Sign in to continue your journey</p>
             </div>
 
+            <div className="flex gap-3 mb-6">
+              {(["phone", "email"] as LoginMethod[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setLoginMethod(m)}
+                  className={`flex-1 py-3 rounded-2xl font-medium transition-all capitalize ${loginMethod === m ? "bg-primary text-primary-foreground shadow-soft" : "border-2 border-primary/10 text-foreground hover:bg-accent-rose"}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
             <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
-              </div>
+              {loginMethod === "phone" ? (
+                <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
+                  <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
+                  <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+                </div>
+              ) : (
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+                </div>
+              )}
               <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
                 Send OTP
                 <ArrowRight className="w-5 h-5" />
