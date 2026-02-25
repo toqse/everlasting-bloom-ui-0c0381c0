@@ -4,11 +4,9 @@ import { SelectField, inputClass } from "../SignupFormFields";
 interface Props {
   formData: Record<string, string>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  agreeTerms: boolean;
-  setAgreeTerms: (v: boolean) => void;
 }
 
-const BasicInfoStep = ({ formData, onChange, agreeTerms, setAgreeTerms }: Props) => (
+const BasicInfoStep = ({ formData, onChange }: Props) => (
   <>
     <div className="text-center mb-6">
       <div className="w-16 h-16 mx-auto rounded-full bg-primary flex items-center justify-center mb-4 relative">
@@ -37,13 +35,6 @@ const BasicInfoStep = ({ formData, onChange, agreeTerms, setAgreeTerms }: Props)
         <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
       </div>
       <SelectField label="Gender" name="gender" options={["Male", "Female"]} value={formData.gender} onChange={onChange} />
-      <div className="relative">
-        <input type="password" name="password" value={formData.password} onChange={onChange} placeholder="Create Password" className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
-      </div>
-      <label className="flex items-center gap-3 cursor-pointer">
-        <input type="checkbox" checked={agreeTerms} onChange={() => setAgreeTerms(!agreeTerms)} className="w-5 h-5 rounded border-primary/30 text-primary focus:ring-primary" />
-        <span className="text-sm text-foreground">I agree to the <a href="#" className="text-primary font-medium hover:underline">Terms & Conditions</a></span>
-      </label>
     </div>
   </>
 );

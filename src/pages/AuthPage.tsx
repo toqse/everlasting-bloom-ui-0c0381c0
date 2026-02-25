@@ -25,7 +25,6 @@ const stepVariants = {
 const AuthPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -48,26 +47,17 @@ const AuthPage = () => {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginMethod === "phone" && !formData.phone) {
-      toast.error("Please enter your phone number");
+    if (!formData.email) {
+      toast.error("Please enter your email address");
       return;
     }
-    if (loginMethod === "email" && (!formData.email || !formData.password)) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    toast.success("Welcome back! 💕");
-    navigate("/search");
+    toast.success("OTP sent to your email! 💕");
   };
 
   const handleSignupNext = () => {
     if (signupStep === 0) {
-      if (!formData.name || !formData.phone || !formData.email || !formData.dob || !formData.gender || !formData.password) {
+      if (!formData.name || !formData.phone || !formData.email || !formData.dob || !formData.gender) {
         toast.error("Please fill all required fields");
-        return;
-      }
-      if (!agreeTerms) {
-        toast.error("Please agree to Terms & Conditions");
         return;
       }
     }
@@ -90,7 +80,7 @@ const AuthPage = () => {
   const renderStep = () => {
     const props = { formData, onChange: handleChange };
     switch (signupStep) {
-      case 0: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} />;
+      case 0: return <BasicInfoStep {...props} />;
       case 1: return <LocationStep {...props} />;
       case 2: return <ReligiousStep {...props} />;
       case 3: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
@@ -133,41 +123,13 @@ const AuthPage = () => {
               <p className="text-muted-foreground text-sm">Sign in to continue your journey</p>
             </div>
 
-            <div className="flex gap-3 mb-6">
-              {(["phone", "email"] as LoginMethod[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setLoginMethod(m)}
-                  className={`flex-1 py-3 rounded-2xl font-medium transition-all capitalize ${loginMethod === m ? "bg-primary text-primary-foreground shadow-soft" : "border-2 border-primary/10 text-foreground hover:bg-accent-rose"}`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-
             <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {loginMethod === "phone" ? (
-                <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                  <span className="flex items-center gap-1.5 pl-4 pr-2 text-sm text-foreground border-r border-primary/10">🇮🇳 +91</span>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone number" className="flex-1 px-3 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
-                </div>
-              ) : (
-                <>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors" />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                    <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-12 pr-12 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/50 hover:text-primary">
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
+                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+              </div>
               <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
-                {loginMethod === "phone" ? "Send OTP" : "Sign In"}
+                Send OTP
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </form>
