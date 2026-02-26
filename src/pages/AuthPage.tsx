@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Heart, Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
 import LocationStep from "@/components/signup/steps/LocationStep";
@@ -56,7 +57,10 @@ const AuthPage = () => {
       toast.error("Please enter your email address");
       return;
     }
-    toast.success(`OTP sent to your ${loginMethod === "phone" ? "phone" : "email"}! 💕`);
+    const { login } = useAuthStore.getState();
+    login(loginMethod, loginMethod === "phone" ? formData.phone : formData.email);
+    toast.success(`OTP verified! Welcome back! 💕`);
+    navigate("/dashboard");
   };
 
   const handleSignupNext = () => {
