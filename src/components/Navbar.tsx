@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { Heart, Menu, X, User, LogIn, Sparkles } from "lucide-react";
+import { Heart, Menu, X, User, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLoading } from "@/contexts/LoadingContext";
-import { useAuthStore } from "@/stores/authStore";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -11,7 +10,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsLoading } = useLoading();
-  const { isLoggedIn, user, logout } = useAuthStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,7 +19,7 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const publicLinks = [
+  const navLinks = [
     { name: "Home", href: "/" },
     { name: "About Us", href: "/about" },
     { name: "Services", href: "/services" },
@@ -30,27 +28,11 @@ const Navbar = () => {
     { name: "Contact", href: "/contact" },
   ];
 
-  const loggedInLinks = [
-    { name: "Home", href: "/" },
-    { name: "Search", href: "/search" },
-    { name: "Interests Received", href: "/interests/received" },
-    { name: "Interests Sent", href: "/interests/sent" },
-    { name: "Success Stories", href: "/success-stories" },
-    { name: "Membership", href: "/membership" },
-  ];
-
-  const navLinks = isLoggedIn ? loggedInLinks : publicLinks;
-
   const isActive = (href: string) => location.pathname === href;
 
   const handleNavLinkClick = (href: string) => {
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 1500);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
   };
 
   return (
@@ -70,7 +52,7 @@ const Navbar = () => {
             <Sparkles className="absolute -bottom-1 -left-1 w-3 h-3 text-secondary animate-sparkle" />
           </div>
           <span className="font-serif text-2xl font-bold text-primary">
-            Eternal<span className="text-secondary">Bond</span>
+            Aiswarya <span className="text-secondary">Matrimony</span>
           </span>
         </Link>
 
@@ -95,32 +77,10 @@ const Navbar = () => {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-4">
-          {isLoggedIn ? (
-            <>
-              <Button variant="ghost" size="icon" className="text-primary hover:text-primary-dark hover:scale-110 transition-transform" onClick={() => navigate("/favorites")}>
-                <Heart className="w-5 h-5" />
-              </Button>
-              <Button variant="outline" className="gap-2 hover-lift" onClick={handleLogout}>
-                <LogIn className="w-4 h-4" />
-                Logout
-              </Button>
-              <Button variant="hero" className="gap-2" onClick={() => navigate("/dashboard")}>
-                <User className="w-4 h-4" />
-                Dashboard
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" className="gap-2 hover-lift" onClick={() => navigate("/auth")}>
-                <LogIn className="w-4 h-4" />
-                Login
-              </Button>
-              <Button variant="hero" className="gap-2" onClick={() => navigate("/auth")}>
-                <User className="w-4 h-4" />
-                Register Free
-              </Button>
-            </>
-          )}
+          <Button variant="hero" className="gap-2" onClick={() => navigate("/auth")}>
+            <User className="w-4 h-4" />
+            Login
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -148,17 +108,7 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="flex gap-3 pt-2">
-            {isLoggedIn ? (
-              <>
-                <Button variant="outline" className="flex-1" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>Logout</Button>
-                <Button variant="hero" className="flex-1" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>Dashboard</Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
-                <Button variant="hero" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Register</Button>
-              </>
-            )}
+            <Button variant="hero" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
           </div>
         </div>
       </div>

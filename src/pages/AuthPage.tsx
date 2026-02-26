@@ -33,6 +33,8 @@ const AuthPage = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [hasChildren, setHasChildren] = useState<"yes" | "no">("no");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
   const [formData, setFormData] = useState({
     name: "", phone: "", email: "", dob: "", gender: "", password: "",
@@ -44,23 +46,71 @@ const AuthPage = () => {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 12);
+      setFormData({ ...formData, phone: digitsOnly });
+      return;
+    }
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginMethod === "phone" && !formData.phone) {
-      toast.error("Please enter your phone number");
-      return;
+    if (loginMethod === "phone") {
+      if (!formData.phone) {
+        toast.error("Please enter your phone number");
+        return;
+      }
+      const len = formData.phone.replace(/\D/g, "").length;
+      if (len < 10 || len > 12) {
+        toast.error("Phone number must be 10–12 digits");
+        return;
+      }
     }
     if (loginMethod === "email" && !formData.email) {
       toast.error("Please enter your email address");
       return;
     }
+    setOtpSent(true);
+    setOtp(["", "", "", "", "", ""]);
+    toast.success(loginMethod === "phone" ? "OTP sent to your phone" : "OTP sent to your email");
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value && !/^\d$/.test(value)) return;
+    const next = [...otp];
+    next[index] = value.slice(-1);
+    setOtp(next);
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpValue = otp.join("");
+    if (otpValue.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
     const { login } = useAuthStore.getState();
     login(loginMethod, loginMethod === "phone" ? formData.phone : formData.email);
-    toast.success(`OTP verified! Welcome back! 💕`);
+    toast.success("OTP verified! Welcome back! 💕");
     navigate("/dashboard");
+  };
+
+  const handleBackToPhoneOrEmail = () => {
+    setOtpSent(false);
+    setOtp(["", "", "", "", "", ""]);
   };
 
   const handleSignupNext = () => {
@@ -69,12 +119,17 @@ const AuthPage = () => {
         toast.error("Please fill all required fields");
         return;
       }
+      const phoneLen = formData.phone.replace(/\D/g, "").length;
+      if (phoneLen < 10 || phoneLen > 12) {
+        toast.error("Phone number must be 10–12 digits");
+        return;
+      }
     }
     if (signupStep < SIGNUP_STEPS.length - 1) {
       setDirection(1);
       setSignupStep(signupStep + 1);
     } else {
-      toast.success("Account created successfully! 🎉", { description: "Welcome to EternalBond!" });
+      toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
       navigate("/search");
     }
   };
@@ -125,58 +180,105 @@ const AuthPage = () => {
                   <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-secondary animate-sparkle" />
                 </div>
                 <span className="font-serif text-3xl font-bold text-primary">
-                  Eternal<span className="text-secondary">Bond</span>
+                  Aiswarya <span className="text-secondary">Matrimony</span>
                 </span>
               </div>
               <h1 className="font-serif text-2xl font-bold text-foreground mb-2">Welcome Back</h1>
               <p className="text-muted-foreground text-sm">Sign in to continue your journey</p>
             </div>
 
-            <div className="flex gap-3 mb-6">
-              {(["phone", "email"] as LoginMethod[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setLoginMethod(m)}
-                  className={`flex-1 py-3 rounded-2xl font-medium transition-all capitalize ${loginMethod === m ? "bg-primary text-primary-foreground shadow-soft" : "border-2 border-primary/10 text-foreground hover:bg-accent-rose"}`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {loginMethod === "phone" ? (
-                <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                  <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
-                  <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+            {!otpSent ? (
+              <>
+                <div className="flex gap-3 mb-6">
+                  {(["phone", "email"] as LoginMethod[]).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setLoginMethod(m)}
+                      className={`flex-1 py-3 rounded-2xl font-medium transition-all capitalize ${loginMethod === m ? "bg-primary text-primary-foreground shadow-soft" : "border-2 border-primary/10 text-foreground hover:bg-accent-rose"}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  {loginMethod === "phone" ? (
+                    <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
+                      <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
+                      <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
+                      <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+                    </div>
+                  )}
+                  <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
+                    Send OTP
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-sm mb-2 text-center">
+                  Enter the 6-digit OTP sent to{" "}
+                  {loginMethod === "phone" ? (
+                    <span className="font-medium text-foreground">+91 {formData.phone}</span>
+                  ) : (
+                    <span className="font-medium text-foreground">{formData.email}</span>
+                  )}
+                </p>
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="flex justify-center gap-2">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        id={`otp-${index}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        className="w-11 h-12 text-center text-lg font-bold rounded-xl border-2 border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white transition-colors"
+                      />
+                    ))}
+                  </div>
+                  <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
+                    Verify & Continue
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={handleBackToPhoneOrEmail}
+                    className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Change {loginMethod === "phone" ? "number" : "email"}
+                  </button>
+                </form>
+              </>
+            )}
+
+            {!otpSent && (
+              <>
+                <div className="my-6 flex items-center gap-4">
+                  <div className="flex-1 border-t border-primary/10" />
+                  <span className="text-sm text-muted-foreground">OR</span>
+                  <div className="flex-1 border-t border-primary/10" />
                 </div>
-              )}
-              <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
-                Send OTP
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </form>
-
-            <div className="my-6 flex items-center gap-4">
-              <div className="flex-1 border-t border-primary/10" />
-              <span className="text-sm text-muted-foreground">OR</span>
-              <div className="flex-1 border-t border-primary/10" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-muted-foreground">
-                Don't have an account?{" "}
-                <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); }} className="text-primary font-bold hover:text-primary-dark transition-colors">
-                  Sign Up
-                </button>
-              </p>
-            </div>
+                <div className="text-center">
+                  <p className="text-muted-foreground">
+                    Don't have an account?{" "}
+                    <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); }} className="text-primary font-bold hover:text-primary-dark transition-colors">
+                      Sign Up
+                    </button>
+                  </p>
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
       </div>

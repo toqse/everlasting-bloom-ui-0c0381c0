@@ -132,7 +132,7 @@ const Footer = () => {
                 <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-secondary animate-sparkle" />
               </div>
               <span className="font-serif text-2xl font-bold text-primary">
-                Eternal<span className="text-secondary">Bond</span>
+                Aiswarya <span className="text-secondary">Matrimony</span>
               </span>
             </Link>
             <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -267,7 +267,7 @@ const Footer = () => {
         <div className="border-t border-primary/10 mt-10 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p className="flex items-center gap-1">
-              © 2024 EternalBond. All rights reserved. Made with 
+              © 2024 Aiswarya Matrimony. All rights reserved. Made with 
               <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat mx-1" /> 
               in India
             </p>

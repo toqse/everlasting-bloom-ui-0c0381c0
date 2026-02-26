@@ -121,7 +121,7 @@ const Hero = () => {
           {/* Subtitle */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
             Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
-            Join millions who found their soulmate with EternalBond.
+            Join millions who found their soulmate with Aiswarya Matrimony.
           </p>
 
           {/* CTA Buttons */}
@@ -150,9 +150,9 @@ const Hero = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
             {[
-              { value: "5M+", label: "Happy Members", icon: Users },
+              { value: "2M+", label: "Happy Members", icon: Users },
               { value: "1M+", label: "Successful Matches", icon: Heart },
-              { value: "15+", label: "Years of Trust", icon: Shield },
+              { value: "38+", label: "Years of Trust", icon: Shield },
               { value: "100%", label: "Privacy Secured", icon: Crown },
             ].map((stat, index) => (
               <div

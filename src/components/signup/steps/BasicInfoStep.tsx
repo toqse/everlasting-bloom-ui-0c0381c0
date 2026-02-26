@@ -24,7 +24,7 @@ const BasicInfoStep = ({ formData, onChange }: Props) => (
       <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
         <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
         <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-        <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+        <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
       </div>
       <div className="relative">
         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />

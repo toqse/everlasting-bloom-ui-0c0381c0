@@ -89,7 +89,7 @@ const AboutPage = () => {
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Welcome to <span className="text-gradient-primary italic">EternalBond</span>
+                Welcome to <span className="text-gradient-primary italic">Aiswarya Matrimony</span>
               </h2>
               <p className="text-muted-foreground mb-4 leading-relaxed">
                 Best wedding matrimony — it is a long established fact that finding your life partner is one of the most important decisions. We make it beautiful and seamless.

@@ -13,7 +13,7 @@ const allStories = [
     id: 4,
     couple: "Vikram & Anita",
     image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&h=400&fit=crop",
-    quote: "We connected over our love for music and art. EternalBond's matching algorithm truly understood our compatibility. Now we create beautiful memories together every day.",
+    quote: "We connected over our love for music and art. Aiswarya Matrimony's matching algorithm truly understood our compatibility. Now we create beautiful memories together every day.",
     location: "Bangalore, India",
     marriedDate: "March 2024",
     yearsOnPlatform: "10 months",
@@ -22,7 +22,7 @@ const allStories = [
     id: 5,
     couple: "Rohan & Kavitha",
     image: "https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=600&h=400&fit=crop",
-    quote: "Distance couldn't keep us apart. I was in the US, she was in India. EternalBond bridged the gap and now we're building our life together.",
+    quote: "Distance couldn't keep us apart. I was in the US, she was in India. Aiswarya Matrimony bridged the gap and now we're building our life together.",
     location: "Hyderabad, India",
     marriedDate: "November 2023",
     yearsOnPlatform: "1 year",
@@ -31,7 +31,7 @@ const allStories = [
     id: 6,
     couple: "Aditya & Pooja",
     image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&h=400&fit=crop",
-    quote: "Our parents were skeptical about online matrimony, but EternalBond's verification process gave them confidence. Thank you for making our dream wedding a reality!",
+    quote: "Our parents were skeptical about online matrimony, but Aiswarya Matrimony's verification process gave them confidence. Thank you for making our dream wedding a reality!",
     location: "Pune, India",
     marriedDate: "April 2024",
     yearsOnPlatform: "7 months",
@@ -266,7 +266,7 @@ const SuccessStoriesPage = () => {
             Ready to Write Your Own Love Story?
           </h2>
           <p className="text-white/80 max-w-xl mx-auto mb-8">
-            Join thousands of happy couples who found their soulmate on EternalBond
+            Join thousands of happy couples who found their soulmate on Aiswarya Matrimony
           </p>
           <Button 
             variant="gold" 
