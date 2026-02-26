@@ -4,12 +4,13 @@ import Hero from "@/components/Hero";
 import SearchFilters from "@/components/SearchFilters";
 import FeaturedProfiles from "@/components/FeaturedProfiles";
 import SuccessStories from "@/components/SuccessStories";
-import Membership from "@/components/Membership";
+import WhyChooseUs from "@/components/WhyChooseUs";
+import HowItWorks from "@/components/HowItWorks";
+import PhotoGallery from "@/components/PhotoGallery";
 import Footer from "@/components/Footer";
 
 const Index = () => {
   useEffect(() => {
-    // Smooth scroll for anchor links
     const handleAnchorClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const anchor = target.closest('a[href^="#"]');
@@ -19,15 +20,11 @@ const Index = () => {
         if (href && href !== "#") {
           const element = document.querySelector(href);
           if (element) {
-            element.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         }
       }
     };
-
     document.addEventListener('click', handleAnchorClick);
     return () => document.removeEventListener('click', handleAnchorClick);
   }, []);
@@ -38,8 +35,10 @@ const Index = () => {
       <Hero />
       <SearchFilters />
       <FeaturedProfiles />
+      <WhyChooseUs />
+      <HowItWorks />
       <SuccessStories />
-      <Membership />
+      <PhotoGallery />
       <Footer />
     </main>
   );
