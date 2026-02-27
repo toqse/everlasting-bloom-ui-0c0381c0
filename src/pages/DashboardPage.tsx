@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { useAuthStore } from "@/stores/authStore";
-import { Heart, Eye, Users, MousePointer, Edit, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, Eye, Users, MousePointer, Edit, TrendingUp, Calendar, Star, ArrowUpRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
@@ -10,121 +10,254 @@ const DashboardPage = () => {
   const navigate = useNavigate();
 
   const profileStats = [
-    { icon: Heart, label: "Likes", value: 12, color: "text-primary" },
-    { icon: Eye, label: "Views", value: 12, color: "text-secondary" },
-    { icon: Users, label: "Interests", value: 12, color: "text-primary" },
-    { icon: MousePointer, label: "Clicks", value: 12, color: "text-secondary" },
+    { icon: Heart, label: "Likes", value: 128, color: "text-primary", trend: "+12%" },
+    { icon: Eye, label: "Views", value: 342, color: "text-secondary", trend: "+24%" },
+    { icon: Users, label: "Interests", value: 56, color: "text-primary", trend: "+8%" },
+    { icon: MousePointer, label: "Clicks", value: 89, color: "text-secondary", trend: "+15%" },
   ];
 
+  const recentActivity = [
+    { name: "Sarah liked your profile", time: "2 mins ago", icon: Heart, color: "bg-accent-pink" },
+    { name: "New interest from Rahul", time: "15 mins ago", icon: Star, color: "bg-accent-gold" },
+    { name: "Profile viewed by Priya", time: "1 hour ago", icon: Eye, color: "bg-accent-rose" },
+    { name: "Message from Ankit", time: "3 hours ago", icon: ArrowUpRight, color: "bg-accent-pink" },
+  ];
+
+  const weeklyViews = [35, 52, 41, 67, 55, 78, 62];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const maxView = Math.max(...weeklyViews);
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">Profiles status</h1>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Profile Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-3xl shadow-card overflow-hidden"
-          >
-            <div className="relative">
-              <img
-                src={user?.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=300&fit=crop&crop=face"}
-                alt={user?.name}
-                className="w-full h-64 object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-foreground/90 text-white py-3 px-6 text-center">
-                <button
-                  onClick={() => navigate("/dashboard/profile")}
-                  className="font-medium tracking-wide flex items-center gap-2 justify-center w-full"
-                >
-                  <Edit className="w-4 h-4" />
-                  EDIT PROFILE
-                </button>
+    <>
+      <Navbar />
+      <div className="pt-20">
+        <DashboardLayout>
+          <div className="space-y-6">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center justify-between"
+            >
+              <div>
+                <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">Profiles status</h1>
+                <p className="text-muted-foreground text-sm mt-1">Welcome back, {user?.name || "User"}!</p>
               </div>
-            </div>
-          </motion.div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.3 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent-gold/50 border border-secondary/20"
+              >
+                <Clock className="w-4 h-4 text-secondary" />
+                <span className="text-sm font-medium text-secondary-foreground">Last active: Today</span>
+              </motion.div>
+            </motion.div>
 
-          {/* Profile Completion */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-3xl shadow-card p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-serif text-lg font-bold text-secondary">Profile completion</h3>
-              <button className="w-8 h-8 rounded-full border border-primary/10 flex items-center justify-center text-muted-foreground hover:bg-accent-rose transition-colors">
-                •••
-              </button>
-            </div>
-
-            {/* Circular Progress */}
-            <div className="flex justify-center mb-8">
-              <div className="relative w-40 h-40">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="50" stroke="hsl(var(--accent-rose))" strokeWidth="8" fill="none" />
-                  <circle
-                    cx="60" cy="60" r="50"
-                    stroke="url(#progress-gradient)"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 50 * 0.9} ${2 * Math.PI * 50}`}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Profile Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4, boxShadow: "0 20px 60px -15px hsl(330 60% 34% / 0.2)" }}
+                className="bg-card rounded-3xl shadow-card overflow-hidden"
+              >
+                <div className="relative group">
+                  <img
+                    src={user?.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=300&fit=crop&crop=face"}
+                    alt={user?.name}
+                    className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <defs>
-                    <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(270, 60%, 50%)" />
-                      <stop offset="100%" stopColor="hsl(330, 60%, 50%)" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-serif text-4xl font-bold text-foreground">90<span className="text-lg">%</span></span>
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-foreground/90 text-primary-foreground py-3 px-6 text-center">
+                    <button
+                      onClick={() => navigate("/dashboard/profile")}
+                      className="font-medium tracking-wide flex items-center gap-2 justify-center w-full hover:text-secondary transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      EDIT PROFILE
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
+
+              {/* Profile Completion */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                whileHover={{ y: -4 }}
+                className="bg-card rounded-3xl shadow-card p-6"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-serif text-lg font-bold text-secondary">Profile completion</h3>
+                  <button className="w-8 h-8 rounded-full border border-primary/10 flex items-center justify-center text-muted-foreground hover:bg-accent-rose transition-colors">
+                    •••
+                  </button>
+                </div>
+
+                {/* Circular Progress */}
+                <div className="flex justify-center mb-8">
+                  <motion.div
+                    className="relative w-40 h-40"
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 80, delay: 0.3 }}
+                  >
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="50" stroke="hsl(var(--accent-rose))" strokeWidth="8" fill="none" />
+                      <motion.circle
+                        cx="60" cy="60" r="50"
+                        stroke="url(#progress-gradient)"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeLinecap="round"
+                        initial={{ strokeDasharray: `0 ${2 * Math.PI * 50}` }}
+                        animate={{ strokeDasharray: `${2 * Math.PI * 50 * 0.9} ${2 * Math.PI * 50}` }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                      />
+                      <defs>
+                        <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="hsl(270, 60%, 50%)" />
+                          <stop offset="100%" stopColor="hsl(330, 60%, 50%)" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <motion.span
+                        className="font-serif text-4xl font-bold text-foreground"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 }}
+                      >
+                        90<span className="text-lg">%</span>
+                      </motion.span>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  {profileStats.map((stat, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + i * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="flex items-center gap-3 cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-accent-rose flex items-center justify-center">
+                        <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                      </div>
+                      <span className="text-sm">
+                        <span className="font-bold text-foreground">{stat.value}</span>{" "}
+                        <span className="text-muted-foreground">{stat.label}</span>
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Stats Cards Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {profileStats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent-rose flex items-center justify-center">
-                    <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                <motion.div
+                  key={`card-${i}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className="bg-card rounded-2xl shadow-card p-5 border border-primary/5"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-10 h-10 rounded-xl bg-accent-rose flex items-center justify-center`}>
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    </div>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 bg-accent-gold/30 text-secondary-dark">
+                      <TrendingUp className="w-3 h-3" />
+                      {stat.trend}
+                    </span>
                   </div>
-                  <span className="text-sm">
-                    <span className="font-bold text-foreground">{stat.value}</span>{" "}
-                    <span className="text-muted-foreground">{stat.label}</span>
-                  </span>
-                </div>
+                  <h4 className="font-serif text-2xl font-bold text-foreground">{stat.value}</h4>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
-        </div>
 
-        {/* Profile Views Chart placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl shadow-card p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-serif text-lg font-bold text-secondary">Profiles views</h3>
-            <select className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white">
-              <option>Current month</option>
-              <option>Last month</option>
-              <option>Last 3 months</option>
-            </select>
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Profile Views Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-card rounded-3xl shadow-card p-6 lg:col-span-2"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-serif text-lg font-bold text-secondary">Profile views</h3>
+                  <select className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-card">
+                    <option>This week</option>
+                    <option>Current month</option>
+                    <option>Last month</option>
+                  </select>
+                </div>
+                {/* Bar Chart */}
+                <div className="flex items-end justify-between gap-3 h-48 px-2">
+                  {weeklyViews.map((val, i) => (
+                    <div key={i} className="flex flex-col items-center flex-1 gap-2">
+                      <motion.div
+                        className="w-full rounded-t-lg"
+                        style={{
+                          background: `linear-gradient(180deg, hsl(330 60% 34%) 0%, hsl(40 100% 56%) 100%)`,
+                        }}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${(val / maxView) * 100}%` }}
+                        transition={{ duration: 0.8, delay: 0.5 + i * 0.1, ease: "easeOut" }}
+                        whileHover={{ scaleY: 1.05, opacity: 0.9 }}
+                      />
+                      <span className="text-xs text-muted-foreground font-medium">{days[i]}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Recent Activity */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-card rounded-3xl shadow-card p-6"
+              >
+                <h3 className="font-serif text-lg font-bold text-secondary mb-4">Recent Activity</h3>
+                <div className="space-y-4">
+                  {recentActivity.map((activity, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + i * 0.1 }}
+                      whileHover={{ x: 4 }}
+                      className="flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className={`w-8 h-8 rounded-full ${activity.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                        <activity.icon className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{activity.name}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
           </div>
-          <div className="h-48 bg-gradient-to-t from-accent-gold/20 to-transparent rounded-2xl flex items-end justify-center pb-4">
-            <p className="text-muted-foreground text-sm">Profile views analytics will appear here</p>
-          </div>
-        </motion.div>
+        </DashboardLayout>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 
