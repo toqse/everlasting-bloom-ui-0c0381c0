@@ -5,7 +5,7 @@ import SearchFilters from "@/components/SearchFilters";
 import FeaturedProfiles from "@/components/FeaturedProfiles";
 import SuccessStories from "@/components/SuccessStories";
 import WhyChooseUs from "@/components/WhyChooseUs";
-import HowItWorks from "@/components/HowItWorks";
+
 import PhotoGallery from "@/components/PhotoGallery";
 import Footer from "@/components/Footer";
 
@@ -36,7 +36,6 @@ const Index = () => {
       <SearchFilters />
       <FeaturedProfiles />
       <WhyChooseUs />
-      <HowItWorks />
       <SuccessStories />
       <PhotoGallery />
       <Footer />
