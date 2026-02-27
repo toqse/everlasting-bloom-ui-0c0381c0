@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Award, Shield, Heart, Sparkles, Star, Users, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Sparkles, Star, Users, Phone, Mail, Facebook, Twitter, Linkedin, Instagram, Heart } from "lucide-react";
 
 const features = [
-  { icon: Award, title: "Genuine Profiles", description: "The most trusted wedding matrimony brand with 100% verified profiles" },
-  { icon: Shield, title: "Most Trusted", description: "The most trusted wedding matrimony brand trusted by millions" },
-  { icon: Heart, title: "2000+ Weddings", description: "The most trusted wedding matrimony brand with thousands of success stories" },
+  { emoji: "🏅", title: "Genuine Profiles", description: "The most trusted wedding matrimony brand with 100% verified profiles" },
+  { emoji: "🤝🛡️", title: "Most Trusted", description: "The most trusted wedding matrimony brand trusted by millions" },
+  { emoji: "💍💕", title: "2000+ Weddings", description: "The most trusted wedding matrimony brand with thousands of success stories" },
 ];
 
 const stats = [
@@ -84,8 +84,8 @@ const AboutPage = () => {
             {features.map((f, i) => (
               <motion.div key={f.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
                 className="bg-card rounded-3xl p-8 shadow-card hover-lift text-center border border-primary/10">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-accent-gold flex items-center justify-center mb-4 shadow-gold">
-                  <f.icon className="w-8 h-8 text-secondary" />
+                <div className="w-20 h-20 mx-auto rounded-full bg-accent-gold/60 flex items-center justify-center mb-4">
+                  <span className="text-3xl">{f.emoji}</span>
                 </div>
                 <h3 className="font-serif text-xl font-bold text-foreground mb-2">{f.title}</h3>
                 <p className="text-muted-foreground text-sm">{f.description}</p>

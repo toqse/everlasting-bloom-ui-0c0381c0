@@ -5,9 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { 
-  Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, 
-  ArrowLeft, Share2, Shield, Calendar, Ruler, Users, Home, 
-  Sparkles, Check, Phone, Mail, Eye, Crown, Clock, X, Send
+  Heart, MapPin, Briefcase, GraduationCap, MessageCircle, 
+  ArrowLeft, Shield, Ruler, Phone, Mail, MapPinned, Send, Clock, X, Check, Crown, Star
 } from "lucide-react";
 import { profilesData } from "@/components/FeaturedProfiles";
 import { useInterestStore, InterestStatus } from "@/stores/interestStore";
@@ -30,8 +29,6 @@ const StatusChip = ({ status }: { status: InterestStatus }) => {
 const ProfileDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("about");
-  
   const { favorites, toggleFavorite, sendInterest, getSentInterestStatus, canChat } = useInterestStore();
   const profile = profilesData.find(p => p.id === Number(id));
   const isFavorite = profile ? favorites.includes(profile.id) : false;
@@ -51,298 +48,207 @@ const ProfileDetail = () => {
 
   const handleSendInterest = () => {
     sendInterest(0, profile.id, "Hi! I'd love to connect with you.");
-    toast.success("Interest sent successfully! 💕", { description: `${profile.name} will be notified about your interest.` });
+    toast.success("Interest sent successfully! 💕", { description: `${profile.name} will be notified.` });
   };
 
   const handleToggleFavorite = () => {
     toggleFavorite(profile.id);
-    toast.success(isFavorite ? `Removed from favorites` : `Added ${profile.name} to favorites! ❤️`);
+    toast.success(isFavorite ? "Removed from favorites" : `Added ${profile.name} to favorites! ❤️`);
   };
 
   const handleMessage = () => {
-    if (chatEnabled) {
-      navigate(`/chat/${profile.id}`);
-    } else {
-      toast.info("Chat unavailable", { description: "You can chat once your interest is accepted." });
-    }
+    if (chatEnabled) navigate(`/chat/${profile.id}`);
+    else toast.info("Chat unavailable", { description: "You can chat once your interest is accepted." });
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Profile link copied to clipboard!");
-  };
+  const quickInfo = [
+    { emoji: "🏙️", label: "CITY:", value: profile.location.split(",")[0] },
+    { emoji: "🎂", label: "AGE:", value: `${profile.age}` },
+    { emoji: "📏", label: "HEIGHT:", value: "5.7" },
+    { emoji: "💼", label: "JOB:", value: profile.profession.split(" ")[0].toUpperCase() },
+  ];
 
-  // Extended profile details
-  const profileDetails = {
-    height: "5'6\"",
-    weight: "55 kg",
-    maritalStatus: "Never Married",
-    motherTongue: "Hindi",
-    religion: "Hindu",
-    caste: "Brahmin",
-    diet: "Vegetarian",
-    drinking: "Non-drinker",
-    smoking: "Non-smoker",
-    family: "Nuclear Family",
-    familyStatus: "Middle Class",
-    fatherOccupation: "Business",
-    motherOccupation: "Homemaker",
-    siblings: "1 Brother, 1 Sister",
-    aboutMe: `I am a ${profile.profession} working in ${profile.location}. I completed my ${profile.education} and am passionate about my career. I believe in maintaining a balance between work and personal life. I enjoy reading, traveling, and spending quality time with family. Looking for a life partner who shares similar values and has a positive outlook on life.`,
-    partnerPreference: "Looking for someone who is educated, family-oriented, and has a good sense of humor. Age preference: 26-32 years. Should be settled in career and open to both working and homemaker wife.",
-  };
-
-  const tabs = [
-    { id: "about", label: "About" },
-    { id: "family", label: "Family" },
-    { id: "preferences", label: "Preferences" },
+  const galleryImages = [
+    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&h=300&fit=crop",
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="pt-20 bg-gradient-romantic relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-20 left-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-10 right-10 w-60 h-60 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
-        
-        {[...Array(5)].map((_, i) => (
-          <Sparkles
-            key={i}
-            className="absolute text-secondary/30 animate-sparkle"
-            style={{
-              left: `${10 + i * 20}%`,
-              top: `${30 + (i % 2) * 30}%`,
-              width: `${18 + i * 4}px`,
-              animationDelay: `${i * 0.5}s`,
-            }}
-          />
-        ))}
-
-        <div className="container mx-auto px-4 py-8 relative z-10">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-6 group"
-          >
+      <section className="pt-20">
+        {/* Back button */}
+        <div className="container mx-auto px-4 py-4">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Search</span>
+            <span className="font-medium">Back</span>
           </button>
+        </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Main Image */}
-            <div className="lg:col-span-1">
-              <div className="relative rounded-3xl overflow-hidden shadow-elevated animate-scale-in group">
-                <img
-                  src={profile.image}
-                  alt={profile.name}
-                  className="w-full h-[450px] object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                
-                {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {profile.isPremium && (
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-sm font-bold rounded-full flex items-center gap-1 shadow-gold animate-glow">
-                      <Crown className="w-4 h-4" /> Premium
-                    </span>
-                  )}
-                  {profile.isVerified && (
-                    <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-full flex items-center gap-1 shadow-soft">
-                      <Shield className="w-4 h-4" /> Verified
-                    </span>
-                  )}
-                </div>
+        {/* Main Profile - Two column layout like reference */}
+        <div className="flex flex-col lg:flex-row">
+          {/* Left - Full height photo */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:w-1/2 relative"
+          >
+            {/* Decorative leaf top-left */}
+            <div className="absolute top-0 left-0 z-10 pointer-events-none opacity-40">
+              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-28 h-36 object-contain" />
+            </div>
 
-                {/* Match Score */}
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-soft">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-foreground">Compatibility Score</span>
-                      <span className="text-2xl font-bold text-gradient-primary">{profile.compatibility}%</span>
-                    </div>
-                    <div className="h-2 bg-accent-rose rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-1000"
-                        style={{ width: `${profile.compatibility}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <img
+              src={profile.image}
+              alt={profile.name}
+              className="w-full h-[500px] lg:h-[600px] object-cover"
+            />
 
-              {/* Photo Gallery Placeholder */}
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                {[...Array(4)].map((_, i) => (
-                  <div
+            {/* Badges */}
+            <div className="absolute top-6 left-6 flex gap-2 z-20">
+              {profile.isPremium && (
+                <span className="px-3 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-sm font-bold rounded-full flex items-center gap-1 shadow-gold animate-glow">
+                  <Crown className="w-4 h-4" /> Premium
+                </span>
+              )}
+              {profile.isVerified && (
+                <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-full flex items-center gap-1">
+                  <Shield className="w-4 h-4" /> Verified
+                </span>
+              )}
+            </div>
+
+            {/* Bottom action buttons like reference */}
+            <div className="flex">
+              <Button
+                variant="default"
+                className="flex-1 rounded-none py-6 text-lg font-semibold bg-[#4338ca] hover:bg-[#3730a3] text-primary-foreground"
+                onClick={handleMessage}
+              >
+                CHAT NOW
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1 rounded-none py-6 text-lg font-semibold bg-secondary hover:bg-secondary-dark text-secondary-foreground"
+                onClick={interestStatus ? undefined : handleSendInterest}
+              >
+                {interestStatus ? interestStatus.toUpperCase() : "SEND INTEREST"}
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* Right - Profile info */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:w-1/2 p-8 lg:p-12 relative"
+          >
+            {/* Decorative leaf top-right */}
+            <div className="absolute top-0 right-0 pointer-events-none opacity-30 transform scale-x-[-1]">
+              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-24 h-32 object-contain" />
+            </div>
+
+            <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-3">
+              {profile.name}
+            </h1>
+
+            {/* Status badges */}
+            <div className="flex gap-2 mb-6">
+              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-md">100 viewers</span>
+              <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-md">Available online</span>
+              {interestStatus && <StatusChip status={interestStatus} />}
+            </div>
+
+            {/* Quick info cards like reference */}
+            <div className="flex gap-3 mb-8">
+              {quickInfo.map((info, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="flex-1 border border-primary/10 rounded-xl p-3 text-center hover-lift bg-card"
+                >
+                  <div className="text-2xl mb-1">{info.emoji}</div>
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase">{info.label}</p>
+                  <p className="text-sm font-bold text-foreground">{info.value}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* About section */}
+            <div className="mb-8">
+              <h3 className="font-serif text-xl font-bold text-foreground mb-3 uppercase tracking-wide">About</h3>
+              <p className="text-muted-foreground leading-relaxed mb-3">
+                I am a {profile.profession} working in {profile.location}. I completed my {profile.education} and am passionate about my career. I believe in maintaining a balance between work and personal life.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text.
+              </p>
+            </div>
+
+            {/* Photo Gallery */}
+            <div className="mb-8">
+              <div className="border-t border-border mb-6" />
+              <h3 className="font-serif text-xl font-bold text-foreground mb-4 uppercase tracking-wide">Photo Gallery</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {galleryImages.map((img, i) => (
+                  <motion.div
                     key={i}
-                    className="aspect-square rounded-xl bg-accent-rose/50 flex items-center justify-center cursor-pointer hover:bg-accent-rose transition-colors group"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + i * 0.1 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="rounded-xl overflow-hidden cursor-pointer shadow-card"
                   >
-                    <Eye className="w-5 h-5 text-primary/40 group-hover:text-primary transition-colors" />
-                  </div>
+                    <img src={img} alt={`Gallery ${i + 1}`} className="w-full h-32 object-cover hover:brightness-110 transition-all" />
+                  </motion.div>
                 ))}
               </div>
             </div>
 
-            {/* Profile Info */}
-            <div className="lg:col-span-2 animate-fade-in-up">
-              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-card border border-primary/5">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+            {/* Contact Info */}
+            <div>
+              <div className="border-t border-border mb-6" />
+              <h3 className="font-serif text-xl font-bold text-foreground mb-4 uppercase tracking-wide">Contact Info</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-primary" />
+                  </div>
                   <div>
-                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2 flex items-center gap-3">
-                      {profile.name}
-                      <motion.div whileTap={{ scale: 0.8 }} onClick={handleToggleFavorite} className="cursor-pointer">
-                        <Heart className={`w-8 h-8 transition-all hover:scale-125 ${isFavorite ? "text-primary fill-primary animate-heart-beat" : "text-primary/30"}`} />
-                      </motion.div>
-                    </h1>
-                    <p className="text-muted-foreground text-lg">{profile.age} years • {profileDetails.height}</p>
-                    {interestStatus && <div className="mt-2"><StatusChip status={interestStatus} /></div>}
-                  </div>
-                  <button onClick={handleShare} className="p-3 rounded-xl bg-accent-rose hover:bg-primary/10 transition-colors group">
-                    <Share2 className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-                  </button>
-                </div>
-
-                {/* Quick Info */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                  <div className="flex items-center gap-3 p-3 bg-accent-rose/50 rounded-xl">
-                    <Briefcase className="w-5 h-5 text-primary" />
-                    <div><p className="text-xs text-muted-foreground">Profession</p><p className="text-sm font-medium text-foreground">{profile.profession}</p></div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-accent-gold/50 rounded-xl">
-                    <GraduationCap className="w-5 h-5 text-secondary" />
-                    <div><p className="text-xs text-muted-foreground">Education</p><p className="text-sm font-medium text-foreground">{profile.education.split(',')[0]}</p></div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-accent-rose/50 rounded-xl">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium text-foreground">{profile.location.split(',')[0]}</p></div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-accent-gold/50 rounded-xl">
-                    <Calendar className="w-5 h-5 text-secondary" />
-                    <div><p className="text-xs text-muted-foreground">Status</p><p className="text-sm font-medium text-foreground">{profileDetails.maritalStatus}</p></div>
+                    <span className="text-sm font-semibold text-foreground">Phone: </span>
+                    <span className="text-sm text-muted-foreground">+92 (8800) 68 - 8960</span>
                   </div>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                  {!interestStatus ? (
-                    <Button variant="hero" size="lg" className="flex-1 gap-2" onClick={handleSendInterest}>
-                      <Send className="w-5 h-5" /> Send Interest
-                    </Button>
-                  ) : interestStatus === 'pending' ? (
-                    <Button variant="outline" size="lg" className="flex-1 gap-2" disabled>
-                      <Clock className="w-5 h-5" /> Interest Pending
-                    </Button>
-                  ) : interestStatus === 'accepted' ? (
-                    <Button variant="gold" size="lg" className="flex-1 gap-2" onClick={handleMessage}>
-                      <MessageCircle className="w-5 h-5" /> Chat Now
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="lg" className="flex-1 gap-2" disabled>
-                      <X className="w-5 h-5" /> Interest Declined
-                    </Button>
-                  )}
-                  <Button variant={isFavorite ? "romantic" : "outline"} size="lg" className="gap-2" onClick={handleToggleFavorite}>
-                    <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} /> {isFavorite ? "Favorited" : "Add to Favorites"}
-                  </Button>
-                </div>
-
-                {/* Tabs */}
-                <div className="border-b border-primary/10 mb-6">
-                  <div className="flex gap-6">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`pb-3 font-medium transition-all relative ${
-                          activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {tab.label}
-                        {activeTab === tab.id && (
-                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary rounded-full" />
-                        )}
-                      </button>
-                    ))}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-foreground">Email: </span>
+                    <span className="text-sm text-muted-foreground">{profile.name.toLowerCase().replace(" ", "")}@gmail.com</span>
                   </div>
                 </div>
-
-                {/* Tab Content */}
-                <div className="animate-fade-in-up">
-                  {activeTab === "about" && (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="font-serif text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                          <Sparkles className="w-5 h-5 text-secondary" />
-                          About Me
-                        </h3>
-                        <p className="text-muted-foreground leading-relaxed">{profileDetails.aboutMe}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {[
-                          { label: "Height", value: profileDetails.height, icon: Ruler },
-                          { label: "Religion", value: profileDetails.religion, icon: Star },
-                          { label: "Mother Tongue", value: profileDetails.motherTongue, icon: MessageCircle },
-                          { label: "Diet", value: profileDetails.diet, icon: Heart },
-                          { label: "Drinking", value: profileDetails.drinking, icon: Check },
-                          { label: "Smoking", value: profileDetails.smoking, icon: Check },
-                        ].map((item, i) => (
-                          <div key={i} className="flex items-center gap-3 p-3 bg-accent-rose/30 rounded-xl">
-                            <item.icon className="w-4 h-4 text-primary" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">{item.label}</p>
-                              <p className="text-sm font-medium text-foreground">{item.value}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "family" && (
-                    <div className="space-y-6">
-                      <h3 className="font-serif text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Users className="w-5 h-5 text-secondary" />
-                        Family Details
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        {[
-                          { label: "Family Type", value: profileDetails.family, icon: Home },
-                          { label: "Family Status", value: profileDetails.familyStatus, icon: Star },
-                          { label: "Father's Occupation", value: profileDetails.fatherOccupation, icon: Briefcase },
-                          { label: "Mother's Occupation", value: profileDetails.motherOccupation, icon: Briefcase },
-                          { label: "Siblings", value: profileDetails.siblings, icon: Users },
-                          { label: "Caste", value: profileDetails.caste, icon: Star },
-                        ].map((item, i) => (
-                          <div key={i} className="flex items-center gap-3 p-4 bg-accent-rose/30 rounded-xl">
-                            <item.icon className="w-5 h-5 text-primary" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">{item.label}</p>
-                              <p className="text-sm font-medium text-foreground">{item.value}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "preferences" && (
-                    <div className="space-y-6">
-                      <h3 className="font-serif text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Heart className="w-5 h-5 text-secondary" />
-                        Partner Preferences
-                      </h3>
-                      <p className="text-muted-foreground leading-relaxed">{profileDetails.partnerPreference}</p>
-                    </div>
-                  )}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
+                    <MapPinned className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-foreground">Address: </span>
+                    <span className="text-sm text-muted-foreground">28800 Orchard Lake Road, Suite 180, {profile.location}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Decorative leaf bottom-right */}
+            <div className="absolute bottom-0 right-0 pointer-events-none opacity-20 transform scale-x-[-1] rotate-180">
+              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-32 h-40 object-contain" />
+            </div>
+          </motion.div>
         </div>
       </section>
 
