@@ -2,8 +2,9 @@ import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import Navbar from "@/components/Navbar";
 import { useAuthStore } from "@/stores/authStore";
-import { Heart, Eye, Users, MousePointer, Edit, TrendingUp, Calendar, Star, ArrowUpRight, Clock } from "lucide-react";
+import { Heart, Eye, Users, MousePointer, Edit, TrendingUp, Calendar, Star, ArrowUpRight, Clock, Sparkles, Bell, Flame, MapPin, Briefcase, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { profilesData } from "@/components/FeaturedProfiles";
 
 const DashboardPage = () => {
   const { user } = useAuthStore();
@@ -254,6 +255,82 @@ const DashboardPage = () => {
                 </div>
               </motion.div>
             </div>
+
+            {/* New Matches Found Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-card rounded-3xl shadow-card p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">
+                      {profilesData.length}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-secondary flex items-center gap-2">
+                      New Matches Found <Flame className="w-4 h-4 text-secondary" />
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Based on your preferences</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate("/dashboard/matches")}
+                  className="text-sm font-medium text-primary hover:text-primary-dark flex items-center gap-1 transition-colors"
+                >
+                  View All <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {profilesData.slice(0, 6).map((profile, i) => (
+                  <motion.div
+                    key={profile.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, type: "spring", stiffness: 100 }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    className="bg-accent/30 rounded-2xl overflow-hidden cursor-pointer group border border-primary/5 hover:shadow-elevated transition-all"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                  >
+                    <div className="relative h-44 overflow-hidden">
+                      <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
+                      {i < 2 && (
+                        <span className="absolute top-2 left-2 px-2 py-0.5 bg-secondary text-secondary-foreground text-[10px] font-bold rounded-full flex items-center gap-1 animate-pulse-soft">
+                          <Bell className="w-2.5 h-2.5" /> NEW
+                        </span>
+                      )}
+                      {profile.isPremium && (
+                        <span className="absolute top-2 right-2 px-2 py-0.5 bg-secondary/90 text-secondary-foreground text-[10px] font-bold rounded-full flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5 fill-current" /> Premium
+                        </span>
+                      )}
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-card/90 backdrop-blur-sm rounded-full shadow-soft">
+                        <span className="text-xs font-bold text-gradient-primary">{profile.compatibility}%</span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-serif text-sm font-bold text-foreground group-hover:text-primary transition-colors">{profile.name}, {profile.age}</h4>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                        <Briefcase className="w-3 h-3 text-primary/60" />
+                        {profile.profession}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="w-3 h-3 text-primary/60" />
+                        {profile.location}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </DashboardLayout>
       </div>

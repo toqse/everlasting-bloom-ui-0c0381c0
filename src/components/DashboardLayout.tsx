@@ -3,12 +3,13 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles
+  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "My Matches", href: "/dashboard/matches", icon: Users },
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
