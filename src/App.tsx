@@ -27,6 +27,7 @@ import DashboardInterests from "./pages/DashboardInterests";
 import ChatListPage from "./pages/ChatListPage";
 import PlanPage from "./pages/PlanPage";
 import SettingsPage from "./pages/SettingsPage";
+import MatchesPage from "./pages/MatchesPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const AppContent = () => {
         <Route path="/dashboard/chat-list" element={<ChatListPage />} />
         <Route path="/dashboard/plan" element={<PlanPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
+        <Route path="/dashboard/matches" element={<MatchesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
