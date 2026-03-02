@@ -17,6 +17,27 @@ const sidebarLinks = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
+const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => (
+  <motion.div
+    className="absolute pointer-events-none text-primary/10"
+    style={{ left, top: "100%" }}
+    animate={{
+      y: [0, -800],
+      x: [0, Math.random() * 40 - 20],
+      opacity: [0, 0.6, 0],
+      rotate: [0, 360],
+    }}
+    transition={{
+      duration: 12 + Math.random() * 8,
+      delay,
+      repeat: Infinity,
+      ease: "easeOut",
+    }}
+  >
+    <Heart className={`w-${size} h-${size}`} style={{ width: size * 4, height: size * 4 }} />
+  </motion.div>
+);
+
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -28,21 +49,48 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen bg-accent-rose/30 relative">
-      {/* Decorative leaves */}
-      <div className="absolute top-0 left-0 w-32 h-40 opacity-40 pointer-events-none">
-        <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain" />
-      </div>
-      <div className="absolute top-0 right-0 w-32 h-40 opacity-40 pointer-events-none transform scale-x-[-1]">
-        <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain" />
-      </div>
+    <div className="min-h-screen relative overflow-hidden" style={{
+      background: "linear-gradient(135deg, hsl(340 60% 97%) 0%, hsl(0 0% 100%) 30%, hsl(45 100% 98%) 60%, hsl(340 60% 96%) 100%)"
+    }}>
+      {/* Animated background orbs */}
+      <motion.div
+        className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(330 60% 80%) 0%, transparent 70%)" }}
+        animate={{ scale: [1, 1.2, 1], x: [0, 30, 0], y: [0, -20, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute top-1/2 right-10 w-96 h-96 rounded-full opacity-15 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(40 100% 80%) 0%, transparent 70%)" }}
+        animate={{ scale: [1, 1.3, 1], x: [0, -20, 0], y: [0, 30, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+      <motion.div
+        className="absolute bottom-20 left-1/3 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(330 55% 75%) 0%, transparent 70%)" }}
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+      />
 
-      <div className="container mx-auto px-4 py-8">
+      {/* Floating hearts */}
+      <FloatingHeart delay={0} left="5%" size={3} />
+      <FloatingHeart delay={3} left="85%" size={2} />
+      <FloatingHeart delay={6} left="45%" size={4} />
+      <FloatingHeart delay={9} left="70%" size={2} />
+      <FloatingHeart delay={12} left="20%" size={3} />
+
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+        backgroundImage: "radial-gradient(circle at 1px 1px, hsl(330 60% 34%) 1px, transparent 0)",
+        backgroundSize: "40px 40px"
+      }} />
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="flex gap-6 relative">
           {/* Mobile Toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white rounded-full shadow-soft flex items-center justify-center"
+            className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-card rounded-full shadow-soft flex items-center justify-center"
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -55,9 +103,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               sidebarOpen ? "fixed inset-0 z-40 lg:static lg:z-auto" : "hidden lg:block"
             )}
           >
-            {sidebarOpen && <div className="fixed inset-0 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+            {sidebarOpen && <div className="fixed inset-0 bg-foreground/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
             
-            <div className="bg-white rounded-3xl shadow-card p-6 sticky top-8 relative z-50">
+            <div className="bg-card rounded-3xl shadow-card p-6 sticky top-8 relative z-50">
               {/* User Photo */}
               <div className="relative mb-6 rounded-2xl overflow-hidden">
                 <img
@@ -103,11 +151,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             {children}
           </main>
         </div>
-      </div>
-
-      {/* Decorative bottom leaves */}
-      <div className="absolute bottom-0 right-0 w-40 h-48 opacity-30 pointer-events-none">
-        <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain transform rotate-180" />
       </div>
     </div>
   );
