@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import Navbar from "@/components/Navbar";
@@ -25,8 +26,14 @@ const DashboardPage = () => {
   ];
 
   const weeklyViews = [35, 52, 41, 67, 55, 78, 62];
+  const monthlyViews = [120, 185, 210, 156, 230, 195, 278, 245, 312, 198, 267, 290];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const maxView = Math.max(...weeklyViews);
+  const [chartPeriod, setChartPeriod] = useState<string>("This week");
+  const activeData = chartPeriod === "This week" ? weeklyViews : monthlyViews.slice(0, 7);
+  const activeLabels = chartPeriod === "This week" ? days : months.slice(0, 7);
+  const activeMax = Math.max(...activeData);
 
   return (
     <>
@@ -199,27 +206,59 @@ const DashboardPage = () => {
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-serif text-lg font-bold text-secondary">Profile views</h3>
-                  <select className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-card">
+                  <select 
+                    className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-card"
+                    value={chartPeriod}
+                    onChange={(e) => setChartPeriod(e.target.value)}
+                  >
                     <option>This week</option>
                     <option>Current month</option>
-                    <option>Last month</option>
                   </select>
+                </div>
+                {/* Summary stats row */}
+                <div className="flex gap-4 mb-4">
+                  <div className="flex-1 bg-accent-rose/40 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Total Views</p>
+                    <p className="font-serif text-xl font-bold text-foreground">{activeData.reduce((a, b) => a + b, 0)}</p>
+                  </div>
+                  <div className="flex-1 bg-accent-gold/40 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Avg/Day</p>
+                    <p className="font-serif text-xl font-bold text-foreground">{Math.round(activeData.reduce((a, b) => a + b, 0) / activeData.length)}</p>
+                  </div>
+                  <div className="flex-1 bg-accent-pink/40 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Peak</p>
+                    <p className="font-serif text-xl font-bold text-foreground">{activeMax}</p>
+                  </div>
                 </div>
                 {/* Bar Chart */}
                 <div className="flex items-end justify-between gap-3 h-48 px-2">
-                  {weeklyViews.map((val, i) => (
+                  {activeData.map((val, i) => (
                     <div key={i} className="flex flex-col items-center flex-1 gap-2">
+                      <motion.span
+                        className="text-[10px] font-bold text-secondary"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 + i * 0.1 }}
+                      >
+                        {val}
+                      </motion.span>
                       <motion.div
-                        className="w-full rounded-t-lg"
+                        className="w-full rounded-t-xl relative overflow-hidden"
                         style={{
                           background: `linear-gradient(180deg, hsl(330 60% 34%) 0%, hsl(40 100% 56%) 100%)`,
                         }}
                         initial={{ height: 0 }}
-                        animate={{ height: `${(val / maxView) * 100}%` }}
+                        animate={{ height: `${(val / activeMax) * 100}%` }}
                         transition={{ duration: 0.8, delay: 0.5 + i * 0.1, ease: "easeOut" }}
                         whileHover={{ scaleY: 1.05, opacity: 0.9 }}
-                      />
-                      <span className="text-xs text-muted-foreground font-medium">{days[i]}</span>
+                      >
+                        <motion.div 
+                          className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20"
+                          animate={{ opacity: [0, 0.3, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                        />
+                      </motion.div>
+                      <span className="text-xs text-muted-foreground font-medium">{activeLabels[i]}</span>
                     </div>
                   ))}
                 </div>
