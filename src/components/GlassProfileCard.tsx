@@ -296,7 +296,7 @@ const GlassProfileCard = ({
                 }}
               >
                 <Eye className="w-4 h-4" />
-                View
+                View Profile
               </Button>
             </div>
           )}

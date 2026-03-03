@@ -1,99 +1,127 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Download, Gift } from "lucide-react";
+import { Check } from "lucide-react";
 import PaymentPopup from "@/components/PaymentPopup";
 
-const invoices = [
-  { planType: "Platinum", duration: "12 Months (May 2023 - June 2024)", cost: "₹2,999" },
-  { planType: "Standard", duration: "6 Months (Aug 2021 - Jan 2022)", cost: "₹1,499" },
-  { planType: "Standard", duration: "6 Months (Jan 2021 - July 2021)", cost: "₹1,499" },
+const plans = [
+  {
+    id: "silver",
+    name: "Silver",
+    price: "₹499",
+    duration: "3 Months",
+    features: ["View Contact Details", "Send 10 Interests/day", "Basic Chat"],
+    buttonLabel: "Choose Silver",
+    variant: "silver" as const,
+  },
+  {
+    id: "gold",
+    name: "Gold",
+    price: "₹999",
+    duration: "6 Months",
+    popular: true,
+    features: ["All Silver +", "50 Interests/day", "Priority Listing"],
+    buttonLabel: "Choose Gold",
+    variant: "gold" as const,
+  },
+  {
+    id: "diamond",
+    name: "Diamond",
+    price: "₹1999",
+    duration: "12 Months",
+    features: ["All Gold +", "Unlimited Contacts", "Dedicated Manager"],
+    buttonLabel: "Choose Diamond",
+    variant: "diamond" as const,
+  },
 ];
 
 const PlanPage = () => {
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  const handleChoosePlan = (planId: string) => {
+    setSelectedPlanId(planId);
+    setPaymentOpen(true);
+  };
+
+  const defaultPlanId = plans.find((p) => p.id === (selectedPlanId ?? "gold")) ? 2 : 2; // Gold = 2 for PaymentPopup if it uses index
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Current Plan */}
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-secondary italic mb-4">Plan details</h2>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl shadow-card p-8 text-center"
-            >
-              <p className="text-secondary font-medium mb-4">Current plan</p>
-              <div className="flex justify-center mb-4">
-                <Gift className="w-20 h-20 text-secondary" />
-              </div>
-              <p className="text-sm text-muted-foreground">Plan name: <strong className="text-foreground">{user?.plan || "Premium"}</strong></p>
-              <p className="text-sm text-muted-foreground">Validity: <strong className="text-foreground">12 Months</strong></p>
-              <p className="text-sm text-muted-foreground">Valid till <strong className="text-foreground">24 June 2025</strong></p>
-              <Button className="mt-6 bg-foreground text-white hover:bg-foreground/90 font-bold tracking-wider" onClick={() => setPaymentOpen(true)}>
-                UPGRADE NOW
-              </Button>
-            </motion.div>
-          </div>
+        <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground pb-3 border-b border-gray-200">
+          Plans & Pricing
+        </h1>
 
-          {/* All Invoices */}
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-secondary italic mb-4">All invoice</h2>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-3xl shadow-card overflow-hidden"
+        <div className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={`relative bg-white rounded-2xl shadow-card overflow-hidden flex flex-col ${
+                plan.popular ? "ring-2 ring-secondary border-secondary/30" : "border border-primary/10"
+              }`}
             >
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-primary/10">
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Plan type</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Duration</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Cost</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Invoice</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((inv, i) => (
-                    <tr key={i} className="border-b border-primary/5 last:border-0">
-                      <td className="p-4 text-sm text-foreground">{inv.planType}</td>
-                      <td className="p-4 text-sm text-secondary">{inv.duration}</td>
-                      <td className="p-4 text-sm text-foreground font-medium">{inv.cost}</td>
-                      <td className="p-4">
-                        <Button size="sm" className="bg-foreground text-white hover:bg-foreground/90 text-xs gap-1">
-                          <Download className="w-3 h-3" /> DOWNLOAD
-                        </Button>
-                      </td>
-                    </tr>
+              {plan.popular && (
+                <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-1.5 text-xs font-bold tracking-wider">
+                  POPULAR
+                </div>
+              )}
+              <div className={`p-6 ${plan.popular ? "pt-10" : ""}`}>
+                <h2
+                  className={`font-serif text-xl font-bold ${
+                    plan.variant === "silver"
+                      ? "text-gray-700"
+                      : plan.variant === "gold"
+                        ? "text-secondary"
+                        : "text-primary"
+                  }`}
+                >
+                  {plan.name}
+                </h2>
+                <p
+                  className={`mt-2 text-2xl font-bold ${
+                    plan.variant === "silver"
+                      ? "text-gray-800"
+                      : plan.variant === "gold"
+                        ? "text-secondary"
+                        : "text-primary"
+                  }`}
+                >
+                  {plan.price}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">{plan.duration}</p>
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-foreground">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      {feature}
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </motion.div>
-          </div>
+                </ul>
+                <Button
+                  type="button"
+                  className={`mt-6 w-full ${
+                    plan.variant === "silver"
+                      ? "bg-gray-700 hover:bg-gray-800 text-white"
+                      : plan.variant === "gold"
+                        ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                  }`}
+                  onClick={() => handleChoosePlan(plan.id)}
+                >
+                  {plan.buttonLabel}
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
-
-        {/* Cancellation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-accent-gold/30 rounded-2xl p-4 text-center"
-        >
-          <p className="text-sm text-foreground">
-            Plan cancellation: <button className="text-secondary font-bold hover:underline">Click here</button> to cancel the current plan.
-          </p>
-        </motion.div>
       </div>
 
-      <PaymentPopup open={paymentOpen} onOpenChange={setPaymentOpen} defaultPlanId={1} />
+      <PaymentPopup
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        defaultPlanId={plans.findIndex((p) => p.id === (selectedPlanId ?? "gold")) + 1 || 2}
+      />
     </DashboardLayout>
   );
 };

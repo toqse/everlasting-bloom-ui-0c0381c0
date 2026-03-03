@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users
+  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +13,10 @@ const sidebarLinks = [
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
-  { name: "Plan", href: "/dashboard/plan", icon: Crown },
+  { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
+  { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ];
 
 const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => (
@@ -85,8 +87,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         backgroundSize: "40px 40px"
       }} />
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex gap-6 relative">
+      <div className="w-full px-4 lg:px-10 py-8 relative z-10 min-h-screen flex flex-col">
+        <div className="flex flex-1 gap-6 relative min-h-0">
           {/* Mobile Toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -95,17 +97,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          {/* Sidebar */}
+          {/* Sidebar - full height on desktop */}
           <motion.aside
             initial={false}
             className={cn(
-              "w-72 flex-shrink-0 lg:block",
+              "w-72 flex-shrink-0 lg:block lg:self-stretch lg:min-h-[calc(100vh-4rem)]",
               sidebarOpen ? "fixed inset-0 z-40 lg:static lg:z-auto" : "hidden lg:block"
             )}
           >
             {sidebarOpen && <div className="fixed inset-0 bg-foreground/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
             
-            <div className="bg-card rounded-3xl shadow-card p-6 sticky top-8 relative z-50">
+            <div className="bg-card rounded-3xl shadow-card p-6 h-full flex flex-col relative z-50 lg:min-h-full">
               {/* User Photo */}
               <div className="relative mb-6 rounded-2xl overflow-hidden">
                 <img
@@ -115,8 +117,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 />
               </div>
 
-              {/* Nav Links */}
-              <nav className="space-y-1">
+              {/* Nav Links - flex-1 so sidebar fills height, overflow for long lists */}
+              <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto">
                 {sidebarLinks.map((link) => (
                   <NavLink
                     key={link.name}
