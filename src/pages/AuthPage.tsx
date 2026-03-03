@@ -199,8 +199,14 @@ const AuthPage = () => {
       setDirection(1);
       setSignupStep(signupStep + 1);
     } else {
-      const { login } = useAuthStore.getState();
-      login("phone", formData.phone);
+      const { loginWithProfile } = useAuthStore.getState();
+      loginWithProfile({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email || undefined,
+        religion: formData.religion || "",
+        location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
+      });
       toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
       navigate("/dashboard");
     }

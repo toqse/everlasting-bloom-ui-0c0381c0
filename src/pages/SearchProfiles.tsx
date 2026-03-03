@@ -7,6 +7,7 @@ import { profilesData, Profile } from "@/components/FeaturedProfiles";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { motion } from "framer-motion";
+import ChoosePlanModal from "@/components/ChoosePlanModal";
 
 // Extended profiles
 const allProfiles: Profile[] = [
@@ -36,6 +37,7 @@ const SearchProfiles = () => {
   const { isLoggedIn } = useAuthStore();
   const [viewMode, setViewMode] = useState<"grid" | "list">(isLoggedIn ? "list" : "grid");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   const toggleLike = (id: number) => {
     setLikedProfiles(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
@@ -149,9 +151,9 @@ const SearchProfiles = () => {
               <div className={`space-y-6 ${viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6 space-y-0" : ""}`}>
                 {allProfiles.map((profile, index) => (
                   viewMode === "list" ? (
-                    <ListProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} />
+                    <ListProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                   ) : (
-                    <GridProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} />
+                    <GridProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                   )
                 ))}
               </div>
@@ -166,6 +168,8 @@ const SearchProfiles = () => {
           </div>
         </div>
       </section>
+
+      <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
 
       <Footer />
     </div>
@@ -183,7 +187,7 @@ const FilterSelect = ({ icon, label, options }: { icon: React.ReactNode; label: 
   </div>
 );
 
-const ListProfileCard = ({ profile, index, navigate, liked, onLike }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void }) => {
+const ListProfileCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
   const isOnline = index % 3 === 0;
   return (
     <motion.div
@@ -229,7 +233,7 @@ const ListProfileCard = ({ profile, index, navigate, liked, onLike }: { profile:
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); }}>
             WhatsApp
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); }}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
             <Send className="w-3.5 h-3.5" /> Send interest
           </Button>
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${profile.id}`); }}>
@@ -241,7 +245,7 @@ const ListProfileCard = ({ profile, index, navigate, liked, onLike }: { profile:
   );
 };
 
-const GridProfileCard = ({ profile, index, navigate, liked, onLike }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void }) => {
+const GridProfileCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

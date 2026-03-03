@@ -6,6 +6,7 @@ import { Search, MapPin, Heart, Grid, List, Star, Briefcase, GraduationCap, Chev
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import ChoosePlanModal from "@/components/ChoosePlanModal";
 
 const allProfiles: Profile[] = [
   ...profilesData,
@@ -56,6 +57,7 @@ const MatchesPage = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   const toggleLike = (id: number) => {
     setLikedProfiles(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
@@ -195,9 +197,9 @@ const MatchesPage = () => {
                   >
                     {allProfiles.map((profile, index) => (
                       viewMode === "list" ? (
-                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} />
+                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                       ) : (
-                        <MatchGridCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} />
+                        <MatchGridCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                       )
                     ))}
                   </motion.div>
@@ -219,11 +221,13 @@ const MatchesPage = () => {
           </div>
         </DashboardLayout>
       </div>
+
+      <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </>
   );
 };
 
-const MatchListCard = ({ profile, index, navigate, liked, onLike }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void }) => {
+const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
   const isOnline = index % 3 === 0;
   const isNew = index < 3;
 
@@ -281,7 +285,7 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike }: { profile: P
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
             WhatsApp
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
             <Send className="w-3.5 h-3.5" /> Send interest
           </Button>
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${profile.id}`); }}>
@@ -293,7 +297,7 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike }: { profile: P
   );
 };
 
-const MatchGridCard = ({ profile, index, navigate, liked, onLike }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void }) => {
+const MatchGridCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
   const isNew = index < 3;
   return (
     <motion.div

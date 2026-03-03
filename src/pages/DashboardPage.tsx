@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
+import { useInterestStore } from "@/stores/interestStore";
 import {
   Heart,
   Eye,
@@ -14,29 +16,43 @@ import {
   Camera,
   Settings2,
   ChevronRight,
+  Clock,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import GlassProfileCard from "@/components/GlassProfileCard";
 import { profilesData } from "@/components/FeaturedProfiles";
+import ChoosePlanModal from "@/components/ChoosePlanModal";
 
-const dashboardStats = [
+const allDashboardStats = [
   { icon: Eye, label: "Profile Views", value: 24, color: "text-primary" },
   { icon: Heart, label: "Interests Received", value: 8, color: "text-secondary" },
   { icon: Send, label: "Interests Sent", value: 0, color: "text-primary" },
-  { icon: Star, label: "Horoscope Active", value: "—", color: "text-secondary" },
+  { icon: Star, label: "Horoscope Active", value: "—", color: "text-secondary", hinduOnly: true },
   { icon: IndianRupee, label: "Upgrade Plan", isAction: true, color: "text-secondary" },
 ];
 
-const quickActionsList = [
-  { label: "Add horoscope details", icon: Star, href: "/dashboard/profile" },
+const allQuickActionsList = [
+  { label: "Add horoscope details", icon: Star, href: "/dashboard/profile", hinduOnly: true },
   { label: "Upload more photos", icon: Camera, href: "/dashboard/profile" },
   { label: "Set partner preferences", icon: Settings2, href: "/dashboard/profile" },
 ];
 
+const statusConfig = {
+  pending: { label: "Pending", icon: Clock, className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200" },
+  accepted: { label: "Accepted", icon: Check, className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200" },
+  rejected: { label: "Declined", icon: X, className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200" },
+};
+
 const DashboardPage = () => {
-  const { user } = useAuthStore();
+  const { user, isHindu } = useAuthStore();
+  const { sentInterests } = useInterestStore();
   const navigate = useNavigate();
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const dashboardStats = allDashboardStats.filter((s) => !("hinduOnly" in s && s.hinduOnly) || isHindu());
+  const quickActionsList = allQuickActionsList.filter((a) => !("hinduOnly" in a && a.hinduOnly) || isHindu());
   const newMatches = profilesData.slice(0, 4);
   const suggestedProfiles = profilesData.slice(0, 6);
   const nearbyProfiles = profilesData.slice(0, 3);
@@ -46,6 +62,53 @@ const DashboardPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 w-full">
+        {/* Interests Sent panel */}
+        {sentInterests.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-2xl shadow-card p-5 border border-primary/10"
+          >
+            <h2 className="font-serif text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Interests Sent
+            </h2>
+            <div className="space-y-3">
+              {sentInterests.map((interest) => {
+                const profile = profilesData.find((p) => p.id === interest.toProfileId);
+                const status = statusConfig[interest.status];
+                const StatusIcon = status.icon;
+                return (
+                  <div
+                    key={interest.id}
+                    className="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-muted/30 border border-primary/5 hover:border-primary/10 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-foreground">{profile?.name ?? `Profile #${interest.toProfileId}`}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {profile?.age ?? "—"} yrs · {profile?.location ?? "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{profile?.education ?? "—"}</p>
+                      {isHindu() && (
+                        <p className="text-xs text-primary font-medium mt-1">Horoscope match: 8/10</p>
+                      )}
+                    </div>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${status.className}`}>
+                      <StatusIcon className="w-3.5 h-3.5" />
+                      {status.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {interest.createdAt instanceof Date
+                        ? interest.createdAt.toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })
+                        : new Date(interest.createdAt).toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* Welcome banner */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -61,12 +124,14 @@ const DashboardPage = () => {
                 <span>Profile: {profileCompletion}% Complete</span>
                 <span className="opacity-70">|</span>
                 <span>AM00230916 – Kerala</span>
-                <span className="px-3 py-0.5 rounded-full bg-white/20 font-medium">Hindu</span>
+                {user?.religion && (
+                  <span className="px-3 py-0.5 rounded-full bg-white/20 font-medium">{user.religion}</span>
+                )}
               </div>
             </div>
             <div className="flex gap-3">
               <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{sentInterests.length}</p>
                 <p className="text-xs opacity-90">Interests Sent</p>
               </div>
               <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
@@ -134,7 +199,8 @@ const DashboardPage = () => {
                       profile={profile}
                       index={index}
                       showActions={true}
-                      onSendInterest={() => {}}
+                      onSendInterest={() => setPlanModalOpen(true)}
+                      showHoroscopeBadge={isHindu()}
                     />
                   </div>
                 ))}
@@ -168,7 +234,7 @@ const DashboardPage = () => {
                         size="sm"
                         variant="hero"
                         className="mt-2 w-full text-xs"
-                        onClick={() => {}}
+                        onClick={() => setPlanModalOpen(true)}
                       >
                         Send Interest
                       </Button>
@@ -196,7 +262,8 @@ const DashboardPage = () => {
                       profile={profile}
                       index={index}
                       showActions={true}
-                      onSendInterest={() => {}}
+                      onSendInterest={() => setPlanModalOpen(true)}
+                      showHoroscopeBadge={isHindu()}
                     />
                   </div>
                 ))}
@@ -245,29 +312,30 @@ const DashboardPage = () => {
               </div>
             </motion.div>
 
-            {/* Horoscope Matching */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="bg-accent-gold/20 rounded-3xl shadow-card p-6 border border-secondary/20"
-            >
-              <h3 className="font-serif text-lg font-bold text-secondary mb-2 flex items-center gap-2">
-                <Star className="w-5 h-5 text-secondary" />
-                Horoscope Matching
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                As a Hindu user, you get Jathagam-based Porutham scoring for all your matches.
-              </p>
-              <Button
-                variant="hero"
-                className="w-full gap-2"
-                onClick={() => navigate("/dashboard/plan")}
+            {isHindu() && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="bg-accent-gold/20 rounded-3xl shadow-card p-6 border border-secondary/20"
               >
-                Upgrade to Access Horoscope
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
+                <h3 className="font-serif text-lg font-bold text-secondary mb-2 flex items-center gap-2">
+                  <Star className="w-5 h-5 text-secondary" />
+                  Horoscope Matching
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  As a Hindu user, you get Jathagam-based Porutham scoring for all your matches.
+                </p>
+                <Button
+                  variant="hero"
+                  className="w-full gap-2"
+                  onClick={() => navigate("/dashboard/jathagam")}
+                >
+                  Set Up Horoscope
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
 
             {/* Today's Picks */}
             <motion.div
@@ -305,6 +373,8 @@ const DashboardPage = () => {
           </aside>
         </div>
       </div>
+
+      <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </DashboardLayout>
   );
 };

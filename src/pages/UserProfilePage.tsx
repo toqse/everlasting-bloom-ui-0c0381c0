@@ -16,7 +16,7 @@ type SectionKey =
   | "About Me"
   | "Horoscope";
 
-const profileSections: {
+const allProfileSections: {
   title: SectionKey;
   description: string;
   icon?: LucideIcon;
@@ -383,7 +383,8 @@ function EditSectionForm({
 }
 
 const UserProfilePage = () => {
-  const { user } = useAuthStore();
+  const { user, isHindu } = useAuthStore();
+  const profileSections = allProfileSections.filter((s) => s.title !== "Horoscope" || isHindu());
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [profileData, setProfileData] = useState<ProfileFormData>(() =>
     defaultProfileData(user)

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, MapPin, Briefcase, GraduationCap, Star, Eye, MessageCircle, Shield, Crown, Check, X, Clock } from "lucide-react";
+import { Heart, MapPin, Briefcase, GraduationCap, Star, Eye, MessageCircle, Shield, Crown, Check, X, Clock, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "./FeaturedProfiles";
@@ -17,6 +17,8 @@ interface GlassProfileCardProps {
   onSendInterest?: () => void;
   onMessage?: () => void;
   canChat?: boolean;
+  /** Show Horoscope badge (for Hindu users). */
+  showHoroscopeBadge?: boolean;
 }
 
 const StatusChip = ({ status }: { status: InterestStatus }) => {
@@ -64,6 +66,7 @@ const GlassProfileCard = ({
   onSendInterest,
   onMessage,
   canChat = false,
+  showHoroscopeBadge = false,
 }: GlassProfileCardProps) => {
   const navigate = useNavigate();
 
@@ -164,6 +167,16 @@ const GlassProfileCard = ({
           >
             <span className="text-sm font-bold text-gradient-primary">{profile.compatibility}% Match</span>
           </motion.div>
+          {showHoroscopeBadge && (
+            <motion.span
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="absolute bottom-4 left-4 px-2.5 py-1 bg-primary/90 backdrop-blur-sm rounded-full text-primary-foreground text-xs font-semibold flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Horoscope
+            </motion.span>
+          )}
         </div>
 
         {/* Profile Info */}

@@ -6,13 +6,15 @@ import {
   LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DemoReligionBar from "@/components/DemoReligionBar";
 
-const sidebarLinks = [
+const baseSidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Matches", href: "/dashboard/matches", icon: Users },
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
+  { name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -41,9 +43,10 @@ const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; siz
 );
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, isHindu } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
 
   const handleLogout = () => {
     logout();
@@ -54,6 +57,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen relative overflow-hidden" style={{
       background: "linear-gradient(135deg, hsl(340 60% 97%) 0%, hsl(0 0% 100%) 30%, hsl(45 100% 98%) 60%, hsl(340 60% 96%) 100%)"
     }}>
+      <DemoReligionBar />
       {/* Animated background orbs */}
       <motion.div
         className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 pointer-events-none"

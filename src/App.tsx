@@ -30,6 +30,7 @@ import TransactionsPage from "./pages/TransactionsPage";
 import SettingsPage from "./pages/SettingsPage";
 import HelpSupportPage from "./pages/HelpSupportPage";
 import MatchesPage from "./pages/MatchesPage";
+import JathagamPage from "./pages/JathagamPage";
 
 const queryClient = new QueryClient();
 
@@ -56,11 +57,12 @@ const AppContent = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/jathagam" element={<JathagamPage />} />
         <Route path="/dashboard/profile" element={<UserProfilePage />} />
         <Route path="/dashboard/interests" element={<DashboardInterests />} />
         <Route path="/dashboard/chat-list" element={<ChatListPage />} />
         <Route path="/dashboard/plan" element={<PlanPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/transactions" element={<TransactionsPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
         <Route path="/dashboard/help" element={<HelpSupportPage />} />

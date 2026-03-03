@@ -11,6 +11,7 @@ import {
 import { profilesData } from "@/components/FeaturedProfiles";
 import { useInterestStore, InterestStatus } from "@/stores/interestStore";
 import { toast } from "sonner";
+import ChoosePlanModal from "@/components/ChoosePlanModal";
 
 const StatusChip = ({ status }: { status: InterestStatus }) => {
   const config = {
@@ -34,6 +35,7 @@ const ProfileDetail = () => {
   const isFavorite = profile ? favorites.includes(profile.id) : false;
   const interestStatus = profile ? getSentInterestStatus(profile.id) : null;
   const chatEnabled = profile ? canChat(profile.id) : false;
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   if (!profile) {
     return (
@@ -47,8 +49,13 @@ const ProfileDetail = () => {
   }
 
   const handleSendInterest = () => {
-    sendInterest(0, profile.id, "Hi! I'd love to connect with you.");
-    toast.success("Interest sent successfully! 💕", { description: `${profile.name} will be notified.` });
+    setPlanModalOpen(true);
+  };
+  const handlePlanPaySuccess = () => {
+    if (profile) {
+      sendInterest(0, profile.id, "Hi! I'd love to connect with you.");
+      toast.success("Interest sent successfully! 💕", { description: `${profile.name} will be notified.` });
+    }
   };
 
   const handleToggleFavorite = () => {
@@ -138,6 +145,12 @@ const ProfileDetail = () => {
               </Button>
             </div>
           </motion.div>
+
+          <ChoosePlanModal
+            open={planModalOpen}
+            onOpenChange={setPlanModalOpen}
+            onPaySuccess={handlePlanPaySuccess}
+          />
 
           {/* Right - Profile info */}
           <motion.div
