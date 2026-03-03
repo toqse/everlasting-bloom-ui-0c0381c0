@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 
 const SIGNUP_STEPS = [
-  "Basic Info",
+  "Profile For",
+  "Registration",
   "Location",
   "Religious",
   "Personal",
@@ -31,7 +32,7 @@ const SignupStepIndicator = ({ currentStep }: Props) => {
         <motion.div
           className="h-full rounded-full"
           style={{ background: "var(--gradient-primary)" }}
-          initial={{ width: 0 }}
+          initial={false}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         />

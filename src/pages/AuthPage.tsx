@@ -6,6 +6,7 @@ import { Heart, Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone 
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
+import ProfileForStep from "@/components/signup/steps/ProfileForStep";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
 import LocationStep from "@/components/signup/steps/LocationStep";
 import ReligiousStep from "@/components/signup/steps/ReligiousStep";
@@ -32,27 +33,36 @@ const AuthPage = () => {
   const [direction, setDirection] = useState(1);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [hasChildren, setHasChildren] = useState<"yes" | "no">("no");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [interCaste, setInterCaste] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [signupOtpSent, setSignupOtpSent] = useState(false);
+  const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
   const [formData, setFormData] = useState({
-    name: "", phone: "", email: "", dob: "", gender: "", password: "",
-    country: "", state: "", district: "", city: "", address: "",
+    profileFor: "", name: "", phone: "", email: "", dob: "", gender: "", password: "",
+    country: "", state: "", district: "", city: "", address: "", addressType: "",
     religion: "", caste: "", subCaste: "", motherTongue: "",
     maritalStatus: "", numberOfChildren: "", height: "", weight: "", skinTone: "",
-    education: "", educationSubject: "", employmentStatus: "", occupation: "",
-    aboutMe: "",
+    education: "", educationSubject: "", employmentStatus: "", occupation: "", annualIncome: "",
+    aboutMe: "", aadhaarNumber: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "phone") {
       const digitsOnly = value.replace(/\D/g, "").slice(0, 12);
-      setFormData({ ...formData, phone: digitsOnly });
+      setFormData((prev) => ({ ...prev, phone: digitsOnly }));
       return;
     }
-    setFormData({ ...formData, [name]: value });
+    if (name === "religion") {
+      setFormData((prev) => ({ ...prev, religion: value, caste: "" }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSendOtp = (e: React.FormEvent) => {
@@ -113,15 +123,75 @@ const AuthPage = () => {
     setOtp(["", "", "", "", "", ""]);
   };
 
+  const handleSignupSendOtp = () => {
+    if (!formData.name?.trim()) {
+      toast.error("Please enter full name");
+      return;
+    }
+    const phoneLen = formData.phone.replace(/\D/g, "").length;
+    if (phoneLen < 10 || phoneLen > 12) {
+      toast.error("Phone number must be 10–12 digits");
+      return;
+    }
+    setSignupOtpSent(true);
+    setSignupOtp(["", "", "", "", "", ""]);
+    toast.success("OTP sent to +91 " + formData.phone);
+  };
+
+  const handleSignupVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpValue = signupOtp.join("");
+    if (otpValue.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
+    setPhoneVerified(true);
+    setSignupOtpSent(false);
+    setSignupOtp(["", "", "", "", "", ""]);
+    toast.success("Phone verified!");
+  };
+
+  const handleSignupOtpChange = (index: number, value: string) => {
+    if (value && !/^\d$/.test(value)) return;
+    const next = [...signupOtp];
+    next[index] = value.slice(-1);
+    setSignupOtp(next);
+    if (value && index < 5) {
+      const el = document.getElementById(`signup-otp-${index + 1}`);
+      (el as HTMLInputElement)?.focus();
+    }
+  };
+
+  const handleSignupOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !signupOtp[index] && index > 0) {
+      const el = document.getElementById(`signup-otp-${index - 1}`);
+      (el as HTMLInputElement)?.focus();
+    }
+  };
+
+  const handleSignupBackFromOtp = () => {
+    setSignupOtpSent(false);
+    setSignupOtp(["", "", "", "", "", ""]);
+  };
+
   const handleSignupNext = () => {
     if (signupStep === 0) {
-      if (!formData.name || !formData.phone || !formData.email || !formData.dob || !formData.gender) {
-        toast.error("Please fill all required fields");
+      if (!formData.profileFor) {
+        toast.error("Please select who this profile is for");
         return;
       }
-      const phoneLen = formData.phone.replace(/\D/g, "").length;
-      if (phoneLen < 10 || phoneLen > 12) {
-        toast.error("Phone number must be 10–12 digits");
+    }
+    if (signupStep === 1) {
+      if (!phoneVerified) {
+        toast.error("Please verify your phone with OTP first");
+        return;
+      }
+      if (!formData.name?.trim() || !formData.dob || !formData.gender) {
+        toast.error("Please fill name, date of birth, and gender");
+        return;
+      }
+      if (!agreeTerms) {
+        toast.error("Please agree to Terms & Conditions");
         return;
       }
     }
@@ -129,9 +199,32 @@ const AuthPage = () => {
       setDirection(1);
       setSignupStep(signupStep + 1);
     } else {
+      const { login } = useAuthStore.getState();
+      login("phone", formData.phone);
       toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
-      navigate("/search");
+      navigate("/dashboard");
     }
+  };
+
+  const handleAboutHelpMeWrite = () => {
+    const sample = "I am a caring and family-oriented person. I value honesty and respect. I enjoy reading and spending time with family. Looking for a life partner who shares similar values.";
+    setFormData((prev) => ({ ...prev, aboutMe: sample }));
+    toast.success("Sample bio added. Feel free to edit!");
+  };
+
+  const handleAboutSkip = () => {
+    setFormData((prev) => ({ ...prev, aboutMe: "" }));
+    toast.success("Skipped. You can add this later.");
+  };
+
+  const handleVerifyAadhaar = () => {
+    const digits = formData.aadhaarNumber.replace(/\D/g, "");
+    if (digits.length !== 12) {
+      toast.error("Enter a valid 12-digit Aadhaar number");
+      return;
+    }
+    setAadhaarVerified(true);
+    toast.success("Aadhaar verified. Verified badge will show on your profile.");
   };
 
   const handleSignupPrev = () => {
@@ -144,16 +237,46 @@ const AuthPage = () => {
   const renderStep = () => {
     const props = { formData, onChange: handleChange };
     switch (signupStep) {
-      case 0: return <BasicInfoStep {...props} />;
-      case 1: return <LocationStep {...props} />;
-      case 2: return <ReligiousStep {...props} />;
-      case 3: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
-      case 4: return <EducationStep {...props} />;
-      case 5: return <AboutMeStep {...props} />;
-      case 6: return <PhotosStep photos={photos} setPhotos={setPhotos} />;
+      case 0:
+        return <ProfileForStep profileFor={formData.profileFor} onChange={(v) => setFormData((prev) => ({ ...prev, profileFor: v }))} />;
+      case 1:
+        return (
+          <BasicInfoStep
+            {...props}
+            agreeTerms={agreeTerms}
+            setAgreeTerms={setAgreeTerms}
+            otpSent={signupOtpSent}
+            otp={signupOtp}
+            onSendOtp={handleSignupSendOtp}
+            onVerifyOtp={handleSignupVerifyOtp}
+            onOtpChange={handleSignupOtpChange}
+            onOtpKeyDown={handleSignupOtpKeyDown}
+            onBackFromOtp={handleSignupBackFromOtp}
+            phoneVerified={phoneVerified}
+          />
+        );
+      case 2: return <LocationStep {...props} />;
+      case 3: return <ReligiousStep {...props} interCaste={interCaste} setInterCaste={setInterCaste} />;
+      case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
+      case 5: return <EducationStep {...props} />;
+      case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
+      case 7:
+        return (
+          <PhotosStep
+            photos={photos}
+            setPhotos={setPhotos}
+            aadhaarNumber={formData.aadhaarNumber}
+            onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))}
+            aadhaarVerified={aadhaarVerified}
+            onVerifyAadhaar={handleVerifyAadhaar}
+            onSkipOrCompleteLater={handleSignupNext}
+          />
+        );
       default: return null;
     }
   };
+
+  const canShowContinue = signupStep !== 1 || phoneVerified;
 
   // ---- LOGIN VIEW ----
   if (mode === "login") {
@@ -272,8 +395,19 @@ const AuthPage = () => {
                 <div className="text-center">
                   <p className="text-muted-foreground">
                     Don't have an account?{" "}
-                    <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); }} className="text-primary font-bold hover:text-primary-dark transition-colors">
-                      Sign Up
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("signup");
+                        setSignupStep(0);
+                        setPhoneVerified(false);
+                        setSignupOtpSent(false);
+                        setSignupOtp(["", "", "", "", "", ""]);
+                        setAadhaarVerified(false);
+                      }}
+                      className="text-primary font-bold hover:text-primary-dark transition-colors"
+                    >
+                      Register free
                     </button>
                   </p>
                 </div>
@@ -291,7 +425,7 @@ const AuthPage = () => {
       <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-4xl relative z-10">
         {signupStep === 0 ? (
           <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -328,10 +462,12 @@ const AuthPage = () => {
           </div>
 
           <div className="mt-8 space-y-3">
-            <Button variant="hero" size="lg" className="w-full gap-2" onClick={handleSignupNext}>
-              {signupStep === SIGNUP_STEPS.length - 1 ? "Create Account" : "Continue"}
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+            {canShowContinue && (
+              <Button variant="hero" size="lg" className="w-full gap-2" onClick={handleSignupNext}>
+                {signupStep === SIGNUP_STEPS.length - 1 ? "Create Account" : "Continue"}
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            )}
             {signupStep > 0 && (
               <button onClick={handleSignupPrev} className="w-full text-center text-foreground font-medium hover:text-primary transition-colors py-2">
                 Previous

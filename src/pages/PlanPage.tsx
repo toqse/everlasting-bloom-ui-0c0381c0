@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Download, Gift } from "lucide-react";
+import PaymentPopup from "@/components/PaymentPopup";
 
 const invoices = [
   { planType: "Platinum", duration: "12 Months (May 2023 - June 2024)", cost: "₹2,999" },
@@ -14,6 +16,7 @@ const invoices = [
 const PlanPage = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   return (
     <DashboardLayout>
@@ -34,7 +37,7 @@ const PlanPage = () => {
               <p className="text-sm text-muted-foreground">Plan name: <strong className="text-foreground">{user?.plan || "Premium"}</strong></p>
               <p className="text-sm text-muted-foreground">Validity: <strong className="text-foreground">12 Months</strong></p>
               <p className="text-sm text-muted-foreground">Valid till <strong className="text-foreground">24 June 2025</strong></p>
-              <Button className="mt-6 bg-foreground text-white hover:bg-foreground/90 font-bold tracking-wider" onClick={() => navigate("/membership")}>
+              <Button className="mt-6 bg-foreground text-white hover:bg-foreground/90 font-bold tracking-wider" onClick={() => setPaymentOpen(true)}>
                 UPGRADE NOW
               </Button>
             </motion.div>
@@ -89,6 +92,8 @@ const PlanPage = () => {
           </p>
         </motion.div>
       </div>
+
+      <PaymentPopup open={paymentOpen} onOpenChange={setPaymentOpen} defaultPlanId={1} />
     </DashboardLayout>
   );
 };
