@@ -31,7 +31,7 @@ const defaultUser: User = {
   name: "Anna Jaslin",
   email: "anna.jaslin@gmail.com",
   phone: "+91 98765 43210",
-  avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
+  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
   plan: "Premium",
   location: "Mumbai, India",
   memberSince: "January 2024",

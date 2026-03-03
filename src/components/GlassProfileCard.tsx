@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, MapPin, Briefcase, GraduationCap, Star, Eye, MessageCircle, Shield, Crown, Check, X, Clock, Sparkles } from "lucide-react";
+import { Heart, MapPin, Briefcase, GraduationCap, Star, Eye, MessageCircle, Shield, Crown, Check, X, Clock, Sparkles, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "./FeaturedProfiles";
@@ -283,6 +283,21 @@ const GlassProfileCard = ({
                 </Button>
               )}
 
+              {interestStatus && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/interests/sent");
+                  }}
+                >
+                  <Send className="w-4 h-4" />
+                  Sent Request
+                </Button>
+              )}
+
               {canChat && (
                 <Button
                   variant="gold"
@@ -299,9 +314,9 @@ const GlassProfileCard = ({
               )}
 
               <Button
-                variant="glass"
+                variant="outline"
                 size="sm"
-                className="gap-1"
+                className="flex-1 gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   window.scrollTo(0, 0);

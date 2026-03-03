@@ -115,7 +115,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {/* User Photo */}
               <div className="relative mb-6 rounded-2xl overflow-hidden">
                 <img
-                  src={user?.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=200&fit=crop&crop=face"}
+                  src={user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"}
                   alt={user?.name}
                   className="w-full h-48 object-cover"
                 />
