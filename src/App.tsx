@@ -28,6 +28,12 @@ import ChatListPage from "./pages/ChatListPage";
 import PlanPage from "./pages/PlanPage";
 import SettingsPage from "./pages/SettingsPage";
 import MatchesPage from "./pages/MatchesPage";
+import ShortlistedPage from "./pages/ShortlistedPage";
+import ContactViewedPage from "./pages/ContactViewedPage";
+import WhoViewedPage from "./pages/WhoViewedPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import HoroscopePage from "./pages/HoroscopePage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +67,12 @@ const AppContent = () => {
         <Route path="/dashboard/plan" element={<PlanPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
         <Route path="/dashboard/matches" element={<MatchesPage />} />
+        <Route path="/dashboard/shortlisted" element={<ShortlistedPage />} />
+        <Route path="/dashboard/contact-viewed" element={<ContactViewedPage />} />
+        <Route path="/dashboard/who-viewed" element={<WhoViewedPage />} />
+        <Route path="/dashboard/subscription" element={<SubscriptionPage />} />
+        <Route path="/dashboard/notifications" element={<NotificationsPage />} />
+        <Route path="/dashboard/horoscope" element={<HoroscopePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
