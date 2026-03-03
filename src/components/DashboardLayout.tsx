@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users
+  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Users, BookmarkCheck, Eye, EyeOff, CreditCard, Bell, Sun
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,13 @@ const sidebarLinks = [
   { name: "My Matches", href: "/dashboard/matches", icon: Users },
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
+  { name: "Shortlisted", href: "/dashboard/shortlisted", icon: BookmarkCheck },
+  { name: "Contact Viewed", href: "/dashboard/contact-viewed", icon: Eye },
+  { name: "Who Viewed Me", href: "/dashboard/who-viewed", icon: EyeOff },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
+  { name: "Subscription", href: "/dashboard/subscription", icon: CreditCard },
+  { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
+  { name: "Horoscope", href: "/dashboard/horoscope", icon: Sun },
   { name: "Plan", href: "/dashboard/plan", icon: Crown },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
