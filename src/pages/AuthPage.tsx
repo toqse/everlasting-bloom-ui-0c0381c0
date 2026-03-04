@@ -262,7 +262,7 @@ const AuthPage = () => {
           />
         );
       case 2: return <LocationStep {...props} />;
-      case 3: return <ReligiousStep {...props} interCaste={interCaste} setInterCaste={setInterCaste} />;
+      case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
       case 5: return <EducationStep {...props} />;
       case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
