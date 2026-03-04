@@ -147,7 +147,7 @@ export default function ChoosePlanModal({
             duration={selectedPlan.duration}
             transactionId={`TXN${Math.floor(10000000 + Math.random() * 90000000)}`}
             paymentVia={paymentLabel}
-            features={selectedPlan.features}
+            features={[...selectedPlan.features]}
             showHoroscopeBanner={isHindu}
             onSetupHoroscope={handleSetupHoroscope}
             onClose={handleClose}
