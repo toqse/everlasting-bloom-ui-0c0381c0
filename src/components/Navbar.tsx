@@ -51,7 +51,7 @@ const Navbar = () => {
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-14 w-auto object-contain lg:h-16"
+            className="h-16 w-auto object-contain lg:h-20"
           />
         </Link>
 

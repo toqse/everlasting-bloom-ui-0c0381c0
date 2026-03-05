@@ -60,7 +60,7 @@ const ServicesPage = () => {
               >
                 {/* Animated moving border */}
                 <div
-                  className="absolute inset-0 rounded-3xl bg-[length:200%_200%] animate-[shimmer_3s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  className="absolute inset-0 rounded-3xl bg-[length:200%_200%] animate-[shimmer_3s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ backgroundImage: "linear-gradient(90deg, transparent, hsl(var(--secondary)), hsl(var(--primary)), hsl(var(--secondary)), transparent)" }}
                 />
                 <div className="relative bg-card rounded-[22px] p-6 text-center z-10 h-full">

@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Search, MapPin, Calendar, Heart, Users, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
 
 const SearchFilters = () => {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [lookingFor, setLookingFor] = useState("Bride");
+  const [ageRange, setAgeRange] = useState("21 - 25");
+  const [religion, setReligion] = useState("All Religions");
+  const [location, setLocation] = useState("All India");
 
   const filters = [
     { id: "all", label: "All Profiles", icon: Users },
@@ -61,7 +67,7 @@ const SearchFilters = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Looking For</label>
                 <div className="relative">
                   <Heart className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50 group-hover:text-primary transition-colors" />
-                  <select className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
+                  <select value={lookingFor} onChange={e => setLookingFor(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
                     <option>Bride</option>
                     <option>Groom</option>
                   </select>
@@ -73,7 +79,7 @@ const SearchFilters = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Age Range</label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50 group-hover:text-primary transition-colors" />
-                  <select className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
+                  <select value={ageRange} onChange={e => setAgeRange(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
                     <option>21 - 25</option>
                     <option>26 - 30</option>
                     <option>31 - 35</option>
@@ -88,14 +94,12 @@ const SearchFilters = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Religion</label>
                 <div className="relative">
                   <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50 group-hover:text-primary transition-colors" />
-                  <select className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
+                  <select value={religion} onChange={e => setReligion(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
                     <option>All Religions</option>
                     <option>Hindu</option>
-                    <option>Muslim</option>
                     <option>Christian</option>
-                    <option>Sikh</option>
-                    <option>Buddhist</option>
-                    <option>Jain</option>
+                    <option>Muslim</option>
+                    <option>Others</option>
                   </select>
                 </div>
               </div>
@@ -105,7 +109,7 @@ const SearchFilters = () => {
                 <label className="block text-sm font-medium text-foreground mb-2">Location</label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50 group-hover:text-primary transition-colors" />
-                  <select className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
+                  <select value={location} onChange={e => setLocation(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer">
                     <option>All India</option>
                     <option>Mumbai</option>
                     <option>Delhi NCR</option>
@@ -121,7 +125,15 @@ const SearchFilters = () => {
 
             {/* Search Button */}
             <div className="flex justify-center">
-              <Button variant="romantic" size="xl" className="min-w-[200px]">
+              <Button variant="romantic" size="xl" className="min-w-[200px]" onClick={() => {
+                const params = new URLSearchParams();
+                if (lookingFor) params.set("gender", lookingFor);
+                if (ageRange) params.set("age", ageRange);
+                if (religion !== "All Religions") params.set("religion", religion);
+                if (location !== "All India") params.set("location", location);
+                if (activeFilter !== "all") params.set("filter", activeFilter);
+                navigate(`/search?${params.toString()}`);
+              }}>
                 <Search className="w-5 h-5" />
                 Search Profiles
               </Button>
