@@ -31,15 +31,7 @@ const faqs = [
 
 const MembershipPage = () => {
   const navigate = useNavigate();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const getPrice = (basePrice: string, isYearly: boolean) => {
-    if (basePrice === "Free") return "Free";
-    const price = parseInt(basePrice.replace(/[^\d]/g, ""));
-    const yearlyPrice = Math.round(price * 0.8); // 20% discount for yearly
-    return isYearly ? `₹${yearlyPrice.toLocaleString()}` : basePrice;
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,37 +75,6 @@ const MembershipPage = () => {
             </p>
           </div>
 
-          {/* Billing Toggle */}
-          <div className="flex justify-center mb-12 animate-scale-in">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-soft border border-primary/10">
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setBillingCycle("monthly")}
-                  className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
-                    billingCycle === "monthly"
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "text-foreground hover:bg-accent-rose"
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setBillingCycle("yearly")}
-                  className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                    billingCycle === "yearly"
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "text-foreground hover:bg-accent-rose"
-                  }`}
-                >
-                  Yearly
-                  <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">
-                    Save 20%
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Pricing Cards */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {plansData.map((plan, index) => (
@@ -154,11 +115,11 @@ const MembershipPage = () => {
                   
                   <div className="flex items-baseline gap-1 mb-6">
                     <span className="font-serif text-4xl font-bold text-gradient-primary">
-                      {getPrice(plan.price, billingCycle === "yearly")}
+                      {plan.price}
                     </span>
                     {plan.period && (
                       <span className="text-muted-foreground">
-                        /{billingCycle === "yearly" ? "year" : plan.period.replace("/", "")}
+                        {plan.period}
                       </span>
                     )}
                   </div>

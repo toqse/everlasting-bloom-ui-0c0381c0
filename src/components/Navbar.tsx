@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLoading } from "@/contexts/LoadingContext";
+import { useAuthStore } from "@/stores/authStore";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -10,6 +11,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsLoading } = useLoading();
+  const { isLoggedIn, user, logout } = useAuthStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,18 +45,18 @@ const Navbar = () => {
           : "bg-transparent py-5"
       }`}
     >
-      <div className="container mx-auto px-4 flex items-center justify-between">
+      <div className="container mx-auto px-4 flex items-center justify-between min-h-[72px] lg:min-h-[80px]">
         {/* Logo */}
-        <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center gap-2 group">
+        <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center shrink-0 group">
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-24 w-auto object-contain"
+            className="h-14 w-auto object-contain lg:h-16"
           />
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8 min-h-[44px]">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -73,11 +75,24 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-4">
-          <Button variant="hero" className="gap-2" onClick={() => navigate("/auth")}>
-            <User className="w-4 h-4" />
-            Login
-          </Button>
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
+          {isLoggedIn ? (
+            <>
+              <Button variant="outline" className="gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Button>
+              <Button variant="hero" className="gap-2" onClick={() => { logout(); navigate("/"); }}>
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Button variant="hero" className="gap-2" onClick={() => navigate("/auth")}>
+              <User className="w-4 h-4" />
+              Login
+            </Button>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -105,7 +120,18 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="flex gap-3 pt-2">
-            <Button variant="hero" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
+            {isLoggedIn ? (
+              <>
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Button>
+                <Button variant="hero" className="flex-1 gap-2" onClick={() => { logout(); navigate("/"); setIsMobileMenuOpen(false); }}>
+                  <LogOut className="w-4 h-4" /> Logout
+                </Button>
+              </>
+            ) : (
+              <Button variant="hero" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
+            )}
           </div>
         </div>
       </div>

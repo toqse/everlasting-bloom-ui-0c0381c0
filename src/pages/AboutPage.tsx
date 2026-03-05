@@ -160,16 +160,13 @@ const AboutPage = () => {
                 <span className="text-gradient-primary italic">Wedding Matrimony</span>
               </h3>
               <p className="text-muted-foreground mb-4 leading-relaxed">
-                Best wedding matrimony — it is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+                Aiswarya Bureau is a trusted matrimonial service with over 37 years of experience in connecting suitable brides and grooms. Located near Cherthala Private Bus Stand in Alappuzha District, Kerala, we serve families both within Kerala and outside the state.
               </p>
-              <p className="text-secondary font-semibold mb-4 cursor-pointer hover:underline">
-                Click here to <span>Start your matrimony service now.</span>
+              <p className="text-muted-foreground mb-4 leading-relaxed">
+                Our experienced team understands the preferences of families and helps them find the right life partner. Built on the values of trust, responsibility, and sincerity, we are committed to providing the best matrimonial connections at a reasonable cost.
               </p>
-
-              <div className="border-t border-border my-6" />
-
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable.
+                For more than three decades, Aiswarya Vivaha Bureau has been helping people build happy and meaningful marriages.
               </p>
 
               <div className="flex flex-wrap gap-8 text-sm">

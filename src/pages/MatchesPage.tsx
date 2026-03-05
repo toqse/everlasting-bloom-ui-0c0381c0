@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -8,60 +8,90 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 
-const allProfiles: Profile[] = [
-  ...profilesData,
+type MatchProfile = Profile & { isOnline?: boolean };
+
+const allProfiles: MatchProfile[] = [
+  ...profilesData.map((p, i) => ({ ...p, isOnline: i % 3 === 0 })),
   {
     id: 7, name: "Riya Kapoor", age: 25, profession: "UI/UX Designer",
     education: "B.Des, NID Ahmedabad", location: "Bangalore, Karnataka",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop",
-    isVerified: true, isPremium: false, compatibility: 89,
+    isVerified: true, isPremium: false, compatibility: 89, isOnline: true,
   },
   {
     id: 8, name: "Nisha Singh", age: 27, profession: "Lawyer",
     education: "LLB, NLU Delhi", location: "Lucknow, UP",
     image: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop",
-    isVerified: true, isPremium: true, compatibility: 91,
+    isVerified: true, isPremium: true, compatibility: 91, isOnline: false,
   },
   {
     id: 9, name: "Divya Nair", age: 24, profession: "Fashion Designer",
     education: "B.Des, Pearl Academy", location: "Mumbai, Maharashtra",
     image: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop",
-    isVerified: true, isPremium: false, compatibility: 84,
+    isVerified: true, isPremium: false, compatibility: 84, isOnline: true,
   },
   {
     id: 10, name: "Tanya Mehra", age: 26, profession: "Content Strategist",
     education: "MA English, JNU", location: "Delhi NCR",
     image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop",
-    isVerified: true, isPremium: true, compatibility: 93,
+    isVerified: true, isPremium: true, compatibility: 93, isOnline: false,
   },
   {
     id: 11, name: "Pooja Desai", age: 23, profession: "Graphic Designer",
     education: "BFA, MS University", location: "Vadodara, Gujarat",
     image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
-    isVerified: true, isPremium: false, compatibility: 86,
+    isVerified: true, isPremium: false, compatibility: 86, isOnline: true,
   },
 ];
 
-const FilterSelect = ({ icon, label, options }: { icon: React.ReactNode; label: string; options: string[] }) => (
+const FilterSelect = ({ icon, label, options, value, onChange }: { icon: React.ReactNode; label: string; options: string[]; value: string; onChange: (v: string) => void }) => (
   <div>
     <div className="flex items-center gap-2 text-primary font-serif font-semibold mb-2">
       {icon} {label}
     </div>
-    <select className="w-full px-3 py-2.5 rounded-lg border border-primary/10 text-sm bg-card text-foreground focus:ring-2 focus:ring-primary/20 transition-all">
-      {options.map(o => <option key={o}>{o}</option>)}
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2.5 rounded-lg border border-primary/10 text-sm bg-card text-foreground focus:ring-2 focus:ring-primary/20 transition-all"
+    >
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
   </div>
 );
+
+const AGE_OPTIONS = ["Select age", "21-25", "26-30", "31-35", "36+"];
+const LOCATION_OPTIONS = ["Select location", "Chennai", "Mumbai", "Delhi", "Bangalore", "Hyderabad"];
 
 const MatchesPage = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [ageRange, setAgeRange] = useState(AGE_OPTIONS[0]);
+  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
+  const [availability, setAvailability] = useState<"All" | "Available" | "Offline">("All");
+  const [profileType, setProfileType] = useState<"All" | "Premium" | "Free">("All");
 
   const toggleLike = (id: number) => {
     setLikedProfiles(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   };
+
+  const filteredProfiles = useMemo(() => {
+    return allProfiles.filter((profile) => {
+      if (ageRange && ageRange !== AGE_OPTIONS[0]) {
+        const [min, max] = ageRange === "36+" ? [36, 120] : ageRange.split("-").map(Number);
+        if (profile.age < min || (max !== 120 && profile.age > max)) return false;
+      }
+      if (location && location !== LOCATION_OPTIONS[0]) {
+        if (!profile.location.toLowerCase().includes(location.toLowerCase())) return false;
+      }
+      if (availability === "Available" && !(profile as MatchProfile).isOnline) return false;
+      if (availability === "Offline" && (profile as MatchProfile).isOnline) return false;
+      if (profileType === "Premium" && !profile.isPremium) return false;
+      if (profileType === "Free" && profile.isPremium) return false;
+      return true;
+    });
+  }, [ageRange, location, availability, profileType]);
 
   return (
     <>
@@ -81,14 +111,14 @@ const MatchesPage = () => {
                     <Sparkles className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">
-                    {allProfiles.length}
+                    {filteredProfiles.length}
                   </span>
                 </div>
                 <div>
                   <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">New Matches Found</h1>
                   <p className="text-muted-foreground text-sm flex items-center gap-1">
                     <Flame className="w-3.5 h-3.5 text-secondary" />
-                    {allProfiles.length} compatible profiles waiting for you
+                    {filteredProfiles.length} compatible profiles waiting for you
                   </p>
                 </div>
               </div>
@@ -114,19 +144,19 @@ const MatchesPage = () => {
                 className="lg:w-64 flex-shrink-0"
               >
                 <div className="bg-card rounded-2xl shadow-card p-5 border border-primary/5 space-y-5 sticky top-28">
-                  <FilterSelect icon={<Search className="w-4 h-4 text-primary" />} label="I'm looking for" options={["I'm looking for", "Bride", "Groom"]} />
-                  <FilterSelect icon={<Clock className="w-4 h-4 text-primary" />} label="Age" options={["Select age", "21-25", "26-30", "31-35", "36+"]} />
-                  <FilterSelect icon={<Sparkles className="w-4 h-4 text-primary" />} label="Select Religion" options={["Religion", "Hindu", "Muslim", "Christian", "Sikh"]} />
-                  <FilterSelect icon={<MapPin className="w-4 h-4 text-primary" />} label="Location" options={["Chennai", "Mumbai", "Delhi", "Bangalore", "Hyderabad"]} />
+                  <FilterSelect icon={<Search className="w-4 h-4 text-primary" />} label="I'm looking for" options={["I'm looking for", "Bride", "Groom"]} value="I'm looking for" onChange={() => {}} />
+                  <FilterSelect icon={<Clock className="w-4 h-4 text-primary" />} label="Age" options={AGE_OPTIONS} value={ageRange} onChange={setAgeRange} />
+                  <FilterSelect icon={<Sparkles className="w-4 h-4 text-primary" />} label="Select Religion" options={["Religion", "Hindu", "Muslim", "Christian", "Sikh"]} value="Religion" onChange={() => {}} />
+                  <FilterSelect icon={<MapPin className="w-4 h-4 text-primary" />} label="Location" options={LOCATION_OPTIONS} value={location} onChange={setLocation} />
 
                   <div>
                     <div className="flex items-center gap-2 text-primary font-serif font-semibold mb-2">
                       <Clock className="w-4 h-4" /> Availability
                     </div>
                     <div className="space-y-1.5 text-sm">
-                      {["All", "Available", "Offline"].map(o => (
+                      {(["All", "Available", "Offline"] as const).map(o => (
                         <label key={o} className="flex items-center gap-2 cursor-pointer py-1 hover:text-primary transition-colors">
-                          <input type="radio" name="availability" defaultChecked={o === "All"} className="accent-primary" />
+                          <input type="radio" name="availability" checked={availability === o} onChange={() => setAvailability(o)} className="accent-primary" />
                           <span className="text-muted-foreground">{o}</span>
                         </label>
                       ))}
@@ -138,9 +168,9 @@ const MatchesPage = () => {
                       <Users className="w-4 h-4" /> Profile
                     </div>
                     <div className="space-y-1.5 text-sm">
-                      {["All", "Premium", "Free"].map(o => (
+                      {(["All", "Premium", "Free"] as const).map(o => (
                         <label key={o} className="flex items-center gap-2 cursor-pointer py-1 hover:text-primary transition-colors">
-                          <input type="radio" name="profile_type" defaultChecked={o === "All"} className="accent-primary" />
+                          <input type="radio" name="profile_type" checked={profileType === o} onChange={() => setProfileType(o)} className="accent-primary" />
                           <span className="text-muted-foreground">{o}</span>
                         </label>
                       ))}
@@ -166,7 +196,7 @@ const MatchesPage = () => {
                   className="flex items-center justify-between mb-5 flex-wrap gap-3"
                 >
                   <h2 className="font-serif text-lg font-bold text-foreground">
-                    Showing <span className="text-secondary">{allProfiles.length}</span> profiles
+                    Showing <span className="text-secondary">{filteredProfiles.length}</span> profiles
                   </h2>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">Sort by:</span>
@@ -195,9 +225,9 @@ const MatchesPage = () => {
                     exit={{ opacity: 0 }}
                     className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-5" : "space-y-5"}
                   >
-                    {allProfiles.map((profile, index) => (
+                    {filteredProfiles.map((profile, index) => (
                       viewMode === "list" ? (
-                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
+                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} isOnline={(profile as MatchProfile).isOnline} />
                       ) : (
                         <MatchGridCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                       )
@@ -227,8 +257,8 @@ const MatchesPage = () => {
   );
 };
 
-const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
-  const isOnline = index % 3 === 0;
+const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest, isOnline: isOnlineProp }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void; isOnline?: boolean }) => {
+  const isOnline = isOnlineProp ?? index % 3 === 0;
   const isNew = index < 3;
 
   return (
@@ -287,9 +317,6 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
           </Button>
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
             <Send className="w-3.5 h-3.5" /> Send interest
-          </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${profile.id}`); }}>
-            More details
           </Button>
         </div>
       </div>

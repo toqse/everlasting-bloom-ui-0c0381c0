@@ -1,50 +1,18 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Star, Crown, Sparkles, ArrowRight } from "lucide-react";
 import PaymentPopup from "@/components/PaymentPopup";
-
-const plans = [
-  {
-    id: "silver",
-    name: "Silver",
-    price: "₹499",
-    duration: "3 Months",
-    features: ["View Contact Details", "Send 10 Interests/day", "Basic Chat"],
-    buttonLabel: "Choose Silver",
-    variant: "silver" as const,
-  },
-  {
-    id: "gold",
-    name: "Gold",
-    price: "₹999",
-    duration: "6 Months",
-    popular: true,
-    features: ["All Silver +", "50 Interests/day", "Priority Listing"],
-    buttonLabel: "Choose Gold",
-    variant: "gold" as const,
-  },
-  {
-    id: "diamond",
-    name: "Diamond",
-    price: "₹1999",
-    duration: "12 Months",
-    features: ["All Gold +", "Unlimited Contacts", "Dedicated Manager"],
-    buttonLabel: "Choose Diamond",
-    variant: "diamond" as const,
-  },
-];
+import { plansData } from "@/components/Membership";
 
 const PlanPage = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState<number>(1);
 
-  const handleChoosePlan = (planId: string) => {
-    setSelectedPlanId(planId);
+  const handleChoosePlan = (index: number) => {
+    setSelectedPlanIndex(index);
     setPaymentOpen(true);
   };
-
-  const defaultPlanId = plans.find((p) => p.id === (selectedPlanId ?? "gold")) ? 2 : 2; // Gold = 2 for PaymentPopup if it uses index
 
   return (
     <DashboardLayout>
@@ -53,63 +21,84 @@ const PlanPage = () => {
           Plans & Pricing
         </h1>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {plans.map((plan) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {plansData.map((plan, index) => (
             <div
-              key={plan.id}
+              key={plan.name}
               className={`relative bg-white rounded-2xl shadow-card overflow-hidden flex flex-col ${
-                plan.popular ? "ring-2 ring-secondary border-secondary/30" : "border border-primary/10"
+                plan.isPopular
+                  ? "ring-2 ring-secondary border-secondary/30 md:-mt-2 md:mb-2"
+                  : "border border-primary/10"
               }`}
             >
-              {plan.popular && (
-                <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-1.5 text-xs font-bold tracking-wider">
-                  POPULAR
+              {plan.isPopular && (
+                <div className="absolute top-0 left-0 right-0 z-10 bg-secondary text-white text-center py-2 px-4">
+                  <span className="font-serif font-bold text-base tracking-wide flex items-center justify-center gap-2">
+                    <Star className="w-5 h-5 fill-current flex-shrink-0" /> Best Value
+                  </span>
                 </div>
               )}
-              <div className={`p-6 ${plan.popular ? "pt-10" : ""}`}>
+              <div className={`p-6 flex flex-col flex-1 ${plan.isPopular ? "pt-14" : ""}`}>
+                {/* Plan icon */}
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${
+                    plan.isPopular || plan.variant === "gold"
+                      ? "bg-gradient-to-br from-secondary to-amber-400 shadow-md"
+                      : "bg-accent-rose"
+                  }`}
+                >
+                  <plan.icon
+                    className={`w-7 h-7 ${
+                      plan.isPopular || plan.variant === "gold" ? "text-white" : "text-primary"
+                    }`}
+                  />
+                </div>
+
                 <h2
                   className={`font-serif text-xl font-bold ${
-                    plan.variant === "silver"
-                      ? "text-gray-700"
-                      : plan.variant === "gold"
-                        ? "text-secondary"
-                        : "text-primary"
+                    plan.isPopular || plan.variant === "gold" ? "text-secondary" : "text-foreground"
                   }`}
                 >
                   {plan.name}
                 </h2>
-                <p
-                  className={`mt-2 text-2xl font-bold ${
-                    plan.variant === "silver"
-                      ? "text-gray-800"
-                      : plan.variant === "gold"
-                        ? "text-secondary"
-                        : "text-primary"
-                  }`}
-                >
-                  {plan.price}
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">{plan.duration}</p>
-                <ul className="mt-6 space-y-3">
+                <p className="text-sm text-muted-foreground mb-3">{plan.description}</p>
+
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="font-serif text-2xl font-bold text-primary">{plan.price}</span>
+                  <span className="text-sm text-muted-foreground">{plan.period}</span>
+                </div>
+
+                <ul className="space-y-2.5 flex-1">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                      <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      {feature}
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          plan.isPopular || plan.variant === "gold"
+                            ? "bg-secondary/20"
+                            : "bg-accent-rose"
+                        }`}
+                      >
+                        <Check
+                          className={`w-3 h-3 ${
+                            plan.isPopular || plan.variant === "gold"
+                              ? "text-secondary"
+                              : "text-primary"
+                          }`}
+                        />
+                      </div>
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
+
                 <Button
                   type="button"
-                  className={`mt-6 w-full ${
-                    plan.variant === "silver"
-                      ? "bg-gray-700 hover:bg-gray-800 text-white"
-                      : plan.variant === "gold"
-                        ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                  }`}
-                  onClick={() => handleChoosePlan(plan.id)}
+                  variant={plan.variant}
+                  className="mt-6 w-full gap-2 group/btn"
+                  onClick={() => handleChoosePlan(index)}
                 >
-                  {plan.buttonLabel}
+                  Get Started
+                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                 </Button>
               </div>
             </div>
@@ -118,9 +107,10 @@ const PlanPage = () => {
       </div>
 
       <PaymentPopup
+        key={selectedPlanIndex}
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
-        defaultPlanId={plans.findIndex((p) => p.id === (selectedPlanId ?? "gold")) + 1 || 2}
+        defaultPlanId={selectedPlanIndex}
       />
     </DashboardLayout>
   );
