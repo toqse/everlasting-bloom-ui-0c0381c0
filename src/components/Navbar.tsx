@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Menu, X, User, Sparkles } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLoading } from "@/contexts/LoadingContext";
@@ -46,14 +46,11 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center gap-2 group">
-          <div className="relative">
-            <Heart className="w-8 h-8 text-primary fill-primary group-hover:animate-heart-beat transition-all" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary rounded-full animate-pulse-soft" />
-            <Sparkles className="absolute -bottom-1 -left-1 w-3 h-3 text-secondary animate-sparkle" />
-          </div>
-          <span className="font-serif text-2xl font-bold text-primary">
-            Aiswarya <span className="text-secondary">Matrimony</span>
-          </span>
+          <img
+            src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+            alt="Aiswarya Matrimony"
+            className="h-24 w-auto object-contain"
+          />
         </Link>
 
         {/* Desktop Navigation */}
