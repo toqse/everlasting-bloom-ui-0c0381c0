@@ -107,48 +107,35 @@ const AboutPage = () => {
 
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left - Overlapping images like reference */}
-            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative min-h-[500px]">
-              {/* Gold circle decoration */}
-              <motion.div
-                className="absolute top-4 left-[25%] w-16 h-16 rounded-full border-4 border-secondary z-10"
-                initial={{ scale: 0, rotate: -180 }}
-                whileInView={{ scale: 1, rotate: 0 }}
-                viewport={{ once: true }}
-                transition={{ type: "spring", delay: 0.3 }}
-              />
-
-              {/* Main large image */}
-              <motion.div
-                className="relative z-[2] w-[70%] rounded-3xl overflow-hidden shadow-elevated"
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=450&fit=crop"
-                  alt="Happy couple"
-                  className="w-full h-80 object-cover"
-                />
-              </motion.div>
-
-              {/* Overlapping second image */}
-              <motion.div
-                className="absolute bottom-0 right-0 w-[55%] z-[3] rounded-3xl overflow-hidden shadow-elevated border-4 border-card"
-                initial={{ opacity: 0, y: 40, x: 20 }}
-                whileInView={{ opacity: 1, y: 0, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                whileHover={{ scale: 1.03 }}
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=500&h=350&fit=crop"
-                  alt="Wedding couple"
-                  className="w-full h-72 object-cover"
-                />
-              </motion.div>
-
-              {/* Pink rounded decoration */}
-              <div className="absolute -bottom-4 right-[10%] w-24 h-24 rounded-2xl border-4 border-accent-rose z-[1]" />
+            {/* Left - Couple illustration */}
+            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative flex items-center justify-center min-h-[400px]">
+              <div className="relative">
+                <motion.div
+                  className="text-[180px] leading-none select-none"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  👫
+                </motion.div>
+                <motion.div
+                  className="absolute -top-6 left-1/2 -translate-x-1/2"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Heart className="w-10 h-10 text-primary fill-primary" />
+                </motion.div>
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute"
+                    style={{ left: `${20 + i * 15}%`, top: `${10 + (i % 3) * 30}%` }}
+                    animate={{ y: [0, -15, 0], opacity: [0.3, 0.8, 0.3] }}
+                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
+                  >
+                    <Sparkles className="w-5 h-5 text-secondary" />
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
 
             {/* Right - Content */}

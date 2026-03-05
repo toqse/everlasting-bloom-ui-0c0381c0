@@ -21,22 +21,12 @@ const Footer = () => {
 
   const footerLinks = {
     company: [
-      { name: "About Us", href: "/" },
+      { name: "About Us", href: "/about" },
       { name: "Success Stories", href: "/success-stories" },
-      { name: "Careers", href: "/" },
-      { name: "Press", href: "/" },
-    ],
-    help: [
-      { name: "Help Center", href: "/" },
-      { name: "Safety Tips", href: "/" },
-      { name: "Report Abuse", href: "/" },
-      { name: "FAQs", href: "/membership" },
     ],
     legal: [
       { name: "Privacy Policy", href: "/" },
       { name: "Terms of Service", href: "/" },
-      { name: "Cookie Policy", href: "/" },
-      { name: "Refund Policy", href: "/" },
     ],
     services: [
       { name: "Matrimony Services", href: "/search" },
@@ -175,18 +165,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
-            <h4 className="font-serif text-lg font-bold text-foreground mb-5">Help & Support</h4>
-            <ul className="space-y-3">
-              {footerLinks.help.map((link) => (
-                <li key={link.name}>
-                  <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
 
           <div>
             <h4 className="font-serif text-lg font-bold text-foreground mb-5">Legal</h4>

@@ -124,6 +124,13 @@ const Hero = () => {
             Join millions who found their soulmate with Aiswarya Matrimony.
           </p>
 
+          {/* Bride & Groom Animation */}
+          <div className="flex items-center justify-center gap-2 mb-6 animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
+            <span className="text-5xl animate-float" style={{ animationDuration: "3s" }}>🤵</span>
+            <Heart className="w-8 h-8 text-primary fill-primary animate-heart-beat" />
+            <span className="text-5xl animate-float-delayed" style={{ animationDuration: "3.5s" }}>👰</span>
+          </div>
+
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
             <Button 

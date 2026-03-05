@@ -56,14 +56,21 @@ const ServicesPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="bg-white rounded-3xl p-6 shadow-card hover-lift group border border-primary/5 text-center"
+                className="relative rounded-3xl p-[2px] overflow-hidden group hover-lift"
               >
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-accent-gold flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-gold">
-                  <service.icon className="w-8 h-8 text-secondary" />
+                {/* Animated moving border */}
+                <div
+                  className="absolute inset-0 rounded-3xl bg-[length:200%_200%] animate-[shimmer_3s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ backgroundImage: "linear-gradient(90deg, transparent, hsl(var(--secondary)), hsl(var(--primary)), hsl(var(--secondary)), transparent)" }}
+                />
+                <div className="relative bg-card rounded-[22px] p-6 text-center z-10 h-full">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-accent-gold flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-gold">
+                    <service.icon className="w-8 h-8 text-secondary" />
+                  </div>
+                  <h3 className="font-serif text-lg font-bold text-foreground mb-2">{service.title}</h3>
+                  <p className="text-secondary text-xs font-medium mb-3">{service.count}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
                 </div>
-                <h3 className="font-serif text-lg font-bold text-foreground mb-2">{service.title}</h3>
-                <p className="text-secondary text-xs font-medium mb-3">{service.count}</p>
-                <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
               </motion.div>
             ))}
           </div>
