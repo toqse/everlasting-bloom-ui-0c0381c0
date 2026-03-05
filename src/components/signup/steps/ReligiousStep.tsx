@@ -11,7 +11,7 @@ interface Props {
   setInterCaste: (v: boolean) => void;
 }
 
-const RELIGIONS = Object.keys(RELIGION_CASTE_MAP);
+const RELIGIONS = ["Christian", "Hindu", "Muslim", "Other"];
 
 type CastePref = "own" | "open" | "specific";
 
@@ -38,7 +38,6 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     <>
       <div className="text-center mb-6">
         <h1 className="font-serif text-2xl font-bold text-foreground mb-1">Religious Details</h1>
-        <p className="text-muted-foreground text-sm">Religious background helps find better matches</p>
       </div>
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
