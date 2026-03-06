@@ -51,12 +51,8 @@ const BasicInfoStep = ({
           <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
           <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
         </div>
-        {!otpSent ? (
-          <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp}>
-            Send OTP
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        ) : (
+
+        {otpSent && (
           <>
             <p className="text-muted-foreground text-sm text-center">
               OTP sent to +91 {formData.phone}. Enter 6-digit code:
@@ -109,6 +105,10 @@ const BasicInfoStep = ({
                 I agree to the Terms & Conditions and Privacy Policy
               </label>
             </div>
+            <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp}>
+              Send OTP
+              <ArrowRight className="w-5 h-5" />
+            </Button>
           </>
         )}
       </div>

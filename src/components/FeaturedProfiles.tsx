@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, ArrowRight, Sparkles, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import ProfileViewDrawer from "./ProfileViewDrawer";
 
 export interface Profile {
   id: number;
@@ -95,6 +96,7 @@ const FeaturedProfiles = () => {
   const navigate = useNavigate();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
+  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
 
   const toggleLike = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -232,7 +234,7 @@ const FeaturedProfiles = () => {
                         className="flex-1 gap-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleViewProfile(profile.id);
+                          setViewProfile(profile);
                         }}
                       >
                         <Eye className="w-4 h-4" />
@@ -285,6 +287,13 @@ const FeaturedProfiles = () => {
           </Button>
         </div>
       </div>
+
+      <ProfileViewDrawer
+        open={!!viewProfile}
+        onOpenChange={(open) => !open && setViewProfile(null)}
+        profile={viewProfile}
+        onSendInterest={() => {}}
+      />
     </section>
   );
 };

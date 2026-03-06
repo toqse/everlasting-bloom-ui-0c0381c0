@@ -80,7 +80,7 @@ const MembershipPage = () => {
             {plansData.map((plan, index) => (
               <div
                 key={plan.name}
-                className={`relative animate-fade-in-up ${plan.isPopular ? "md:-mt-6 md:mb-6" : ""}`}
+                className="relative animate-fade-in-up flex"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 {/* Popular Badge */}
@@ -94,7 +94,7 @@ const MembershipPage = () => {
                 )}
 
                 <div
-                  className={`h-full bg-white rounded-3xl p-8 transition-all duration-500 hover-lift group ${
+                  className={`h-full w-full bg-white rounded-3xl p-8 transition-all duration-500 hover-lift group flex flex-col ${
                     plan.isPopular
                       ? "shadow-elevated border-2 border-secondary"
                       : "shadow-card border border-primary/10"
@@ -125,7 +125,7 @@ const MembershipPage = () => {
                   </div>
 
                   {/* Features */}
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-3 mb-8 flex-1">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
