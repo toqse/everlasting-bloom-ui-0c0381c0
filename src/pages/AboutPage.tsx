@@ -95,46 +95,51 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Welcome Section - Matching reference layout */}
+      {/* Welcome Section */}
       <section className="py-16 bg-card relative overflow-hidden">
-        {/* Decorative leaves */}
-        <div className="absolute top-0 left-0 w-36 h-44 opacity-40 pointer-events-none">
-          <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain" />
-        </div>
-        <div className="absolute bottom-0 right-0 w-40 h-48 opacity-40 pointer-events-none transform rotate-180">
-          <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain" />
-        </div>
-
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left - Couple illustration */}
-            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative flex items-center justify-center min-h-[400px]">
-              <div className="relative">
+            {/* Left - Overlapping wedding photos */}
+            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative flex items-center justify-center min-h-[420px]">
+              <div className="relative w-full max-w-[480px] mx-auto">
+                {/* Background decorative shape */}
+                <div className="absolute -top-4 -left-4 w-[320px] h-[260px] rounded-3xl bg-accent-rose/40 -z-10" />
+                
+                {/* Main image */}
                 <motion.div
-                  className="text-[180px] leading-none select-none"
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative z-10 rounded-2xl overflow-hidden shadow-elevated w-[300px] h-[220px]"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  👫
+                  <img
+                    src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop"
+                    alt="Wedding couple with bouquet"
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
+
+                {/* Overlapping second image */}
                 <motion.div
-                  className="absolute -top-6 left-1/2 -translate-x-1/2"
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute top-[120px] left-[140px] z-20 rounded-2xl overflow-hidden shadow-elevated w-[300px] h-[220px] border-4 border-card"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <Heart className="w-10 h-10 text-primary fill-primary" />
+                  <img
+                    src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&h=400&fit=crop"
+                    alt="Wedding rings hands"
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute"
-                    style={{ left: `${20 + i * 15}%`, top: `${10 + (i % 3) * 30}%` }}
-                    animate={{ y: [0, -15, 0], opacity: [0.3, 0.8, 0.3] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
-                  >
-                    <Sparkles className="w-5 h-5 text-secondary" />
-                  </motion.div>
-                ))}
+
+                {/* Decorative gold circle */}
+                <motion.div
+                  className="absolute -top-2 left-[180px] z-30 w-12 h-12 rounded-full border-[3px] border-secondary"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+
+                {/* Small decorative circle bottom-right */}
+                <div className="absolute bottom-0 right-4 w-8 h-8 rounded-full bg-accent-rose/60 -z-10" />
               </div>
             </motion.div>
 
@@ -183,10 +188,6 @@ const AboutPage = () => {
 
       {/* Stats Bar - Matching reference */}
       <section className="py-12 bg-gradient-romantic relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-40 opacity-30 pointer-events-none">
-          <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-full h-full object-contain transform scale-x-[-1]" />
-        </div>
-        {/* Pink decoration circle */}
         <div className="absolute bottom-4 right-[10%] w-12 h-12 rounded-full border-3 border-accent-rose opacity-40" />
 
         <div className="container mx-auto px-4">
