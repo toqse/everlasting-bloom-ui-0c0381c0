@@ -148,6 +148,8 @@ const AuthPage = () => {
     setPhoneVerified(true);
     setSignupOtpSent(false);
     setSignupOtp(["", "", "", "", "", ""]);
+    setDirection(1);
+    setSignupStep(2); // Go directly to Location Details; do not show registration again
     toast.success("Phone verified!");
   };
 

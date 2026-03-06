@@ -2,12 +2,12 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Heart, Filter, Grid, List, Star, Briefcase, GraduationCap, ChevronDown, MessageCircle, Send, Eye, Clock, Sparkles, Users } from "lucide-react";
+import { Search, MapPin, Heart, Star, Briefcase, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users } from "lucide-react";
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/stores/authStore";
 import { motion } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
+import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 
 // Extended profiles
 const allProfiles: Profile[] = [
@@ -34,10 +34,9 @@ const allProfiles: Profile[] = [
 
 const SearchProfiles = () => {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuthStore();
-  const [viewMode, setViewMode] = useState<"grid" | "list">(isLoggedIn ? "list" : "grid");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
 
   const toggleLike = (id: number) => {
     setLikedProfiles(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
@@ -136,25 +135,13 @@ const SearchProfiles = () => {
                     <option>Newest First</option>
                     <option>Best Match</option>
                   </select>
-                  <div className="flex bg-card rounded-lg border border-primary/10 overflow-hidden">
-                    <button onClick={() => setViewMode("grid")} className={`p-2.5 ${viewMode === "grid" ? "bg-primary text-primary-foreground" : ""}`}>
-                      <Grid className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setViewMode("list")} className={`p-2.5 ${viewMode === "list" ? "bg-primary text-primary-foreground" : ""}`}>
-                      <List className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
               </div>
 
-              {/* Profiles */}
-              <div className={`space-y-6 ${viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6 space-y-0" : ""}`}>
+              {/* Profiles - list/table format only */}
+              <div className="space-y-6">
                 {allProfiles.map((profile, index) => (
-                  viewMode === "list" ? (
-                    <ListProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
-                  ) : (
-                    <GridProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
-                  )
+                  <ListProfileCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onMoreDetails={() => setViewProfile(profile)} />
                 ))}
               </div>
 
@@ -170,6 +157,7 @@ const SearchProfiles = () => {
       </section>
 
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
+      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => { setPlanModalOpen(true); setViewProfile(null); }} />
 
       <Footer />
     </div>
@@ -187,45 +175,42 @@ const FilterSelect = ({ icon, label, options }: { icon: React.ReactNode; label: 
   </div>
 );
 
-const ListProfileCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
+const ListProfileCard = ({ profile, index, liked, onLike, onSendInterest, onMoreDetails }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void; onMoreDetails?: () => void }) => {
   const isOnline = index % 3 === 0;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift cursor-pointer group"
-      onClick={() => navigate(`/profile/${profile.id}`)}
+      className="flex items-start bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift group"
     >
-      {/* Image */}
-      <div className="w-64 flex-shrink-0 relative overflow-hidden">
-        {/* Online indicator */}
+      {/* Image - fixed size + object-center so all faces show consistently (no 2nd image crop) */}
+      <div className="w-64 h-64 flex-shrink-0 relative overflow-hidden bg-muted/30" onClick={(e) => { e.stopPropagation(); onMoreDetails?.(); }}>
         <div className={`absolute top-3 left-3 z-10 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? "bg-green-500" : "bg-muted-foreground/40"}`} />
-        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 min-h-[220px]" />
-        {/* Bottom status bar */}
+        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
         <div className={`absolute bottom-0 left-0 right-0 py-1.5 text-center text-xs font-medium text-primary-foreground ${isOnline ? "bg-green-600/90" : "bg-muted-foreground/70"}`}>
-          {isOnline ? "Available Online" : `I'll be available on 10:00 AM`}
+          {isOnline ? "Available Online" : "I'll be available on 10:00 AM"}
         </div>
       </div>
 
-      {/* Info */}
-      <div className="flex-1 p-6">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="font-serif text-2xl font-bold text-primary group-hover:text-primary-dark transition-colors">{profile.name}</h3>
-          <button onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-colors">
+      {/* Info - compact layout, no extra space in the middle */}
+      <div className="p-4 flex flex-col min-w-0">
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-serif text-xl font-bold text-primary group-hover:text-primary-dark transition-colors">{profile.name}</h3>
+          <button onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0 ml-2">
             <Heart className={`w-5 h-5 ${liked ? "fill-primary text-primary" : ""}`} />
           </button>
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="px-3 py-1 bg-foreground text-primary-foreground text-xs font-medium rounded-md">{profile.education.split(",")[0]}</span>
-          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.profession}</span>
-          <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md">{profile.age} Years old</span>
-          <span className="px-3 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-md">Height: 155Cms</span>
+        {/* Tags - compact, same style as reference */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <span className="px-2.5 py-0.5 bg-foreground text-primary-foreground text-xs font-medium rounded-md">{profile.education.split(",")[0]}</span>
+          <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.profession}</span>
+          <span className="px-2.5 py-0.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md">{profile.age} Years old</span>
+          <span className="px-2.5 py-0.5 bg-accent text-accent-foreground text-xs font-medium rounded-md">Height: 155Cms</span>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons - right below tags, no gap */}
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="hero" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); }}>
             <MessageCircle className="w-3.5 h-3.5" /> Chat now
@@ -236,43 +221,9 @@ const ListProfileCard = ({ profile, index, navigate, liked, onLike, onSendIntere
           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
             <Send className="w-3.5 h-3.5" /> Send interest
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${profile.id}`); }}>
+          <Button size="sm" variant="hero" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onMoreDetails?.(); }}>
             More details
           </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const GridProfileCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift cursor-pointer group flex flex-col"
-      onClick={() => navigate(`/profile/${profile.id}`)}
-    >
-      <div className="relative h-72 overflow-hidden">
-        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
-        {profile.isPremium && (
-          <span className="absolute top-3 left-3 px-2 py-1 bg-secondary text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1">
-            <Star className="w-3 h-3 fill-current" /> Premium
-          </span>
-        )}
-        <button onClick={(e) => { e.stopPropagation(); onLike(); }} className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 ${liked ? "bg-primary" : "bg-card/90"}`}>
-          <Heart className={`w-4 h-4 ${liked ? "text-primary-foreground fill-primary-foreground" : "text-primary"}`} />
-        </button>
-        <div className="absolute bottom-3 right-3 px-2 py-1 bg-card/90 rounded-full text-xs font-bold text-primary">{profile.compatibility}% Match</div>
-      </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-serif text-lg font-bold text-foreground">{profile.name}</h3>
-        <p className="text-sm text-muted-foreground mb-2">{profile.age} years</p>
-        <div className="space-y-1.5 mt-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><Briefcase className="w-4 h-4 text-primary/60" />{profile.profession}</div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-4 h-4 text-primary/60" />{profile.location}</div>
         </div>
       </div>
     </motion.div>

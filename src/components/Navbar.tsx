@@ -88,7 +88,7 @@ const Navbar = () => {
               </Button>
             </>
           ) : (
-            <Button variant="hero" className="gap-2" onClick={() => navigate("/auth")}>
+            <Button variant="hero" className="gap-2 min-w-[160px] px-8" onClick={() => navigate("/auth")}>
               <User className="w-4 h-4" />
               Login
             </Button>
@@ -130,7 +130,7 @@ const Navbar = () => {
                 </Button>
               </>
             ) : (
-              <Button variant="hero" className="flex-1" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
+              <Button variant="hero" className="flex-1 min-w-[160px]" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
             )}
           </div>
         </div>

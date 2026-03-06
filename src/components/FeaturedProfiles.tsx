@@ -163,8 +163,8 @@ const FeaturedProfiles = () => {
                 profile.isPremium ? "gold-border" : "border border-primary/10"
               } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
                 
-                {/* Image Container */}
-                <div className="relative h-72 overflow-hidden">
+                {/* Image Container - click on image does not open modal */}
+                <div className="relative h-72 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                   <img
                     src={profile.image}
                     alt={profile.name}
