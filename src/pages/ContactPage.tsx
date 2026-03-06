@@ -128,6 +128,35 @@ const ContactPage = () => {
         </div>
       </section>
 
+      {/* Location Map */}
+      <section className="py-16 bg-accent-rose/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-8">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Our <span className="text-gradient-gold">Location</span>
+            </h2>
+            <p className="text-muted-foreground">Visit us at our office in Cherthala, Alappuzha, Kerala</p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-3xl overflow-hidden shadow-elevated border-4 border-card"
+          >
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31524.66884302874!2d76.32!3d9.68!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b0882cd0a0a0a0b%3A0x3b0882cd0a0a0a0b!2sCherthala%2C%20Kerala!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              width="100%"
+              height="400"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Aiswarya Matrimony Location"
+            />
+          </motion.div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
