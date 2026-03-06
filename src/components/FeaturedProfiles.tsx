@@ -111,7 +111,7 @@ const FeaturedProfiles = () => {
   };
 
   return (
-    <section id="profiles" className="py-24 bg-gradient-romantic relative overflow-hidden">
+    <section id="profiles" className="py-12 sm:py-16 md:py-24 bg-gradient-romantic relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-secondary/15 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float-delayed" />
@@ -134,13 +134,13 @@ const FeaturedProfiles = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-8 sm:mb-14">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 animate-fade-in-up shadow-soft">
             <Star className="w-4 h-4 text-secondary fill-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">Featured Profiles</span>
             <Star className="w-4 h-4 text-secondary fill-secondary animate-sparkle" style={{ animationDelay: "0.5s" }} />
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
             Meet Your <span className="text-gradient-gold">Perfect Match</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -149,7 +149,7 @@ const FeaturedProfiles = () => {
         </div>
 
         {/* Profiles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
           {profilesData.map((profile, index) => (
             <div
               key={profile.id}

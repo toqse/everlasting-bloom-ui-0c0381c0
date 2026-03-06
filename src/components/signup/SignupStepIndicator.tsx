@@ -19,12 +19,12 @@ const SignupStepIndicator = ({ currentStep }: Props) => {
   const progress = ((currentStep + 1) / SIGNUP_STEPS.length) * 100;
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground">
+    <div className="mb-4 sm:mb-6">
+      <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">
           Step {currentStep + 1} of {SIGNUP_STEPS.length}
         </span>
-        <span className="text-xs font-semibold text-primary">
+        <span className="text-xs font-semibold text-primary truncate text-right">
           {SIGNUP_STEPS[currentStep]}
         </span>
       </div>
@@ -37,7 +37,7 @@ const SignupStepIndicator = ({ currentStep }: Props) => {
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
-      <div className="flex justify-between mt-2">
+      <div className="flex justify-between gap-0.5 sm:gap-1 mt-2">
         {SIGNUP_STEPS.map((_, i) => (
           <motion.div
             key={i}

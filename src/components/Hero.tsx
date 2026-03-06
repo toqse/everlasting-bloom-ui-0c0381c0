@@ -91,8 +91,8 @@ const Hero = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 pt-28 pb-20 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="container mx-auto px-4 pt-24 sm:pt-28 pb-12 sm:pb-20 relative z-10">
+        <div className="max-w-4xl mx-auto text-center min-w-0">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-8 animate-fade-in-up hover-lift cursor-pointer group">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
@@ -101,7 +101,7 @@ const Hero = () => {
           </div>
 
           {/* Heading */}
-          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight mb-4 sm:mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
             Find Your{" "}
             <span className="relative inline-block">
               <span className="text-gradient-primary">Forever</span>
@@ -119,7 +119,7 @@ const Hero = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 animate-fade-in-up leading-relaxed px-0" style={{ animationDelay: "0.2s" }}>
             Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
             Join millions who found their soulmate with Aiswarya Matrimony.
           </p>
@@ -132,11 +132,11 @@ const Hero = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
             <Button 
               variant="hero" 
               size="xl" 
-              className="group min-w-[220px]"
+              className="group w-full sm:min-w-[220px]"
               onClick={() => navigate("/auth")}
             >
               <Heart className="w-5 h-5 group-hover:animate-heart-beat" fill="currentColor" />
@@ -146,7 +146,7 @@ const Hero = () => {
             <Button 
               variant="outline" 
               size="xl" 
-              className="group min-w-[220px]"
+              className="group w-full sm:min-w-[220px]"
               onClick={() => navigate("/success-stories")}
             >
               <Sparkles className="w-5 h-5 group-hover:animate-sparkle" />
@@ -155,7 +155,7 @@ const Hero = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mt-10 sm:mt-16 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
             {[
               { value: "2M+", label: "Happy Members", icon: Users },
               { value: "1M+", label: "Successful Matches", icon: Heart },

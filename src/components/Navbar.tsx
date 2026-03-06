@@ -45,13 +45,13 @@ const Navbar = () => {
           : "bg-transparent py-5"
       }`}
     >
-      <div className="container mx-auto px-4 flex items-center justify-between min-h-[72px] lg:min-h-[80px]">
+      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between min-h-[60px] sm:min-h-[72px] lg:min-h-[80px]">
         {/* Logo */}
-        <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center shrink-0 group">
+        <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center shrink-0 group min-w-0">
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-16 w-auto object-contain lg:h-20"
+            className="h-12 sm:h-16 w-auto object-contain lg:h-20 max-h-[60px] sm:max-h-none"
           />
         </Link>
 
@@ -96,16 +96,21 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 text-primary hover:scale-110 transition-transform">
+        <button
+          type="button"
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="lg:hidden p-2.5 -mr-1 text-primary hover:scale-110 active:scale-95 transition-transform touch-manipulation"
+        >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {/* Mobile Menu */}
-      <div className={`lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-elevated transition-all duration-300 overflow-hidden ${
-        isMobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+      <div className={`lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-elevated transition-all duration-300 overflow-hidden max-h-[85vh] overflow-y-auto ${
+        isMobileMenuOpen ? "max-h-[85vh] opacity-100" : "max-h-0 opacity-0"
       }`}>
-        <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-6">
           {navLinks.map((link, index) => (
             <Link
               key={link.name}

@@ -19,7 +19,7 @@ const SearchFilters = () => {
   ];
 
   return (
-    <section id="search" className="py-20 bg-white relative overflow-hidden">
+    <section id="search" className="py-12 sm:py-16 md:py-20 bg-white relative overflow-hidden">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-accent-rose/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent-gold/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
@@ -31,7 +31,7 @@ const SearchFilters = () => {
             <Search className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-primary">Find Your Match</span>
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Discover Your <span className="text-gradient-primary">Perfect Partner</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -41,7 +41,7 @@ const SearchFilters = () => {
 
         {/* Search Card */}
         <div className="max-w-5xl mx-auto">
-          <div className="bg-gradient-card rounded-3xl p-8 shadow-elevated border border-primary/5 animate-scale-in">
+          <div className="bg-gradient-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-elevated border border-primary/5 animate-scale-in">
             {/* Filter Tabs */}
             <div className="flex flex-wrap gap-3 mb-8 justify-center">
               {filters.map((filter) => (
@@ -141,14 +141,14 @@ const SearchFilters = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="flex flex-wrap justify-center gap-6 mt-8">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 mt-6 sm:mt-8">
             {[
               { icon: Users, value: "10,000+", label: "Active Today" },
               { icon: Heart, value: "500+", label: "New Matches" },
               { icon: Sparkles, value: "50+", label: "Success Stories This Week" },
             ].map((stat, index) => (
-              <div key={index} className="flex items-center gap-3 px-5 py-3 bg-white/80 rounded-full shadow-soft">
-                <stat.icon className="w-5 h-5 text-secondary" />
+              <div key={index} className="flex items-center justify-center sm:justify-start gap-3 px-4 sm:px-5 py-3 bg-white/80 rounded-full shadow-soft">
+                <stat.icon className="w-5 h-5 text-secondary shrink-0" />
                 <span className="font-bold text-foreground">{stat.value}</span>
                 <span className="text-muted-foreground text-sm">{stat.label}</span>
               </div>

@@ -289,20 +289,20 @@ const AuthPage = () => {
   // ---- LOGIN VIEW ----
   if (mode === "login") {
     return (
-      <div className="min-h-screen bg-gradient-romantic flex items-center justify-center relative overflow-hidden py-12 px-4">
+      <div className="min-h-screen bg-gradient-romantic flex items-center justify-center relative overflow-hidden py-6 sm:py-12 px-3 sm:px-4">
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
-        <div className="w-full max-w-md relative z-10">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-6 group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <div className="w-full max-w-md relative z-10 min-w-0">
+          <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 sm:mb-6 group">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform shrink-0" />
             <span className="font-medium">Back to Home</span>
           </button>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-elevated p-8 border border-primary/5"
+            className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5"
           >
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 mb-4">
@@ -429,11 +429,11 @@ const AuthPage = () => {
 
   // ---- SIGNUP VIEW (multi-step with animations) ----
   return (
-    <div className="min-h-screen bg-gradient-romantic flex items-center justify-center relative overflow-hidden py-8 px-4">
+    <div className="min-h-screen bg-gradient-romantic flex items-center justify-center relative overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4">
       <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
-      <div className="w-full max-w-4xl relative z-10">
+      <div className="w-full max-w-4xl relative z-10 min-w-0">
         {signupStep === 0 ? (
           <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -449,11 +449,11 @@ const AuthPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-elevated p-8 border border-primary/5"
+          className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5"
         >
           <SignupStepIndicator currentStep={signupStep} />
 
-          <div className="overflow-hidden min-h-[380px]">
+          <div className="overflow-hidden min-h-[320px] sm:min-h-[380px]">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={signupStep}

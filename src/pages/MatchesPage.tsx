@@ -267,7 +267,7 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, type: "spring", stiffness: 100 }}
       whileHover={{ y: -4, boxShadow: "0 20px 60px -15px hsl(330 60% 34% / 0.15)" }}
-      className="flex bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 cursor-pointer group relative"
+      className="flex flex-col md:flex-row md:items-stretch bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 cursor-pointer group relative"
       onClick={() => navigate(`/profile/${profile.id}`)}
     >
       {/* New badge */}
@@ -277,29 +277,27 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
         </div>
       )}
 
-      {/* Image */}
-      <div className="w-56 md:w-64 flex-shrink-0 relative overflow-hidden">
+      {/* Image - full width on mobile */}
+      <div className="w-full md:w-56 lg:w-64 h-52 md:h-64 flex-shrink-0 relative overflow-hidden">
         <div className={`absolute top-3 left-3 z-10 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? "bg-green-500 animate-pulse-soft" : "bg-muted-foreground/40"}`} />
-        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 min-h-[200px]" />
+        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
         <div className={`absolute bottom-0 left-0 right-0 py-1.5 text-center text-xs font-medium text-primary-foreground ${isOnline ? "bg-green-600/90" : "bg-muted-foreground/70"}`}>
           {isOnline ? "Available Online" : `Last login 10 mins ago`}
         </div>
-        {/* Compatibility badge on image */}
         <div className="absolute top-3 right-3 px-2 py-1 bg-card/95 backdrop-blur-sm rounded-full shadow-soft">
           <span className="text-xs font-bold text-gradient-primary">{profile.compatibility}%</span>
         </div>
       </div>
 
       {/* Info */}
-      <div className="flex-1 p-5 min-w-0">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-serif text-xl font-bold text-primary group-hover:text-primary-dark transition-colors">{profile.name}</h3>
-          <button onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-all hover:scale-125">
+      <div className="flex-1 p-3 sm:p-5 min-w-0 flex flex-col">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-primary-dark transition-colors truncate min-w-0">{profile.name}</h3>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-all hover:scale-125 flex-shrink-0">
             <Heart className={`w-5 h-5 ${liked ? "fill-primary text-primary" : ""}`} />
           </button>
         </div>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-3">
           <span className="px-2.5 py-0.5 bg-foreground text-primary-foreground text-xs font-medium rounded-md">{profile.education.split(",")[0]}</span>
           <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.profession}</span>
@@ -307,16 +305,15 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
           <span className="px-2.5 py-0.5 bg-accent text-accent-foreground text-xs font-medium rounded-md">Height: 155Cms</span>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="hero" className="gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
-            <MessageCircle className="w-3.5 h-3.5" /> Chat now
+        <div className="flex flex-wrap gap-2 mt-auto">
+          <Button size="sm" variant="hero" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => e.stopPropagation()}>
+            <MessageCircle className="w-3.5 h-3.5 shrink-0" /> Chat now
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => e.stopPropagation()}>
             WhatsApp
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
-            <Send className="w-3.5 h-3.5" /> Send interest
+          <Button size="sm" variant="outline" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
+            <Send className="w-3.5 h-3.5 shrink-0" /> Send interest
           </Button>
         </div>
       </div>

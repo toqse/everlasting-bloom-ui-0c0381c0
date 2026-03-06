@@ -28,19 +28,19 @@ const stats = [
 
 const WhyChooseUs = () => {
   return (
-    <section className="py-24 relative overflow-hidden bg-card">
+    <section className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-card">
       {/* Clean background - no image boxes */}
       <div className="absolute top-20 right-10 w-72 h-72 bg-secondary/5 rounded-full blur-[100px]" />
       <div className="absolute bottom-20 left-10 w-48 h-48 bg-primary/5 rounded-full blur-[100px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/10 mb-4 animate-fade-in-up shadow-soft">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">#1 Matrimony</span>
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
             Why Choose <span className="text-gradient-gold">Us</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -49,7 +49,7 @@ const WhyChooseUs = () => {
         </div>
 
         {/* Features with emoji icons like reference */}
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-20">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
@@ -69,38 +69,38 @@ const WhyChooseUs = () => {
         </div>
 
         {/* Welcome to Aiswarya Matrimony - exact reference layout */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
+        <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center mb-12 sm:mb-20">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="relative min-h-[520px]"
+            className="relative flex flex-col lg:block min-h-0 lg:min-h-[520px]"
           >
-            {/* Gold circle decoration top-left */}
+            {/* Gold circle decoration top-left - hidden on small mobile */}
             <motion.div
-              className="absolute -top-2 left-[15%] w-20 h-20 rounded-full border-[5px] border-secondary z-10"
+              className="absolute -top-2 left-[15%] w-14 h-14 sm:w-20 sm:h-20 rounded-full border-[4px] sm:border-[5px] border-secondary z-10 hidden sm:block"
               initial={{ scale: 0, rotate: -180 }}
               whileInView={{ scale: 1, rotate: 0 }}
               viewport={{ once: true }}
               transition={{ type: "spring", delay: 0.3 }}
             />
 
-            {/* Main large image - top left, slightly tilted */}
+            {/* Main large image - full width on mobile, 65% on lg */}
             <motion.div
-              className="relative z-[2] w-[65%] rounded-2xl overflow-hidden shadow-elevated"
+              className="relative z-[2] w-full lg:w-[65%] rounded-2xl overflow-hidden shadow-elevated shrink-0"
               whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 200 }}
             >
               <img
                 src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=450&fit=crop"
                 alt="Couple with fairy lights"
-                className="w-full h-[320px] object-cover"
+                className="w-full h-[240px] sm:h-[280px] lg:h-[320px] object-cover"
               />
             </motion.div>
 
-            {/* Overlapping second image - bottom right, overlapping */}
+            {/* Second image - stacked on mobile, overlapping on lg */}
             <motion.div
-              className="absolute bottom-0 left-[25%] w-[65%] z-[3] rounded-2xl overflow-hidden shadow-elevated border-[6px] border-card"
+              className="relative mt-4 lg:absolute lg:bottom-0 lg:left-[25%] lg:mt-0 w-full lg:w-[65%] z-[3] rounded-2xl overflow-hidden shadow-elevated border-4 lg:border-[6px] border-card"
               initial={{ opacity: 0, y: 40, x: 20 }}
               whileInView={{ opacity: 1, y: 0, x: 0 }}
               viewport={{ once: true }}
@@ -110,12 +110,12 @@ const WhyChooseUs = () => {
               <img
                 src="https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=600&h=400&fit=crop"
                 alt="Wedding couple with veil"
-                className="w-full h-[300px] object-cover"
+                className="w-full h-[200px] sm:h-[240px] lg:h-[300px] object-cover"
               />
             </motion.div>
 
-            {/* Pink/rose rounded rectangle decoration bottom-right */}
-            <div className="absolute -bottom-4 right-[5%] w-28 h-28 rounded-2xl border-[5px] border-accent-rose z-[1]" />
+            {/* Pink/rose rounded rectangle decoration bottom-right - hidden on small mobile */}
+            <div className="absolute -bottom-4 right-[5%] w-20 h-20 sm:w-28 sm:h-28 rounded-2xl border-[4px] sm:border-[5px] border-accent-rose z-[1] hidden sm:block pointer-events-none" />
           </motion.div>
 
           {/* Right - Content matching reference exactly */}
