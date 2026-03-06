@@ -251,10 +251,10 @@ const GridProfileCard = ({ profile, index, navigate, liked, onLike, onSendIntere
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift cursor-pointer group"
+      className="bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift cursor-pointer group flex flex-col"
       onClick={() => navigate(`/profile/${profile.id}`)}
     >
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-72 overflow-hidden">
         <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
         {profile.isPremium && (
@@ -267,10 +267,10 @@ const GridProfileCard = ({ profile, index, navigate, liked, onLike, onSendIntere
         </button>
         <div className="absolute bottom-3 right-3 px-2 py-1 bg-card/90 rounded-full text-xs font-bold text-primary">{profile.compatibility}% Match</div>
       </div>
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         <h3 className="font-serif text-lg font-bold text-foreground">{profile.name}</h3>
         <p className="text-sm text-muted-foreground mb-2">{profile.age} years</p>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 mt-auto">
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><Briefcase className="w-4 h-4 text-primary/60" />{profile.profession}</div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-4 h-4 text-primary/60" />{profile.location}</div>
         </div>

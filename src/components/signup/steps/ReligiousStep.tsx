@@ -45,11 +45,6 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
           <SelectField label="Caste" name="caste" options={casteOptions} value={formData.caste} onChange={onChange} />
         </div>
 
-        {formData.religion && (
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200/50 text-xs text-amber-800">
-            ⚠️ Sub-caste not required. We match based on primary caste only.
-          </div>
-        )}
 
         <SelectField label="Mother Tongue *" name="motherTongue" options={MOTHER_TONGUES} value={formData.motherTongue} onChange={onChange} />
 

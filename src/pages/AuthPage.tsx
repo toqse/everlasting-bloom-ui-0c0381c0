@@ -344,7 +344,7 @@ const AuthPage = () => {
                       <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
                     </div>
                   )}
-                  <Button type="submit" variant="hero" size="lg" className="w-full gap-2">
+                  <Button type="submit" variant="hero" size="xl" className="w-full gap-2">
                     Send OTP
                     <ArrowRight className="w-5 h-5" />
                   </Button>

@@ -88,7 +88,7 @@ const ProfileDetail = () => {
       <section className="pt-20">
         {/* Back button */}
         <div className="container mx-auto px-4 py-4">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors group">
+          <button onClick={() => { if (window.history.length > 1) navigate(-1); else navigate("/search"); }} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Back</span>
           </button>
@@ -102,11 +102,6 @@ const ProfileDetail = () => {
             animate={{ opacity: 1, x: 0 }}
             className="lg:w-1/2 relative"
           >
-            {/* Decorative leaf top-left */}
-            <div className="absolute top-0 left-0 z-10 pointer-events-none opacity-40">
-              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-28 h-36 object-contain" />
-            </div>
-
             <img
               src={profile.image}
               alt={profile.name}
