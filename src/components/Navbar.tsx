@@ -62,7 +62,7 @@ const Navbar = () => {
               key={link.name}
               to={link.href}
               onClick={() => handleNavLinkClick(link.href)}
-              className={`relative font-medium transition-all duration-300 group hover-lift ${
+              className={`relative font-medium transition-colors duration-300 group ${
                 isActive(link.href) ? "text-primary" : "text-foreground/80 hover:text-primary"
               }`}
             >
