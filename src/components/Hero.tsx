@@ -78,7 +78,7 @@ const Hero = () => {
           </div>
 
           {/* Right: Wedding Image */}
-          <div className="hidden lg:flex items-center justify-center animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+          <div className="hidden lg:flex flex-col items-center justify-center animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-br from-secondary/30 to-primary/20 rounded-[2rem] blur-xl" />
               <img
@@ -94,6 +94,9 @@ const Hero = () => {
                 <Star className="w-7 h-7 text-white fill-white" />
               </div>
             </div>
+            <p className="mt-4 text-center font-serif text-lg font-semibold text-foreground">
+              39 Years of Trust & Tradition
+            </p>
           </div>
         </div>
       </div>

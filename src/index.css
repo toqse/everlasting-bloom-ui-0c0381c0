@@ -68,6 +68,21 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Membership card exact colors (Premium reference) */
+    --membership-title: #6A3266;
+    --membership-price: #000000;
+    --membership-period: #707070;
+    --membership-desc: #555555;
+    --membership-feature: #444444;
+    --membership-divider: #E0E0E0;
+    --membership-check: #6A3266;
+    --membership-btn-from: #b23272;
+    --membership-btn-to: #b23272;
+    --membership-card-premium: #FFF6EE;
+    --membership-icon-premium-from: #FFC75E;
+    --membership-icon-premium-to: #FFA500;
+    --membership-section-bg: #F2E0E7;
   }
 
   .dark {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import { Heart, Quote, ChevronLeft, ChevronRight, Play, Calendar, MapPin, Star, Sparkles, ArrowRight } from "lucide-react";
 import { storiesData } from "@/components/SuccessStories";
@@ -25,36 +26,19 @@ const SuccessStoriesPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="pt-28 pb-16 bg-gradient-romantic relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]">
-          <img src="https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
-        </div>
+      {/* Hero banner (same style as Contact page) */}
+      <PageHeroBanner
+        tagLabel="Real Love Stories"
+        TagIcon={Heart}
+        titlePart1="Love Stories That"
+        titleHighlight="Inspire"
+        description="Every love story is beautiful, but yours will be unique."
+        backgroundImage="https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=1920&h=800&fit=crop"
+      />
 
-        {[...Array(6)].map((_, i) => (
-          <Sparkles key={i} className="absolute text-secondary/40 animate-sparkle"
-            style={{ left: `${10 + i * 15}%`, top: `${20 + (i % 3) * 25}%`, width: `${18 + i * 3}px`, animationDelay: `${i * 0.6}s` }} />
-        ))}
-
+      {/* Featured Story & Content */}
+      <section className="py-16 bg-gradient-romantic relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
-              <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat" />
-              <span className="text-sm font-medium text-primary">Real Love Stories</span>
-              <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
-            </div>
-            <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-              Love Stories That <span className="text-gradient-primary">Inspire</span>
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-              Every love story is beautiful, but yours will be unique.
-            </p>
-          </div>
-
           {/* Featured Story */}
           <div className="max-w-5xl mx-auto animate-scale-in">
             <div className="bg-white rounded-3xl overflow-hidden shadow-elevated border border-primary/5">

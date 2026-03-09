@@ -28,11 +28,6 @@ const teamMembers = [
   { name: "Thomas Mathew", role: "Christian Caste Manager", phone: "+91 94567 12303", branch: "Alappuzha Branch", caste: "Christian" },
   { name: "Suresh Nair", role: "Nair Community Manager", phone: "+91 94567 12304", branch: "Kochi Branch", caste: "Hindu" },
   { name: "Priya Menon", role: "Ezhava Community Manager", phone: "+91 94567 12305", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Fathima Beevi", role: "Client Coordinator", phone: "+91 94567 12306", branch: "Alappuzha Branch", caste: "General" },
-  { name: "Deepa Krishnan", role: "Matchmaking Specialist", phone: "+91 94567 12307", branch: "Kochi Branch", caste: "General" },
-  { name: "Anil Pillai", role: "Pillai Community Manager", phone: "+91 94567 12308", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Meera Das", role: "Customer Support Lead", phone: "+91 94567 12309", branch: "Alappuzha Branch", caste: "General" },
-  { name: "Joseph Varghese", role: "Branch Operations Head", phone: "+91 94567 12310", branch: "Kochi Branch", caste: "General" },
 ];
 
 const teamColors = [
@@ -41,11 +36,6 @@ const teamColors = [
   "bg-amber-50 border-amber-200",
   "bg-green-50 border-green-200",
   "bg-purple-50 border-purple-200",
-  "bg-teal-50 border-teal-200",
-  "bg-pink-50 border-pink-200",
-  "bg-indigo-50 border-indigo-200",
-  "bg-orange-50 border-orange-200",
-  "bg-cyan-50 border-cyan-200",
 ];
 
 const teamIconColors = [
@@ -54,11 +44,6 @@ const teamIconColors = [
   "bg-amber-200 text-amber-600",
   "bg-green-200 text-green-600",
   "bg-purple-200 text-purple-600",
-  "bg-teal-200 text-teal-600",
-  "bg-pink-200 text-pink-600",
-  "bg-indigo-200 text-indigo-600",
-  "bg-orange-200 text-orange-600",
-  "bg-cyan-200 text-cyan-600",
 ];
 
 const AboutPage = () => {
