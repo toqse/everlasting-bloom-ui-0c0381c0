@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -6,20 +6,11 @@ import { useLoading } from "@/contexts/LoadingContext";
 import { useAuthStore } from "@/stores/authStore";
 
 const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsLoading } = useLoading();
-  const { isLoggedIn, user, logout } = useAuthStore();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const { isLoggedIn, logout } = useAuthStore();
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -38,13 +29,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-lg shadow-soft py-3"
-          : "bg-transparent py-5"
-      }`}
-    >
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-3">
       <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between min-h-[60px] sm:min-h-[72px] lg:min-h-[80px]">
         {/* Logo */}
         <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex items-center shrink-0 group min-w-0">
@@ -107,7 +92,7 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-elevated transition-all duration-300 overflow-hidden max-h-[85vh] overflow-y-auto ${
+      <div className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-elevated transition-all duration-300 overflow-hidden max-h-[85vh] overflow-y-auto ${
         isMobileMenuOpen ? "max-h-[85vh] opacity-100" : "max-h-0 opacity-0"
       }`}>
         <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-6">

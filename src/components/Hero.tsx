@@ -1,4 +1,4 @@
-import { Heart, Sparkles, ArrowRight, Star, Users, Shield, Crown } from "lucide-react";
+import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import weddingHero from "@/assets/wedding-hero.jpg";
@@ -64,12 +64,6 @@ const Hero = () => {
               Join millions who found their soulmate with Aiswarya Matrimony.
             </p>
 
-            <div className="flex items-center justify-center lg:justify-start gap-2 mb-6 animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
-              <span className="text-5xl animate-float" style={{ animationDuration: "3s" }}>🤵</span>
-              <Heart className="w-8 h-8 text-primary fill-primary animate-heart-beat" />
-              <span className="text-5xl animate-float-delayed" style={{ animationDuration: "3.5s" }}>👰</span>
-            </div>
-
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
               <Button variant="hero" size="xl" className="group w-full sm:w-auto" onClick={() => navigate("/auth")}>
                 <Heart className="w-5 h-5 group-hover:animate-heart-beat" fill="currentColor" />
@@ -101,22 +95,6 @@ const Hero = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mt-10 sm:mt-16 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
-          {[
-            { value: "2M+", label: "Happy Members", icon: Users },
-            { value: "1M+", label: "Successful Matches", icon: Heart },
-            { value: "38+", label: "Years of Trust", icon: Shield },
-            { value: "100%", label: "Privacy Secured", icon: Crown },
-          ].map((stat, index) => (
-            <div key={index} className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 md:p-6 border border-primary/10 shadow-card hover-lift group cursor-pointer">
-              <stat.icon className="w-6 h-6 text-secondary mx-auto mb-2 group-hover:animate-bounce-soft" />
-              <div className="font-serif text-2xl md:text-3xl font-bold text-gradient-primary mb-1">{stat.value}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </div>
 
