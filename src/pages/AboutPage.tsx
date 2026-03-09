@@ -52,9 +52,10 @@ const AboutPage = () => {
       <Navbar />
 
       {/* Hero Banner */}
-      <section className="pt-28 pb-16 bg-gradient-romantic relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]">
-          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
+      <section className="pt-28 pb-16 relative overflow-hidden min-h-[380px] flex items-center">
+        <div className="absolute inset-0">
+          <img src="/images/Inter%20caste%20wedding%20Thali.jpg" alt="Traditional wedding Thali" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-black/25" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
@@ -63,14 +64,14 @@ const AboutPage = () => {
             style={{ left: `${10 + i * 15}%`, top: `${20 + (i % 3) * 25}%`, width: `${16 + i * 3}px`, animationDelay: `${i * 0.3}s` }} />
         ))}
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">#1 Matrimony</span>
           </div>
-          <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            Our <span className="text-gradient-gold">Story & Vision</span>
+          <h1 className="font-serif text-4xl md:text-6xl font-bold text-white mb-4 animate-fade-in-up drop-shadow-[0_2px_12px_rgba(0,0,0,0.6),0_0_20px_rgba(0,0,0,0.3)]" style={{ animationDelay: "0.1s" }}>
+            Our <span className="text-[#FCD34D] drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">Story & Vision</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+          <p className="text-white max-w-2xl mx-auto text-lg animate-fade-in-up drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" style={{ animationDelay: "0.2s" }}>
             Most Trusted and premium Matrimony Service in the World
           </p>
         </div>

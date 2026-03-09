@@ -6,14 +6,14 @@ import { useNavigate } from "react-router-dom";
 import { Users, Camera, Crown, Heart, MessageCircle, Search, Shield, Sparkles, ArrowRight, Star } from "lucide-react";
 
 const services = [
-  { icon: Users, title: "Browse Profiles", description: "Explore 1200+ verified profiles with detailed information, photos, and preferences.", count: "1200+ Profiles", iconColor: "text-rose-500", iconBg: "bg-rose-100", borderColor: "border-rose-200" },
-  { icon: Heart, title: "Matchmaking", description: "Our advanced algorithm matches you with compatible profiles based on your preferences.", count: "Smart Matching", iconColor: "text-pink-500", iconBg: "bg-pink-100", borderColor: "border-pink-200" },
-  { icon: Camera, title: "Photo Gallery", description: "View and share beautiful wedding photos and moments from our successful couples.", count: "1000+ Photos", iconColor: "text-amber-500", iconBg: "bg-amber-100", borderColor: "border-amber-200" },
-  { icon: Crown, title: "Premium Plans", description: "Get access to exclusive features with our premium membership plans.", count: "4 Plans", iconColor: "text-secondary", iconBg: "bg-accent-gold", borderColor: "border-secondary/30" },
-  { icon: MessageCircle, title: "Chat & Connect", description: "Communicate with your matches through our secure messaging platform.", count: "Real-time Chat", iconColor: "text-teal-500", iconBg: "bg-teal-100", borderColor: "border-teal-200" },
-  { icon: Shield, title: "Verified Profiles", description: "All profiles go through a thorough verification process for your safety.", count: "100% Verified", iconColor: "text-green-500", iconBg: "bg-green-100", borderColor: "border-green-200" },
-  { icon: Search, title: "Advanced Search", description: "Find your perfect match using our detailed search filters and preferences.", count: "20+ Filters", iconColor: "text-blue-500", iconBg: "bg-blue-100", borderColor: "border-blue-200" },
-  { icon: Star, title: "Horoscope Matching", description: "Traditional horoscope compatibility analysis for a perfect match.", count: "Vedic Analysis", iconColor: "text-purple-500", iconBg: "bg-purple-100", borderColor: "border-purple-200" },
+  { icon: Users, title: "Browse Profiles", description: "Explore 1200+ verified profiles with detailed information, photos, and preferences.", count: "1200+ Profiles", iconColor: "text-rose-500", iconBg: "bg-rose-100", borderColor: "border-rose-200", cardBg: "bg-gradient-to-br from-rose-100/80 via-rose-50/90 to-orange-50/80" },
+  { icon: Heart, title: "Matchmaking", description: "Our advanced algorithm matches you with compatible profiles based on your preferences.", count: "Smart Matching", iconColor: "text-pink-500", iconBg: "bg-pink-100", borderColor: "border-pink-200", cardBg: "bg-gradient-to-br from-pink-100/80 via-pink-50/90 to-amber-50/80" },
+  { icon: Camera, title: "Photo Gallery", description: "View and share beautiful wedding photos and moments from our successful couples.", count: "1000+ Photos", iconColor: "text-amber-500", iconBg: "bg-amber-100", borderColor: "border-amber-200", cardBg: "bg-gradient-to-br from-amber-100/80 via-amber-50/90 to-orange-50/80" },
+  { icon: Crown, title: "Premium Plans", description: "Get access to exclusive features with our premium membership plans.", count: "4 Plans", iconColor: "text-secondary", iconBg: "bg-accent-gold", borderColor: "border-secondary/30", cardBg: "bg-gradient-to-br from-amber-100/80 via-yellow-50/90 to-purple-50/60" },
+  { icon: MessageCircle, title: "Chat & Connect", description: "Communicate with your matches through our secure messaging platform.", count: "Real-time Chat", iconColor: "text-teal-500", iconBg: "bg-teal-100", borderColor: "border-teal-200", cardBg: "bg-gradient-to-br from-teal-100/80 via-teal-50/90 to-green-50/80" },
+  { icon: Shield, title: "Verified Profiles", description: "All profiles go through a thorough verification process for your safety.", count: "100% Verified", iconColor: "text-green-500", iconBg: "bg-green-100", borderColor: "border-green-200", cardBg: "bg-gradient-to-br from-green-100/80 via-green-50/90 to-emerald-50/80" },
+  { icon: Search, title: "Advanced Search", description: "Find your perfect match using our detailed search filters and preferences.", count: "20+ Filters", iconColor: "text-blue-500", iconBg: "bg-blue-100", borderColor: "border-blue-200", cardBg: "bg-gradient-to-br from-blue-100/80 via-blue-50/90 to-purple-50/80" },
+  { icon: Star, title: "Horoscope Matching", description: "Traditional horoscope compatibility analysis for a perfect match.", count: "Vedic Analysis", iconColor: "text-purple-500", iconBg: "bg-purple-100", borderColor: "border-purple-200", cardBg: "bg-gradient-to-br from-purple-100/80 via-purple-50/90 to-pink-50/80" },
 ];
 
 const ServicesPage = () => {
@@ -62,7 +62,7 @@ const ServicesPage = () => {
                   className="absolute inset-0 rounded-3xl bg-[length:200%_200%] animate-[shimmer_3s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ backgroundImage: "linear-gradient(90deg, transparent, hsl(var(--secondary)), hsl(var(--primary)), hsl(var(--secondary)), transparent)" }}
                 />
-                <div className={`relative bg-card rounded-[22px] p-6 text-center z-10 h-full border ${service.borderColor}`}>
+                <div className={`relative rounded-[22px] p-6 text-center z-10 h-full border ${service.cardBg} ${service.borderColor}`}>
                   <div className={`w-16 h-16 mx-auto rounded-2xl ${service.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <service.icon className={`w-8 h-8 ${service.iconColor}`} />
                   </div>
