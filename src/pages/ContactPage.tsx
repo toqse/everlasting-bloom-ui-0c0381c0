@@ -32,12 +32,11 @@ const ContactPage = () => {
 
       {/* Hero */}
       <section className="pt-28 pb-16 bg-gradient-romantic relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.06]">
+          <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
+        </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
-        {[...Array(5)].map((_, i) => (
-          <Sparkles key={i} className="absolute text-secondary/20 animate-sparkle"
-            style={{ left: `${10 + i * 18}%`, top: `${20 + (i % 3) * 25}%`, width: `${16 + i * 3}px`, animationDelay: `${i * 0.3}s` }} />
-        ))}
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
@@ -56,68 +55,33 @@ const ContactPage = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Info Cards */}
             <div className="space-y-4">
               {contactInfo.map((info, i) => (
-                <motion.div
-                  key={info.title}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-white rounded-2xl p-5 shadow-card hover-lift flex items-start gap-4"
-                >
+                <motion.div key={info.title} initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                  className="bg-white rounded-2xl p-5 shadow-card hover-lift flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-accent-gold flex items-center justify-center flex-shrink-0">
                     <info.icon className="w-6 h-6 text-secondary" />
                   </div>
                   <div>
                     <h4 className="font-serif font-bold text-foreground mb-1">{info.title}</h4>
-                    {info.details.map((d, j) => (
-                      <p key={j} className="text-sm text-muted-foreground">{d}</p>
-                    ))}
+                    {info.details.map((d, j) => <p key={j} className="text-sm text-muted-foreground">{d}</p>)}
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Form */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="lg:col-span-2 bg-white rounded-3xl shadow-card p-8"
-            >
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="lg:col-span-2 bg-white rounded-3xl shadow-card p-8">
               <h3 className="font-serif text-2xl font-bold text-foreground mb-6">Send us a Message</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <input
-                    type="text" placeholder="Your Name *" value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
-                  />
-                  <input
-                    type="email" placeholder="Your Email *" value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
-                  />
+                  <input type="text" placeholder="Your Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+                  <input type="email" placeholder="Your Email *" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <input
-                    type="tel" placeholder="Phone Number" value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
-                  />
-                  <input
-                    type="text" placeholder="Subject" value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
-                  />
+                  <input type="tel" placeholder="Phone Number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+                  <input type="text" placeholder="Subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
                 </div>
-                <textarea
-                  placeholder="Your Message *" value={form.message} rows={5}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none"
-                />
+                <textarea placeholder="Your Message *" value={form.message} rows={5} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none" />
                 <Button type="submit" variant="hero" size="lg" className="gap-2 group">
                   <Send className="w-5 h-5" />
                   Send Message
@@ -137,21 +101,10 @@ const ContactPage = () => {
             </h2>
             <p className="text-muted-foreground">Visit us at our office in Cherthala, Alappuzha, Kerala</p>
           </div>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="rounded-3xl overflow-hidden shadow-elevated border-4 border-card"
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-3xl overflow-hidden shadow-elevated border-4 border-card">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31524.66884302874!2d76.32!3d9.68!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b0882cd0a0a0a0b%3A0x3b0882cd0a0a0a0b!2sCherthala%2C%20Kerala!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-              width="100%"
-              height="400"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Aiswarya Matrimony Location"
+              width="100%" height="400" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Aiswarya Matrimony Location"
             />
           </motion.div>
         </div>
