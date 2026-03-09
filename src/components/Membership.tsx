@@ -1,4 +1,4 @@
-import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight } from "lucide-react";
+import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, Award } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -12,16 +12,42 @@ export interface Plan {
   isPopular: boolean;
   variant: "outline" | "hero" | "gold";
   highlightFeature?: string;
-  commission?: string;
+  contactView?: string;
+  badge?: string;
+  badgeColor?: string;
+  cardAccent?: string;
+  iconBg?: string;
 }
 
 export const plansData: Plan[] = [
+  {
+    name: "Special Offer",
+    price: "₹499",
+    period: "/1 month",
+    description: "Quick trial plan",
+    highlightFeature: "6 Horoscope Matching",
+    contactView: "6 Up to Contact View",
+    features: [
+      "Up to 6 horoscope matches",
+      "Send interests to profiles",
+      "Chat with matches",
+      "Profile visibility",
+    ],
+    icon: Zap,
+    isPopular: false,
+    variant: "outline",
+    badge: "SPECIAL OFFER",
+    badgeColor: "bg-red-500 text-white",
+    cardAccent: "border-red-400",
+    iconBg: "bg-red-100",
+  },
   {
     name: "Silver",
     price: "₹999",
     period: "/3 months",
     description: "Perfect to get started",
     highlightFeature: "15 Horoscope Matching",
+    contactView: "15 Up to Contact View",
     features: [
       "Up to 15 horoscope matches",
       "Send interests to profiles",
@@ -31,6 +57,8 @@ export const plansData: Plan[] = [
     icon: Star,
     isPopular: false,
     variant: "outline",
+    cardAccent: "border-blue-300",
+    iconBg: "bg-blue-100",
   },
   {
     name: "Gold",
@@ -38,6 +66,7 @@ export const plansData: Plan[] = [
     period: "/6 months",
     description: "Most popular choice",
     highlightFeature: "30 Horoscope Matching",
+    contactView: "30 Up to Contact View",
     features: [
       "Up to 30 horoscope matches",
       "Send interests to profiles",
@@ -47,6 +76,10 @@ export const plansData: Plan[] = [
     icon: Crown,
     isPopular: true,
     variant: "hero",
+    badge: "BEST VALUE",
+    badgeColor: "bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground",
+    cardAccent: "border-secondary",
+    iconBg: "bg-gradient-to-br from-secondary to-secondary-light",
   },
   {
     name: "Premium",
@@ -54,6 +87,7 @@ export const plansData: Plan[] = [
     period: "/1 Year",
     description: "Most popular choice",
     highlightFeature: "60 Horoscope Matching",
+    contactView: "60 Up to Contact View",
     features: [
       "Up to 60 horoscope matches",
       "Send interests to profiles",
@@ -66,6 +100,10 @@ export const plansData: Plan[] = [
     icon: Sparkles,
     isPopular: true,
     variant: "hero",
+    badge: "BEST VALUE",
+    badgeColor: "bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground",
+    cardAccent: "border-orange-400",
+    iconBg: "bg-gradient-to-br from-orange-400 to-orange-300",
   },
   {
     name: "Ultimate",
@@ -73,6 +111,7 @@ export const plansData: Plan[] = [
     period: "/1 Year",
     description: "Best value for serious seekers",
     highlightFeature: "70 Horoscope Matching",
+    contactView: "70 Up to Contact View",
     features: [
       "Up to 70 horoscope matches",
       "Send interests to profiles",
@@ -82,10 +121,13 @@ export const plansData: Plan[] = [
       "Dedicated support",
       "Customer care Assistance",
     ],
-    commission: "Commission includes Male Rs. 15,000 / Female Rs. 10,000",
-    icon: Sparkles,
+    icon: Award,
     isPopular: false,
     variant: "gold",
+    badge: "TOP RECOMMENDED",
+    badgeColor: "bg-purple-600 text-white",
+    cardAccent: "border-purple-400",
+    iconBg: "bg-gradient-to-br from-purple-500 to-purple-400",
   },
 ];
 
@@ -97,20 +139,6 @@ const Membership = () => {
       <div className="absolute top-0 left-0 w-full h-32 bg-white" style={{ clipPath: "ellipse(70% 100% at 50% 0%)" }} />
       <div className="absolute top-20 right-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 left-10 w-72 h-72 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
-
-      {[...Array(8)].map((_, i) => (
-        <Sparkles
-          key={i}
-          className="absolute text-secondary/30 animate-sparkle"
-          style={{
-            left: `${5 + i * 12}%`,
-            top: `${10 + (i % 4) * 20}%`,
-            width: `${18 + i * 3}px`,
-            height: `${18 + i * 3}px`,
-            animationDelay: `${i * 0.3}s`,
-          }}
-        />
-      ))}
 
       <div className="container mx-auto px-4 relative z-10 pt-16">
         <div className="text-center mb-16">
@@ -127,60 +155,59 @@ const Membership = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-5 max-w-7xl mx-auto">
           {plansData.map((plan, index) => (
             <div
               key={plan.name}
-              className={`relative animate-fade-in-up ${plan.isPopular ? "md:-mt-4 md:mb-4" : ""}`}
+              className="relative animate-fade-in-up flex"
               style={{ animationDelay: `${0.1 * index}s` }}
             >
-              {plan.isPopular && (
+              {plan.badge && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <div className="px-4 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-xs font-bold rounded-full shadow-gold flex items-center gap-1 animate-glow">
-                    <Star className="w-3 h-3 fill-current animate-sparkle" />
-                    MOST POPULAR
+                  <div className={`px-3 py-1.5 ${plan.badgeColor} text-xs font-bold rounded-full shadow-md flex items-center gap-1 whitespace-nowrap`}>
+                    <Star className="w-3 h-3 fill-current" />
+                    {plan.badge}
                   </div>
                 </div>
               )}
 
               <div
-                className={`h-full bg-white rounded-3xl p-6 transition-all duration-500 hover-lift group ${
-                  plan.isPopular
-                    ? "shadow-elevated border-2 border-secondary"
-                    : plan.variant === "gold"
-                    ? "shadow-elevated border-2 border-secondary/60"
-                    : "shadow-card border border-primary/10 hover:border-primary/20"
-                }`}
+                className={`h-full w-full bg-white rounded-3xl p-5 transition-all duration-500 hover-lift group flex flex-col shadow-card border-2 ${plan.cardAccent || "border-primary/10"}`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${
-                  plan.isPopular
-                    ? "bg-gradient-to-br from-secondary to-secondary-light shadow-gold"
-                    : plan.variant === "gold"
-                    ? "bg-gradient-to-br from-secondary to-secondary-light shadow-gold"
-                    : "bg-accent-rose group-hover:bg-primary/10"
-                }`}>
-                  <plan.icon className={`w-6 h-6 ${plan.isPopular || plan.variant === "gold" ? "text-white" : "text-primary"}`} />
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${plan.iconBg || "bg-accent-rose"}`}>
+                  <plan.icon className={`w-6 h-6 ${plan.iconBg?.includes("gradient") ? "text-white" : "text-primary"}`} />
                 </div>
 
-                <h3 className={`font-serif text-xl font-bold mb-1 ${plan.isPopular || plan.variant === "gold" ? "text-secondary" : "text-foreground"}`}>{plan.name}</h3>
+                <h3 className="font-serif text-lg font-bold text-foreground mb-1">{plan.name}</h3>
                 <p className="text-muted-foreground text-xs mb-3">{plan.description}</p>
                 
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="font-serif text-3xl font-bold text-gradient-primary">{plan.price}</span>
-                  {plan.period && <span className="text-muted-foreground text-sm">{plan.period}</span>}
+                  <span className="font-serif text-2xl font-bold text-gradient-primary">{plan.price}</span>
+                  {plan.period && <span className="text-muted-foreground text-xs">{plan.period}</span>}
                 </div>
 
                 {plan.highlightFeature && (
-                  <p className="text-sm font-medium text-foreground mb-4 underline decoration-primary/30 underline-offset-2">
+                  <p className="text-xs font-medium text-foreground mb-1 underline decoration-primary/30 underline-offset-2">
                     {plan.highlightFeature}
                   </p>
                 )}
 
-                {plan.commission && (
-                  <p className="text-xs text-primary font-medium mb-4 leading-relaxed">
-                    {plan.commission}
+                {plan.contactView && (
+                  <p className="text-xs font-bold text-primary mb-3">
+                    {plan.contactView}
                   </p>
                 )}
+
+                <ul className="space-y-2 mb-6 flex-1">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-green-100">
+                        <Check className="w-2.5 h-2.5 text-green-600" />
+                      </div>
+                      <span className="text-xs text-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
                 <Button 
                   variant={plan.variant} 
