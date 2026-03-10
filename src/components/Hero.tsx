@@ -88,8 +88,8 @@ const Hero = () => {
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-br from-secondary/30 via-[hsl(330,60%,70%)/0.2] to-primary/20 rounded-[2rem] blur-xl" />
               <img
-                src="https://images.unsplash.com/photo-1583089892943-e02e5b017b6a?w=800&h=1000&fit=crop"
-                alt="Beautiful Indian wedding couple"
+                src="/images/image%20wedding.jpg"
+                alt="Beautiful wedding couple"
                 className="relative rounded-[2rem] w-[420px] h-[520px] object-cover shadow-elevated border-4 border-white/50"
               />
               {/* Decorative elements */}

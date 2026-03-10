@@ -29,20 +29,20 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-3">
-      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between min-h-[60px] sm:min-h-[72px] lg:min-h-[80px]">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
+      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between min-h-[48px] sm:min-h-[52px] lg:min-h-[56px]">
         {/* Logo */}
         <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex flex-col items-start justify-center shrink-0 group min-w-0">
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-16 sm:h-20 w-auto object-contain lg:h-24 max-h-[72px] sm:max-h-none"
+            className="h-12 sm:h-14 w-auto object-contain lg:h-16 max-h-[56px] sm:max-h-none"
           />
-          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wider mt-0.5 ml-2">Since 1991</span>
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium tracking-wider -mt-2 ml-0.5">Since 1991</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-8 min-h-[44px]">
+        <div className="hidden lg:flex items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.name}

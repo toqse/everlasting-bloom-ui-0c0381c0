@@ -18,7 +18,7 @@ const PageHeroBanner = ({
   backgroundImage = "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop",
 }: PageHeroBannerProps) => {
   return (
-    <section className="pt-28 pb-16 relative overflow-hidden min-h-[320px] flex items-center">
+    <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
       {/* Full visible background image */}
       <div className="absolute inset-0">
         <img src={backgroundImage} alt="" className="w-full h-full object-cover" />

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Heart, Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
+import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
@@ -11,12 +11,12 @@ import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
 import LocationStep from "@/components/signup/steps/LocationStep";
 import ReligiousStep from "@/components/signup/steps/ReligiousStep";
 import PersonalStep from "@/components/signup/steps/PersonalStep";
+import FamilyDetailsStep from "@/components/signup/steps/FamilyDetailsStep";
 import EducationStep from "@/components/signup/steps/EducationStep";
 import AboutMeStep from "@/components/signup/steps/AboutMeStep";
 import PhotosStep from "@/components/signup/steps/PhotosStep";
 
 type AuthMode = "login" | "signup";
-type LoginMethod = "phone" | "email";
 
 const stepVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
@@ -27,7 +27,6 @@ const stepVariants = {
 const AuthPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -47,6 +46,8 @@ const AuthPage = () => {
     country: "", state: "", district: "", city: "", address: "", addressType: "",
     religion: "", caste: "", subCaste: "", motherTongue: "",
     maritalStatus: "", numberOfChildren: "", height: "", weight: "", skinTone: "",
+    familyType: "", fathersName: "", fathersOccupation: "", mothersName: "", mothersOccupation: "",
+    familyStatus: "", numberOfBrothers: "", numberOfMarriedBrothers: "", numberOfSisters: "", numberOfMarriedSisters: "", aboutMyFamily: "",
     education: "", educationSubject: "", employmentStatus: "", occupation: "", annualIncome: "",
     aboutMe: "", aadhaarNumber: "",
   });
@@ -67,15 +68,12 @@ const AuthPage = () => {
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginMethod === "phone") {
-      if (!formData.phone) { toast.error("Please enter your phone number"); return; }
-      const len = formData.phone.replace(/\D/g, "").length;
-      if (len < 10 || len > 12) { toast.error("Phone number must be 10–12 digits"); return; }
-    }
-    if (loginMethod === "email" && !formData.email) { toast.error("Please enter your email address"); return; }
+    if (!formData.phone) { toast.error("Please enter your phone number"); return; }
+    const len = formData.phone.replace(/\D/g, "").length;
+    if (len < 10 || len > 12) { toast.error("Phone number must be 10–12 digits"); return; }
     setOtpSent(true);
     setOtp(["", "", "", "", "", ""]);
-    toast.success(loginMethod === "phone" ? "OTP sent to your phone" : "OTP sent to your email");
+    toast.success("OTP sent to your phone");
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -94,12 +92,12 @@ const AuthPage = () => {
     e.preventDefault();
     if (otp.join("").length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
     const { login } = useAuthStore.getState();
-    login(loginMethod, loginMethod === "phone" ? formData.phone : formData.email);
+    login("phone", formData.phone);
     toast.success("OTP verified! Welcome back! 💕");
     navigate("/dashboard");
   };
 
-  const handleBackToPhoneOrEmail = () => { setOtpSent(false); setOtp(["", "", "", "", "", ""]); };
+  const handleBackToPhone = () => { setOtpSent(false); setOtp(["", "", "", "", "", ""]); };
 
   const handleSignupSendOtp = () => {
     if (!formData.name?.trim()) { toast.error("Please enter full name"); return; }
@@ -174,9 +172,10 @@ const AuthPage = () => {
       case 2: return <LocationStep {...props} />;
       case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
-      case 5: return <EducationStep {...props} />;
-      case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
-      case 7: return <PhotosStep photos={photos} setPhotos={setPhotos} aadhaarNumber={formData.aadhaarNumber} onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))} aadhaarVerified={aadhaarVerified} onVerifyAadhaar={handleVerifyAadhaar} onSkipOrCompleteLater={handleSignupNext} />;
+      case 5: return <FamilyDetailsStep {...props} />;
+      case 6: return <EducationStep {...props} />;
+      case 7: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
+      case 8: return <PhotosStep photos={photos} setPhotos={setPhotos} aadhaarNumber={formData.aadhaarNumber} onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))} aadhaarVerified={aadhaarVerified} onVerifyAadhaar={handleVerifyAadhaar} onSkipOrCompleteLater={handleSignupNext} />;
       default: return null;
     }
   };
@@ -186,13 +185,13 @@ const AuthPage = () => {
   // ---- LOGIN VIEW ----
   if (mode === "login") {
     return (
-      <div className="min-h-screen flex relative overflow-hidden">
+      <div className="h-screen min-h-0 flex relative overflow-hidden">
         {/* Left side - Couple Image */}
-        <div className="hidden lg:flex w-1/2 relative">
+        <div className="hidden lg:flex w-1/2 relative min-h-0">
           <img
-            src="https://images.unsplash.com/photo-1583089892943-e02e5b017b6a?w=1200&h=1600&fit=crop"
+            src="/images/login.jpg"
             alt="Happy Indian wedding couple"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-[center_40%]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(340,60%,93%)/0.3]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -203,9 +202,9 @@ const AuthPage = () => {
         </div>
 
         {/* Right side - Login Form */}
-        <div className="flex-1 bg-gradient-to-br from-[hsl(340,60%,93%)] via-[hsl(0,100%,96%)] to-[hsl(45,100%,94%)] flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 relative">
-          <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
+        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-8 px-3 sm:px-4 relative overflow-y-auto bg-gradient-to-br from-rose-100 via-amber-50 to-yellow-100">
+          <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed" />
 
           <div className="w-full max-w-md relative z-10 min-w-0">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 sm:mb-6 group">
@@ -234,25 +233,12 @@ const AuthPage = () => {
 
               {!otpSent ? (
                 <>
-                  <div className="flex gap-3 mb-6">
-                    {(["phone", "email"] as LoginMethod[]).map((m) => (
-                      <button key={m} type="button" onClick={() => setLoginMethod(m)}
-                        className={`flex-1 py-3 rounded-2xl font-medium transition-all capitalize ${loginMethod === m ? "bg-primary text-primary-foreground shadow-soft" : "border-2 border-primary/10 text-foreground hover:bg-accent-rose"}`}>{m}</button>
-                    ))}
-                  </div>
                   <form onSubmit={handleSendOtp} className="space-y-4">
-                    {loginMethod === "phone" ? (
-                      <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                        <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
-                        <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                        <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
-                      </div>
-                    )}
+                    <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
+                      <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
+                      <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+                    </div>
                     <Button type="submit" variant="hero" size="xl" className="w-full gap-2">
                       Send OTP <ArrowRight className="w-5 h-5" />
                     </Button>
@@ -261,8 +247,7 @@ const AuthPage = () => {
               ) : (
                 <>
                   <p className="text-muted-foreground text-sm mb-2 text-center">
-                    Enter the 6-digit OTP sent to{" "}
-                    {loginMethod === "phone" ? <span className="font-medium text-foreground">+91 {formData.phone}</span> : <span className="font-medium text-foreground">{formData.email}</span>}
+                    Enter the 6-digit OTP sent to <span className="font-medium text-foreground">+91 {formData.phone}</span>
                   </p>
                   <form onSubmit={handleVerifyOtp} className="space-y-4">
                     <div className="flex justify-center gap-2">
@@ -273,8 +258,8 @@ const AuthPage = () => {
                       ))}
                     </div>
                     <Button type="submit" variant="hero" size="lg" className="w-full gap-2">Verify & Continue <ArrowRight className="w-5 h-5" /></Button>
-                    <button type="button" onClick={handleBackToPhoneOrEmail} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                      Change {loginMethod === "phone" ? "number" : "email"}
+                    <button type="button" onClick={handleBackToPhone} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Change number
                     </button>
                   </form>
                 </>

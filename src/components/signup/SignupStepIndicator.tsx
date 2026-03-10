@@ -6,6 +6,7 @@ const SIGNUP_STEPS = [
   "Location",
   "Religious",
   "Personal",
+  "Family Details",
   "Education",
   "About Me",
   "Photos",

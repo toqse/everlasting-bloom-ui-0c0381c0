@@ -28,7 +28,7 @@ const ContactPage = () => {
       <Navbar />
 
       {/* Hero with wedding background */}
-      <section className="pt-28 pb-16 relative overflow-hidden min-h-[380px] flex items-center">
+      <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
           <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="Wedding rings" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
