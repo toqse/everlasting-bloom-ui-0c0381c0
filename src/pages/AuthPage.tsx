@@ -103,6 +103,9 @@ const AuthPage = () => {
     if (!formData.name?.trim()) { toast.error("Please enter full name"); return; }
     const phoneLen = formData.phone.replace(/\D/g, "").length;
     if (phoneLen < 10 || phoneLen > 12) { toast.error("Phone number must be 10–12 digits"); return; }
+    if (!formData.dob?.trim()) { toast.error("Please enter date of birth"); return; }
+    if (!formData.gender?.trim()) { toast.error("Please select gender"); return; }
+    if (!agreeTerms) { toast.error("Please agree to Terms & Conditions and Privacy Policy"); return; }
     setSignupOtpSent(true);
     setSignupOtp(["", "", "", "", "", ""]);
     toast.success("OTP sent to +91 " + formData.phone);
@@ -164,11 +167,19 @@ const AuthPage = () => {
 
   const handleSignupPrev = () => { if (signupStep > 0) { setDirection(-1); setSignupStep(signupStep - 1); } };
 
+  const canSendSignupOtp =
+    !!formData.name?.trim() &&
+    formData.phone.replace(/\D/g, "").length >= 10 &&
+    formData.phone.replace(/\D/g, "").length <= 12 &&
+    !!formData.dob?.trim() &&
+    !!formData.gender?.trim() &&
+    agreeTerms;
+
   const renderStep = () => {
     const props = { formData, onChange: handleChange };
     switch (signupStep) {
       case 0: return <ProfileForStep profileFor={formData.profileFor} onChange={(v) => setFormData((prev) => ({ ...prev, profileFor: v }))} />;
-      case 1: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} otpSent={signupOtpSent} otp={signupOtp} onSendOtp={handleSignupSendOtp} onVerifyOtp={handleSignupVerifyOtp} onOtpChange={handleSignupOtpChange} onOtpKeyDown={handleSignupOtpKeyDown} onBackFromOtp={handleSignupBackFromOtp} phoneVerified={phoneVerified} />;
+      case 1: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} otpSent={signupOtpSent} otp={signupOtp} onSendOtp={handleSignupSendOtp} onVerifyOtp={handleSignupVerifyOtp} onOtpChange={handleSignupOtpChange} onOtpKeyDown={handleSignupOtpKeyDown} onBackFromOtp={handleSignupBackFromOtp} phoneVerified={phoneVerified} canSendOtp={canSendSignupOtp} />;
       case 2: return <LocationStep {...props} />;
       case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
@@ -201,8 +212,12 @@ const AuthPage = () => {
           </div>
         </div>
 
-        {/* Right side - Login Form */}
-        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-8 px-3 sm:px-4 relative overflow-y-auto bg-gradient-to-br from-rose-100 via-amber-50 to-yellow-100">
+        {/* Right side - Login Form with ring background */}
+        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-8 px-3 sm:px-4 relative overflow-y-auto">
+          <div className="absolute inset-0">
+            <img src="/images/ring.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-primary/25" />
+          </div>
           <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed" />
 
@@ -290,11 +305,28 @@ const AuthPage = () => {
 
   // ---- SIGNUP VIEW ----
   return (
-    <div className="min-h-screen bg-gradient-romantic flex items-center justify-center relative overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4">
-      <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
+    <div className="h-screen min-h-0 flex overflow-hidden">
+      {/* Left side - Wedding image (desktop) */}
+      <div className="hidden lg:flex lg:w-2/5 xl:w-2/5 relative min-h-0 shrink-0">
+        <img
+          src="/images/image2.jpg"
+          alt="Wedding couple"
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+      </div>
 
-      <div className="w-full max-w-4xl relative z-10 min-w-0">
+      {/* Right side - Signup form with background image */}
+      <div className="flex-1 min-h-0 flex items-center justify-center relative overflow-y-auto py-4 sm:py-6 md:py-8 px-3 sm:px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="absolute inset-0">
+          <img src="/images/image2.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/75 to-primary/20" />
+        </div>
+        <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
+
+        <div className="w-full max-w-4xl relative z-10 min-w-0">
         {signupStep === 0 ? (
           <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -340,6 +372,7 @@ const AuthPage = () => {
             </div>
           )}
         </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -30,15 +30,15 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
-      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between min-h-[48px] sm:min-h-[52px] lg:min-h-[56px]">
-        {/* Logo */}
+      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14 overflow-visible">
+        {/* Logo - larger than bar so it overflows; bar height stays fixed */}
         <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex flex-col items-start justify-center shrink-0 group min-w-0">
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-12 sm:h-14 w-auto object-contain lg:h-16 max-h-[56px] sm:max-h-none"
+            className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain"
           />
-          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium tracking-wider -mt-2 ml-0.5">Since 1991</span>
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium tracking-wider -mt-3 ml-4">Since 1991</span>
         </Link>
 
         {/* Desktop Navigation */}

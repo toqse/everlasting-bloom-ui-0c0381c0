@@ -249,11 +249,6 @@ const Footer = () => {
               <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat mx-1" /> 
               in India
             </p>
-            <div className="flex items-center gap-6">
-              <Link to="/" className="hover:text-primary transition-colors">Sitemap</Link>
-              <Link to="/" className="hover:text-primary transition-colors">Accessibility</Link>
-              <Link to="/" className="hover:text-primary transition-colors">Contact</Link>
-            </div>
           </div>
         </div>
       </div>

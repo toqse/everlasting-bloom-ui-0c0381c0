@@ -1,6 +1,7 @@
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import heroBg from "@/assets/hero-bg.png";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -9,8 +10,14 @@ const Hero = () => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Rich multi-layered gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(340,60%,93%)] via-[hsl(20,100%,94%)] to-[hsl(45,100%,90%)]" />
+      {/* Background image (same as public/images/ChatGPT Image Mar 10, 2026, 10_56_02 AM.png) */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroBg})` }}
+        aria-hidden
+      />
+      {/* Light gradient overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(340,60%,93%)/0.5] via-[hsl(20,100%,94%)/0.4] to-[hsl(45,100%,90%)/0.5]" />
       <div className="absolute inset-0 bg-gradient-to-tr from-[hsl(330,60%,90%)/0.5] via-transparent to-[hsl(40,100%,85%)/0.4]" />
       <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[hsl(40,100%,92%)/0.6] to-transparent" />
 

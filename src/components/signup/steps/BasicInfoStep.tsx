@@ -15,6 +15,7 @@ interface Props {
   onOtpKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onBackFromOtp: () => void;
   phoneVerified: boolean;
+  canSendOtp?: boolean;
 }
 
 const BasicInfoStep = ({
@@ -30,6 +31,7 @@ const BasicInfoStep = ({
   onOtpKeyDown,
   onBackFromOtp,
   phoneVerified,
+  canSendOtp = false,
 }: Props) => (
   <>
     {/* OTP-only screen when OTP has been sent (no registration form) */}
@@ -104,7 +106,7 @@ const BasicInfoStep = ({
               I agree to the Terms & Conditions and Privacy Policy
             </label>
           </div>
-          <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp}>
+          <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp} disabled={!canSendOtp}>
             Send OTP
             <ArrowRight className="w-5 h-5" />
           </Button>
