@@ -11,10 +11,7 @@ const ContactPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
+    if (!form.name || !form.email || !form.message) { toast.error("Please fill in all required fields"); return; }
     toast.success("Message sent successfully! 💕", { description: "We'll get back to you shortly." });
     setForm({ name: "", email: "", phone: "", subject: "", message: "" });
   };
@@ -30,22 +27,23 @@ const ContactPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
-      <section className="pt-28 pb-16 bg-gradient-romantic relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]">
-          <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
+      {/* Hero with wedding background */}
+      <section className="pt-28 pb-16 relative overflow-hidden min-h-[380px] flex items-center">
+        <div className="absolute inset-0">
+          <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="Wedding rings" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">Get In Touch</span>
           </div>
-          <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            Contact <span className="text-gradient-gold">Us</span>
+          <h1 className="font-serif text-4xl md:text-6xl font-bold text-white mb-4 animate-fade-in-up drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]" style={{ animationDelay: "0.1s" }}>
+            Contact <span className="text-[#FCD34D] drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">Us</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+          <p className="text-white max-w-2xl mx-auto text-lg animate-fade-in-up drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" style={{ animationDelay: "0.2s" }}>
             Have questions? We'd love to hear from you. Send us a message!
           </p>
         </div>
@@ -83,8 +81,7 @@ const ContactPage = () => {
                 </div>
                 <textarea placeholder="Your Message *" value={form.message} rows={5} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none" />
                 <Button type="submit" variant="hero" size="lg" className="gap-2 group">
-                  <Send className="w-5 h-5" />
-                  Send Message
+                  <Send className="w-5 h-5" /> Send Message
                 </Button>
               </form>
             </motion.div>
@@ -96,16 +93,12 @@ const ContactPage = () => {
       <section className="py-16 bg-accent-rose/30">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-8">
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Our <span className="text-gradient-gold">Location</span>
-            </h2>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">Our <span className="text-gradient-gold">Location</span></h2>
             <p className="text-muted-foreground">Visit us at our office in Cherthala, Alappuzha, Kerala</p>
           </div>
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-3xl overflow-hidden shadow-elevated border-4 border-card">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31524.66884302874!2d76.32!3d9.68!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b0882cd0a0a0a0b%3A0x3b0882cd0a0a0a0b!2sCherthala%2C%20Kerala!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-              width="100%" height="400" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Aiswarya Matrimony Location"
-            />
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31524.66884302874!2d76.32!3d9.68!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b0882cd0a0a0a0b%3A0x3b0882cd0a0a0a0b!2sCherthala%2C%20Kerala!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              width="100%" height="400" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Aiswarya Matrimony Location" />
           </motion.div>
         </div>
       </section>

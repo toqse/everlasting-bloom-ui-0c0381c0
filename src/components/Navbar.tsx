@@ -36,7 +36,7 @@ const Navbar = () => {
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="h-12 sm:h-16 w-auto object-contain lg:h-20 max-h-[60px] sm:max-h-none"
+            className="h-16 sm:h-20 w-auto object-contain lg:h-24 max-h-[72px] sm:max-h-none"
           />
           <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wider mt-0.5 ml-2">Since 1991</span>
         </Link>
