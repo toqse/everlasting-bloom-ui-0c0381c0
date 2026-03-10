@@ -222,7 +222,7 @@ const FeaturedProfiles = () => {
                         className="flex-1 gap-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleLike(e, profile.id);
+                          navigate("/auth");
                         }}
                       >
                         <Heart className="w-4 h-4" />

@@ -26,7 +26,7 @@ const ServicesPage = () => {
       {/* Hero with wedding background */}
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
+          <img src="/images/Screenshot%202026-03-10%20115018.png" alt="Beach wedding setup" className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />

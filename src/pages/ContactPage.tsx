@@ -30,7 +30,7 @@ const ContactPage = () => {
       {/* Hero with wedding background */}
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="Wedding rings" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&h=800&fit=crop" alt="Wedding couple" className="w-full h-full object-cover object-top" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />

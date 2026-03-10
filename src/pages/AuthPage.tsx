@@ -343,7 +343,7 @@ const AuthPage = () => {
           className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5">
           <SignupStepIndicator currentStep={signupStep} />
 
-          <div className="overflow-hidden min-h-[320px] sm:min-h-[380px]">
+          <div className="min-h-[320px] sm:min-h-[380px] max-h-[50vh] sm:max-h-[55vh] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:thin]">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div key={signupStep} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }}>
                 {renderStep()}

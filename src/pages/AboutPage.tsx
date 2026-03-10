@@ -54,7 +54,7 @@ const AboutPage = () => {
       {/* Hero Banner with wedding background */}
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&h=800&fit=crop" alt="Wedding celebration" className="w-full h-full object-cover object-center" />
+          <img src={"/images/" + encodeURIComponent("image about.png")} alt="Wedding couple in traditional attire" className="w-full h-full object-cover object-[center_20%]" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
@@ -95,28 +95,48 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Welcome Section */}
+      {/* Welcome Section - same images & layout as homepage WhyChooseUs */}
       <section className="py-16 bg-card relative overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative flex items-center justify-center min-h-[420px]">
-              <div className="relative w-full max-w-[480px] mx-auto">
-                <div className="absolute -top-4 -left-4 w-[320px] h-[260px] rounded-3xl bg-accent-rose/40 -z-10" />
-                <motion.div className="relative z-10 rounded-2xl overflow-hidden shadow-elevated w-[300px] h-[220px]" whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }}>
-                  <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" alt="Wedding couple with bouquet" className="w-full h-full object-cover" />
-                </motion.div>
-                <motion.div className="absolute top-[120px] left-[140px] z-20 rounded-2xl overflow-hidden shadow-elevated w-[300px] h-[220px] border-4 border-card" whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }}>
-                  <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&h=400&fit=crop" alt="Wedding rings hands" className="w-full h-full object-cover" />
-                </motion.div>
-                <motion.div className="absolute -top-2 left-[180px] z-30 w-12 h-12 rounded-full border-[3px] border-secondary" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 3, repeat: Infinity }} />
-                <div className="absolute bottom-0 right-4 w-8 h-8 rounded-full bg-accent-rose/60 -z-10" />
-              </div>
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative flex flex-col lg:block min-h-0 lg:min-h-[520px]"
+            >
+              <motion.div
+                className="relative z-[2] w-full lg:w-[65%] rounded-2xl overflow-hidden shadow-elevated shrink-0"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
+                <img
+                  src="/images/christian.png"
+                  alt="Wedding couple"
+                  className="w-full h-[240px] sm:h-[280px] lg:h-[320px] object-cover object-[center_30%]"
+                />
+              </motion.div>
+              <motion.div
+                className="relative mt-4 lg:absolute lg:bottom-0 lg:left-[25%] lg:mt-0 w-full lg:w-[65%] z-[3] rounded-2xl overflow-hidden shadow-elevated border-4 lg:border-[6px] border-card"
+                initial={{ opacity: 0, y: 40, x: 20 }}
+                whileInView={{ opacity: 1, y: 0, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                whileHover={{ scale: 1.03 }}
+              >
+                <img
+                  src="/images/Wedding%20day.jpg"
+                  alt="Wedding rings and flowers"
+                  className="w-full h-[200px] sm:h-[240px] lg:h-[300px] object-cover object-center"
+                />
+              </motion.div>
+              <div className="absolute -bottom-4 right-[5%] w-20 h-20 sm:w-28 sm:h-28 rounded-2xl border-[4px] sm:border-[5px] border-accent-rose z-[1] hidden sm:block pointer-events-none" />
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-              <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-2 uppercase tracking-wider">Welcome to</h2>
+              <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-2 uppercase tracking-wider" style={{ textDecoration: "underline", textDecorationColor: "hsl(var(--secondary))", textUnderlineOffset: "8px" }}>Welcome to</h2>
               <h3 className="font-serif text-3xl md:text-4xl font-bold mb-6">
-                <span className="text-gradient-primary italic">Wedding Matrimony</span>
+                <span className="text-gradient-primary italic">Aiswarya Matrimony</span>
               </h3>
               <p className="text-muted-foreground mb-4 leading-relaxed">
                 Aiswarya Bureau is a trusted matrimonial service with over 37 years of experience in connecting suitable brides and grooms. Located near Cherthala Private Bus Stand in Alappuzha District, Kerala, we serve families both within Kerala and outside the state.
