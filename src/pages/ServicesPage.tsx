@@ -6,14 +6,14 @@ import { useNavigate } from "react-router-dom";
 import { Users, Camera, Crown, Heart, MessageCircle, Search, Shield, Sparkles, ArrowRight, Star } from "lucide-react";
 
 const services = [
-  { icon: Users, title: "Browse Profiles", description: "Explore 1200+ verified profiles with detailed information, photos, and preferences.", count: "1200+ Profiles", iconColor: "text-rose-500", iconBg: "bg-rose-100", borderColor: "border-rose-200", cardBg: "bg-gradient-to-br from-rose-100/80 via-rose-50/90 to-orange-50/80" },
-  { icon: Heart, title: "Matchmaking", description: "Our advanced algorithm matches you with compatible profiles based on your preferences.", count: "Smart Matching", iconColor: "text-pink-500", iconBg: "bg-pink-100", borderColor: "border-pink-200", cardBg: "bg-gradient-to-br from-pink-100/80 via-pink-50/90 to-amber-50/80" },
-  { icon: Camera, title: "Photo Gallery", description: "View and share beautiful wedding photos and moments from our successful couples.", count: "1000+ Photos", iconColor: "text-amber-500", iconBg: "bg-amber-100", borderColor: "border-amber-200", cardBg: "bg-gradient-to-br from-amber-100/80 via-amber-50/90 to-orange-50/80" },
-  { icon: Crown, title: "Premium Plans", description: "Get access to exclusive features with our premium membership plans.", count: "4 Plans", iconColor: "text-secondary", iconBg: "bg-accent-gold", borderColor: "border-secondary/30", cardBg: "bg-gradient-to-br from-amber-100/80 via-yellow-50/90 to-purple-50/60" },
-  { icon: MessageCircle, title: "Chat & Connect", description: "Communicate with your matches through our secure messaging platform.", count: "Real-time Chat", iconColor: "text-teal-500", iconBg: "bg-teal-100", borderColor: "border-teal-200", cardBg: "bg-gradient-to-br from-teal-100/80 via-teal-50/90 to-green-50/80" },
-  { icon: Shield, title: "Verified Profiles", description: "All profiles go through a thorough verification process for your safety.", count: "100% Verified", iconColor: "text-green-500", iconBg: "bg-green-100", borderColor: "border-green-200", cardBg: "bg-gradient-to-br from-green-100/80 via-green-50/90 to-emerald-50/80" },
-  { icon: Search, title: "Advanced Search", description: "Find your perfect match using our detailed search filters and preferences.", count: "20+ Filters", iconColor: "text-blue-500", iconBg: "bg-blue-100", borderColor: "border-blue-200", cardBg: "bg-gradient-to-br from-blue-100/80 via-blue-50/90 to-purple-50/80" },
-  { icon: Star, title: "Horoscope Matching", description: "Traditional horoscope compatibility analysis for a perfect match.", count: "Vedic Analysis", iconColor: "text-purple-500", iconBg: "bg-purple-100", borderColor: "border-purple-200", cardBg: "bg-gradient-to-br from-purple-100/80 via-purple-50/90 to-pink-50/80" },
+  { icon: Users, title: "Browse Profiles", description: "Explore 1200+ verified profiles with detailed information, photos, and preferences.", count: "1200+ Profiles", iconColor: "text-rose-600", iconBg: "bg-rose-200", cardBg: "bg-gradient-to-br from-rose-100 via-rose-50 to-orange-50", borderColor: "border-rose-300" },
+  { icon: Heart, title: "Matchmaking", description: "Our advanced algorithm matches you with compatible profiles based on your preferences.", count: "Smart Matching", iconColor: "text-pink-600", iconBg: "bg-pink-200", cardBg: "bg-gradient-to-br from-pink-100 via-fuchsia-50 to-rose-50", borderColor: "border-pink-300" },
+  { icon: Camera, title: "Photo Gallery", description: "View and share beautiful wedding photos and moments from our successful couples.", count: "1000+ Photos", iconColor: "text-amber-600", iconBg: "bg-amber-200", cardBg: "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50", borderColor: "border-amber-300" },
+  { icon: Crown, title: "Premium Plans", description: "Get access to exclusive features with our premium membership plans.", count: "4 Plans", iconColor: "text-orange-600", iconBg: "bg-orange-200", cardBg: "bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-50", borderColor: "border-orange-300" },
+  { icon: MessageCircle, title: "Chat & Connect", description: "Communicate with your matches through our secure messaging platform.", count: "Real-time Chat", iconColor: "text-teal-600", iconBg: "bg-teal-200", cardBg: "bg-gradient-to-br from-teal-100 via-emerald-50 to-green-50", borderColor: "border-teal-300" },
+  { icon: Shield, title: "Verified Profiles", description: "All profiles go through a thorough verification process for your safety.", count: "100% Verified", iconColor: "text-green-600", iconBg: "bg-green-200", cardBg: "bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50", borderColor: "border-green-300" },
+  { icon: Search, title: "Advanced Search", description: "Find your perfect match using our detailed search filters and preferences.", count: "20+ Filters", iconColor: "text-blue-600", iconBg: "bg-blue-200", cardBg: "bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-50", borderColor: "border-blue-300" },
+  { icon: Star, title: "Horoscope Matching", description: "Traditional horoscope compatibility analysis for a perfect match.", count: "Vedic Analysis", iconColor: "text-purple-600", iconBg: "bg-purple-200", cardBg: "bg-gradient-to-br from-purple-100 via-violet-50 to-pink-50", borderColor: "border-purple-300" },
 ];
 
 const ServicesPage = () => {
@@ -23,28 +23,29 @@ const ServicesPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
-      <section className="pt-28 pb-16 bg-gradient-romantic relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]">
+      {/* Hero with wedding background */}
+      <section className="pt-28 pb-16 relative overflow-hidden min-h-[380px] flex items-center">
+        <div className="absolute inset-0">
           <img src="https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=1920&h=800&fit=crop" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-sm border border-primary/10 mb-4 shadow-soft animate-fade-in-up">
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
             <span className="text-sm font-medium text-primary">What We Offer</span>
           </div>
-          <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            Explore Our <span className="text-gradient-gold">Offerings</span>
+          <h1 className="font-serif text-4xl md:text-6xl font-bold text-white mb-4 animate-fade-in-up drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]" style={{ animationDelay: "0.1s" }}>
+            Explore Our <span className="text-[#FCD34D] drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">Offerings</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+          <p className="text-white max-w-2xl mx-auto text-lg animate-fade-in-up drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" style={{ animationDelay: "0.2s" }}>
             Comprehensive matrimony services designed to help you find your perfect life partner
           </p>
         </div>
       </section>
 
-      {/* Services Grid */}
+      {/* Services Grid - colorful, NO shimmer/blinking */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
@@ -55,21 +56,14 @@ const ServicesPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className={`relative rounded-3xl p-[2px] overflow-hidden group hover-lift`}
+                className={`rounded-3xl p-6 text-center border-2 ${service.cardBg} ${service.borderColor} hover-lift group`}
               >
-                {/* Animated moving border */}
-                <div
-                  className="absolute inset-0 rounded-3xl bg-[length:200%_200%] animate-[shimmer_3s_linear_infinite] opacity-60 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ backgroundImage: "linear-gradient(90deg, transparent, hsl(var(--secondary)), hsl(var(--primary)), hsl(var(--secondary)), transparent)" }}
-                />
-                <div className={`relative rounded-[22px] p-6 text-center z-10 h-full border ${service.cardBg} ${service.borderColor}`}>
-                  <div className={`w-16 h-16 mx-auto rounded-2xl ${service.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <service.icon className={`w-8 h-8 ${service.iconColor}`} />
-                  </div>
-                  <h3 className="font-serif text-lg font-bold text-foreground mb-2">{service.title}</h3>
-                  <p className={`${service.iconColor} text-xs font-medium mb-3`}>{service.count}</p>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
+                <div className={`w-16 h-16 mx-auto rounded-2xl ${service.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <service.icon className={`w-8 h-8 ${service.iconColor}`} />
                 </div>
+                <h3 className="font-serif text-lg font-bold text-foreground mb-2">{service.title}</h3>
+                <p className={`${service.iconColor} text-xs font-medium mb-3`}>{service.count}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">{service.description}</p>
               </motion.div>
             ))}
           </div>

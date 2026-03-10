@@ -1,7 +1,6 @@
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
-import weddingHero from "@/assets/wedding-hero.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -9,7 +8,12 @@ const Hero = () => {
   const sparkles = Array.from({ length: 8 }, (_, i) => i);
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-romantic">
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Rich multi-layered gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(340,60%,93%)] via-[hsl(20,100%,94%)] to-[hsl(45,100%,90%)]" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-[hsl(330,60%,90%)/0.5] via-transparent to-[hsl(40,100%,85%)/0.4]" />
+      <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[hsl(40,100%,92%)/0.6] to-transparent" />
+
       {/* Animated Background Particles */}
       <div className="absolute inset-0 overflow-hidden">
         {petals.map((_, i) => (
@@ -26,10 +30,12 @@ const Hero = () => {
         ))}
       </div>
 
-      {/* Glowing Orbs */}
-      <div className="absolute top-1/4 left-10 w-40 h-40 bg-secondary/25 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/3 right-10 w-52 h-52 bg-primary/20 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-accent-pink rounded-full blur-2xl animate-pulse-soft" />
+      {/* Glowing Orbs - more vibrant */}
+      <div className="absolute top-1/4 left-10 w-48 h-48 bg-secondary/30 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-1/3 right-10 w-60 h-60 bg-primary/25 rounded-full blur-3xl animate-float-delayed" />
+      <div className="absolute top-1/2 left-1/3 w-36 h-36 bg-[hsl(40,100%,70%)/0.3] rounded-full blur-2xl animate-pulse-soft" />
+      <div className="absolute top-1/3 right-1/3 w-28 h-28 bg-[hsl(330,60%,70%)/0.2] rounded-full blur-2xl animate-float" />
+      <div className="absolute bottom-1/4 left-1/4 w-32 h-32 bg-[hsl(20,100%,80%)/0.3] rounded-full blur-3xl animate-float-delayed" />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pt-24 sm:pt-28 pb-12 sm:pb-20 relative z-10">
@@ -80,10 +86,10 @@ const Hero = () => {
           {/* Right: Wedding Image */}
           <div className="hidden lg:flex flex-col items-center justify-center animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-br from-secondary/30 to-primary/20 rounded-[2rem] blur-xl" />
+              <div className="absolute -inset-4 bg-gradient-to-br from-secondary/30 via-[hsl(330,60%,70%)/0.2] to-primary/20 rounded-[2rem] blur-xl" />
               <img
-                src={weddingHero}
-                alt="Beautiful wedding couple"
+                src="https://images.unsplash.com/photo-1583089892943-e02e5b017b6a?w=800&h=1000&fit=crop"
+                alt="Beautiful Indian wedding couple"
                 className="relative rounded-[2rem] w-[420px] h-[520px] object-cover shadow-elevated border-4 border-white/50"
               />
               {/* Decorative elements */}

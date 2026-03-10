@@ -51,11 +51,11 @@ const AboutPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Banner */}
+      {/* Hero Banner with wedding background */}
       <section className="pt-28 pb-16 relative overflow-hidden min-h-[380px] flex items-center">
         <div className="absolute inset-0">
-          <img src="/images/Inter%20caste%20wedding%20Thali.jpg" alt="Traditional wedding Thali" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-black/25" />
+          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&h=800&fit=crop" alt="Wedding celebration" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
@@ -202,7 +202,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Team - No photos, phone numbers and branch details */}
+      {/* Team */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -216,15 +216,8 @@ const AboutPage = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 max-w-6xl mx-auto">
             {teamMembers.map((member, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className={`rounded-2xl p-5 border shadow-card hover-lift text-center ${teamColors[i]}`}
-              >
-                {/* Avatar with initials */}
+              <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
+                className={`rounded-2xl p-5 border shadow-card hover-lift text-center ${teamColors[i]}`}>
                 <div className={`w-14 h-14 mx-auto rounded-full ${teamIconColors[i]} flex items-center justify-center mb-3 text-lg font-bold`}>
                   {member.name.split(" ").map(n => n[0]).join("")}
                 </div>
