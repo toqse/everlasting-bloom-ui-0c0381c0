@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, MapPin, Heart, Shield, Crown, Sparkles, Lock } from "lucide-react";
+import { X, Heart, Sparkles, Lock, User, Briefcase, ClipboardList, Users, Moon, Phone } from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -83,7 +83,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
             {/* About Me */}
             <div>
               <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                👤 About Me
+                <User className="w-5 h-5 text-primary" /> About Me
               </h3>
               <div className="p-4 rounded-xl border border-primary/10 bg-accent-rose/5">
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -95,7 +95,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
             {/* Career & Education */}
             <div>
               <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                💼 Career & Education
+                <Briefcase className="w-5 h-5 text-primary" /> Career & Education
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {careerDetails.map((d, i) => (
@@ -112,7 +112,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                📋 Basic Details
+                <ClipboardList className="w-5 h-5 text-primary" /> Basic Details
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {basicDetails.map((d, i) => (
@@ -126,7 +126,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
 
             <div>
               <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                👨‍👩‍👧 Family Background
+                <Users className="w-5 h-5 text-primary" /> Family Background
               </h3>
               <div className="p-4 rounded-xl border border-primary/10 bg-accent-rose/5">
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -138,7 +138,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
               {isHindu() && (
                 <div className="mt-4">
                   <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                    🔮 Horoscope Info
+                    <Moon className="w-5 h-5 text-primary" /> Horoscope Info
                   </h3>
                   <div className="grid grid-cols-2 gap-2 p-4 rounded-xl bg-primary/5 border border-primary/15">
                     {horoscopeInfo.map((d, i) => (
@@ -156,7 +156,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
           {/* Contact Details - Blurred */}
           <div>
             <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-              📞 Contact Details
+              <Phone className="w-5 h-5 text-primary" /> Contact Details
             </h3>
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 relative">
               <div className="blur-sm select-none pointer-events-none">
@@ -164,9 +164,9 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
                 <p className="text-sm text-foreground mt-1">{profile.name.toLowerCase().replace(" ", "")}@gmail.com</p>
               </div>
               <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-xl">
-                <div className="text-center">
-                  <Lock className="w-5 h-5 text-secondary mx-auto mb-1" />
-                  <p className="text-xs font-semibold text-secondary">Upgrade to Gold or Diamond plan to view contact</p>
+                <div className="text-center flex items-center gap-2 justify-center">
+                  <Lock className="w-4 h-4 text-secondary shrink-0" />
+                  <p className="text-sm font-semibold text-secondary">Upgrade to Gold or Diamond plan to view contact</p>
                 </div>
               </div>
             </div>

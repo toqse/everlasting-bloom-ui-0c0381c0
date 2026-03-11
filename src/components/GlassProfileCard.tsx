@@ -16,6 +16,8 @@ interface GlassProfileCardProps {
   onReject?: () => void;
   onSendInterest?: () => void;
   onMessage?: () => void;
+  /** When set, View Profile opens this callback (e.g. modal) instead of navigating. */
+  onViewProfile?: () => void;
   canChat?: boolean;
   /** Show Horoscope badge (for Hindu users). */
   showHoroscopeBadge?: boolean;
@@ -65,6 +67,7 @@ const GlassProfileCard = ({
   onReject,
   onSendInterest,
   onMessage,
+  onViewProfile,
   canChat = false,
   showHoroscopeBadge = false,
 }: GlassProfileCardProps) => {
@@ -319,8 +322,12 @@ const GlassProfileCard = ({
                 className="flex-1 gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.scrollTo(0, 0);
-                  navigate(`/profile/${profile.id}`);
+                  if (onViewProfile) {
+                    onViewProfile();
+                  } else {
+                    window.scrollTo(0, 0);
+                    navigate(`/profile/${profile.id}`);
+                  }
                 }}
               >
                 <Eye className="w-4 h-4" />

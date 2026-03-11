@@ -9,7 +9,7 @@ export default function DemoReligionBar() {
   const effectiveReligion = (demoReligionOverride?.trim() || user?.religion?.trim() || "").toLowerCase();
 
   return (
-    <div className="sticky top-0 z-[100] w-full bg-slate-800 text-white px-4 flex flex-wrap items-center gap-3 text-sm min-h-[44px]">
+    <div className="sticky top-0 z-40 w-full bg-slate-800 text-white px-4 flex flex-wrap items-center gap-3 text-sm min-h-[44px]">
       <span className="font-semibold text-slate-200 flex items-center h-9">Demo — religion:</span>
       <div className="flex items-center gap-2 h-9">
         {RELIGIONS.map((r) => {

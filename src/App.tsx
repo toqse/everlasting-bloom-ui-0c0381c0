@@ -31,6 +31,7 @@ import SettingsPage from "./pages/SettingsPage";
 import HelpSupportPage from "./pages/HelpSupportPage";
 import MatchesPage from "./pages/MatchesPage";
 import JathagamPage from "./pages/JathagamPage";
+import FamilyDetailsPage from "./pages/FamilyDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const AppContent = () => {
         <Route path="/dashboard/profile" element={<UserProfilePage />} />
         <Route path="/dashboard/interests" element={<DashboardInterests />} />
         <Route path="/dashboard/chat-list" element={<ChatListPage />} />
+        <Route path="/dashboard/family-details" element={<FamilyDetailsPage />} />
         <Route path="/dashboard/plan" element={<PlanPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/transactions" element={<TransactionsPage />} />

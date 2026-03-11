@@ -6,14 +6,18 @@ const FAMILY_STATUS_OPTIONS = ["Middle Class", "Upper Middle Class", "Rich", "Af
 interface Props {
   formData: Record<string, string>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  /** When true, hide the step title (e.g. when embedded in dashboard Family Details page). */
+  hideTitle?: boolean;
 }
 
-const FamilyDetailsStep = ({ formData, onChange }: Props) => (
+const FamilyDetailsStep = ({ formData, onChange, hideTitle }: Props) => (
   <>
-    <div className="text-center mb-6">
-      <h1 className="font-serif text-2xl font-bold text-foreground mb-1">Family Details</h1>
-      <p className="text-muted-foreground text-sm">Tell us about your family</p>
-    </div>
+    {!hideTitle && (
+      <div className="text-center mb-6">
+        <h1 className="font-serif text-2xl font-bold text-foreground mb-1">Family Details</h1>
+        <p className="text-muted-foreground text-sm">Tell us about your family</p>
+      </div>
+    )}
     <div className="space-y-4">
       <SelectField label="Family Type" name="familyType" options={FAMILY_TYPES} value={formData.familyType} onChange={onChange} />
       <div>

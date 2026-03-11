@@ -42,7 +42,7 @@ const DashboardPage = () => {
 
   const dashboardStats = allDashboardStats.filter((s) => !("hinduOnly" in s && s.hinduOnly) || isHindu());
   const newMatches = profilesData.slice(0, 4);
-  const suggestedProfiles = profilesData.slice(0, 6);
+  const suggestedProfiles = profilesData.slice(0, 4);
   const nearbyProfiles = profilesData.slice(0, 3);
   const todaysPicks = profilesData.slice(2, 4);
   const profileCompletion = 75;
@@ -251,6 +251,7 @@ const DashboardPage = () => {
                       index={index}
                       showActions={true}
                       onSendInterest={() => setPlanModalOpen(true)}
+                      onViewProfile={() => setViewProfile(profile)}
                       showHoroscopeBadge={isHindu()}
                     />
                   </div>
@@ -265,7 +266,7 @@ const DashboardPage = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-card rounded-3xl shadow-card p-6 sticky top-8"
+              className="bg-card rounded-3xl shadow-card p-6"
             >
               <h3 className="font-serif text-lg font-bold text-secondary mb-4">Quick actions</h3>
               <div className="space-y-4">

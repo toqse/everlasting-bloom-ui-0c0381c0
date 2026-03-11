@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
+  LayoutDashboard, User, Heart, MessageCircle, UsersRound, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DemoReligionBar from "@/components/DemoReligionBar";
@@ -14,6 +14,7 @@ const baseSidebarLinks = [
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
+  { name: "Family Details", href: "/dashboard/family-details", icon: UsersRound },
   { name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
@@ -91,8 +92,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         backgroundSize: "40px 40px"
       }} />
 
-      <div className="w-full px-4 lg:px-10 py-8 relative z-10 min-h-screen flex flex-col">
-        <div className="flex flex-1 gap-6 relative min-h-0">
+      {/* Desktop: fixed-height container so only main content scrolls; sidebar stays fixed. Mobile: normal flow. */}
+      <div className="w-full px-4 lg:px-10 py-8 relative z-10 flex flex-col min-h-screen lg:min-h-0 lg:h-[calc(100vh-44px)] lg:overflow-hidden">
+        <div className="flex flex-1 gap-6 relative min-h-0 lg:overflow-hidden">
           {/* Mobile Toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -101,17 +103,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          {/* Sidebar - full height on desktop */}
+          {/* Sidebar - fixed on desktop (main content scrolls instead) */}
           <motion.aside
             initial={false}
             className={cn(
-              "w-72 flex-shrink-0 lg:block lg:self-stretch lg:min-h-[calc(100vh-4rem)]",
+              "w-72 flex-shrink-0 lg:block lg:h-full",
               sidebarOpen ? "fixed inset-0 z-40 lg:static lg:z-auto" : "hidden lg:block"
             )}
           >
             {sidebarOpen && <div className="fixed inset-0 bg-foreground/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
             
-            <div className="bg-card rounded-3xl shadow-card p-6 h-full flex flex-col relative z-50 lg:min-h-full">
+            <div className="bg-card rounded-3xl shadow-card p-6 h-full flex flex-col relative z-50 lg:min-h-0 lg:max-h-full overflow-hidden">
               {/* User Photo */}
               <div className="relative mb-6 rounded-2xl overflow-hidden">
                 <img
@@ -122,7 +124,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
 
               {/* Nav Links - flex-1 so sidebar fills height, overflow for long lists */}
-              <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto">
+              <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:w-0">
                 {sidebarLinks.map((link) => (
                   <NavLink
                     key={link.name}
@@ -152,8 +154,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </motion.aside>
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0">
+          {/* Main Content - scrolls on desktop; sidebar stays fixed */}
+          <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
             {children}
           </main>
         </div>

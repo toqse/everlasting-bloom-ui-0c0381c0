@@ -11,7 +11,6 @@ import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
 import LocationStep from "@/components/signup/steps/LocationStep";
 import ReligiousStep from "@/components/signup/steps/ReligiousStep";
 import PersonalStep from "@/components/signup/steps/PersonalStep";
-import FamilyDetailsStep from "@/components/signup/steps/FamilyDetailsStep";
 import EducationStep from "@/components/signup/steps/EducationStep";
 import AboutMeStep from "@/components/signup/steps/AboutMeStep";
 import PhotosStep from "@/components/signup/steps/PhotosStep";
@@ -183,10 +182,9 @@ const AuthPage = () => {
       case 2: return <LocationStep {...props} />;
       case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
-      case 5: return <FamilyDetailsStep {...props} />;
-      case 6: return <EducationStep {...props} />;
-      case 7: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
-      case 8: return <PhotosStep photos={photos} setPhotos={setPhotos} aadhaarNumber={formData.aadhaarNumber} onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))} aadhaarVerified={aadhaarVerified} onVerifyAadhaar={handleVerifyAadhaar} onSkipOrCompleteLater={handleSignupNext} />;
+      case 5: return <EducationStep {...props} />;
+      case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
+      case 7: return <PhotosStep photos={photos} setPhotos={setPhotos} aadhaarNumber={formData.aadhaarNumber} onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))} aadhaarVerified={aadhaarVerified} onVerifyAadhaar={handleVerifyAadhaar} onSkipOrCompleteLater={handleSignupNext} />;
       default: return null;
     }
   };

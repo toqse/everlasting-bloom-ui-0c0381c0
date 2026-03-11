@@ -2,11 +2,17 @@ import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Heart, Grid, List, Star, Briefcase, GraduationCap, ChevronDown, MessageCircle, Send, Eye, Clock, Sparkles, Users, Bell, TrendingUp, Flame } from "lucide-react";
+import { Search, MapPin, Heart, Grid, List, Star, Briefcase, GraduationCap, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users, Bell, TrendingUp, Flame, ImageIcon, Ruler, BookOpen, Briefcase as BriefcaseIcon, X, Eye } from "lucide-react";
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
+import ProfileViewDrawer from "@/components/ProfileViewDrawer";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { RELIGION_CASTE_MAP } from "@/data/religionCaste";
 
 type MatchProfile = Profile & { isOnline?: boolean };
 
@@ -44,33 +50,142 @@ const allProfiles: MatchProfile[] = [
   },
 ];
 
-const FilterSelect = ({ icon, label, options, value, onChange }: { icon: React.ReactNode; label: string; options: string[]; value: string; onChange: (v: string) => void }) => (
-  <div>
-    <div className="flex items-center gap-2 text-primary font-serif font-semibold mb-2">
-      {icon} {label}
-    </div>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-lg border border-primary/10 text-sm bg-card text-foreground focus:ring-2 focus:ring-primary/20 transition-all"
-    >
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
-    </select>
-  </div>
+const MARITAL_STATUS_OPTIONS = ["Divorced", "Marriage Dropped", "Separated", "Single", "Waiting for Legal Divorce", "Widowed"];
+const RELIGIONS = [...Object.keys(RELIGION_CASTE_MAP), "Inter Caste", "Other", "Unknown"];
+const ALL_CASTE_OPTIONS = [...new Set([...Object.values(RELIGION_CASTE_MAP).flat(), "Angle Indian", "Born Again", "Caldiyn Syrian", "Chappar", "Christian-Nadar"])];
+const EDUCATION_OPTIONS = ["Aviation Degree", "B.A.", "B.A.M.S.", "B.Arch", "B.Com", "B.Des", "B.Tech", "BBA", "MBBS", "MBA", "M.Com", "M.Tech", "LLB", "Other"];
+const OCCUPATION_OPTIONS = ["Accounts/Finance Professional", "Administrative Professional", "Advertising / PR Professional", "Advisor", "Agriculture & Farming Professional", "Software Engineer", "Doctor", "Lawyer", "Teacher", "Business", "Other"];
+
+const FilterSection = ({ title, icon, children, defaultOpen = false }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) => (
+  <Collapsible defaultOpen={defaultOpen} className="group/collapse border-b border-primary/10 last:border-0">
+    <CollapsibleTrigger className="flex w-full items-center justify-between py-3 text-left font-medium text-foreground hover:text-primary transition-colors">
+      <span className="flex items-center gap-2 text-sm font-semibold">
+        {icon}
+        {title}
+      </span>
+      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapse:rotate-180" />
+    </CollapsibleTrigger>
+    <CollapsibleContent className="pb-3">{children}</CollapsibleContent>
+  </Collapsible>
 );
 
-const AGE_OPTIONS = ["Select age", "21-25", "26-30", "31-35", "36+"];
-const LOCATION_OPTIONS = ["Select location", "Chennai", "Mumbai", "Delhi", "Bangalore", "Hyderabad"];
+const SearchableList = ({
+  placeholder,
+  options,
+  selected,
+  onToggle,
+  searchQuery,
+  onSearchChange,
+  initialVisible = 5,
+}: {
+  placeholder: string;
+  options: string[];
+  selected: string[];
+  onToggle: (item: string) => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  initialVisible?: number;
+}) => {
+  const [showAll, setShowAll] = useState(false);
+  const filtered = options.filter((o) => o.toLowerCase().includes(searchQuery.toLowerCase()));
+  const displayList = showAll ? filtered : filtered.slice(0, initialVisible);
+  const hasMore = !showAll && filtered.length > initialVisible;
+  return (
+    <div className="space-y-2">
+      <Input
+        placeholder={placeholder}
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="h-9 text-sm rounded-lg border-primary/10"
+      />
+      <div className="max-h-40 overflow-y-auto space-y-1">
+        {displayList.map((item) => (
+          <label
+            key={item}
+            className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm"
+          >
+            <Checkbox checked={selected.includes(item)} onCheckedChange={() => onToggle(item)} />
+            <span className="text-muted-foreground">{item}</span>
+          </label>
+        ))}
+      </div>
+      {hasMore && (
+        <button type="button" onClick={() => setShowAll(true)} className="text-xs text-primary font-medium hover:underline">
+          More
+        </button>
+      )}
+    </div>
+  );
+};
+
+const ReligionMultiSelect = ({ selected, onToggle, searchQuery, onSearchChange }: { selected: string[]; onToggle: (r: string) => void; searchQuery: string; onSearchChange: (q: string) => void }) => {
+  const filtered = RELIGIONS.filter((r) => r.toLowerCase().includes(searchQuery.toLowerCase()));
+  return (
+    <div className="space-y-2">
+      <Input
+        placeholder="Search religion..."
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="h-9 text-sm rounded-lg border-primary/10"
+      />
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((r) => (
+            <span
+              key={r}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium"
+            >
+              {r}
+              <button type="button" onClick={() => onToggle(r)} className="hover:opacity-80" aria-label={`Remove ${r}`}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="max-h-32 overflow-y-auto space-y-1">
+        {filtered.map((item) => (
+          <label
+            key={item}
+            className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm"
+          >
+            <Checkbox checked={selected.includes(item)} onCheckedChange={() => onToggle(item)} />
+            <span className="text-muted-foreground">{item}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const MatchesPage = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [planModalOpen, setPlanModalOpen] = useState(false);
-  const [ageRange, setAgeRange] = useState(AGE_OPTIONS[0]);
-  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
-  const [availability, setAvailability] = useState<"All" | "Available" | "Offline">("All");
-  const [profileType, setProfileType] = useState<"All" | "Premium" | "Free">("All");
+  const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
+  const [ageRange, setAgeRange] = useState<[number, number]>([18, 70]);
+  const [heightRange, setHeightRange] = useState<[number, number]>([120, 200]);
+  const [maritalStatus, setMaritalStatus] = useState<string[]>([]);
+  const [religions, setReligions] = useState<string[]>([]);
+  const [castes, setCastes] = useState<string[]>([]);
+  const [education, setEducation] = useState<string[]>([]);
+  const [occupation, setOccupation] = useState<string[]>([]);
+  const [maritalSearch, setMaritalSearch] = useState("");
+  const [religionSearch, setReligionSearch] = useState("");
+  const [casteSearch, setCasteSearch] = useState("");
+  const [educationSearch, setEducationSearch] = useState("");
+  const [occupationSearch, setOccupationSearch] = useState("");
+  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
+
+  const toggleSet = (set: string[], item: string, setter: (v: string[]) => void) => {
+    setter(set.includes(item) ? set.filter((x) => x !== item) : [...set, item]);
+  };
+  const casteOptions = useMemo(() => {
+    if (religions.length === 0) return [] as string[];
+    const fromReligions = religions.flatMap((r) => RELIGION_CASTE_MAP[r] || []);
+    return [...new Set(fromReligions)];
+  }, [religions]);
 
   const toggleLike = (id: number) => {
     setLikedProfiles(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
@@ -78,20 +193,15 @@ const MatchesPage = () => {
 
   const filteredProfiles = useMemo(() => {
     return allProfiles.filter((profile) => {
-      if (ageRange && ageRange !== AGE_OPTIONS[0]) {
-        const [min, max] = ageRange === "36+" ? [36, 120] : ageRange.split("-").map(Number);
-        if (profile.age < min || (max !== 120 && profile.age > max)) return false;
-      }
-      if (location && location !== LOCATION_OPTIONS[0]) {
-        if (!profile.location.toLowerCase().includes(location.toLowerCase())) return false;
-      }
-      if (availability === "Available" && !(profile as MatchProfile).isOnline) return false;
-      if (availability === "Offline" && (profile as MatchProfile).isOnline) return false;
-      if (profileType === "Premium" && !profile.isPremium) return false;
-      if (profileType === "Free" && profile.isPremium) return false;
+      if (onlyWithPhoto && !profile.image) return false;
+      if (profile.age < ageRange[0] || profile.age > ageRange[1]) return false;
+      const matchProfile = profile as MatchProfile & { height?: number };
+      if (matchProfile.height != null && (matchProfile.height < heightRange[0] || matchProfile.height > heightRange[1])) return false;
+      if (education.length > 0 && !education.some((e) => profile.education.toLowerCase().includes(e.toLowerCase()))) return false;
+      if (occupation.length > 0 && !occupation.some((o) => profile.profession.toLowerCase().includes(o.toLowerCase()))) return false;
       return true;
     });
-  }, [ageRange, location, availability, profileType]);
+  }, [onlyWithPhoto, ageRange, heightRange, education, occupation]);
 
   return (
     <>
@@ -136,53 +246,109 @@ const MatchesPage = () => {
 
             {/* Main Content - Sidebar + Profiles */}
             <div className="flex flex-col lg:flex-row gap-6">
-              {/* Left Sidebar Filters */}
+              {/* Left Sidebar - Detailed Filters (collapsible) */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="lg:w-64 flex-shrink-0"
+                className="lg:w-72 xl:w-80 flex-shrink-0"
               >
-                <div className="bg-card rounded-2xl shadow-card p-5 border border-primary/5 space-y-5 sticky top-28">
-                  <FilterSelect icon={<Search className="w-4 h-4 text-primary" />} label="I'm looking for" options={["I'm looking for", "Bride", "Groom"]} value="I'm looking for" onChange={() => {}} />
-                  <FilterSelect icon={<Clock className="w-4 h-4 text-primary" />} label="Age" options={AGE_OPTIONS} value={ageRange} onChange={setAgeRange} />
-                  <FilterSelect icon={<Sparkles className="w-4 h-4 text-primary" />} label="Select Religion" options={["Religion", "Hindu", "Muslim", "Christian", "Sikh"]} value="Religion" onChange={() => {}} />
-                  <FilterSelect icon={<MapPin className="w-4 h-4 text-primary" />} label="Location" options={LOCATION_OPTIONS} value={location} onChange={setLocation} />
+                <div className="bg-card rounded-2xl shadow-card p-4 border border-primary/5 space-y-0 sticky top-28">
+                  <FilterSection title="Profile Type" icon={<ImageIcon className="w-4 h-4 text-primary" />}>
+                    <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
+                      <Checkbox checked={onlyWithPhoto} onCheckedChange={(c) => setOnlyWithPhoto(!!c)} />
+                      Only with Photo
+                    </label>
+                  </FilterSection>
 
-                  <div>
-                    <div className="flex items-center gap-2 text-primary font-serif font-semibold mb-2">
-                      <Clock className="w-4 h-4" /> Availability
+                  <FilterSection title="Age" icon={<Clock className="w-4 h-4 text-primary" />}>
+                    <div className="space-y-3 pt-1">
+                      <Slider
+                        min={18}
+                        max={70}
+                        step={1}
+                        value={ageRange}
+                        onValueChange={(v) => setAgeRange(v as [number, number])}
+                        className="py-2"
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        {ageRange[0]} - {ageRange[1]} years
+                      </p>
                     </div>
-                    <div className="space-y-1.5 text-sm">
-                      {(["All", "Available", "Offline"] as const).map(o => (
-                        <label key={o} className="flex items-center gap-2 cursor-pointer py-1 hover:text-primary transition-colors">
-                          <input type="radio" name="availability" checked={availability === o} onChange={() => setAvailability(o)} className="accent-primary" />
-                          <span className="text-muted-foreground">{o}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  </FilterSection>
 
-                  <div>
-                    <div className="flex items-center gap-2 text-primary font-serif font-semibold mb-2">
-                      <Users className="w-4 h-4" /> Profile
+                  <FilterSection title="Height" icon={<Ruler className="w-4 h-4 text-primary" />}>
+                    <div className="space-y-3 pt-1">
+                      <Slider
+                        min={120}
+                        max={200}
+                        step={5}
+                        value={heightRange}
+                        onValueChange={(v) => setHeightRange(v as [number, number])}
+                        className="py-2"
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        {heightRange[0]}cm - {heightRange[1]}cm
+                      </p>
                     </div>
-                    <div className="space-y-1.5 text-sm">
-                      {(["All", "Premium", "Free"] as const).map(o => (
-                        <label key={o} className="flex items-center gap-2 cursor-pointer py-1 hover:text-primary transition-colors">
-                          <input type="radio" name="profile_type" checked={profileType === o} onChange={() => setProfileType(o)} className="accent-primary" />
-                          <span className="text-muted-foreground">{o}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  </FilterSection>
 
-                  {/* CTA Box */}
-                  <div className="bg-primary rounded-2xl p-5 text-center text-primary-foreground">
-                    <h4 className="font-serif text-lg font-bold mb-1">What are you looking for?</h4>
-                    <p className="text-xs opacity-80 mb-3">We will help to arrange the best match to you</p>
-                    <Button variant="gold" size="sm" className="w-full">Send your queries</Button>
-                  </div>
+                  <FilterSection title="Marital Status" icon={<Heart className="w-4 h-4 text-primary" />}>
+                    <SearchableList
+                      placeholder="Search marital status..."
+                      options={MARITAL_STATUS_OPTIONS}
+                      selected={maritalStatus}
+                      onToggle={(item) => toggleSet(maritalStatus, item, setMaritalStatus)}
+                      searchQuery={maritalSearch}
+                      onSearchChange={setMaritalSearch}
+                      initialVisible={6}
+                    />
+                  </FilterSection>
+
+                  <FilterSection title="Religion" icon={<Sparkles className="w-4 h-4 text-primary" />}>
+                    <ReligionMultiSelect
+                      selected={religions}
+                      onToggle={(r) => toggleSet(religions, r, setReligions)}
+                      searchQuery={religionSearch}
+                      onSearchChange={setReligionSearch}
+                    />
+                  </FilterSection>
+
+                  <FilterSection title="Caste" icon={<Users className="w-4 h-4 text-primary" />}>
+                    <SearchableList
+                      placeholder="Search caste..."
+                      options={casteOptions.length > 0 ? casteOptions : ALL_CASTE_OPTIONS}
+                      selected={castes}
+                      onToggle={(item) => toggleSet(castes, item, setCastes)}
+                      searchQuery={casteSearch}
+                      onSearchChange={setCasteSearch}
+                      initialVisible={5}
+                    />
+                  </FilterSection>
+
+                  <FilterSection title="Education" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+                    <SearchableList
+                      placeholder="Search education..."
+                      options={EDUCATION_OPTIONS}
+                      selected={education}
+                      onToggle={(item) => toggleSet(education, item, setEducation)}
+                      searchQuery={educationSearch}
+                      onSearchChange={setEducationSearch}
+                      initialVisible={5}
+                    />
+                  </FilterSection>
+
+                  <FilterSection title="Occupation" icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}>
+                    <SearchableList
+                      placeholder="Search occupation..."
+                      options={OCCUPATION_OPTIONS}
+                      selected={occupation}
+                      onToggle={(item) => toggleSet(occupation, item, setOccupation)}
+                      searchQuery={occupationSearch}
+                      onSearchChange={setOccupationSearch}
+                      initialVisible={5}
+                    />
+                  </FilterSection>
                 </div>
               </motion.div>
 
@@ -227,7 +393,7 @@ const MatchesPage = () => {
                   >
                     {filteredProfiles.map((profile, index) => (
                       viewMode === "list" ? (
-                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} isOnline={(profile as MatchProfile).isOnline} />
+                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onViewDetails={() => setViewProfile(profile)} isOnline={(profile as MatchProfile).isOnline} />
                       ) : (
                         <MatchGridCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
                       )
@@ -252,12 +418,13 @@ const MatchesPage = () => {
         </DashboardLayout>
       </div>
 
+      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(open) => !open && setViewProfile(null)} profile={viewProfile} onSendInterest={() => setPlanModalOpen(true)} />
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </>
   );
 };
 
-const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest, isOnline: isOnlineProp }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void; isOnline?: boolean }) => {
+const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest, onViewDetails, isOnline: isOnlineProp }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void; onViewDetails?: () => void; isOnline?: boolean }) => {
   const isOnline = isOnlineProp ?? index % 3 === 0;
   const isNew = index < 3;
 
@@ -268,7 +435,7 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
       transition={{ delay: index * 0.06, type: "spring", stiffness: 100 }}
       whileHover={{ y: -4, boxShadow: "0 20px 60px -15px hsl(330 60% 34% / 0.15)" }}
       className="flex flex-col md:flex-row md:items-stretch bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 cursor-pointer group relative"
-      onClick={() => navigate(`/profile/${profile.id}`)}
+      onClick={() => onViewDetails?.()}
     >
       {/* New badge */}
       {isNew && (
@@ -293,27 +460,30 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
       <div className="flex-1 p-3 sm:p-5 min-w-0 flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-primary-dark transition-colors truncate min-w-0">{profile.name}</h3>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-all hover:scale-125 flex-shrink-0">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onLike(); }} className="text-muted-foreground hover:text-primary transition-all hover:scale-125 flex-shrink-0" aria-label="Favorite">
             <Heart className={`w-5 h-5 ${liked ? "fill-primary text-primary" : ""}`} />
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          <span className="px-2.5 py-0.5 bg-foreground text-primary-foreground text-xs font-medium rounded-md">{profile.education.split(",")[0]}</span>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.education.split(",")[0]}</span>
           <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.profession}</span>
           <span className="px-2.5 py-0.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md">{profile.age} Years old</span>
           <span className="px-2.5 py-0.5 bg-accent text-accent-foreground text-xs font-medium rounded-md">Height: 155Cms</span>
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-auto">
-          <Button size="sm" variant="hero" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" variant="hero" className="gap-1 text-xs shrink-0" onClick={(e) => e.stopPropagation()}>
             <MessageCircle className="w-3.5 h-3.5 shrink-0" /> Chat now
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0" onClick={(e) => e.stopPropagation()}>
             WhatsApp
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs flex-1 sm:flex-initial min-w-[calc(50%-4px)] sm:min-w-0" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0" onClick={(e) => { e.stopPropagation(); onSendInterest?.(); }}>
             <Send className="w-3.5 h-3.5 shrink-0" /> Send interest
+          </Button>
+          <Button size="sm" variant="hero" className="gap-1 text-xs shrink-0" onClick={(e) => { e.stopPropagation(); onViewDetails?.(); }}>
+            <Eye className="w-3.5 h-3.5 shrink-0" /> View details
           </Button>
         </div>
       </div>
