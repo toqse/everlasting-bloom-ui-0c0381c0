@@ -2,10 +2,10 @@ import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Heart, Grid, List, Star, Briefcase, GraduationCap, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users, Bell, TrendingUp, Flame, ImageIcon, Ruler, BookOpen, Briefcase as BriefcaseIcon, X, Eye } from "lucide-react";
+import { Search, MapPin, Heart, Star, Briefcase, GraduationCap, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users, Bell, TrendingUp, Flame, ImageIcon, Ruler, BookOpen, Briefcase as BriefcaseIcon, X, Eye } from "lucide-react";
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -160,7 +160,6 @@ const ReligionMultiSelect = ({ selected, onToggle, searchQuery, onSearchChange }
 
 const MatchesPage = () => {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
@@ -371,35 +370,19 @@ const MatchesPage = () => {
                       <option>Newest First</option>
                       <option>Best Match</option>
                     </select>
-                    <div className="flex bg-card rounded-lg border border-primary/10 overflow-hidden">
-                      <button onClick={() => setViewMode("grid")} className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
-                        <Grid className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setViewMode("list")} className={`p-2.5 transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
-                        <List className="w-4 h-4" />
-                      </button>
-                    </div>
                   </div>
                 </motion.div>
 
-                {/* Profile Cards */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={viewMode}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-5" : "space-y-5"}
-                  >
-                    {filteredProfiles.map((profile, index) => (
-                      viewMode === "list" ? (
-                        <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onViewDetails={() => setViewProfile(profile)} isOnline={(profile as MatchProfile).isOnline} />
-                      ) : (
-                        <MatchGridCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} />
-                      )
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
+                {/* Profile list - horizontal view only */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-5"
+                >
+                  {filteredProfiles.map((profile, index) => (
+                    <MatchListCard key={profile.id} profile={profile} index={index} navigate={navigate} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onViewDetails={() => setViewProfile(profile)} isOnline={(profile as MatchProfile).isOnline} />
+                  ))}
+                </motion.div>
 
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -485,47 +468,6 @@ const MatchListCard = ({ profile, index, navigate, liked, onLike, onSendInterest
           <Button size="sm" variant="hero" className="gap-1 text-xs shrink-0" onClick={(e) => { e.stopPropagation(); onViewDetails?.(); }}>
             <Eye className="w-3.5 h-3.5 shrink-0" /> View details
           </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const MatchGridCard = ({ profile, index, navigate, liked, onLike, onSendInterest }: { profile: Profile; index: number; navigate: any; liked: boolean; onLike: () => void; onSendInterest?: () => void }) => {
-  const isNew = index < 3;
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.06, type: "spring" }}
-      whileHover={{ y: -6, scale: 1.02 }}
-      className="bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 cursor-pointer group relative"
-      onClick={() => navigate(`/profile/${profile.id}`)}
-    >
-      {isNew && (
-        <div className="absolute top-3 left-3 z-10 px-2.5 py-1 bg-secondary text-secondary-foreground text-[10px] font-bold rounded-full flex items-center gap-1 animate-pulse-soft">
-          <Bell className="w-3 h-3" /> NEW
-        </div>
-      )}
-      <div className="relative h-56 overflow-hidden">
-        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
-        {profile.isPremium && (
-          <span className="absolute top-3 right-3 px-2 py-1 bg-secondary text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1">
-            <Star className="w-3 h-3 fill-current" /> Premium
-          </span>
-        )}
-        <button onClick={(e) => { e.stopPropagation(); onLike(); }} className={`absolute top-3 ${isNew ? "left-20" : "left-3"} w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 ${liked ? "bg-primary" : "bg-card/90"}`}>
-          <Heart className={`w-4 h-4 ${liked ? "text-primary-foreground fill-primary-foreground" : "text-primary"}`} />
-        </button>
-        <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-card/90 rounded-full text-xs font-bold text-gradient-primary shadow-soft">{profile.compatibility}% Match</div>
-      </div>
-      <div className="p-4">
-        <h3 className="font-serif text-lg font-bold text-foreground group-hover:text-primary transition-colors">{profile.name}</h3>
-        <p className="text-sm text-muted-foreground mb-2">{profile.age} years</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><Briefcase className="w-4 h-4 text-primary/60" />{profile.profession}</div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="w-4 h-4 text-primary/60" />{profile.location}</div>
         </div>
       </div>
     </motion.div>
