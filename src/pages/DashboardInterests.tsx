@@ -7,24 +7,21 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-type Tab = "new" | "accepted" | "denied";
+type Tab = "received" | "sent";
 
 const DashboardInterests = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("new");
+  const [activeTab, setActiveTab] = useState<Tab>("received");
   const navigate = useNavigate();
-  const { receivedInterests, acceptInterest, rejectInterest } = useInterestStore();
+  const { receivedInterests, sentInterests, acceptInterest, rejectInterest } = useInterestStore();
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "new", label: "New requests" },
-    { id: "accepted", label: "Accept request" },
-    { id: "denied", label: "Deny request" },
+    { id: "received", label: "Received" },
+    { id: "sent", label: "Sent" },
   ];
 
-  const filteredInterests = receivedInterests.filter((i) => {
-    if (activeTab === "new") return i.status === "pending";
-    if (activeTab === "accepted") return i.status === "accepted";
-    return i.status === "rejected";
-  });
+  const filteredList = activeTab === "received"
+    ? receivedInterests.map((i) => ({ interest: i, fromProfileId: i.fromProfileId, toProfileId: i.toProfileId, isReceived: true }))
+    : sentInterests.map((i) => ({ interest: i, fromProfileId: i.fromProfileId, toProfileId: i.toProfileId, isReceived: false }));
 
   const handleAccept = (id: string, name: string) => {
     acceptInterest(id);
@@ -53,16 +50,16 @@ const DashboardInterests = () => {
             </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-6 border-b border-primary/10 mb-6">
+          {/* Pill-style tabs: Received, Sent, Accepted, Declined */}
+          <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-6 p-1 rounded-2xl bg-rose-50/80 border border-primary/5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 text-sm font-medium transition-all border-b-2 ${
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                   activeTab === tab.id
-                    ? "border-secondary text-secondary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-md border-2 border-primary"
+                    : "bg-white/60 text-muted-foreground border-2 border-primary/10 hover:border-primary/20 hover:text-foreground"
                 }`}
               >
                 {tab.label}
@@ -72,19 +69,21 @@ const DashboardInterests = () => {
 
           {/* Interest Cards */}
           <div className="space-y-6">
-            {filteredInterests.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No {activeTab} requests at the moment.</p>
+            {filteredList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No {activeTab} interests at the moment.</p>
             ) : (
-              filteredInterests.map((interest) => {
-                const profile = profilesData.find((p) => p.id === interest.fromProfileId);
+              filteredList.map(({ interest, fromProfileId, toProfileId, isReceived }) => {
+                const profileId = isReceived ? fromProfileId : toProfileId;
+                const profile = profilesData.find((p) => p.id === profileId);
                 if (!profile) return null;
 
                 const planBadge = profile.isPremium ? "PLATINUM USER" : "FREE USER";
                 const badgeColor = profile.isPremium ? "bg-primary text-primary-foreground" : "bg-green-600 text-white";
+                const showAcceptDeny = isReceived && interest.status === "pending";
 
                 return (
                   <motion.div
-                    key={interest.id}
+                    key={`${interest.id}-${isReceived ? "r" : "s"}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex items-start gap-4 pb-6 border-b border-primary/5 last:border-0"
@@ -111,10 +110,10 @@ const DashboardInterests = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         • Request on: {new Date(interest.createdAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}, {new Date(interest.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                         {interest.status === "accepted" && (
-                          <span> • Accept on: {new Date(interest.updatedAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}, {new Date(interest.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                          <span> • Accepted: {new Date(interest.updatedAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}, {new Date(interest.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                         )}
                         {interest.status === "rejected" && (
-                          <span> • Deny on: {new Date(interest.updatedAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}, {new Date(interest.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                          <span> • Declined: {new Date(interest.updatedAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}, {new Date(interest.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                         )}
                       </p>
                       <button
@@ -126,17 +125,11 @@ const DashboardInterests = () => {
                     </div>
 
                     <div className="flex gap-2 flex-shrink-0">
-                      {activeTab === "new" && (
+                      {showAcceptDeny && (
                         <>
                           <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs rounded-full" onClick={() => handleAccept(interest.id, profile.name)}>Accept</Button>
                           <Button size="sm" variant="outline" className="text-xs rounded-full border-primary" onClick={() => handleReject(interest.id, profile.name)}>Deny</Button>
                         </>
-                      )}
-                      {activeTab === "accepted" && (
-                        <Button size="sm" variant="outline" className="text-xs rounded-full border-primary" onClick={() => handleReject(interest.id, profile.name)}>Deny</Button>
-                      )}
-                      {activeTab === "denied" && (
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs rounded-full" onClick={() => handleAccept(interest.id, profile.name)}>Accept</Button>
                       )}
                     </div>
                   </motion.div>

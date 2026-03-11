@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, UsersRound, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
+  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DemoReligionBar from "@/components/DemoReligionBar";
@@ -14,7 +14,6 @@ const baseSidebarLinks = [
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
-  { name: "Family Details", href: "/dashboard/family-details", icon: UsersRound },
   { name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
@@ -47,7 +46,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout, isHindu } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
+  const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
+  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || (isHindu() && hasPaidPlan()));
 
   const handleLogout = () => {
     logout();

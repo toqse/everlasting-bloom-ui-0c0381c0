@@ -32,7 +32,10 @@ const statusConfig = {
 };
 
 const DashboardPage = () => {
-  const { user, isHindu } = useAuthStore();
+  const { user, isHindu, hasPaidPlan, getHoroscopeRemaining, getHoroscopeQuota } = useAuthStore();
+  const showHoroscope = () => isHindu() && hasPaidPlan();
+  const horoscopeRemaining = getHoroscopeRemaining();
+  const horoscopeQuota = getHoroscopeQuota();
   const { sentInterests } = useInterestStore();
   const navigate = useNavigate();
   const [planModalOpen, setPlanModalOpen] = useState(false);
@@ -40,7 +43,7 @@ const DashboardPage = () => {
   const [uploadPhotosOpen, setUploadPhotosOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
-  const dashboardStats = allDashboardStats.filter((s) => !("hinduOnly" in s && s.hinduOnly) || isHindu());
+  const dashboardStats = allDashboardStats.filter((s) => !("hinduOnly" in s && s.hinduOnly) || showHoroscope());
   const newMatches = profilesData.slice(0, 4);
   const suggestedProfiles = profilesData.slice(0, 4);
   const nearbyProfiles = profilesData.slice(0, 3);
@@ -48,7 +51,7 @@ const DashboardPage = () => {
   const profileCompletion = 75;
 
   const quickActionsList = [
-    ...(isHindu() ? [{ label: "Add horoscope details", icon: Star, action: () => navigate("/dashboard/profile") }] : []),
+    ...(showHoroscope() ? [{ label: "Add horoscope details", icon: Star, action: () => navigate("/dashboard/jathagam") }] : []),
     { label: "Upload more photos", icon: Camera, action: () => setUploadPhotosOpen(true) },
     { label: "Set partner preferences", icon: Settings2, action: () => setPreferencesOpen(true) },
   ];
@@ -122,6 +125,33 @@ const DashboardPage = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Horoscope / Contact credits usage widget - visible when subscribed */}
+        {hasPaidPlan() && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className="bg-card rounded-2xl shadow-card p-4 border border-primary/10 flex flex-wrap items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Horoscope & contact views</p>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-bold text-primary">{horoscopeRemaining}</span> of {horoscopeQuota} remaining this period
+                </p>
+              </div>
+            </div>
+            {horoscopeRemaining <= 2 && (
+              <Button size="sm" variant="outline" onClick={() => setPlanModalOpen(true)}>
+                Get more
+              </Button>
+            )}
+          </motion.div>
+        )}
 
         {/* 5 stat cards */}
         <motion.div
@@ -252,7 +282,7 @@ const DashboardPage = () => {
                       showActions={true}
                       onSendInterest={() => setPlanModalOpen(true)}
                       onViewProfile={() => setViewProfile(profile)}
-                      showHoroscopeBadge={isHindu()}
+                      showHoroscopeBadge={showHoroscope()}
                     />
                   </div>
                 ))}
@@ -296,7 +326,7 @@ const DashboardPage = () => {
               </div>
             </motion.div>
 
-            {isHindu() && (
+            {showHoroscope() && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -348,7 +378,7 @@ const DashboardPage = () => {
       </div>
 
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
-      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => setPlanModalOpen(true)} />
+      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => setPlanModalOpen(true)} onOpenPlanModal={() => setPlanModalOpen(true)} />
       <UploadPhotosModal open={uploadPhotosOpen} onOpenChange={setUploadPhotosOpen} />
       <PartnerPreferencesModal open={preferencesOpen} onOpenChange={setPreferencesOpen} />
     </DashboardLayout>

@@ -1,21 +1,88 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Heart, Sparkles, Lock, User, Briefcase, ClipboardList, Users, Moon, Phone } from "lucide-react";
+import { X, Heart, Sparkles, Lock, User, Briefcase, ClipboardList, Users, Moon, Phone, Eye } from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
 import { useAuthStore } from "@/stores/authStore";
+import { useInterestStore } from "@/stores/interestStore";
+import { toast } from "sonner";
+import UseCreditDialog, { type CreditDialogVariant } from "@/components/UseCreditDialog";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profile: Profile | null;
   onSendInterest: () => void;
+  /** When credits are exhausted or user clicks Upgrade in credit dialog */
+  onOpenPlanModal?: () => void;
 }
 
-const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Props) => {
+const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest, onOpenPlanModal }: Props) => {
   const isHindu = useAuthStore((s) => s.isHindu);
+  const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
+  const sendInterest = useInterestStore((s) => s.sendInterest);
+  const getHoroscopeRemaining = useAuthStore((s) => s.getHoroscopeRemaining);
+  const getHoroscopeQuota = useAuthStore((s) => s.getHoroscopeQuota);
+  const useHoroscopeCredit = useAuthStore((s) => s.useHoroscopeCredit);
+
+  const [contactRevealed, setContactRevealed] = useState(false);
+  const [horoscopeRevealed, setHoroscopeRevealed] = useState(false);
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false);
+  const [creditDialogVariant, setCreditDialogVariant] = useState<CreditDialogVariant>("contact");
+
+  useEffect(() => {
+    if (!open) {
+      setContactRevealed(false);
+      setHoroscopeRevealed(false);
+    }
+  }, [open, profile?.id]);
 
   if (!profile) return null;
+
+  const handleSendInterest = () => {
+    if (hasPaidPlan()) {
+      sendInterest(0, profile.id, "Hi! I'd love to connect with you.");
+      toast.success("Interest sent!", { description: `${profile.name} will be notified.` });
+      onOpenChange(false);
+    } else {
+      onSendInterest();
+      onOpenChange(false);
+    }
+  };
+
+  const handleCreditConfirm = () => {
+    const used = useHoroscopeCredit();
+    if (used) {
+      if (creditDialogVariant === "contact") setContactRevealed(true);
+      else setHoroscopeRevealed(true);
+      toast.success("1 credit used");
+      const remaining = getHoroscopeRemaining();
+      if (remaining <= 2 && remaining > 0) {
+        toast.info(`Only ${remaining} horoscope match${remaining === 1 ? "" : "es"} remaining. Consider upgrading for more.`);
+      }
+    }
+  };
+
+  const handleViewContactClick = () => {
+    if (getHoroscopeRemaining() <= 0) {
+      setCreditDialogVariant("contact");
+      setCreditDialogOpen(true);
+      return;
+    }
+    setCreditDialogVariant("contact");
+    setCreditDialogOpen(true);
+  };
+
+  const handleCheckHoroscopeClick = () => {
+    if (getHoroscopeRemaining() <= 0) {
+      setCreditDialogVariant("horoscope");
+      setCreditDialogOpen(true);
+      return;
+    }
+    setCreditDialogVariant("horoscope");
+    setCreditDialogOpen(true);
+  };
 
   const basicDetails = [
     { label: "AGE", value: `${profile.age} years` },
@@ -134,44 +201,73 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
                 </p>
               </div>
 
-              {/* Horoscope Info - Hindu only */}
-              {isHindu() && (
+              {/* Horoscope Info - Hindu + paid plan; use 1 credit to view */}
+              {isHindu() && hasPaidPlan() && (
                 <div className="mt-4">
                   <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                     <Moon className="w-5 h-5 text-primary" /> Horoscope Info
                   </h3>
-                  <div className="grid grid-cols-2 gap-2 p-4 rounded-xl bg-primary/5 border border-primary/15">
-                    {horoscopeInfo.map((d, i) => (
-                      <div key={i} className="p-2">
-                        <p className="text-[10px] font-bold text-primary uppercase">{d.label}</p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">{d.value}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {horoscopeRevealed ? (
+                    <div className="grid grid-cols-2 gap-2 p-4 rounded-xl bg-primary/5 border border-primary/15">
+                      {horoscopeInfo.map((d, i) => (
+                        <div key={i} className="p-2">
+                          <p className="text-[10px] font-bold text-primary uppercase">{d.label}</p>
+                          <p className="text-sm font-semibold text-foreground mt-0.5">{d.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleCheckHoroscopeClick}
+                    >
+                      <Sparkles className="w-4 h-4" /> Check Horoscope
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Contact Details - Blurred */}
+          {/* Contact Details - after payment use 1 credit to reveal; otherwise upgrade prompt */}
           <div>
             <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
               <Phone className="w-5 h-5 text-primary" /> Contact Details
             </h3>
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 relative">
-              <div className="blur-sm select-none pointer-events-none">
+              <div className={hasPaidPlan() && contactRevealed ? "" : "blur-sm select-none pointer-events-none"}>
                 <p className="text-sm text-foreground">+91 98765 43210</p>
                 <p className="text-sm text-foreground mt-1">{profile.name.toLowerCase().replace(" ", "")}@gmail.com</p>
               </div>
-              <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-xl">
-                <div className="text-center flex items-center gap-2 justify-center">
-                  <Lock className="w-4 h-4 text-secondary shrink-0" />
-                  <p className="text-sm font-semibold text-secondary">Upgrade to Gold or Diamond plan to view contact</p>
+              {!hasPaidPlan() && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-xl">
+                  <div className="text-center flex items-center gap-2 justify-center">
+                    <Lock className="w-4 h-4 text-secondary shrink-0" />
+                    <p className="text-sm font-semibold text-secondary">Upgrade to Gold or Diamond plan to view contact</p>
+                  </div>
                 </div>
-              </div>
+              )}
+              {hasPaidPlan() && !contactRevealed && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-[2px] rounded-xl">
+                  <Button variant="hero" className="gap-2" onClick={handleViewContactClick}>
+                    <Eye className="w-4 h-4" /> View Contact
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        <UseCreditDialog
+          open={creditDialogOpen}
+          onOpenChange={setCreditDialogOpen}
+          remaining={getHoroscopeRemaining()}
+          quota={getHoroscopeQuota()}
+          variant={creditDialogVariant}
+          onConfirm={handleCreditConfirm}
+          onUpgrade={() => onOpenPlanModal?.()}
+        />
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-primary/10 flex gap-3">
@@ -179,10 +275,7 @@ const ProfileViewDrawer = ({ open, onOpenChange, profile, onSendInterest }: Prop
             variant="hero"
             size="lg"
             className="flex-1 gap-2"
-            onClick={() => {
-              onSendInterest();
-              onOpenChange(false);
-            }}
+            onClick={handleSendInterest}
           >
             <Heart className="w-5 h-5" /> Send Interest
           </Button>

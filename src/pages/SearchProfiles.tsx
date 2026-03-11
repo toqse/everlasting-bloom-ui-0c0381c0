@@ -233,7 +233,7 @@ const SearchProfiles = () => {
       </section>
 
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
-      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => { setPlanModalOpen(true); setViewProfile(null); }} />
+      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => { setPlanModalOpen(true); setViewProfile(null); }} onOpenPlanModal={() => { setPlanModalOpen(true); setViewProfile(null); }} />
 
       <Footer />
     </div>

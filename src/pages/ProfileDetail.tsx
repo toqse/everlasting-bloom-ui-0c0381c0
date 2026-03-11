@@ -4,12 +4,13 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { 
-  Heart, MapPin, Briefcase, GraduationCap, MessageCircle, 
-  ArrowLeft, Shield, Ruler, Phone, Mail, MapPinned, Send, Clock, X, Check, Crown, Star
+import {
+  ArrowLeft, Shield, Phone, Mail, MapPinned, Clock, X, Check, Crown,
+  Building2, Cake, Ruler, Briefcase, Sun, Lock,
 } from "lucide-react";
 import { profilesData } from "@/components/FeaturedProfiles";
 import { useInterestStore, InterestStatus } from "@/stores/interestStore";
+import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 
@@ -30,6 +31,7 @@ const StatusChip = ({ status }: { status: InterestStatus }) => {
 const ProfileDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan());
   const { favorites, toggleFavorite, sendInterest, getSentInterestStatus, canChat } = useInterestStore();
   const profile = profilesData.find(p => p.id === Number(id));
   const isFavorite = profile ? favorites.includes(profile.id) : false;
@@ -69,11 +71,20 @@ const ProfileDetail = () => {
   };
 
   const quickInfo = [
-    { emoji: "🏙️", label: "CITY:", value: profile.location.split(",")[0] },
-    { emoji: "🎂", label: "AGE:", value: `${profile.age}` },
-    { emoji: "📏", label: "HEIGHT:", value: "5.7" },
-    { emoji: "💼", label: "JOB:", value: profile.profession.split(" ")[0].toUpperCase() },
+    { icon: Building2, label: "CITY", value: profile.location.split(",")[0] },
+    { icon: Cake, label: "AGE", value: `${profile.age}` },
+    { icon: Ruler, label: "HEIGHT", value: "5.7" },
+    { icon: Briefcase, label: "JOB", value: profile.profession.split(" ")[0].toUpperCase() },
   ];
+
+  // Demo horoscope data (in real app would come from profile/API)
+  const horoscope = {
+    rashi: "Meena (Pisces)",
+    nakshatra: "Revati",
+    manglikStatus: "Non-Manglik",
+    birthTime: "10:30 AM",
+    birthPlace: profile.location.split(",")[0],
+  };
 
   const galleryImages = [
     "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300&h=300&fit=crop",
@@ -82,62 +93,80 @@ const ProfileDetail = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50/80">
       <Navbar />
 
-      <section className="pt-20">
-        {/* Back button */}
-        <div className="container mx-auto px-4 py-4">
-          <button onClick={() => { if (window.history.length > 1) navigate(-1); else navigate("/search"); }} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back</span>
-          </button>
-        </div>
-
-        {/* Main Profile - Two column layout like reference */}
-        <div className="flex flex-col lg:flex-row">
-          {/* Left - Full height photo */}
+      <section className="pt-20 pb-16">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* Back */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:w-1/2 relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6"
           >
-            <img
-              src={profile.image}
-              alt={profile.name}
-              className="w-full h-[500px] lg:h-[600px] object-cover"
-            />
+            <button
+              onClick={() => { if (window.history.length > 1) navigate(-1); else navigate("/search"); }}
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              <span className="text-sm font-medium">Back to search</span>
+            </button>
+          </motion.div>
 
-            {/* Badges */}
-            <div className="absolute top-6 left-6 flex gap-2 z-20">
-              {profile.isPremium && (
-                <span className="px-3 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-sm font-bold rounded-full flex items-center gap-1 shadow-gold animate-glow">
-                  <Crown className="w-4 h-4" /> Premium
-                </span>
-              )}
-              {profile.isVerified && (
-                <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-full flex items-center gap-1">
-                  <Shield className="w-4 h-4" /> Verified
-                </span>
-              )}
-            </div>
-
-            {/* Bottom action buttons like reference */}
-            <div className="flex">
-              <Button
-                variant="default"
-                className="flex-1 rounded-none py-6 text-lg font-semibold bg-[#4338ca] hover:bg-[#3730a3] text-primary-foreground"
-                onClick={handleMessage}
-              >
-                CHAT NOW
-              </Button>
-              <Button
-                variant="default"
-                className="flex-1 rounded-none py-6 text-lg font-semibold bg-secondary hover:bg-secondary-dark text-secondary-foreground"
-                onClick={interestStatus ? undefined : handleSendInterest}
-              >
-                {interestStatus ? interestStatus.toUpperCase() : "SEND INTEREST"}
-              </Button>
+          {/* Hero card: image + name + badges + actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white rounded-3xl shadow-xl shadow-primary/5 border border-primary/5 overflow-hidden mb-8"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:p-8">
+              <div className="relative shrink-0 mx-auto sm:mx-0">
+                <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden ring-2 ring-white shadow-lg">
+                  <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                </div>
+                <div className="absolute -top-1 -right-1 flex flex-col gap-1">
+                  {profile.isPremium && (
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold rounded-full flex items-center gap-0.5 shadow">
+                      <Crown className="w-3 h-3" /> Premium
+                    </span>
+                  )}
+                  {profile.isVerified && (
+                    <span className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center gap-0.5">
+                      <Shield className="w-3 h-3" /> Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 text-center sm:text-left min-w-0">
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-1">{profile.name}</h1>
+                <p className="text-muted-foreground text-sm mb-3">
+                  {profile.age} yrs · {profile.location.split(",")[0]} · {profile.profession}
+                </p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-4">
+                  <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">100 viewers</span>
+                  <span className="px-2.5 py-1 bg-emerald-500/15 text-emerald-700 text-xs font-semibold rounded-lg">Online</span>
+                  {interestStatus && <StatusChip status={interestStatus} />}
+                </div>
+                <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+                  <Button
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5"
+                    onClick={handleMessage}
+                  >
+                    Chat now
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl border-2 border-primary/30 text-primary hover:bg-primary/10"
+                    onClick={interestStatus ? undefined : handleSendInterest}
+                  >
+                    {interestStatus ? interestStatus : "Send interest"}
+                  </Button>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -147,116 +176,148 @@ const ProfileDetail = () => {
             onPaySuccess={handlePlanPaySuccess}
           />
 
-          {/* Right - Profile info */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:w-1/2 p-8 lg:p-12 relative"
-          >
-            {/* Decorative leaf top-right */}
-            <div className="absolute top-0 right-0 pointer-events-none opacity-30 transform scale-x-[-1]">
-              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-24 h-32 object-contain" />
-            </div>
-
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-3">
-              {profile.name}
-            </h1>
-
-            {/* Status badges */}
-            <div className="flex gap-2 mb-6">
-              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-md">100 viewers</span>
-              <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-md">Available online</span>
-              {interestStatus && <StatusChip status={interestStatus} />}
-            </div>
-
-            {/* Quick info cards like reference */}
-            <div className="flex gap-3 mb-8">
-              {quickInfo.map((info, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                  className="flex-1 border border-primary/10 rounded-xl p-3 text-center hover-lift bg-card"
-                >
-                  <div className="text-2xl mb-1">{info.emoji}</div>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase">{info.label}</p>
-                  <p className="text-sm font-bold text-foreground">{info.value}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* About section */}
-            <div className="mb-8">
-              <h3 className="font-serif text-xl font-bold text-foreground mb-3 uppercase tracking-wide">About</h3>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+          {/* Content grid: 2 cols on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* About - spans 2 cols */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:col-span-2 bg-white rounded-2xl border border-primary/5 shadow-lg shadow-primary/5 p-6"
+            >
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 rounded-full bg-primary" /> About
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-3">
                 I am a {profile.profession} working in {profile.location}. I completed my {profile.education} and am passionate about my career. I believe in maintaining a balance between work and personal life.
               </p>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text.
               </p>
-            </div>
+            </motion.div>
 
-            {/* Photo Gallery */}
-            <div className="mb-8">
-              <div className="border-t border-border mb-6" />
-              <h3 className="font-serif text-xl font-bold text-foreground mb-4 uppercase tracking-wide">Photo Gallery</h3>
+            {/* Quick info - 1 col */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="bg-white rounded-2xl border border-primary/5 shadow-lg shadow-primary/5 p-6"
+            >
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 rounded-full bg-primary" /> Details
+              </h2>
+              <ul className="space-y-3">
+                {quickInfo.map((info, i) => {
+                  const Icon = info.icon;
+                  return (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{info.label}</p>
+                        <p className="text-sm font-semibold text-foreground">{info.value}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </motion.div>
+
+            {/* Horoscope - 1 col */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-2xl border border-primary/5 shadow-lg shadow-primary/5 p-6"
+            >
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <Sun className="w-5 h-5 text-amber-500" /> Horoscope
+              </h2>
+              {hasPaidPlan ? (
+                <div className="space-y-3 text-sm">
+                  <div><p className="text-xs text-muted-foreground uppercase font-semibold">Rashi</p><p className="font-medium text-foreground">{horoscope.rashi}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-semibold">Nakshatra</p><p className="font-medium text-foreground">{horoscope.nakshatra}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-semibold">Manglik</p><p className="font-medium text-foreground">{horoscope.manglikStatus}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-semibold">Birth time</p><p className="font-medium text-foreground">{horoscope.birthTime}</p></div>
+                  <div><p className="text-xs text-muted-foreground uppercase font-semibold">Birth place</p><p className="font-medium text-foreground">{horoscope.birthPlace}</p></div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Lock className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground mb-3">Unlock with a plan</p>
+                  <Button size="sm" variant="hero" className="rounded-xl" onClick={() => setPlanModalOpen(true)}>View plans</Button>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Photo gallery - spans 2 cols */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="lg:col-span-2 bg-white rounded-2xl border border-primary/5 shadow-lg shadow-primary/5 p-6"
+            >
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4">Photo gallery</h2>
               <div className="grid grid-cols-3 gap-3">
                 {galleryImages.map((img, i) => (
-                  <motion.div
+                  <div
                     key={i}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 + i * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="rounded-xl overflow-hidden cursor-pointer shadow-card"
+                    className="aspect-square rounded-xl overflow-hidden bg-muted ring-1 ring-black/5 hover:ring-primary/20 transition-all"
                   >
-                    <img src={img} alt={`Gallery ${i + 1}`} className="w-full h-32 object-cover hover:brightness-110 transition-all" />
-                  </motion.div>
+                    <img src={img} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                  </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Contact Info */}
-            <div>
-              <div className="border-t border-border mb-6" />
-              <h3 className="font-serif text-xl font-bold text-foreground mb-4 uppercase tracking-wide">Contact Info</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
-                    <Phone className="w-4 h-4 text-primary" />
+            {/* Contact - 1 col */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white rounded-2xl border border-primary/5 shadow-lg shadow-primary/5 p-6"
+            >
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4">Contact</h2>
+              {hasPaidPlan ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Phone className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Phone</p>
+                      <p className="text-sm font-medium text-foreground truncate">+92 (8800) 68 - 8960</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm font-semibold text-foreground">Phone: </span>
-                    <span className="text-sm text-muted-foreground">+92 (8800) 68 - 8960</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Email</p>
+                      <p className="text-sm font-medium text-foreground truncate">{profile.name.toLowerCase().replace(" ", "")}@gmail.com</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <MapPinned className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Address</p>
+                      <p className="text-sm font-medium text-foreground">28800 Orchard Lake Road, Suite 180, {profile.location}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold text-foreground">Email: </span>
-                    <span className="text-sm text-muted-foreground">{profile.name.toLowerCase().replace(" ", "")}@gmail.com</span>
-                  </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Lock className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground mb-3">Unlock contact details</p>
+                  <Button size="sm" variant="hero" className="rounded-xl" onClick={() => setPlanModalOpen(true)}>View plans</Button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center">
-                    <MapPinned className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold text-foreground">Address: </span>
-                    <span className="text-sm text-muted-foreground">28800 Orchard Lake Road, Suite 180, {profile.location}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Decorative leaf bottom-right */}
-            <div className="absolute bottom-0 right-0 pointer-events-none opacity-20 transform scale-x-[-1] rotate-180">
-              <img src="https://rn53themes.net/themes/matrimo/images/leafs-min.png" alt="" className="w-32 h-40 object-contain" />
-            </div>
-          </motion.div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </section>
 

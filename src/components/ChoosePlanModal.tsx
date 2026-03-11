@@ -99,11 +99,13 @@ export default function ChoosePlanModal({
       if (p < 100) requestAnimationFrame(tick);
       else {
         setStep("success");
+        const planName = PLANS.find((p) => p.id === selectedPlanId)?.name ?? "Gold";
+        useAuthStore.getState().setPlan(planName);
         onPaySuccess?.();
       }
     };
     requestAnimationFrame(tick);
-  }, [step, onPaySuccess]);
+  }, [step, selectedPlanId, onPaySuccess]);
 
   const handlePayNow = () => {
     setStep("processing");

@@ -418,7 +418,7 @@ const MatchesPage = () => {
         </DashboardLayout>
       </div>
 
-      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(open) => !open && setViewProfile(null)} profile={viewProfile} onSendInterest={() => setPlanModalOpen(true)} />
+      <ProfileViewDrawer open={!!viewProfile} onOpenChange={(open) => !open && setViewProfile(null)} profile={viewProfile} onSendInterest={() => setPlanModalOpen(true)} onOpenPlanModal={() => setPlanModalOpen(true)} />
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </>
   );
