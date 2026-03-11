@@ -17,10 +17,35 @@ const ContactPage = () => {
   };
 
   const contactInfo = [
-    { icon: Phone, title: "Phone", details: ["+91 123 456 7890", "+91 987 654 3210"] },
-    { icon: Mail, title: "Email", details: ["support@eternalbond.com", "info@eternalbond.com"] },
-    { icon: MapPin, title: "Address", details: ["123 Wedding Street", "Mumbai, Maharashtra 400001"] },
-    { icon: Clock, title: "Working Hours", details: ["Mon - Sat: 9:00 AM - 7:00 PM", "Sunday: Closed"] },
+    {
+      icon: MapPin,
+      title: "Head Office",
+      details: [
+        "Aiswarya Marriage Bureau",
+        "Near Private Bus Stand",
+        "Cherthala – 688524",
+        "Customer Care: 7907240062",
+      ],
+    },
+    {
+      icon: Mail,
+      title: "Email",
+      details: ["ramananpm68@gmail.com"],
+    },
+    {
+      icon: MapPin,
+      title: "Branch Office",
+      details: [
+        "Pothanicad",
+        "Moovattupuzha, Ernakulam",
+        "Branch Contact: 6282857276",
+      ],
+    },
+    {
+      icon: Clock,
+      title: "Working Hours",
+      details: ["Mon - Sat: 9:00 AM - 7:00 PM", "Sunday: Closed"],
+    },
   ];
 
   return (

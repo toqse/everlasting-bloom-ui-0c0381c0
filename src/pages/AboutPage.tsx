@@ -1,12 +1,27 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Sparkles, Star, Users, Phone, Mail, Heart, MapPin, Building2 } from "lucide-react";
+import { Sparkles, Star, Users, Phone, Mail, Heart, MapPin, Building2, UserCheck, ShieldCheck, Infinity } from "lucide-react";
 
 const features = [
-  { emoji: "🏅", title: "Genuine Profiles", description: "The most trusted wedding matrimony brand with 100% verified profiles" },
-  { emoji: "🤝🛡️", title: "Most Trusted", description: "The most trusted wedding matrimony brand trusted by millions" },
-  { emoji: "💍💕", title: "2000+ Weddings", description: "The most trusted wedding matrimony brand with thousands of success stories" },
+  {
+    title: "Genuine Profiles",
+    description: "The most trusted wedding matrimony brand with 100% verified profiles",
+    icon: UserCheck,
+    ringClass: "from-emerald-200/60 via-emerald-100 to-emerald-50",
+  },
+  {
+    title: "Most Trusted",
+    description: "The most trusted wedding matrimony brand trusted by millions",
+    icon: ShieldCheck,
+    ringClass: "from-violet-200/70 via-violet-100 to-violet-50",
+  },
+  {
+    title: "2000+ Weddings",
+    description: "The most trusted wedding matrimony brand with thousands of success stories",
+    icon: Infinity,
+    ringClass: "from-pink-200/70 via-pink-100 to-pink-50",
+  },
 ];
 
 const stats = [
@@ -25,9 +40,12 @@ const testimonials = [
 const teamMembers = [
   { name: "Rajesh Kumar", role: "Hindu Caste Manager", phone: "+91 94567 12301", branch: "Cherthala Main Branch", caste: "Hindu" },
   { name: "Anwar Hussain", role: "Muslim Caste Manager", phone: "+91 94567 12302", branch: "Cherthala Main Branch", caste: "Muslim" },
-  { name: "Thomas Mathew", role: "Christian Caste Manager", phone: "+91 94567 12303", branch: "Alappuzha Branch", caste: "Christian" },
-  { name: "Suresh Nair", role: "Nair Community Manager", phone: "+91 94567 12304", branch: "Kochi Branch", caste: "Hindu" },
-  { name: "Priya Menon", role: "Ezhava Community Manager", phone: "+91 94567 12305", branch: "Cherthala Main Branch", caste: "Hindu" },
+  { name: "Thomas Mathew", role: "Christian Caste Manager", phone: "6282857276, 8075352944, 9037188286", branch: "Alappuzha Branch", caste: "Christian" },
+  { name: "Suresh Nair", role: "Nair Community Manager", phone: "8848290822, 808906360", branch: "Kochi Branch", caste: "Hindu" },
+  { name: "Priya Menon", role: "Ezhava Community Manager", phone: "8848862419, 7907240062", branch: "Cherthala Main Branch", caste: "Hindu" },
+  { name: "Saji Kumar", role: "Velan / Mannan / Paravar Community Manager", phone: "9495091895", branch: "Cherthala Main Branch", caste: "Hindu" },
+  { name: "Binu Viswakarma", role: "Viswakarma / Pattarya Vilakkathala Community Manager", phone: "9495091895, 8089063608", branch: "Cherthala Main Branch", caste: "Hindu" },
+  { name: "Manoj Varghese", role: "Velan / Mannan / Paravar / Pulaya Community Manager", phone: "9495091895, 8075352944", branch: "Cherthala Main Branch", caste: "Hindu" },
 ];
 
 const teamColors = [
@@ -36,6 +54,9 @@ const teamColors = [
   "bg-amber-50 border-amber-200",
   "bg-green-50 border-green-200",
   "bg-purple-50 border-purple-200",
+  "bg-rose-50 border-rose-200",
+  "bg-blue-50 border-blue-200",
+  "bg-amber-50 border-amber-200",
 ];
 
 const teamIconColors = [
@@ -44,6 +65,9 @@ const teamIconColors = [
   "bg-amber-200 text-amber-600",
   "bg-green-200 text-green-600",
   "bg-purple-200 text-purple-600",
+  "bg-rose-200 text-rose-600",
+  "bg-blue-200 text-blue-600",
+  "bg-amber-200 text-amber-600",
 ];
 
 const AboutPage = () => {
@@ -82,10 +106,18 @@ const AboutPage = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 -mt-16 relative z-20">
             {features.map((f, i) => (
-              <motion.div key={f.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                className="bg-card rounded-3xl p-8 shadow-card hover-lift text-center border border-primary/10">
-                <div className="w-20 h-20 mx-auto rounded-full bg-accent-gold/60 flex items-center justify-center mb-4">
-                  <span className="text-3xl">{f.emoji}</span>
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="bg-card rounded-3xl p-8 shadow-card hover-lift text-center border border-primary/10"
+              >
+                <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-b ${f.ringClass} flex items-center justify-center mb-4 shadow-inner`}>
+                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-soft">
+                    <f.icon className="w-8 h-8 text-primary" />
+                  </div>
                 </div>
                 <h3 className="font-serif text-xl font-bold text-foreground mb-2">{f.title}</h3>
                 <p className="text-muted-foreground text-sm">{f.description}</p>

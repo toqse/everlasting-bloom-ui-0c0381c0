@@ -130,23 +130,27 @@ const Footer = () => {
               Begin your beautiful journey towards forever love.
             </p>
             <div className="space-y-3">
-              <a href="tel:+911234567890" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
+              <a href="tel:+917907240062" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Phone className="w-4 h-4 text-primary" />
                 </div>
-                +91 123 456 7890
+                Customer Care: 7907240062
               </a>
-              <a href="mailto:support@eternalbond.com" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
+              <a href="mailto:ramananpm68@gmail.com" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
-                support@eternalbond.com
+                ramananpm68@gmail.com
               </a>
               <div className="flex items-start gap-3 text-foreground">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-4 h-4 text-primary" />
                 </div>
-                Mumbai, Maharashtra, India
+                <div className="text-sm">
+                  <p>Aiswarya Marriage Bureau</p>
+                  <p>Near Private Bus Stand</p>
+                  <p>Cherthala – 688524</p>
+                </div>
               </div>
             </div>
           </div>

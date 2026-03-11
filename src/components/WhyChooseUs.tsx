@@ -1,50 +1,23 @@
 import { motion } from "framer-motion";
-import { Phone, Mail, Sparkles } from "lucide-react";
+import { Phone, Mail, Sparkles, UserCheck, ShieldCheck, Infinity } from "lucide-react";
 
-/* Original-style icons: medal with star & ribbon, handshake + shield, ring + hearts */
-const IconGenuine = () => (
-  <svg viewBox="0 0 64 64" className="w-10 h-10 shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <circle cx="32" cy="26" r="14" fill="#D4A84B" stroke="#B8860B" strokeWidth="1.5" />
-    <path d="M32 18l3.5 7 7.5 1-5.5 5.5 1.5 7.5L32 35l-6 4 1.5-7.5-5.5-5.5 7.5-1L32 18z" fill="#fff" stroke="#B8860B" strokeWidth="0.8" strokeLinejoin="round" />
-    <path d="M22 42h20v6c0 2-1.5 4-4 4H26c-2.5 0-4-2-4-4v-6z" fill="#D4A84B" stroke="#B8860B" strokeWidth="1.2" />
-    <path d="M26 48h12M28 52h8" stroke="#B8860B" strokeWidth="1" strokeLinecap="round" />
-    <rect x="26" y="54" width="12" height="6" rx="1" fill="#8B5CF6" />
-    <rect x="26" y="58" width="4" height="2" fill="#93C5FD" /><rect x="34" y="58" width="4" height="2" fill="#93C5FD" />
-  </svg>
-);
-const IconTrusted = () => (
-  <svg viewBox="0 0 64 64" className="w-10 h-10 shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <path d="M20 34l6-6 4 4 8-8 6 6" stroke="#D4A84B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <path d="M28 28v-4c0-2 2-4 4-4s4 2 4 4v4" stroke="#D4A84B" strokeWidth="2" fill="none" />
-    <path d="M24 30c-2 0-4 2-4 4v2h16v-2c0-2-2-4-4-4" stroke="#D4A84B" strokeWidth="1.8" fill="none" />
-    <path d="M32 38c-6 0-10 4-10 10v8h20v-8c0-6-4-10-10-10z" fill="#3B82F6" stroke="#2563EB" strokeWidth="1.5" />
-    <path d="M32 42l2 2 4-4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-const IconWeddings = () => (
-  <svg viewBox="0 0 64 64" className="w-10 h-10 shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <circle cx="32" cy="26" r="11" stroke="#A78BFA" strokeWidth="2.5" fill="none" />
-    <circle cx="32" cy="26" r="7" stroke="#A78BFA" strokeWidth="2" fill="none" />
-    <path d="M32 19v14M25 26h14" stroke="#A78BFA" strokeWidth="2" />
-    <path d="M22 40c0-2 2-4 5-5 2-.8 4-.8 6 0 3 1 5 3 5 5v4H22v-4z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.2" />
-    <path d="M42 40c0-2-2-4-5-5-2-.8-4-.8-6 0-3 1-5 3-5 5v4h10v-4z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.2" />
-    <path d="M28 38c1.2-1 2.8-1.5 4-1.5s2.8.5 4 1.5M36 38c1.2-1 2.8-1.5 4-1.5s2.8.5 4 1.5" stroke="#EF4444" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-  </svg>
-);
-
+// Simple circle icons matching About page style
 const features = [
   {
-    icon: IconGenuine,
+    icon: UserCheck,
+    ringClass: "from-emerald-200/60 via-emerald-100 to-emerald-50",
     title: "Genuine Profiles",
     description: "Contact genuine profiles with 100% verified mobile numbers and background checks",
   },
   {
-    icon: IconTrusted,
+    icon: ShieldCheck,
+    ringClass: "from-violet-200/70 via-violet-100 to-violet-50",
     title: "Most Trusted",
     description: "The most trusted wedding matrimony brand with millions of happy members",
   },
   {
-    icon: IconWeddings,
+    icon: Infinity,
+    ringClass: "from-pink-200/70 via-pink-100 to-pink-50",
     title: "2000+ Weddings",
     description: "Lakhs of people have found their life partner through our platform",
   },
@@ -79,7 +52,7 @@ const WhyChooseUs = () => {
           </p>
         </div>
 
-        {/* Features with emoji icons like reference */}
+        {/* Features icons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-20">
           {features.map((feature, index) => {
             const Icon = feature.icon;
@@ -92,8 +65,10 @@ const WhyChooseUs = () => {
                 transition={{ delay: index * 0.15 }}
                 className="bg-background rounded-3xl p-8 border border-primary/5 shadow-card hover-lift group text-center"
               >
-                <div className="w-20 h-20 mx-auto rounded-full bg-accent-gold/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-foreground">
-                  <Icon />
+                <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-b ${feature.ringClass} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-soft">
+                    <Icon className="w-7 h-7 text-primary" />
+                  </div>
                 </div>
                 <h3 className="font-serif text-xl font-bold text-foreground mb-3">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
