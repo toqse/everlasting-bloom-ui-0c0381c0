@@ -18,7 +18,7 @@ export const storiesData: Story[] = [
   {
     id: 1,
     couple: "Rahul & Priya",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
+    image: "/images/download11.jpg",
     quote: "We found each other on Aiswarya Matrimony and knew instantly that this was meant to be.",
     location: "Mumbai, India",
     marriedDate: "December 2023",
