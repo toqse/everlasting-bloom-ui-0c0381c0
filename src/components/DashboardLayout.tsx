@@ -46,8 +46,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout, isHindu } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
-  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || (isHindu() && hasPaidPlan()));
+  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
 
   const handleLogout = () => {
     logout();
