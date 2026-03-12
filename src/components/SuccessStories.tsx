@@ -27,7 +27,7 @@ export const storiesData: Story[] = [
   {
     id: 2,
     couple: "Arjun & Sneha",
-    image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
+    image: "/images/12.jpg",
     quote: "The compatibility matching was spot on! We share the same values and dreams.",
     location: "Delhi NCR",
     marriedDate: "February 2024",

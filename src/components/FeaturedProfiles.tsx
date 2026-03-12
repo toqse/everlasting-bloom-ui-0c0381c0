@@ -37,7 +37,7 @@ export const profilesData: Profile[] = [
     profession: "Doctor",
     education: "MBBS, AIIMS Delhi",
     location: "Hyderabad, Telangana",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop",
+    image: "/images/l3.jpg",
     isVerified: true,
     isPremium: false,
     compatibility: 88,
@@ -49,7 +49,7 @@ export const profilesData: Profile[] = [
     profession: "CA",
     education: "B.Com, Gujarat University",
     location: "Ahmedabad, Gujarat",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop",
+    image: "/images/4.jpg",
     isVerified: true,
     isPremium: true,
     compatibility: 92,
@@ -89,6 +89,30 @@ export const profilesData: Profile[] = [
     isVerified: true,
     isPremium: false,
     compatibility: 87,
+  },
+  {
+    id: 7,
+    name: "Divya Krishnan",
+    age: 25,
+    profession: "UX Designer",
+    education: "B.Des, NID Ahmedabad",
+    location: "Pune, Maharashtra",
+    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop",
+    isVerified: true,
+    isPremium: true,
+    compatibility: 91,
+  },
+  {
+    id: 8,
+    name: "Riya Nair",
+    age: 27,
+    profession: "Chartered Accountant",
+    education: "CA, ICAI",
+    location: "Thiruvananthapuram, Kerala",
+    image: "/images/download%201.jpg",
+    isVerified: true,
+    isPremium: false,
+    compatibility: 86,
   },
 ];
 
@@ -149,7 +173,7 @@ const FeaturedProfiles = () => {
         </div>
 
         {/* Profiles Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
           {profilesData.map((profile, index) => (
             <div
               key={profile.id}
@@ -168,7 +192,7 @@ const FeaturedProfiles = () => {
                   <img
                     src={profile.image}
                     alt={profile.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
                   />
                   
                   {/* Overlay Gradient */}
@@ -244,8 +268,14 @@ const FeaturedProfiles = () => {
                   </div>
                 </div>
 
-                {/* Profile Info */}
-                <div className="p-5">
+                {/* Profile Info - click redirects to login */}
+                <div
+                  className="p-5 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/auth");
+                  }}
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors">{profile.name}</h3>

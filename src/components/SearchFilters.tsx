@@ -116,18 +116,27 @@ const SearchFilters = () => {
                     </div>
                   </div>
 
-                  {/* Age Range - two selects */}
-                  <div>
+                  {/* Age Range - single box with two selects and divider */}
+                  <div className="flex flex-col items-center">
                     <label className="block text-xs font-medium text-foreground mb-1.5">Age</label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <select value={ageFrom} onChange={e => setAgeFrom(e.target.value)} className={selectClass}>
+                    <div className="flex items-stretch rounded-xl border border-primary/10 bg-white shadow-sm overflow-hidden w-full max-w-[140px]">
+                      <div className="relative flex-1 min-w-0">
+                        <select
+                          value={ageFrom}
+                          onChange={e => setAgeFrom(e.target.value)}
+                          className="w-full px-3 py-3 bg-transparent border-0 focus:ring-0 focus:outline-none appearance-none cursor-pointer text-sm font-semibold text-center [&>option]:font-normal"
+                        >
                           {fromAges.map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                       </div>
-                      <div className="relative flex-1">
-                        <select value={ageTo} onChange={e => setAgeTo(e.target.value)} className={selectClass}>
+                      <div className="w-px bg-primary/15 shrink-0" aria-hidden />
+                      <div className="relative flex-1 min-w-0">
+                        <select
+                          value={ageTo}
+                          onChange={e => setAgeTo(e.target.value)}
+                          className="w-full px-3 py-3 bg-transparent border-0 focus:ring-0 focus:outline-none appearance-none cursor-pointer text-sm font-semibold text-center [&>option]:font-normal"
+                        >
                           {toAges.map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />

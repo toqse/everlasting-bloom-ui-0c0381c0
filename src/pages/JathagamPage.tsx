@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Clock, Sparkles, Check, X } from "lucide-react";
+import { Calendar, Clock, Sparkles, Check, X, Phone } from "lucide-react";
 import { RASI_OPTIONS, NAKSHATRA_OPTIONS, NAKSHATRA_PADA } from "@/data/jathagam";
 import { profilesData } from "@/components/FeaturedProfiles";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ export default function JathagamPage() {
   const [rasi, setRasi] = useState("");
   const [nakshatra, setNakshatra] = useState("");
   const [nakshatraPada, setNakshatraPada] = useState<number>(1);
+  const [birthName, setBirthName] = useState("");
   const [timeOfBirth, setTimeOfBirth] = useState("");
   const [placeOfBirth, setPlaceOfBirth] = useState("");
   const [mangalDosha, setMangalDosha] = useState(false);
@@ -71,7 +72,7 @@ export default function JathagamPage() {
               Jathagam & Horoscope
             </h1>
             <p className="text-muted-foreground mt-1">
-              Enter your birth details to generate Jathagam PDF and calculate Porutham compatibility score
+              Enter your birth details to generate Horoscope PDF and calculate Porutham compatibility score
             </p>
           </div>
           <div className="px-4 py-2 rounded-xl bg-primary text-primary-foreground flex items-center gap-2 shrink-0">
@@ -93,76 +94,89 @@ export default function JathagamPage() {
             </h2>
 
             <div className="space-y-4">
-              <div>
-                <Label className="text-xs uppercase text-muted-foreground">Rasi (Moon Sign) *</Label>
-                <select
-                  value={rasi}
-                  onChange={(e) => setRasi(e.target.value)}
-                  className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
-                >
-                  <option value="">Select Rasi</option>
-                  {RASI_OPTIONS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label className="text-xs uppercase text-muted-foreground">Nakshatra (Star) *</Label>
-                <select
-                  value={nakshatra}
-                  onChange={(e) => setNakshatra(e.target.value)}
-                  className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
-                >
-                  <option value="">Select Nakshatra</option>
-                  {NAKSHATRA_OPTIONS.map((n) => (
-                    <option key={n.value} value={n.value}>{n.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label className="text-xs uppercase text-muted-foreground">Nakshatra Pada</Label>
-                <div className="flex gap-2 mt-2">
-                  {NAKSHATRA_PADA.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setNakshatraPada(p)}
-                      className={cn(
-                        "w-10 h-10 rounded-full border-2 font-semibold transition-all",
-                        nakshatraPada === p
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Rasi (Moon Sign) *</Label>
+                  <select
+                    value={rasi}
+                    onChange={(e) => setRasi(e.target.value)}
+                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
+                  >
+                    <option value="">Select Rasi</option>
+                    {RASI_OPTIONS.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Nakshatra (Star) *</Label>
+                  <select
+                    value={nakshatra}
+                    onChange={(e) => setNakshatra(e.target.value)}
+                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
+                  >
+                    <option value="">Select Nakshatra</option>
+                    {NAKSHATRA_OPTIONS.map((n) => (
+                      <option key={n.value} value={n.value}>{n.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs uppercase text-muted-foreground">Time of Birth</Label>
-                <div className="flex gap-2 mt-1.5 items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Nakshatra Pada</Label>
+                  <div className="flex gap-2 mt-2">
+                    {NAKSHATRA_PADA.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setNakshatraPada(p)}
+                        className={cn(
+                          "w-10 h-10 rounded-full border-2 font-semibold transition-all",
+                          nakshatraPada === p
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Name</Label>
                   <Input
-                    type="time"
-                    value={timeOfBirth}
-                    onChange={(e) => setTimeOfBirth(e.target.value)}
-                    className="max-w-[140px]"
+                    placeholder="Your name"
+                    value={birthName}
+                    onChange={(e) => setBirthName(e.target.value)}
+                    className="mt-1.5"
                   />
-                  <Clock className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs uppercase text-muted-foreground">Place of Birth</Label>
-                <Input
-                  placeholder="e.g. Thrissur, Kerala"
-                  value={placeOfBirth}
-                  onChange={(e) => setPlaceOfBirth(e.target.value)}
-                  className="mt-1.5"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Time of Birth</Label>
+                  <div className="flex gap-2 mt-1.5 items-center">
+                    <Input
+                      type="time"
+                      value={timeOfBirth}
+                      onChange={(e) => setTimeOfBirth(e.target.value)}
+                      className="max-w-[140px]"
+                    />
+                    <Clock className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Place of Birth</Label>
+                  <Input
+                    placeholder="e.g. Thrissur, Kerala"
+                    value={placeOfBirth}
+                    onChange={(e) => setPlaceOfBirth(e.target.value)}
+                    className="mt-1.5"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between py-2">
@@ -210,9 +224,18 @@ export default function JathagamPage() {
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    Generate Jathagam PDF
+                    Generate Horoscope PDF
                   </>
                 )}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full mt-3 py-6 gap-2 border-primary text-primary hover:bg-primary/10"
+                onClick={() => {}}
+              >
+                <Sparkles className="w-5 h-5" />
+                Generate Jakakam full PDF pay 175/-
               </Button>
             </div>
           </div>
@@ -299,6 +322,18 @@ export default function JathagamPage() {
                 Click &quot;Check Match&quot; to see Porutham score. Fill your birth details first for accurate results.
               </p>
             )}
+
+            <a
+              href="tel:8921726855"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary/5 px-4 py-3 text-center text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Phone className="w-4 h-4 shrink-0" />
+              <span className="text-center">
+                Astrologer services are available
+                <br />
+                contact : 8921726855
+              </span>
+            </a>
           </div>
         </div>
       </div>

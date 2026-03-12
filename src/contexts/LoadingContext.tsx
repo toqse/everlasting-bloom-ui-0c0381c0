@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -8,16 +8,8 @@ interface LoadingContextType {
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
 export const LoadingProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Initial load animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  // Start false so no loading window appears on refresh; Navbar still uses setIsLoading for link transitions
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
