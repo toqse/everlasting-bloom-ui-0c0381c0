@@ -47,8 +47,8 @@ const HOROSCOPE_QUOTA: Record<string, number> = {
 };
 
 const defaultUser: User = {
-  name: "Anna Jaslin",
-  email: "anna.jaslin@gmail.com",
+  name: "Rahul",
+  email: "rahul@gmail.com",
   phone: "+91 98765 43210",
   avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
   plan: "Premium",
@@ -122,6 +122,18 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-store',
       partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user, horoscopeCreditsUsed: state.horoscopeCreditsUsed }),
+      merge: (persisted, current) => {
+        const p = persisted as { isLoggedIn?: boolean; user?: User | null; horoscopeCreditsUsed?: number };
+        const user = p?.user;
+        if (user?.name === "Anna Jaslin") {
+          return {
+            ...current,
+            ...p,
+            user: user ? { ...user, name: "Rahul", email: user.email === "anna.jaslin@gmail.com" ? "rahul@gmail.com" : user.email } : p.user,
+          };
+        }
+        return { ...current, ...p };
+      },
     }
   )
 );

@@ -72,7 +72,7 @@ const Hero = () => {
               Love
             </h1>
 
-            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
+            <p className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
               Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
               Join millions who found their soulmate with Aiswarya Matrimony.
             </p>

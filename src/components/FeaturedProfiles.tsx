@@ -163,8 +163,8 @@ const FeaturedProfiles = () => {
                 profile.isPremium ? "gold-border" : "border border-primary/10"
               } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
                 
-                {/* Image Container - click on image does not open modal */}
-                <div className="relative h-72 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                {/* Image Container - click on image redirects to login */}
+                <div className="relative h-72 overflow-hidden cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate("/auth"); }}>
                   <img
                     src={profile.image}
                     alt={profile.name}

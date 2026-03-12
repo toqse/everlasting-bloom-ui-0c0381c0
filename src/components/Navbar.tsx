@@ -38,7 +38,7 @@ const Navbar = () => {
             alt="Aiswarya Matrimony"
             className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain"
           />
-          <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium tracking-wider -mt-3 ml-4">Since 1991</span>
+          <span className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wider -mt-3 ml-4">Since 1991</span>
         </Link>
 
         {/* Desktop Navigation */}

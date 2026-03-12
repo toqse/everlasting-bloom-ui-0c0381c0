@@ -105,7 +105,7 @@ const DashboardPage = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="font-serif text-2xl md:text-3xl font-bold">
-                Welcome back, {user?.name || "User"}
+                Welcome back, {user?.name === "Anna Jaslin" ? "Rahul" : (user?.name || "User")}
               </h1>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm opacity-95">
                 <span>Profile: {profileCompletion}% Complete</span>

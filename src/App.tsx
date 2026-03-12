@@ -3,9 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import { LoadingProvider, useLoading } from "@/contexts/LoadingContext";
-import LoadingAnimation from "@/components/LoadingAnimation";
+import { LoadingProvider } from "@/contexts/LoadingContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import SearchProfiles from "./pages/SearchProfiles";
@@ -36,14 +34,9 @@ import FamilyDetailsPage from "./pages/FamilyDetailsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isLoading } = useLoading();
-
   return (
     <>
       <ScrollToTop />
-      <AnimatePresence mode="wait">
-        {isLoading && <LoadingAnimation key="loading" />}
-      </AnimatePresence>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/search" element={<SearchProfiles />} />

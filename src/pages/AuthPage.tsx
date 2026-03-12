@@ -211,7 +211,7 @@ const AuthPage = () => {
         </div>
 
         {/* Right side - Login Form with ring background */}
-        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-8 px-3 sm:px-4 relative overflow-y-auto">
+        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
           <div className="absolute inset-0">
             <img src="/images/ring.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
             <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-primary/25" />
@@ -219,59 +219,67 @@ const AuthPage = () => {
           <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed" />
 
-          <div className="w-full max-w-md relative z-10 min-w-0">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 sm:mb-6 group">
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform shrink-0" />
-              <span className="font-medium">Back to Home</span>
+          <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center pt-0 pb-6 px-3 sm:px-4 relative z-10">
+            <div className="w-full max-w-xl min-w-0">
+            <div className="flex justify-center mb-0">
+              <img
+                src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+                alt="AVB - 39 Years of Trust & Tradition"
+                className="h-36 sm:h-44 md:h-52 w-auto object-contain"
+              />
+            </div>
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 sm:mb-2 group">
+              <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform shrink-0" />
+              <span className="font-medium text-lg">Back to Home</span>
             </button>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5"
+              className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-5 sm:p-8 md:p-10 border border-primary/5"
             >
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 mb-4">
+              <div className="text-center mb-6 sm:mb-10">
+                <div className="inline-flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5">
                   <div className="relative">
-                    <Heart className="w-10 h-10 text-primary fill-primary animate-heart-beat" />
-                    <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-secondary animate-sparkle" />
+                    <Heart className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-primary fill-primary animate-heart-beat" />
+                    <Sparkles className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 text-secondary animate-sparkle" />
                   </div>
-                  <span className="font-serif text-3xl font-bold text-primary">
+                  <span className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold text-primary">
                     Aiswarya <span className="text-secondary">Matrimony</span>
                   </span>
                 </div>
-                <h1 className="font-serif text-2xl font-bold text-foreground mb-2">Welcome Back</h1>
-                <p className="text-muted-foreground text-sm">Sign in to continue your journey</p>
+                <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">Welcome Back</h1>
+                <p className="text-muted-foreground text-lg">Sign in to continue your journey</p>
               </div>
 
               {!otpSent ? (
                 <>
-                  <form onSubmit={handleSendOtp} className="space-y-4">
+                  <form onSubmit={handleSendOtp} className="space-y-6">
                     <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                      <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
-                      <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+                      <Phone className="absolute left-6 w-7 h-7 text-primary/50" />
+                      <span className="pl-16 pr-2 text-lg text-foreground">+91</span>
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
                     </div>
-                    <Button type="submit" variant="hero" size="xl" className="w-full gap-2">
-                      Send OTP <ArrowRight className="w-5 h-5" />
+                    <Button type="submit" variant="hero" size="xl" className="w-full gap-2 text-lg py-7">
+                      Send OTP <ArrowRight className="w-6 h-6" />
                     </Button>
                   </form>
                 </>
               ) : (
                 <>
-                  <p className="text-muted-foreground text-sm mb-2 text-center">
+                  <p className="text-muted-foreground text-lg mb-4 text-center">
                     Enter the 6-digit OTP sent to <span className="font-medium text-foreground">+91 {formData.phone}</span>
                   </p>
-                  <form onSubmit={handleVerifyOtp} className="space-y-4">
-                    <div className="flex justify-center gap-2">
+                  <form onSubmit={handleVerifyOtp} className="space-y-6">
+                    <div className="flex justify-center gap-2 sm:gap-3">
                       {otp.map((digit, index) => (
                         <input key={index} id={`otp-${index}`} type="text" inputMode="numeric" maxLength={1} value={digit}
                           onChange={(e) => handleOtpChange(index, e.target.value)} onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                          className="w-11 h-12 text-center text-lg font-bold rounded-xl border-2 border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white transition-colors" />
+                          className="w-14 h-16 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white transition-colors" />
                       ))}
                     </div>
-                    <Button type="submit" variant="hero" size="lg" className="w-full gap-2">Verify & Continue <ArrowRight className="w-5 h-5" /></Button>
-                    <button type="button" onClick={handleBackToPhone} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Button type="submit" variant="hero" size="lg" className="w-full gap-2 text-lg py-7">Verify & Continue <ArrowRight className="w-6 h-6" /></Button>
+                    <button type="button" onClick={handleBackToPhone} className="w-full text-center text-lg text-muted-foreground hover:text-primary transition-colors">
                       Change number
                     </button>
                   </form>
@@ -280,13 +288,13 @@ const AuthPage = () => {
 
               {!otpSent && (
                 <>
-                  <div className="my-6 flex items-center gap-4">
+                  <div className="my-6 sm:my-8 flex items-center gap-4">
                     <div className="flex-1 border-t border-primary/10" />
-                    <span className="text-sm text-muted-foreground">OR</span>
+                    <span className="text-lg text-muted-foreground">OR</span>
                     <div className="flex-1 border-t border-primary/10" />
                   </div>
                   <div className="text-center">
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground text-lg">
                       Don't have an account?{" "}
                       <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); setAadhaarVerified(false); }}
                         className="text-primary font-bold hover:text-primary-dark transition-colors">Register free</button>
@@ -295,6 +303,7 @@ const AuthPage = () => {
                 </>
               )}
             </motion.div>
+            </div>
           </div>
         </div>
       </div>
@@ -316,7 +325,7 @@ const AuthPage = () => {
       </div>
 
       {/* Right side - Signup form with background image */}
-      <div className="flex-1 min-h-0 flex items-center justify-center relative overflow-y-auto py-4 sm:py-6 md:py-8 px-3 sm:px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 min-h-0 flex items-center justify-center relative overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4">
         <div className="absolute inset-0">
           <img src="/images/image2.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
           <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/75 to-primary/20" />
@@ -325,13 +334,20 @@ const AuthPage = () => {
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
         <div className="w-full max-w-4xl relative z-10 min-w-0">
+        <div className="flex justify-center mb-0">
+          <img
+            src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+            alt="AVB - 39 Years of Trust & Tradition"
+            className="h-28 sm:h-36 md:h-40 w-auto object-contain"
+          />
+        </div>
         {signupStep === 0 ? (
-          <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 group">
+          <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Back to Sign In</span>
           </button>
         ) : (
-          <button onClick={handleSignupPrev} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4 group">
+          <button onClick={handleSignupPrev} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Previous Step</span>
           </button>

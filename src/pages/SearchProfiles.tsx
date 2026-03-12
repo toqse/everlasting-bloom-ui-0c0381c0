@@ -217,7 +217,7 @@ const SearchProfiles = () => {
 
               <div className="space-y-4 sm:space-y-6">
                 {allProfiles.map((profile, index) => (
-                  <ListProfileCard key={profile.id} profile={profile} index={index} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onMoreDetails={() => setViewProfile(profile)} />
+                  <ListProfileCard key={profile.id} profile={profile} index={index} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onMoreDetails={() => setViewProfile(profile)} onImageClick={() => navigate("/auth")} />
                 ))}
               </div>
 
@@ -253,7 +253,7 @@ const FilterSection = ({ title, icon, expanded, onToggle, children }: { title: s
   </div>
 );
 
-const ListProfileCard = ({ profile, index, liked, onLike, onSendInterest, onMoreDetails }: { profile: Profile; index: number; liked: boolean; onLike: () => void; onSendInterest?: () => void; onMoreDetails?: () => void }) => {
+const ListProfileCard = ({ profile, index, liked, onLike, onSendInterest, onMoreDetails, onImageClick }: { profile: Profile; index: number; liked: boolean; onLike: () => void; onSendInterest?: () => void; onMoreDetails?: () => void; onImageClick?: () => void }) => {
   const isOnline = index % 3 === 0;
   return (
     <motion.div
@@ -262,7 +262,7 @@ const ListProfileCard = ({ profile, index, liked, onLike, onSendInterest, onMore
       transition={{ delay: index * 0.05 }}
       className="flex flex-col md:flex-row md:items-start bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 hover-lift group"
     >
-      <div className="w-full md:w-64 h-52 sm:h-56 md:h-64 flex-shrink-0 relative overflow-hidden bg-muted/30 cursor-pointer" onClick={() => onMoreDetails?.()}>
+      <div className="w-full md:w-64 h-52 sm:h-56 md:h-64 flex-shrink-0 relative overflow-hidden bg-muted/30 cursor-pointer" onClick={() => onImageClick?.() ?? onMoreDetails?.()}>
         <div className={`absolute top-3 left-3 z-10 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? "bg-green-500" : "bg-muted-foreground/40"}`} />
         <img src={profile.image} alt={profile.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
         <div className={`absolute bottom-0 left-0 right-0 py-1.5 text-center text-xs font-medium text-primary-foreground ${isOnline ? "bg-green-600/90" : "bg-muted-foreground/70"}`}>

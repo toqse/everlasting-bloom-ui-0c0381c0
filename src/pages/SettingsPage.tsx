@@ -18,7 +18,7 @@ const SettingsPage = () => {
   });
 
   const accountInfo = [
-    { label: "Full name", value: user?.name || "Anna Jaslin" },
+    { label: "Full name", value: user?.name || "Rahul" },
     { label: "Mobile", value: user?.phone || "+91 98765 43210" },
     { label: "Email id", value: user?.email || "anna.jaslin@gmail.com" },
     { label: "Password", value: "••••••••••" },
