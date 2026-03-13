@@ -16,6 +16,7 @@ interface Props {
   onBackFromOtp: () => void;
   phoneVerified: boolean;
   canSendOtp?: boolean;
+  fieldErrors?: { email?: string; dob?: string; general?: string };
 }
 
 const BasicInfoStep = ({
@@ -32,6 +33,7 @@ const BasicInfoStep = ({
   onBackFromOtp,
   phoneVerified,
   canSendOtp = false,
+  fieldErrors,
 }: Props) => (
   <>
     {/* OTP-only screen when OTP has been sent (no registration form) */}
@@ -89,10 +91,16 @@ const BasicInfoStep = ({
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
+          {fieldErrors?.email && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.email}</p>
+          )}
           <div className="relative">
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
+          {fieldErrors?.dob && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
+          )}
           <SelectField label="Gender" name="gender" options={["Male", "Female"]} value={formData.gender} onChange={onChange} />
           <div className="flex items-start gap-3">
             <input
@@ -110,6 +118,9 @@ const BasicInfoStep = ({
             Send OTP
             <ArrowRight className="w-5 h-5" />
           </Button>
+          {fieldErrors?.general && (
+            <p className="mt-2 text-xs text-red-500 text-left">{fieldErrors.general}</p>
+          )}
         </div>
       </>
     )}
@@ -139,10 +150,16 @@ const BasicInfoStep = ({
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
+          {fieldErrors?.email && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.email}</p>
+          )}
           <div className="relative">
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
+          {fieldErrors?.dob && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
+          )}
           <SelectField label="Gender" name="gender" options={["Male", "Female"]} value={formData.gender} onChange={onChange} />
           <div className="flex items-start gap-3">
             <input

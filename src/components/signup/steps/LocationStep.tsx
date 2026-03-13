@@ -1,18 +1,8 @@
-import { SelectField, labelClass, inputClass } from "../SignupFormFields";
-import { INDIAN_STATES_AND_UTS } from "@/data/indianStates";
-import { COUNTRY_STATES } from "@/data/countryStates";
-
-const ADDRESS_TYPES = ["Home", "Office", "Current", "Permanent", "Other"];
-const OTHER_COUNTRIES = ["USA", "UK", "Canada", "Australia", "UAE", "Saudi Arabia", "Singapore", "Malaysia", "Other"];
-
-const INDIAN_DISTRICTS = [
-  "Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli", "Thanjavur", "Erode",
-  "Tirunelveli", "Vellore", "Bengaluru Urban", "Mumbai", "Hyderabad", "Other",
-];
-const INDIAN_CITIES = [
-  "Chennai", "Coimbatore", "Madurai", "Salem", "Trichy", "Thanjavur", "Erode",
-  "Tirunelveli", "Bengaluru", "Mumbai", "Hyderabad", "Other",
-];
+import { useState, useEffect, useCallback } from "react";
+import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
+import type { Country, State, District, City } from "@/lib/masterApi";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { labelClass } from "../SignupFormFields";
 
 interface Props {
   formData: Record<string, string>;
@@ -20,10 +10,85 @@ interface Props {
 }
 
 const LocationStep = ({ formData, onChange }: Props) => {
-  const isIndia = formData.country === "India";
-  const stateOptionsForCountry = formData.country ? (COUNTRY_STATES[formData.country] ?? []) : [];
-  const hasStateOptions = isIndia || stateOptionsForCountry.length > 0;
-  const stateOptions = isIndia ? INDIAN_STATES_AND_UTS : stateOptionsForCountry;
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [states, setStates] = useState<State[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  const countryId = formData.country_id ? Number(formData.country_id) : 0;
+  const stateId = formData.state_id ? Number(formData.state_id) : 0;
+  const districtId = formData.district_id ? Number(formData.district_id) : 0;
+
+  const handleSelect = useCallback(
+    (name: string, value: string) => {
+      onChange({ target: { name, value } } as React.ChangeEvent<HTMLSelectElement>);
+    },
+    [onChange]
+  );
+
+  const loadCountries = useCallback(async (search: string) => {
+    setLoadingCountries(true);
+    try {
+      const list = await getCountries(search || undefined);
+      setCountries(list);
+    } catch {
+      setCountries([]);
+    } finally {
+      setLoadingCountries(false);
+    }
+  }, []);
+
+  const loadStates = useCallback(
+    async (search: string) => {
+      if (!countryId) return;
+      setLoadingStates(true);
+      try {
+        const list = await getStates(countryId, search || undefined);
+        setStates(list);
+      } catch {
+        setStates([]);
+      } finally {
+        setLoadingStates(false);
+      }
+    },
+    [countryId]
+  );
+
+  const loadDistricts = useCallback(
+    async (search: string) => {
+      if (!stateId) return;
+      setLoadingDistricts(true);
+      try {
+        const list = await getDistricts(stateId, search || undefined);
+        setDistricts(list);
+      } catch {
+        setDistricts([]);
+      } finally {
+        setLoadingDistricts(false);
+      }
+    },
+    [stateId]
+  );
+
+  const loadCities = useCallback(
+    async (search: string) => {
+      if (!districtId) return;
+      setLoadingCities(true);
+      try {
+        const list = await getCities(districtId, search || undefined);
+        setCities(list);
+      } catch {
+        setCities([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    },
+    [districtId]
+  );
 
   return (
     <>
@@ -32,87 +97,56 @@ const LocationStep = ({ formData, onChange }: Props) => {
         <p className="text-muted-foreground text-sm">Country, State, District, City, Address</p>
       </div>
       <div className="space-y-4">
-        <SelectField
+        <SearchableSelect
+          name="country_id"
+          value={formData.country_id || ""}
+          options={countries}
+          loading={loadingCountries}
           label="Country"
-          name="country"
-          options={["India", ...OTHER_COUNTRIES]}
-          value={formData.country}
-          onChange={onChange}
+          placeholder="Select Country"
+          onSearch={loadCountries}
+          onSelect={handleSelect}
         />
 
-        {hasStateOptions ? (
-          <SelectField
+        {countryId ? (
+          <SearchableSelect
+            name="state_id"
+            value={formData.state_id || ""}
+            options={states}
+            loading={loadingStates}
             label="State"
-            name="state"
-            options={stateOptions}
-            value={formData.state}
-            onChange={onChange}
+            placeholder="Select State"
+            onSearch={loadStates}
+            onSelect={handleSelect}
           />
-        ) : formData.country ? (
-          <div>
-            <label className={labelClass}>State / Province / Region</label>
-            <input
-              type="text"
-              name="state"
-              value={formData.state}
-              onChange={onChange}
-              placeholder="Enter state or region"
-              className={inputClass}
-            />
-          </div>
         ) : null}
 
-        {isIndia ? (
-          <SelectField
+        {stateId ? (
+          <SearchableSelect
+            name="district_id"
+            value={formData.district_id || ""}
+            options={districts}
+            loading={loadingDistricts}
             label="District"
-            name="district"
-            options={INDIAN_DISTRICTS}
-            value={formData.district}
-            onChange={onChange}
+            placeholder="Select District"
+            onSearch={loadDistricts}
+            onSelect={handleSelect}
           />
-        ) : formData.country ? (
-          <div>
-            <label className={labelClass}>District / Area</label>
-            <input
-              type="text"
-              name="district"
-              value={formData.district}
-              onChange={onChange}
-              placeholder="Enter district or area"
-              className={inputClass}
-            />
-          </div>
         ) : null}
 
-        {isIndia ? (
-          <SelectField
+        {districtId ? (
+          <SearchableSelect
+            name="city_id"
+            value={formData.city_id || ""}
+            options={cities}
+            loading={loadingCities}
             label="City"
-            name="city"
-            options={INDIAN_CITIES}
-            value={formData.city}
-            onChange={onChange}
+            placeholder="Select City"
+            onSearch={loadCities}
+            onSelect={handleSelect}
           />
-        ) : formData.country ? (
-          <div>
-            <label className={labelClass}>City</label>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={onChange}
-              placeholder="Enter city"
-              className={inputClass}
-            />
-          </div>
         ) : null}
 
-        <SelectField
-          label="Address type"
-          name="addressType"
-          options={ADDRESS_TYPES}
-          value={formData.addressType || ""}
-          onChange={onChange}
-        />
         <div>
           <label className={labelClass}>Address</label>
           <textarea

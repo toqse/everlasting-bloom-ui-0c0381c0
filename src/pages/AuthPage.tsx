@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
+import { registerMobile, verifyMobile, register as registerApi, verifyOtp, type VerifyMobileData } from "@/lib/authApi";
+import { postLocation, postReligion, postPersonal, postEducation, getGenerateAbout, postAbout, postPhotos } from "@/lib/profileApi";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
 import ProfileForStep from "@/components/signup/steps/ProfileForStep";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
@@ -23,6 +25,44 @@ const stepVariants = {
   exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
 };
 
+const PROFILE_STEP_TO_SIGNUP_INDEX: Record<string, number> = {
+  location: 2,
+  religion: 3,
+  personal: 4,
+  education: 5,
+  about: 6,
+  photos: 7,
+};
+
+const PROFILE_STEP_ORDER: string[] = ["location", "religion", "personal", "education", "about", "photos"];
+
+const isProfileFullyCompleted = (data?: VerifyMobileData): boolean => {
+  if (!data) return false;
+  if (data.is_registration_profile_completed) return true;
+  if (data.profile_status === "completed") return true;
+  const steps = data.profile_steps;
+  if (steps && Object.values(steps).every(Boolean)) return true;
+  return false;
+};
+
+const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null => {
+  if (!data) return null;
+  const steps = data.profile_steps ?? {};
+
+  if (data.next_step && PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step]) {
+    return PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step];
+  }
+
+  for (const key of PROFILE_STEP_ORDER) {
+    const flag = (steps as Record<string, boolean | undefined>)[key];
+    if (!flag) {
+      return PROFILE_STEP_TO_SIGNUP_INDEX[key];
+    }
+  }
+
+  return null;
+};
+
 const AuthPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
@@ -35,15 +75,21 @@ const AuthPage = () => {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [signupOtpSent, setSignupOtpSent] = useState(false);
   const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
-  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<Record<string, { file: File; previewUrl: string }>>({});
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [aboutSuggestions, setAboutSuggestions] = useState<string[]>([]);
+  const [aboutSuggestionIndex, setAboutSuggestionIndex] = useState(0);
+  const [signupErrors, setSignupErrors] = useState<{ email?: string; dob?: string; general?: string }>({});
 
   const [formData, setFormData] = useState({
     profileFor: "", name: "", phone: "", email: "", dob: "", gender: "", password: "",
     country: "", state: "", district: "", city: "", address: "", addressType: "",
-    religion: "", caste: "", subCaste: "", motherTongue: "",
+    country_id: "", state_id: "", district_id: "", city_id: "",
+    religion: "", religion_id: "", caste: "", caste_id: "", subCaste: "",
+    motherTongue: "", mother_tongue_id: "",
+    partner_preference_type: "", partner_religion_ids: "",
     maritalStatus: "", numberOfChildren: "", height: "", weight: "", skinTone: "",
     familyType: "", fathersName: "", fathersOccupation: "", mothersName: "", mothersOccupation: "",
     familyStatus: "", numberOfBrothers: "", numberOfMarriedBrothers: "", numberOfSisters: "", numberOfMarriedSisters: "", aboutMyFamily: "",
@@ -58,21 +104,52 @@ const AuthPage = () => {
       setFormData((prev) => ({ ...prev, phone: digitsOnly }));
       return;
     }
+    if (name === "dob") {
+      const cleaned = value.slice(0, 10);
+      const [y = "", m = "", d = ""] = cleaned.split("-");
+      const safeYear = y.slice(0, 4);
+      const nextDob = safeYear && m && d ? `${safeYear}-${m}-${d}` : cleaned;
+      setFormData((prev) => ({ ...prev, dob: nextDob }));
+      setSignupErrors((prev) => ({ ...prev, dob: undefined }));
+      return;
+    }
     if (name === "religion") {
       setFormData((prev) => ({ ...prev, religion: value, caste: "" }));
       return;
     }
+    if (name === "country_id") {
+      setFormData((prev) => ({ ...prev, country_id: value, state_id: "", district_id: "", city_id: "" }));
+      return;
+    }
+    if (name === "state_id") {
+      setFormData((prev) => ({ ...prev, state_id: value, district_id: "", city_id: "" }));
+      return;
+    }
+    if (name === "district_id") {
+      setFormData((prev) => ({ ...prev, district_id: value, city_id: "" }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "email") {
+      setSignupErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+    }
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.phone) { toast.error("Please enter your phone number"); return; }
-    const len = formData.phone.replace(/\D/g, "").length;
+    const digits = formData.phone.replace(/\D/g, "");
+    const len = digits.length;
     if (len < 10 || len > 12) { toast.error("Phone number must be 10–12 digits"); return; }
-    setOtpSent(true);
-    setOtp(["", "", "", "", "", ""]);
-    toast.success("OTP sent to your phone");
+    const mobile = "+91" + digits;
+    try {
+      await registerMobile({ mobile });
+      setOtpSent(true);
+      setOtp(["", "", "", "", "", ""]);
+      toast.success("OTP sent to your phone");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send OTP");
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -87,38 +164,98 @@ const AuthPage = () => {
     if (e.key === "Backspace" && !otp[index] && index > 0) document.getElementById(`otp-${index - 1}`)?.focus();
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.join("").length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
-    const { login } = useAuthStore.getState();
-    login("phone", formData.phone);
-    toast.success("OTP verified! Welcome back! 💕");
-    navigate("/dashboard");
+    const otpCode = otp.join("");
+    if (otpCode.length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
+    const digits = formData.phone.replace(/\D/g, "");
+    const mobile = "+91" + digits;
+    try {
+      const response = await verifyMobile({ mobile, otp: otpCode });
+      const data = response.data;
+      if (!response.success || !data) {
+        toast.error("Failed to verify OTP");
+        return;
+      }
+
+      useAuthStore.getState().setAuthFromVerify(mobile, data);
+      setOtpSent(false);
+      setOtp(["", "", "", "", "", ""]);
+
+      if (isProfileFullyCompleted(data)) {
+        toast.success("OTP verified! Welcome back! 💕");
+        navigate("/dashboard");
+        return;
+      }
+
+      const nextStepIndex = getNextSignupStepFromProfile(data) ?? 2;
+
+      toast.success("OTP verified. Please complete your profile.");
+      setMode("signup");
+      setPhoneVerified(true);
+      setDirection(1);
+      setSignupStep(nextStepIndex);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
+    }
   };
 
   const handleBackToPhone = () => { setOtpSent(false); setOtp(["", "", "", "", "", ""]); };
 
-  const handleSignupSendOtp = () => {
+  const handleSignupSendOtp = async () => {
     if (!formData.name?.trim()) { toast.error("Please enter full name"); return; }
-    const phoneLen = formData.phone.replace(/\D/g, "").length;
-    if (phoneLen < 10 || phoneLen > 12) { toast.error("Phone number must be 10–12 digits"); return; }
+    const digits = formData.phone.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 12) { toast.error("Phone number must be 10–12 digits"); return; }
     if (!formData.dob?.trim()) { toast.error("Please enter date of birth"); return; }
     if (!formData.gender?.trim()) { toast.error("Please select gender"); return; }
     if (!agreeTerms) { toast.error("Please agree to Terms & Conditions and Privacy Policy"); return; }
-    setSignupOtpSent(true);
-    setSignupOtp(["", "", "", "", "", ""]);
-    toast.success("OTP sent to +91 " + formData.phone);
+    const phone_number = "+91" + digits;
+    // Convert yyyy-mm-dd (input type="date") to dd-mm-yyyy
+    const [y, m, d] = formData.dob.split("-");
+    const dob = d && m && y ? `${d}-${m}-${y}` : formData.dob;
+    const gender = formData.gender.toLowerCase().startsWith("f") ? "F" : "M";
+    try {
+      await registerApi({
+        name: formData.name.trim(),
+        phone_number,
+        email: formData.email?.trim() || "",
+        dob,
+        gender,
+      });
+      setSignupOtpSent(true);
+      setSignupOtp(["", "", "", "", "", ""]);
+      toast.success("OTP sent to +91 " + formData.phone);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send OTP";
+      const lower = msg.toLowerCase();
+      const nextErrors: { email?: string; dob?: string; general?: string } = {};
+      if (lower.includes("email")) nextErrors.email = msg;
+      else if (lower.includes("dob") || lower.includes("birth")) nextErrors.dob = msg;
+      else nextErrors.general = msg;
+      setSignupErrors(nextErrors);
+    }
   };
 
-  const handleSignupVerifyOtp = (e: React.FormEvent) => {
+  const handleSignupVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (signupOtp.join("").length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
-    setPhoneVerified(true);
-    setSignupOtpSent(false);
-    setSignupOtp(["", "", "", "", "", ""]);
-    setDirection(1);
-    setSignupStep(2);
-    toast.success("Phone verified!");
+    const otpCode = signupOtp.join("");
+    if (otpCode.length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
+    const digits = formData.phone.replace(/\D/g, "");
+    const mobile = "+91" + digits;
+    try {
+      const response = await verifyOtp({ mobile, otp: otpCode });
+      if (response.data?.access_token) {
+        useAuthStore.getState().setAuthFromVerify(mobile, response.data);
+      }
+      setPhoneVerified(true);
+      setSignupOtpSent(false);
+      setSignupOtp(["", "", "", "", "", ""]);
+      setDirection(1);
+      setSignupStep(2);
+      toast.success("Phone verified!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
+    }
   };
 
   const handleSignupOtpChange = (index: number, value: string) => {
@@ -135,25 +272,186 @@ const AuthPage = () => {
 
   const handleSignupBackFromOtp = () => { setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); };
 
-  const handleSignupNext = () => {
+  const handleSignupNext = async () => {
     if (signupStep === 0 && !formData.profileFor) { toast.error("Please select who this profile is for"); return; }
     if (signupStep === 1) {
       if (!phoneVerified) { toast.error("Please verify your phone with OTP first"); return; }
       if (!formData.name?.trim() || !formData.dob || !formData.gender) { toast.error("Please fill name, date of birth, and gender"); return; }
       if (!agreeTerms) { toast.error("Please agree to Terms & Conditions"); return; }
     }
+    if (signupStep === 2) {
+      const cid = formData.country_id ? Number(formData.country_id) : 0;
+      const sid = formData.state_id ? Number(formData.state_id) : 0;
+      const did = formData.district_id ? Number(formData.district_id) : 0;
+      const cityId = formData.city_id ? Number(formData.city_id) : 0;
+      if (!cid || !sid || !did || !cityId) { toast.error("Please select Country, State, District and City"); return; }
+      if (!formData.address?.trim()) { toast.error("Please enter your address"); return; }
+      try {
+        await postLocation({ country_id: cid, state_id: sid, district_id: did, city_id: cityId, address: formData.address.trim() });
+        toast.success("Location saved");
+        setDirection(1);
+        setSignupStep(3);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save location");
+      }
+      return;
+    }
+    if (signupStep === 3) {
+      const religionId = formData.religion_id ? Number(formData.religion_id) : 0;
+      const casteId = formData.caste_id ? Number(formData.caste_id) : 0;
+      const motherTongueId = formData.mother_tongue_id ? Number(formData.mother_tongue_id) : 0;
+      if (!religionId) { toast.error("Please select your religion"); return; }
+      if (!motherTongueId) { toast.error("Please select your mother tongue"); return; }
+      const prefType = (formData.partner_preference_type || "open_to_all") as "own_religion_only" | "open_to_all" | "specific_religions";
+      const partnerReligionIds =
+        formData.partner_religion_ids
+          ?.split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => Number.isFinite(n) && n > 0) ?? [];
+      try {
+        await postReligion({
+          religion_id: religionId,
+          caste_id: casteId || null,
+          mother_tongue_id: motherTongueId,
+          partner_preference_type: prefType,
+          partner_religion_ids: partnerReligionIds,
+        });
+        toast.success("Religious details saved");
+        setDirection(1);
+        setSignupStep(4);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save religious details");
+      }
+      return;
+    }
+    if (signupStep === 4) {
+      if (!formData.maritalStatus) { toast.error("Please select marital status"); return; }
+      if (!formData.height?.trim()) { toast.error("Please enter your height"); return; }
+      if (!formData.skinTone) { toast.error("Please select complexion / color"); return; }
+
+      const maritalStatus = formData.maritalStatus;
+      const isStatusWithChildren =
+        maritalStatus === "Divorced" || maritalStatus === "Widowed" || maritalStatus === "Separated";
+
+      const hasChildrenFlag = isStatusWithChildren ? hasChildren === "yes" : false;
+
+      let numberOfChildren: number | null = null;
+      if (hasChildrenFlag) {
+        const n = Number(formData.numberOfChildren);
+        if (!Number.isFinite(n) || n <= 0) {
+          toast.error("Please enter number of children");
+          return;
+        }
+        numberOfChildren = n;
+      }
+
+      const heightNumber = Number(formData.height);
+      if (!Number.isFinite(heightNumber) || heightNumber <= 0) {
+        toast.error("Please enter a valid height"); return;
+      }
+
+      const weightNumber = formData.weight ? Number(formData.weight) : NaN;
+
+      try {
+        await postPersonal({
+          marital_status: maritalStatus,
+          has_children: hasChildrenFlag,
+          number_of_children: numberOfChildren,
+          height: heightNumber,
+          weight: Number.isFinite(weightNumber) ? weightNumber : null,
+          complexion: formData.skinTone,
+        });
+        toast.success("Personal details saved");
+        setDirection(1);
+        setSignupStep(5);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save personal details");
+      }
+      return;
+    }
+    if (signupStep === 5) {
+      if (!formData.education) { toast.error("Please select highest education"); return; }
+      if (!formData.educationSubject) { toast.error("Please select subject"); return; }
+      if (!formData.employmentStatus) { toast.error("Please select employment"); return; }
+      if (!formData.occupation?.trim()) { toast.error("Please enter occupation"); return; }
+      if (!formData.annualIncome) { toast.error("Please select annual income"); return; }
+
+      try {
+        await postEducation({
+          highest_education: formData.education,
+          education_subject: formData.educationSubject,
+          employment: formData.employmentStatus,
+          occupation: formData.occupation.trim(),
+          annual_income: formData.annualIncome,
+        });
+        toast.success("Education details saved");
+        setDirection(1);
+        setSignupStep(6);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save education details");
+      }
+      return;
+    }
+    if (signupStep === 6) {
+      try {
+        await postAbout({ about_me: formData.aboutMe || "" });
+        toast.success("About me saved");
+        setDirection(1);
+        setSignupStep(7);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save about me");
+      }
+      return;
+    }
     if (signupStep < SIGNUP_STEPS.length - 1) { setDirection(1); setSignupStep(signupStep + 1); }
     else {
+      try {
+        const hasAnyPhoto = Object.keys(photos).length > 0;
+        if (hasAnyPhoto) {
+          await postPhotos({
+            // Treat passport as the main profile photo if provided; otherwise fall back to full photo
+            profile_photo: photos.passport?.file ?? photos.full?.file,
+            full_photo: photos.full?.file,
+            selfie_photo: photos.selfie?.file,
+            family_photo: photos.family?.file,
+          });
+          toast.success("Photos uploaded successfully");
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to upload photos");
+        return;
+      }
+
       const { loginWithProfile } = useAuthStore.getState();
-      loginWithProfile({ name: formData.name, phone: formData.phone, email: formData.email || undefined, religion: formData.religion || "", location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined });
+      loginWithProfile({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email || undefined,
+        religion: formData.religion || "",
+        location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
+      });
       toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
       navigate("/dashboard");
     }
   };
 
-  const handleAboutHelpMeWrite = () => {
-    setFormData((prev) => ({ ...prev, aboutMe: "I am a caring and family-oriented person. I value honesty and respect. I enjoy reading and spending time with family. Looking for a life partner who shares similar values." }));
-    toast.success("Sample bio added. Feel free to edit!");
+  const handleAboutHelpMeWrite = async () => {
+    try {
+      let suggestions = aboutSuggestions;
+      if (!suggestions.length) {
+        const res = await getGenerateAbout();
+        suggestions = res.data.suggestions && res.data.suggestions.length ? res.data.suggestions : [res.data.about_me];
+        setAboutSuggestions(suggestions);
+        setAboutSuggestionIndex(0);
+      }
+      const index = aboutSuggestionIndex % suggestions.length;
+      const text = suggestions[index];
+      setFormData((prev) => ({ ...prev, aboutMe: text }));
+      setAboutSuggestionIndex(index + 1);
+      toast.success("Suggestion added. You can edit it.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate about me");
+    }
   };
 
   const handleAboutSkip = () => { setFormData((prev) => ({ ...prev, aboutMe: "" })); toast.success("Skipped. You can add this later."); };
@@ -178,7 +476,7 @@ const AuthPage = () => {
     const props = { formData, onChange: handleChange };
     switch (signupStep) {
       case 0: return <ProfileForStep profileFor={formData.profileFor} onChange={(v) => setFormData((prev) => ({ ...prev, profileFor: v }))} />;
-      case 1: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} otpSent={signupOtpSent} otp={signupOtp} onSendOtp={handleSignupSendOtp} onVerifyOtp={handleSignupVerifyOtp} onOtpChange={handleSignupOtpChange} onOtpKeyDown={handleSignupOtpKeyDown} onBackFromOtp={handleSignupBackFromOtp} phoneVerified={phoneVerified} canSendOtp={canSendSignupOtp} />;
+      case 1: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} otpSent={signupOtpSent} otp={signupOtp} onSendOtp={handleSignupSendOtp} onVerifyOtp={handleSignupVerifyOtp} onOtpChange={handleSignupOtpChange} onOtpKeyDown={handleSignupOtpKeyDown} onBackFromOtp={handleSignupBackFromOtp} phoneVerified={phoneVerified} canSendOtp={canSendSignupOtp} fieldErrors={signupErrors} />;
       case 2: return <LocationStep {...props} />;
       case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;

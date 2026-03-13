@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import type { VerifyMobileData } from "@/lib/authApi";
+
 export interface User {
   name: string;
   email: string;
@@ -11,16 +13,22 @@ export interface User {
   memberSince: string;
   /** Religion from registration (Step 4). Used for Horoscope visibility and post-payment redirect. */
   religion: string;
+  /** Matri ID from auth verify (e.g. AM100006). */
+  matriId?: string;
 }
 
 interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   /** Demo override: "Hindu" | "Christian" | "Muslim" | null. When set, isHindu() uses this instead of user.religion. */
   demoReligionOverride: string | null;
   login: (method: 'email' | 'phone', value: string) => void;
   /** Complete signup: set user with profile data including religion. */
   loginWithProfile: (profile: Partial<User> & { religion: string }) => void;
+  /** Set auth state from verify/mobile API response. Call only when profile_status === "completed". */
+  setAuthFromVerify: (mobile: string, data: VerifyMobileData) => void;
   logout: () => void;
   setDemoReligion: (religion: string | null) => void;
   /** Update user's plan after payment (e.g. "Gold", "Diamond", "Silver"). */
@@ -62,6 +70,8 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       isLoggedIn: false,
       user: null,
+      accessToken: null,
+      refreshToken: null,
       demoReligionOverride: null,
       horoscopeCreditsUsed: 0,
       login: () => {
@@ -80,8 +90,21 @@ export const useAuthStore = create<AuthState>()(
           },
         });
       },
+      setAuthFromVerify: (mobile, data) => {
+        set({
+          isLoggedIn: true,
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          user: {
+            ...defaultUser,
+            phone: mobile,
+            name: data.matri_id,
+            matriId: data.matri_id,
+          },
+        });
+      },
       logout: () => {
-        set({ isLoggedIn: false, user: null, demoReligionOverride: null });
+        set({ isLoggedIn: false, user: null, accessToken: null, refreshToken: null, demoReligionOverride: null });
       },
       setDemoReligion: (religion) => {
         set({ demoReligionOverride: religion || null });
@@ -121,7 +144,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-store',
-      partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user, horoscopeCreditsUsed: state.horoscopeCreditsUsed }),
+      partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user, accessToken: state.accessToken, refreshToken: state.refreshToken, horoscopeCreditsUsed: state.horoscopeCreditsUsed }),
       merge: (persisted, current) => {
         const p = persisted as { isLoggedIn?: boolean; user?: User | null; horoscopeCreditsUsed?: number };
         const user = p?.user;

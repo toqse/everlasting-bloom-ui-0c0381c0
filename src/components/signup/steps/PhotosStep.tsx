@@ -7,9 +7,14 @@ const SLOTS = [
   { key: "family", label: "Family Photo (400x180)", size: "400x180 px", icon: Users },
 ] as const;
 
+export interface PhotoSlotValue {
+  file: File;
+  previewUrl: string;
+}
+
 interface Props {
-  photos: Record<string, string>;
-  setPhotos: (p: Record<string, string>) => void;
+  photos: Record<string, PhotoSlotValue>;
+  setPhotos: (p: Record<string, PhotoSlotValue>) => void;
   aadhaarNumber: string;
   onAadhaarChange: (value: string) => void;
   aadhaarVerified: boolean;
@@ -26,11 +31,22 @@ const PhotosStep = ({
   onVerifyAadhaar,
   onSkipOrCompleteLater,
 }: Props) => {
-  const updateSlot = (key: string, url: string) => {
-    setPhotos({ ...photos, [key]: url });
+  const updateSlot = (key: string, file: File) => {
+    const next = { ...photos };
+    const existing = next[key];
+    if (existing?.previewUrl) {
+      URL.revokeObjectURL(existing.previewUrl);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    next[key] = { file, previewUrl };
+    setPhotos(next);
   };
   const removeSlot = (key: string) => {
     const next = { ...photos };
+    const existing = next[key];
+    if (existing?.previewUrl) {
+      URL.revokeObjectURL(existing.previewUrl);
+    }
     delete next[key];
     setPhotos(next);
   };
@@ -80,13 +96,13 @@ const PhotosStep = ({
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) updateSlot(key, URL.createObjectURL(file));
+                if (file) updateSlot(key, file);
                 e.target.value = "";
               }}
             />
             {photos[key] ? (
               <div className="absolute inset-0 rounded-2xl overflow-hidden">
-                <img src={photos[key]} alt={label} className="w-full h-full object-cover" />
+                <img src={photos[key].previewUrl} alt={label} className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={(e) => {

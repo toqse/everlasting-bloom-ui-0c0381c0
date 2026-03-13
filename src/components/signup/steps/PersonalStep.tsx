@@ -11,7 +11,10 @@ const MARITAL_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated"];
 const COLOR_OPTIONS = ["Fair", "Wheatish", "Dark", "Very Fair"];
 
 const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props) => {
-  const showChildren = formData.maritalStatus === "Divorced" || formData.maritalStatus === "Widowed";
+  const showChildren =
+    formData.maritalStatus === "Divorced" ||
+    formData.maritalStatus === "Widowed" ||
+    formData.maritalStatus === "Separated";
 
   return (
     <>

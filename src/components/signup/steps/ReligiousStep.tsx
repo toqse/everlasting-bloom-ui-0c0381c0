@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { SelectField, labelClass } from "../SignupFormFields";
-import { RELIGION_CASTE_MAP, MOTHER_TONGUES } from "@/data/religionCaste";
+import { useCallback, useEffect, useState } from "react";
+import { labelClass } from "../SignupFormFields";
 import { Home, Globe, CheckSquare, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { getReligions, getCastes, getMotherTongues, type Religion, type Caste, type MotherTongue } from "@/lib/masterApi";
 
 interface Props {
   formData: Record<string, string>;
@@ -11,31 +12,135 @@ interface Props {
   setInterCaste: (v: boolean) => void;
 }
 
-const RELIGIONS = ["Hindu", "Christian", "Muslim", "Caste no bar", "Intercaste"];
+type PartnerPrefKey = "own" | "open" | "specific";
 
-/** Options shown when "Specific Religions" is selected for partner preference */
-const PARTNER_RELIGION_OPTIONS = ["Hindu", "Christian", "Muslim"];
-
-type CastePref = "own" | "open" | "specific";
+const prefKeyToApi: Record<PartnerPrefKey, "own_religion_only" | "open_to_all" | "specific_religions"> = {
+  own: "own_religion_only",
+  open: "open_to_all",
+  specific: "specific_religions",
+};
 
 const ReligiousStep = ({ formData, onChange }: Props) => {
-  const casteOptions = useMemo(() => {
-    const r = formData.religion || "";
-    return RELIGION_CASTE_MAP[r] || [];
-  }, [formData.religion]);
+  const [religions, setReligions] = useState<Religion[]>([]);
+  const [castes, setCastes] = useState<Caste[]>([]);
+  const [motherTongues, setMotherTongues] = useState<MotherTongue[]>([]);
+  const [loadingReligions, setLoadingReligions] = useState(false);
+  const [loadingCastes, setLoadingCastes] = useState(false);
+  const [loadingMotherTongues, setLoadingMotherTongues] = useState(false);
 
-  const [castePref, setCastePref] = useState<CastePref>("open");
-  const [selectedCastes, setSelectedCastes] = useState<string[]>([]);
+  const [prefKey, setPrefKey] = useState<PartnerPrefKey>("open");
+  const [partnerReligionIds, setPartnerReligionIds] = useState<number[]>([]);
 
-  const toggleCaste = (c: string) => {
-    setSelectedCastes(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  const religionId = formData.religion_id ? Number(formData.religion_id) : 0;
+
+  const emitChange = (name: string, value: string) => {
+    onChange({ target: { name, value } } as React.ChangeEvent<HTMLInputElement>);
   };
 
-  const castePreferenceOptions: { key: CastePref; icon: React.ReactNode; label: string; desc: string }[] = [
+  const loadReligions = useCallback(async (search: string) => {
+    setLoadingReligions(true);
+    try {
+      const list = await getReligions(search || undefined);
+      setReligions(list);
+    } catch {
+      setReligions([]);
+    } finally {
+      setLoadingReligions(false);
+    }
+  }, []);
+
+  const loadCastes = useCallback(
+    async (search: string) => {
+      if (!religionId) return;
+      setLoadingCastes(true);
+      try {
+        const list = await getCastes(religionId, search || undefined);
+        setCastes(list);
+      } catch {
+        setCastes([]);
+      } finally {
+        setLoadingCastes(false);
+      }
+    },
+    [religionId]
+  );
+
+  const loadMotherTongues = useCallback(async (search: string) => {
+    setLoadingMotherTongues(true);
+    try {
+      const list = await getMotherTongues(search || undefined);
+      setMotherTongues(list);
+    } catch {
+      setMotherTongues([]);
+    } finally {
+      setLoadingMotherTongues(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Initial load of religions and mother tongues
+    loadReligions("");
+    loadMotherTongues("");
+  }, [loadReligions, loadMotherTongues]);
+
+  useEffect(() => {
+    // Reset castes when religion changes
+    setCastes([]);
+    if (religionId) loadCastes("");
+  }, [religionId, loadCastes]);
+
+  const handleSelectReligion = (name: string, value: string) => {
+    const id = Number(value);
+    const rel = religions.find((r) => r.id === id);
+    emitChange("religion_id", value);
+    emitChange("religion", rel?.name ?? "");
+    // Clear caste when religion changes
+    emitChange("caste_id", "");
+    emitChange("caste", "");
+  };
+
+  const handleSelectCaste = (name: string, value: string) => {
+    const id = Number(value);
+    const caste = castes.find((c) => c.id === id);
+    emitChange("caste_id", value);
+    emitChange("caste", caste?.name ?? "");
+  };
+
+  const handleSelectMotherTongue = (name: string, value: string) => {
+    const id = Number(value);
+    const mt = motherTongues.find((m) => m.id === id);
+    emitChange("mother_tongue_id", value);
+    emitChange("motherTongue", mt?.name ?? "");
+  };
+
+  const castePreferenceOptions: { key: PartnerPrefKey; icon: React.ReactNode; label: string; desc: string }[] = [
     { key: "own", icon: <Home className="w-5 h-5" />, label: "Own Religion Only", desc: "Same religion profiles only" },
     { key: "open", icon: <Globe className="w-5 h-5" />, label: "Open to All Religions", desc: "No restriction at all" },
     { key: "specific", icon: <CheckSquare className="w-5 h-5" />, label: "Specific Religions", desc: "I'll choose which ones" },
   ];
+
+  const handlePrefClick = (key: PartnerPrefKey) => {
+    setPrefKey(key);
+    if (key !== "specific") {
+      setPartnerReligionIds([]);
+      emitChange("partner_religion_ids", "");
+    }
+    emitChange("partner_preference_type", prefKeyToApi[key]);
+  };
+
+  const togglePartnerReligion = (id: number) => {
+    setPartnerReligionIds((prev) => {
+      const exists = prev.includes(id);
+      const next = exists ? prev.filter((x) => x !== id) : [...prev, id];
+      // Update parent AFTER computing next list (outside render/updater of parent)
+      queueMicrotask(() => {
+        emitChange("partner_religion_ids", next.join(","));
+      });
+      return next;
+    });
+  };
+
+  const activeReligionName = formData.religion;
 
   return (
     <>
@@ -44,46 +149,72 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
       </div>
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <SelectField label="Religion *" name="religion" options={RELIGIONS} value={formData.religion} onChange={onChange} />
-          {casteOptions.length > 0 && (
-            <SelectField label="Caste" name="caste" options={casteOptions} value={formData.caste} onChange={onChange} />
-          )}
+          <SearchableSelect
+            name="religion_id"
+            value={formData.religion_id || ""}
+            options={religions}
+            loading={loadingReligions}
+            label="Religion *"
+            placeholder="Select Religion"
+            onSearch={loadReligions}
+            onSelect={handleSelectReligion}
+          />
+          {religionId ? (
+            <SearchableSelect
+              name="caste_id"
+              value={formData.caste_id || ""}
+              options={castes}
+              loading={loadingCastes}
+              label="Caste"
+              placeholder="Select Caste"
+              onSearch={loadCastes}
+              onSelect={handleSelectCaste}
+            />
+          ) : null}
         </div>
 
+        <SearchableSelect
+          name="mother_tongue_id"
+          value={formData.mother_tongue_id || ""}
+          options={motherTongues}
+          loading={loadingMotherTongues}
+          label="Mother Tongue *"
+          placeholder="Select Mother Tongue"
+          onSearch={loadMotherTongues}
+          onSelect={handleSelectMotherTongue}
+        />
 
-        <SelectField label="Mother Tongue *" name="motherTongue" options={MOTHER_TONGUES} value={formData.motherTongue} onChange={onChange} />
-
-        {/* Partner Religion Preference - only for Hindu, Christian, Muslim */}
-        {formData.religion && !["Caste no bar", "Intercaste"].includes(formData.religion) && (
+        {/* Partner Religion Preference - only when a religion is selected */}
+        {activeReligionName && (
           <div className="pt-2">
             <div className="border-t border-primary/10 pt-4">
               <h3 className="font-serif text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                 🤝 Partner Religion Preference
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Which {formData.religion} groups are you open to?
+                Which {activeReligionName} groups are you open to?
               </p>
               <div className="grid grid-cols-3 gap-3">
-                {castePreferenceOptions.map(opt => (
+                {castePreferenceOptions.map((opt) => (
                   <button
                     key={opt.key}
                     type="button"
-                    onClick={() => { setCastePref(opt.key); if (opt.key !== "specific") setSelectedCastes([]); }}
+                    onClick={() => handlePrefClick(opt.key)}
                     className={`p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center gap-1.5 ${
-                      castePref === opt.key
+                      prefKey === opt.key
                         ? "border-primary bg-primary/5 shadow-soft"
                         : "border-primary/10 hover:border-primary/30 bg-card"
                     }`}
                   >
-                    <span className={castePref === opt.key ? "text-primary" : "text-muted-foreground"}>{opt.icon}</span>
-                    <p className={`text-xs font-bold ${castePref === opt.key ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
+                    <span className={prefKey === opt.key ? "text-primary" : "text-muted-foreground"}>{opt.icon}</span>
+                    <p className={`text-xs font-bold ${prefKey === opt.key ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
                     <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
-                    {castePref === opt.key && <Check className="w-4 h-4 text-primary" />}
+                    {prefKey === opt.key && <Check className="w-4 h-4 text-primary" />}
                   </button>
                 ))}
               </div>
 
-              {castePref === "specific" && (
+              {prefKey === "specific" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -92,18 +223,18 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                   <p className="text-sm font-bold text-foreground mb-2">Select religions you're open to:</p>
                   <p className="text-xs text-muted-foreground mb-3">You can select one or more</p>
                   <div className="flex flex-wrap gap-2">
-                    {PARTNER_RELIGION_OPTIONS.map(rel => (
+                    {religions.map((rel) => (
                       <button
-                        key={rel}
+                        key={rel.id}
                         type="button"
-                        onClick={() => toggleCaste(rel)}
+                        onClick={() => togglePartnerReligion(rel.id)}
                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                          selectedCastes.includes(rel)
+                          partnerReligionIds.includes(rel.id)
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-foreground hover:bg-primary/10"
                         }`}
                       >
-                        {rel}
+                        {rel.name}
                       </button>
                     ))}
                   </div>
