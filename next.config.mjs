@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Preserve public folder and /images paths
+  // Build to /out for cPanel/static hosting
+  output: "export",
+  // Nice static paths like /about/ → /about/index.html
+  trailingSlash: true,
   images: {
-    unoptimized: false,
+    // Required for static export unless you add a custom image loader
+    unoptimized: true,
   },
-  // Keep existing @ alias
   transpilePackages: [],
 };
 

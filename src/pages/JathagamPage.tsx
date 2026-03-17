@@ -7,9 +7,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Calendar, Clock, Sparkles, Check, X, Phone } from "lucide-react";
-import { RASI_OPTIONS, NAKSHATRA_OPTIONS, NAKSHATRA_PADA } from "@/data/jathagam";
 import { profilesData } from "@/components/FeaturedProfiles";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -98,55 +96,6 @@ export default function JathagamPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Rasi (Moon Sign) *</Label>
-                  <select
-                    value={rasi}
-                    onChange={(e) => setRasi(e.target.value)}
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
-                  >
-                    <option value="">Select Rasi</option>
-                    {RASI_OPTIONS.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Nakshatra (Star) *</Label>
-                  <select
-                    value={nakshatra}
-                    onChange={(e) => setNakshatra(e.target.value)}
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-primary/20 bg-background text-foreground"
-                  >
-                    <option value="">Select Nakshatra</option>
-                    {NAKSHATRA_OPTIONS.map((n) => (
-                      <option key={n.value} value={n.value}>{n.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Nakshatra Pada</Label>
-                  <div className="flex gap-2 mt-2">
-                    {NAKSHATRA_PADA.map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setNakshatraPada(p)}
-                        className={cn(
-                          "w-10 h-10 rounded-full border-2 font-semibold transition-all",
-                          nakshatraPada === p
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
                   <Label className="text-xs uppercase text-muted-foreground">Name</Label>
                   <Input
                     placeholder="Your name"
@@ -155,9 +104,6 @@ export default function JathagamPage() {
                     className="mt-1.5"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs uppercase text-muted-foreground">Time of Birth</Label>
                   <div className="flex gap-2 mt-1.5 items-center">
@@ -170,51 +116,21 @@ export default function JathagamPage() {
                     <Clock className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Place of Birth</Label>
-                  <Input
-                    placeholder="e.g. Thrissur, Kerala"
-                    value={placeOfBirth}
-                    onChange={(e) => setPlaceOfBirth(e.target.value)}
-                    className="mt-1.5"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <Label>Mangal Dosha</Label>
-                  <p className="text-xs text-muted-foreground">Will be included in compatibility calculation</p>
-                </div>
-                <Switch checked={mangalDosha} onCheckedChange={setMangalDosha} />
               </div>
 
               <div>
-                <Label className="text-xs uppercase text-muted-foreground block mb-2">Horoscope Match Required in Partner?</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {(["yes", "no", "any"] as const).map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setHoroscopeMatchRequired(opt)}
-                      className={cn(
-                        "px-4 py-2 rounded-lg border-2 text-sm font-medium capitalize transition-all",
-                        horoscopeMatchRequired === opt
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      {opt === "yes" && "Yes, Required"}
-                      {opt === "no" && "No, Not Required"}
-                      {opt === "any" && "Any"}
-                    </button>
-                  ))}
-                </div>
+                <Label className="text-xs uppercase text-muted-foreground">Place of Birth</Label>
+                <Input
+                  placeholder="e.g. Thrissur, Kerala"
+                  value={placeOfBirth}
+                  onChange={(e) => setPlaceOfBirth(e.target.value)}
+                  className="mt-1.5"
+                />
               </div>
 
               <Button
                 variant="default"
-                className="w-full bg-primary hover:bg-primary-dark py-6 gap-2"
+                className="w-full bg-primary hover:bg-primary-dark py-6 gap-2 transition-colors duration-200"
                 onClick={handleGeneratePdf}
                 disabled={generatingPdf}
               >
@@ -233,11 +149,11 @@ export default function JathagamPage() {
 
               <Button
                 variant="outline"
-                className="w-full mt-3 py-6 gap-2 border-primary text-primary hover:bg-primary/10"
+                className="w-full mt-3 py-6 gap-2 border-2 border-primary bg-white text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-200 [&_svg]:text-current"
                 onClick={() => {}}
               >
                 <Sparkles className="w-5 h-5" />
-                Generate Jakakam full PDF pay 175/-
+                Generate Jakakam full PDF pay 175/-, Thalakuri-20/-
               </Button>
             </div>
           </div>

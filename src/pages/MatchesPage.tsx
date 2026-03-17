@@ -4,11 +4,31 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Send, Clock, Sparkles, Users, TrendingUp, Flame, ImageIcon, Ruler, BookOpen, Briefcase as BriefcaseIcon, ChevronDown, Heart, Eye } from "lucide-react";
+import {
+  MessageCircle,
+  Send,
+  Clock,
+  Sparkles,
+  Users,
+  TrendingUp,
+  Flame,
+  ImageIcon,
+  Ruler,
+  BookOpen,
+  Briefcase as BriefcaseIcon,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Eye,
+  Check,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
@@ -177,6 +197,15 @@ const MatchesPage = () => {
   const [wishlistedMatriIds, setWishlistedMatriIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Local-only Match Check modal state – uses already-fetched profiles, no API changes
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
+  const [matchedMatriIds, setMatchedMatriIds] = useState<string[]>([]);
+
+  const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
+  const groomProfile = useMemo(() => profiles[0] ?? null, [profiles]);
+  const currentBride = brideProfiles[currentBrideIndex] ?? null;
+
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
     try {
@@ -244,6 +273,20 @@ const MatchesPage = () => {
 
   const hasMore = profiles.length < totalProfiles;
 
+  const openMatchModal = useCallback(
+    (initialMatriId?: string) => {
+      if (brideProfiles.length === 0) return;
+      if (initialMatriId) {
+        const idx = brideProfiles.findIndex((p) => p.matri_id === initialMatriId);
+        setCurrentBrideIndex(idx >= 0 ? idx : 0);
+      } else {
+        setCurrentBrideIndex(0);
+      }
+      setMatchModalOpen(true);
+    },
+    [brideProfiles],
+  );
+
   const handleViewDetails = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
     try {
@@ -276,6 +319,10 @@ const MatchesPage = () => {
     }
   }, [router]);
 
+  const handleCheckMatch = useCallback((matriId: string) => {
+    router.push(`/dashboard/jathagam?profile=${encodeURIComponent(matriId)}`);
+  }, [router]);
+
   const handleChat = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
     try {
@@ -299,6 +346,23 @@ const MatchesPage = () => {
       setActionLoading(null);
     }
   }, [router]);
+
+  const goToPrevBride = () => {
+    if (brideProfiles.length === 0) return;
+    setCurrentBrideIndex((prev) => (prev - 1 + brideProfiles.length) % brideProfiles.length);
+  };
+
+  const goToNextBride = () => {
+    if (brideProfiles.length === 0) return;
+    setCurrentBrideIndex((prev) => (prev + 1) % brideProfiles.length);
+  };
+
+  const handleMatchDecision = (accepted: boolean) => {
+    if (accepted && currentBride) {
+      setMatchedMatriIds((prev) => (prev.includes(currentBride.matri_id) ? prev : [...prev, currentBride.matri_id]));
+    }
+    goToNextBride();
+  };
 
   const handleWishlist = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
@@ -482,6 +546,15 @@ const MatchesPage = () => {
                     Showing <span className="text-secondary">{profiles.length}</span> profiles
                   </h2>
                   <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => openMatchModal()}
+                    >
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                      Check Match
+                    </Button>
                     <span className="text-sm text-muted-foreground">Sort by:</span>
                     <select
                       className="px-3 py-2 rounded-lg border border-primary/10 text-sm bg-card"
@@ -515,6 +588,7 @@ const MatchesPage = () => {
                         onSendInterest={() => handleSendInterest(profile.matri_id)}
                         onViewDetails={() => handleViewDetails(profile.matri_id)}
                         onChat={() => handleChat(profile.matri_id)}
+                        onCheckMatch={() => openMatchModal(profile.matri_id)}
                         onOpenPlanModal={() => setPlanModalOpen(true)}
                         actionLoading={actionLoading}
                       />
@@ -549,6 +623,198 @@ const MatchesPage = () => {
         onSendInterest={viewPreview ? () => handleSendInterest(viewPreview.matri_id) : undefined}
         onOpenPlanModal={() => setPlanModalOpen(true)}
       />
+
+      {/* Horoscope Match modal – groom fixed on left, browse up to 10 bride profiles on right */}
+      <Dialog open={matchModalOpen} onOpenChange={setMatchModalOpen}>
+        <DialogContent className="max-w-5xl p-6 sm:p-8">
+          <DialogTitle className="mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            Check Match – Quick Horoscope View
+          </DialogTitle>
+
+          {groomProfile && currentBride ? (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.1fr] gap-6 items-center">
+                {/* Groom (fixed) – real photo with fade-in */}
+                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 flex flex-col items-center gap-3">
+                  <motion.div
+                    className="w-32 h-32 rounded-2xl overflow-hidden bg-muted flex items-center justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <img
+                      src={
+                        groomProfile.profile_photo ||
+                        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop"
+                      }
+                      alt={groomProfile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                  <div className="text-center space-y-1">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Groom</p>
+                    <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
+                      {groomProfile.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">ID: {groomProfile.matri_id}</p>
+                  </div>
+                </div>
+
+                {/* Match score in the middle */}
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Match score
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-secondary">
+                      {currentBride.match_percentage ?? 0}
+                    </span>
+                    <span className="text-sm font-medium text-secondary">%</span>
+                  </div>
+                </div>
+
+                {/* Bride carousel */}
+                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 relative">
+                  {/* Arrows */}
+                  <button
+                    type="button"
+                    onClick={goToPrevBride}
+                    className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-background/80 border border-border shadow-soft hover:bg-background"
+                    aria-label="Previous"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToNextBride}
+                    className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-background/80 border border-border shadow-soft hover:bg-background"
+                    aria-label="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex flex-col items-center gap-3 pt-2 pb-3 min-h-[200px]">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={currentBride.matri_id}
+                        className="flex flex-col items-center gap-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                      >
+                        <div className="w-32 h-32 rounded-2xl overflow-hidden bg-muted flex items-center justify-center">
+                          <img
+                            src={
+                              currentBride.profile_photo ||
+                              "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop"
+                            }
+                            alt={currentBride.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Bride</p>
+                          <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
+                            {currentBride.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">ID: {currentBride.matri_id}</p>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Dots */}
+                    <div className="flex flex-wrap justify-center gap-1.5 mt-1">
+                      {brideProfiles.map((b, idx) => (
+                        <button
+                          key={b.matri_id}
+                          type="button"
+                          onClick={() => setCurrentBrideIndex(idx)}
+                          className={
+                            idx === currentBrideIndex
+                              ? "w-2.5 h-2.5 rounded-full bg-primary"
+                              : "w-2 h-2 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                          }
+                          aria-label={`Go to bride ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Match / Pass + matched list */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    variant="hero"
+                    size="sm"
+                    className="gap-2 px-6"
+                    onClick={() => handleMatchDecision(true)}
+                  >
+                    <Check className="w-4 h-4" />
+                    Match
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 px-6 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => handleMatchDecision(false)}
+                  >
+                    <X className="w-4 h-4" />
+                    Pass
+                  </Button>
+                </div>
+
+                <div className="rounded-2xl border border-primary/10 bg-accent-rose/10 px-3 py-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    Matched profiles
+                  </p>
+                  {matchedMatriIds.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Confirmed matches will appear here as you tap Match.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {matchedMatriIds.map((id) => {
+                        const p = profiles.find((pr) => pr.matri_id === id);
+                        return (
+                          <div
+                            key={id}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-card border border-primary/20 shadow-soft"
+                          >
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                              <img
+                                src={
+                                  p?.profile_photo ||
+                                  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&h=200&fit=crop"
+                                }
+                                alt={p?.name ?? id}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="text-xs">
+                              <div className="font-semibold text-foreground truncate max-w-[90px]">
+                                {p?.name ?? "Match"}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">ID: {id}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Not enough profiles to run quick match comparison yet. Please try again after loading more matches.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </>
   );
@@ -562,6 +828,7 @@ const MatchListCard = ({
   onSendInterest,
   onViewDetails,
   onChat,
+  onCheckMatch,
   onOpenPlanModal,
   actionLoading,
 }: {
@@ -572,6 +839,7 @@ const MatchListCard = ({
   onSendInterest: () => void;
   onViewDetails: () => void;
   onChat: () => void;
+  onCheckMatch: () => void;
   onOpenPlanModal: () => void;
   actionLoading: string | null;
 }) => {
@@ -615,14 +883,53 @@ const MatchListCard = ({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" variant="hero" className="gap-1 text-xs shrink-0" disabled={!profile.can_chat || busy} onClick={(e) => { e.stopPropagation(); profile.can_chat ? onChat() : onOpenPlanModal(); }}>
+          <Button
+            size="sm"
+            variant="hero"
+            className="gap-1 text-xs shrink-0"
+            disabled={!profile.can_chat || busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              profile.can_chat ? onChat() : onOpenPlanModal();
+            }}
+          >
             <MessageCircle className="w-3.5 h-3.5 shrink-0" /> Chat now
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0" disabled={!profile.can_send_interest || busy} onClick={(e) => { e.stopPropagation(); profile.can_send_interest ? onSendInterest() : onOpenPlanModal(); }}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-xs shrink-0"
+            disabled={!profile.can_send_interest || busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              profile.can_send_interest ? onSendInterest() : onOpenPlanModal();
+            }}
+          >
             <Send className="w-3.5 h-3.5 shrink-0" /> Send interest
           </Button>
-          <Button size="sm" variant="hero" className="gap-1 text-xs shrink-0" disabled={!profile.can_view_details || busy} onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
+          <Button
+            size="sm"
+            variant="hero"
+            className="gap-1 text-xs shrink-0"
+            disabled={!profile.can_view_details || busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails();
+            }}
+          >
             <Eye className="w-3.5 h-3.5 shrink-0" /> View details
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-xs shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            disabled={busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCheckMatch();
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5 shrink-0" /> Check Match
           </Button>
         </div>
       </div>
