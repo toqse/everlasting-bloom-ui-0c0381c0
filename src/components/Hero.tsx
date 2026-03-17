@@ -49,7 +49,10 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           {/* Left: Text Content */}
           <div className="text-center lg:text-left min-w-0">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-primary mb-8 sm:mb-10 -mt-6 sm:-mt-8 animate-fade-in-up tracking-tight">
+              Aiswarya Vivaha Bureau
+            </h2>
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group" style={{ animationDelay: "0.05s" }}>
               <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
               <span className="text-sm font-medium text-primary">India's Most Trusted Matrimony</span>
               <Heart className="w-4 h-4 text-primary fill-primary group-hover:animate-heart-beat" />
@@ -72,7 +75,7 @@ const Hero = () => {
               Love
             </h1>
 
-            <p className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
+            <p className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed font-bold" style={{ animationDelay: "0.2s" }}>
               Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
               Join millions who found their soulmate with Aiswarya Matrimony.
             </p>
@@ -107,8 +110,8 @@ const Hero = () => {
                 <Star className="w-7 h-7 text-white fill-white" />
               </div>
             </div>
-            <p className="mt-4 text-center font-serif text-lg font-semibold text-foreground">
-              39 Years of Trust & Tradition
+            <p className="mt-4 text-center font-serif text-xl sm:text-2xl font-semibold text-foreground">
+              Start Your Journey to Forever
             </p>
           </div>
         </div>

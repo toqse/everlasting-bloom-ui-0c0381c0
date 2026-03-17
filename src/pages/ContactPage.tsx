@@ -30,7 +30,7 @@ const ContactPage = () => {
     {
       icon: Mail,
       title: "Email",
-      details: ["ramananpm68@gmail.com"],
+      details: ["aiswarya@aiswaryamatrimonials.com"],
     },
     {
       icon: MapPin,
@@ -44,7 +44,7 @@ const ContactPage = () => {
     {
       icon: Clock,
       title: "Working Hours",
-      details: ["Mon - Sat: 9:00 AM - 7:00 PM", "Sunday: Closed"],
+      details: ["Mon - Sat: 9:00 AM - 5:00 PM", "Sunday: Closed"],
     },
   ];
 

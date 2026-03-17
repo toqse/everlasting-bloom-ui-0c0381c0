@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Sparkles, Star, Users, Phone, Mail, Heart, MapPin, Building2, UserCheck, ShieldCheck, Infinity } from "lucide-react";
+import { Sparkles, Star, Users, Phone, Mail, Heart, MapPin, UserCheck, ShieldCheck, Infinity } from "lucide-react";
 
 const features = [
   {
@@ -37,15 +37,16 @@ const testimonials = [
   { name: "William Son", role: "Government Staff", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face", review: "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. Excellent platform!", rating: 5 },
 ];
 
-const teamMembers = [
-  { name: "Rajesh Kumar", role: "Hindu Caste Manager", phone: "+91 94567 12301", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Anwar Hussain", role: "Muslim Caste Manager", phone: "+91 94567 12302", branch: "Cherthala Main Branch", caste: "Muslim" },
-  { name: "Thomas Mathew", role: "Christian Caste Manager", phone: "6282857276, 8075352944, 9037188286", branch: "Alappuzha Branch", caste: "Christian" },
-  { name: "Suresh Nair", role: "Nair Community Manager", phone: "8848290822, 808906360", branch: "Kochi Branch", caste: "Hindu" },
-  { name: "Priya Menon", role: "Ezhava Community Manager", phone: "8848862419, 7907240062", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Saji Kumar", role: "Velan / Mannan / Paravar Community Manager", phone: "9495091895", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Binu Viswakarma", role: "Viswakarma / Pattarya Vilakkathala Community Manager", phone: "9495091895, 8089063608", branch: "Cherthala Main Branch", caste: "Hindu" },
-  { name: "Manoj Varghese", role: "Velan / Mannan / Paravar / Pulaya Community Manager", phone: "9495091895, 8075352944", branch: "Cherthala Main Branch", caste: "Hindu" },
+const teamContacts = [
+  { label: "EZHAVA", phone: "8848862419, 7907612933" },
+  { label: "CHRISTIAN", phone: "6282857276, 8075352944" },
+  { label: "NAIR", phone: "8848290822" },
+  { label: "VISWAKARMA", phone: "8075662656" },
+  { label: "PATARYA, VILAKKATHALA", phone: "7012129596, 7907612933" },
+  { label: "DHEEVARA, VELAN, MANNAN, PARAVAR", phone: "8078405206, 8848290822" },
+  { label: "PULAYA", phone: "7907612933, 8848290822" },
+  { label: "MUSLIM", phone: "6282857276, 7012129596" },
+  { label: "OTHER CASTE", phone: "9037188286, 7907240062" },
 ];
 
 const teamColors = [
@@ -186,7 +187,7 @@ const AboutPage = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Enquiry</p>
-                    <span className="font-semibold text-foreground">+01 2242 3366</span>
+                    <span className="font-semibold text-foreground">7907240062, 6282857276</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -195,7 +196,7 @@ const AboutPage = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Get Support</p>
-                    <span className="font-semibold text-foreground">info@example.com</span>
+                    <span className="font-semibold text-foreground">aiswarya@aiswaryamatrimonials.com</span>
                   </div>
                 </div>
               </div>
@@ -267,23 +268,16 @@ const AboutPage = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 max-w-6xl mx-auto">
-            {teamMembers.map((member, i) => (
+            {teamContacts.map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
-                className={`rounded-2xl p-5 border shadow-card hover-lift text-center ${teamColors[i]}`}>
-                <div className={`w-14 h-14 mx-auto rounded-full ${teamIconColors[i]} flex items-center justify-center mb-3 text-lg font-bold`}>
-                  {member.name.split(" ").map(n => n[0]).join("")}
+                className={`rounded-2xl p-5 border shadow-card hover-lift text-center ${teamColors[i % teamColors.length]}`}>
+                <div className={`w-14 h-14 mx-auto rounded-full ${teamIconColors[i % teamIconColors.length]} flex items-center justify-center mb-3 text-lg font-bold`}>
+                  <Phone className="w-6 h-6 text-current" />
                 </div>
-                <h4 className="font-serif font-bold text-foreground text-sm mb-1">{member.name}</h4>
-                <p className="text-xs text-muted-foreground mb-3">{member.role}</p>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-foreground">
-                    <Phone className="w-3 h-3 text-primary flex-shrink-0" />
-                    <span>{member.phone}</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                    <Building2 className="w-3 h-3 text-primary flex-shrink-0" />
-                    <span>{member.branch}</span>
-                  </div>
+                <h4 className="font-serif font-bold text-foreground text-sm mb-2 uppercase tracking-wide">{item.label}</h4>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-foreground flex-wrap">
+                  <Phone className="w-3 h-3 text-primary flex-shrink-0" />
+                  <span>{item.phone}</span>
                 </div>
               </motion.div>
             ))}

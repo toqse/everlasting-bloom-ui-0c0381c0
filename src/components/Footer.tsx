@@ -1,4 +1,4 @@
-import { Heart, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube, Linkedin, ArrowRight, Sparkles } from "lucide-react";
+import { Heart, Mail, Phone, MapPin, Facebook, Instagram, Youtube, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -22,11 +22,9 @@ const Footer = () => {
   const footerLinks = {
     company: [
       { name: "About Us", href: "/about" },
-      { name: "Success Stories", href: "/success-stories" },
-    ],
-    legal: [
-      { name: "Privacy Policy", href: "/" },
-      { name: "Terms of Service", href: "/" },
+      { name: "Services", href: "/services" },
+      { name: "Membership", href: "/membership" },
+      { name: "Contact", href: "/contact" },
     ],
     services: [
       { name: "Matrimony Services", href: "/search" },
@@ -39,9 +37,7 @@ const Footer = () => {
   const socialLinks = [
     { icon: Facebook, href: "#", label: "Facebook" },
     { icon: Instagram, href: "#", label: "Instagram" },
-    { icon: Twitter, href: "#", label: "Twitter" },
     { icon: Youtube, href: "#", label: "Youtube" },
-    { icon: Linkedin, href: "#", label: "LinkedIn" },
   ];
 
   return (
@@ -112,8 +108,8 @@ const Footer = () => {
       </div>
 
       {/* Main Footer Content */}
-      <div className="container mx-auto px-4 sm:px-4 py-10 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 md:gap-10">
+      <div className="container mx-auto px-4 sm:px-4 pt-10 sm:pt-16 pb-6 sm:pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8">
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-6 group">
@@ -125,55 +121,41 @@ const Footer = () => {
                 Aiswarya <span className="text-secondary">Matrimony</span>
               </span>
             </Link>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed mb-5">
               India's most trusted matrimony service helping millions find their perfect life partner. 
               Begin your beautiful journey towards forever love.
             </p>
-            <div className="space-y-3">
-              <a href="tel:+917907240062" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Phone className="w-4 h-4 text-primary" />
-                </div>
-                Customer Care: 7907240062
-              </a>
-              <a href="mailto:ramananpm68@gmail.com" className="flex items-center gap-3 text-foreground hover:text-primary transition-colors group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Mail className="w-4 h-4 text-primary" />
-                </div>
-                ramananpm68@gmail.com
-              </a>
-              <div className="flex items-start gap-3 text-foreground">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-primary" />
-                </div>
-                <div className="text-sm">
-                  <p>Aiswarya Marriage Bureau</p>
-                  <p>Near Private Bus Stand</p>
-                  <p>Cherthala – 688524</p>
-                </div>
+            {/* Download Our App - below brand content, layout like reference image */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
+              <span className="font-serif text-lg font-bold text-foreground">Download Our App:</span>
+              <div className="flex flex-wrap gap-3">
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors hover-lift">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" fill="currentColor">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] leading-tight">Download on</div>
+                    <div className="text-xs font-semibold leading-tight">App Store</div>
+                  </div>
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors hover-lift">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" fill="currentColor">
+                    <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35l9.64 9.85-9.64 9.85c-.5-.24-.84-.76-.84-1.35zm13.81-4.61L5.3 22.18l8.56-8.56 2.95 2.27zm1.94-11.78c.34.18.58.51.58.89v14c0 .38-.24.71-.58.89l-7.49-7.5 7.49-7.5zM5.3 1.82L16.81 8.1l-2.95 2.27L5.3 1.82z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] leading-tight">Get it on</div>
+                    <div className="text-xs font-semibold leading-tight">Google Play</div>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
 
           {/* Links Columns */}
           <div>
-            <h4 className="font-serif text-lg font-bold text-foreground mb-5">Company</h4>
+            <h4 className="font-serif text-lg font-bold text-foreground mb-5">Quick Links</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-
-          <div>
-            <h4 className="font-serif text-lg font-bold text-foreground mb-5">Legal</h4>
-            <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
                 <li key={link.name}>
                   <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.name}
@@ -195,64 +177,57 @@ const Footer = () => {
               ))}
             </ul>
           </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="font-serif text-lg font-bold text-foreground mb-5">Contact</h4>
+            <ul className="space-y-3">
+              <li>
+                <a href="tel:+917907240062" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <Phone className="w-4 h-4 text-primary flex-shrink-0" />
+                  7907240062, 6282857276
+                </a>
+              </li>
+              <li>
+                <a href="mailto:aiswarya@aiswaryamatrimonials.com" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                  aiswarya@aiswaryamatrimonials.com
+                </a>
+              </li>
+              <li className="flex items-start gap-2 text-muted-foreground">
+                <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <span>
+                  Aiswarya Marriage Bureau,<br />
+                  Near Private Bus Stand,<br />
+                  Cherthala – 688524
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* App Download & Social */}
-        <div className="border-t border-primary/10 mt-12 pt-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            {/* Download Apps */}
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <span className="text-foreground font-medium">Download Our App:</span>
-              <div className="flex gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors hover-lift">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
-                    <path d="M17.9 17.39c-.26.67-.59 1.31-.97 1.91-.5.78-.9 1.32-1.2 1.62-.48.49-1 .75-1.55.78-.4 0-.88-.11-1.44-.35-.56-.23-1.07-.34-1.53-.34-.48 0-1 .11-1.56.34-.56.24-1.01.36-1.35.37-.53.02-1.05-.25-1.55-.76-.33-.33-.75-.89-1.25-1.67-.54-.85-.99-1.83-1.34-2.95-.38-1.21-.57-2.38-.57-3.51 0-1.3.28-2.42.84-3.36.44-.75 1.03-1.34 1.76-1.77.74-.43 1.53-.65 2.39-.66.43 0 1 .13 1.7.38.7.26 1.15.39 1.35.39.15 0 .65-.15 1.5-.45.8-.28 1.48-.4 2.03-.36 1.5.12 2.63.71 3.38 1.78-1.34.81-2 1.95-1.98 3.42.02 1.15.43 2.1 1.22 2.87.36.35.77.62 1.22.82-.1.28-.2.55-.32.83zM14.2 3.46c0 .9-.33 1.74-.98 2.52-.79.92-1.75 1.45-2.78 1.37-.01-.11-.02-.22-.02-.34 0-.87.38-1.79 1.05-2.55.34-.38.77-.7 1.29-.95.52-.25 1.01-.38 1.48-.41.01.12.02.24.02.36z"/>
-                  </svg>
-                  <div className="text-left">
-                    <div className="text-xs">Download on</div>
-                    <div className="text-sm font-semibold">App Store</div>
-                  </div>
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors hover-lift">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
-                    <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35l9.64 9.85-9.64 9.85c-.5-.24-.84-.76-.84-1.35zm13.81-4.61L5.3 22.18l8.56-8.56 2.95 2.27zm1.94-11.78c.34.18.58.51.58.89v14c0 .38-.24.71-.58.89l-7.49-7.5 7.49-7.5zM5.3 1.82L16.81 8.1l-2.95 2.27L5.3 1.82z"/>
-                  </svg>
-                  <div className="text-left">
-                    <div className="text-xs">Get it on</div>
-                    <div className="text-sm font-semibold">Google Play</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Social Links */}
-            <div className="flex items-center gap-4">
+        {/* Copyright & Follow Us */}
+        <div className="border-t border-primary/10 mt-6 pt-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+            <p className="flex items-center gap-1 font-bold">
+              © 2026 Aiswarya Matrimony. All rights reserved.
+            </p>
+            <div className="flex items-center gap-3">
               <span className="text-foreground font-medium">Follow Us:</span>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 {socialLinks.map((social, i) => (
                   <a
                     key={social.label}
                     href={social.href}
                     aria-label={social.label}
-                    className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover:scale-110"
                     style={{ animationDelay: `${i * 0.2}s` }}
                   >
-                    <social.icon className="w-5 h-5" />
+                    <social.icon className="w-4 h-4" />
                   </a>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="border-t border-primary/10 mt-10 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p className="flex items-center gap-1">
-              © 2024 Aiswarya Matrimony. All rights reserved. Made with 
-              <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat mx-1" /> 
-              in India
-            </p>
           </div>
         </div>
       </div>

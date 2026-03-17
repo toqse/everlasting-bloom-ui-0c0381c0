@@ -147,7 +147,7 @@ const WhyChooseUs = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Enquiry</p>
-                  <span className="font-semibold text-foreground">+01 2242 3366</span>
+                  <span className="font-semibold text-foreground">7907240062, 6282857276</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ const WhyChooseUs = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Get Support</p>
-                  <span className="font-semibold text-foreground">info@example.com</span>
+                  <span className="font-semibold text-foreground">aiswarya@aiswaryamatrimonials.com</span>
                 </div>
               </div>
             </div>

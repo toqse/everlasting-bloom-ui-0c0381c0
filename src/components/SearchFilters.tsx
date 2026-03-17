@@ -16,6 +16,7 @@ const SearchFilters = () => {
   const [lookingFor, setLookingFor] = useState("Bride");
   const [ageFrom, setAgeFrom] = useState("18");
   const [ageTo, setAgeTo] = useState("33");
+  const [height, setHeight] = useState("");
   const [religion, setReligion] = useState("");
   const [caste, setCaste] = useState("");
 
@@ -33,6 +34,7 @@ const SearchFilters = () => {
   const fromAges = ages.filter(a => Number(a) >= minAge);
   const toAges = ages.filter(a => Number(a) >= Number(ageFrom));
 
+  const heightOptions = ["", "140 - 150 cm", "150 - 160 cm", "160 - 170 cm", "170 - 180 cm", "180 cm & above"];
   const religions = Object.keys(RELIGION_CASTE_MAP);
   const castes = religion ? RELIGION_CASTE_MAP[religion] || [] : [];
   const regCastes = regReligion ? RELIGION_CASTE_MAP[regReligion] || [] : [];
@@ -42,6 +44,7 @@ const SearchFilters = () => {
     if (lookingFor) params.set("gender", lookingFor);
     params.set("ageFrom", ageFrom);
     params.set("ageTo", ageTo);
+    if (height) params.set("height", height);
     if (religion) params.set("religion", religion);
     if (caste) params.set("caste", caste);
     navigate(`/search?${params.toString()}`);
@@ -103,7 +106,7 @@ const SearchFilters = () => {
 
             {activeTab === "search" ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6 items-end">
                   {/* Looking For */}
                   <div>
                     <label className="block text-xs font-medium text-foreground mb-1.5">I am Looking for a</label>
@@ -141,6 +144,20 @@ const SearchFilters = () => {
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Height */}
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">Height</label>
+                    <div className="relative">
+                      <select value={height} onChange={e => setHeight(e.target.value)} className={selectClass}>
+                        <option value="">Select</option>
+                        {heightOptions.filter(Boolean).map(h => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
                   </div>
 
