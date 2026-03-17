@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/AboutPage";
 import ServicesPage from "./pages/ServicesPage";
 import ContactPage from "./pages/ContactPage";
+import TermsPage from "./pages/TermsPage";
 import DashboardPage from "./pages/DashboardPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import DashboardInterests from "./pages/DashboardInterests";
@@ -51,6 +52,7 @@ const AppContent = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/terms-conditions" element={<TermsPage />} />
         <Route path="/dashboard/jathagam" element={<JathagamPage />} />
         <Route path="/dashboard/profile" element={<UserProfilePage />} />
         <Route path="/dashboard/interests" element={<DashboardInterests />} />

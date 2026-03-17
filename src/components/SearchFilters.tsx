@@ -35,7 +35,7 @@ const SearchFilters = () => {
   const toAges = ages.filter(a => Number(a) >= Number(ageFrom));
 
   const heightOptions = ["", "140 - 150 cm", "150 - 160 cm", "160 - 170 cm", "170 - 180 cm", "180 cm & above"];
-  const religions = Object.keys(RELIGION_CASTE_MAP);
+  const religionOptions = ["Hindu", "Christian", "Muslim", "Caste no bar", "Intercaste"];
   const castes = religion ? RELIGION_CASTE_MAP[religion] || [] : [];
   const regCastes = regReligion ? RELIGION_CASTE_MAP[regReligion] || [] : [];
 
@@ -167,7 +167,7 @@ const SearchFilters = () => {
                     <div className="relative">
                       <select value={religion} onChange={e => { setReligion(e.target.value); setCaste(""); }} className={selectClass}>
                         <option value="">Select</option>
-                        {religions.map(r => <option key={r} value={r}>{r}</option>)}
+                        {religionOptions.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -178,7 +178,7 @@ const SearchFilters = () => {
                     <label className="block text-xs font-medium text-foreground mb-1.5">Caste</label>
                     <div className="relative">
                       <select value={caste} onChange={e => setCaste(e.target.value)} className={selectClass} disabled={!religion}>
-                        <option value="">Caste</option>
+                        <option value="">Select Caste</option>
                         {castes.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -224,7 +224,7 @@ const SearchFilters = () => {
                     <div className="relative">
                       <select value={regReligion} onChange={e => { setRegReligion(e.target.value); setRegCaste(""); }} className={selectClass}>
                         <option value="">Select</option>
-                        {religions.map(r => <option key={r} value={r}>{r}</option>)}
+                        {religionOptions.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>

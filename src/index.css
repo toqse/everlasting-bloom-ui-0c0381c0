@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 358 47% 89%; /* #f1d5d6 */
     --foreground: 340 50% 15%;
 
     --card: 0 0% 100%;
@@ -128,10 +128,13 @@
   html {
     @apply overflow-x-hidden;
     -webkit-tap-highlight-color: transparent;
+    background: #f1d5d6;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    background: #f1d5d6;
+    min-height: 100vh;
     font-family: 'Inter', sans-serif;
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
@@ -361,4 +364,9 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary-dark));
+}
+
+/* Terms page: bold list numbers */
+.terms-list li::marker {
+  font-weight: bold;
 }

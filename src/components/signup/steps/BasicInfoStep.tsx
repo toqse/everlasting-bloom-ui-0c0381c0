@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { User, Phone, Mail, Calendar, ArrowRight } from "lucide-react";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,11 @@ const BasicInfoStep = ({
               className="mt-1 w-5 h-5 rounded border-primary/30 text-primary focus:ring-primary"
             />
             <label htmlFor="agreeTerms" className="text-sm text-muted-foreground cursor-pointer">
-              I agree to the Terms & Conditions and Privacy Policy
+              I agree to the{" "}
+              <Link to="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+                Terms & Conditions
+              </Link>{" "}
+              and Privacy Policy
             </label>
           </div>
           <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp} disabled={!canSendOtp}>
@@ -176,7 +181,11 @@ const BasicInfoStep = ({
               className="mt-1 w-5 h-5 rounded border-primary/30 text-primary focus:ring-primary"
             />
             <label htmlFor="agreeTermsVerified" className="text-sm text-muted-foreground cursor-pointer">
-              I agree to the Terms & Conditions and Privacy Policy
+              I agree to the{" "}
+              <Link to="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+                Terms & Conditions
+              </Link>{" "}
+              and Privacy Policy
             </label>
           </div>
         </div>

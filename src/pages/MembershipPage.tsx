@@ -154,51 +154,6 @@ const MembershipPage = () => {
         </div>
       </section>
 
-      {/* Features Comparison */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="font-serif text-3xl font-bold text-foreground text-center mb-12">
-            Compare <span className="text-gradient-primary">Plan Features</span>
-          </h2>
-
-          <div className="max-w-5xl mx-auto overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-primary/10">
-                  <th className="py-4 px-2 text-left font-serif text-sm">Feature</th>
-                  <th className="py-4 px-2 text-center font-serif text-sm text-red-500">Special</th>
-                  <th className="py-4 px-2 text-center font-serif text-sm text-blue-500">Silver</th>
-                  <th className="py-4 px-2 text-center font-serif text-sm text-secondary">Gold</th>
-                  <th className="py-4 px-2 text-center font-serif text-sm text-orange-500">Premium</th>
-                  <th className="py-4 px-2 text-center font-serif text-sm text-purple-600">Ultimate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { feature: "Horoscope Matches", special: "6", silver: "15", gold: "30", premium: "60", ultimate: "70" },
-                  { feature: "Contact Views", special: "6", silver: "15", gold: "30", premium: "60", ultimate: "70" },
-                  { feature: "Send Interests", special: "✓", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
-                  { feature: "Chat with Matches", special: "✓", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
-                  { feature: "Profile Visibility", special: "✓", silver: "✓", gold: "✓", premium: "✓", ultimate: "✓" },
-                  { feature: "Dedicated Support", special: "✗", silver: "✗", gold: "✗", premium: "✓", ultimate: "✓" },
-                  { feature: "Customer Care", special: "✗", silver: "✗", gold: "✗", premium: "✗", ultimate: "✓" },
-                  { feature: "Duration", special: "1 month", silver: "3 months", gold: "6 months", premium: "1 Year", ultimate: "1 Year" },
-                ].map((row, i) => (
-                  <tr key={i} className="border-b border-primary/5 hover:bg-accent-rose/30 transition-colors">
-                    <td className="py-3 px-2 font-medium text-sm">{row.feature}</td>
-                    <td className="py-3 px-2 text-center text-sm">{row.special}</td>
-                    <td className="py-3 px-2 text-center text-sm">{row.silver}</td>
-                    <td className="py-3 px-2 text-center bg-secondary/5 font-medium text-secondary text-sm">{row.gold}</td>
-                    <td className="py-3 px-2 text-center bg-orange-50 font-medium text-orange-600 text-sm">{row.premium}</td>
-                    <td className="py-3 px-2 text-center text-sm">{row.ultimate}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
       {/* Trust Badges */}
       <section className="py-12 bg-gradient-romantic">
         <div className="container mx-auto px-4">

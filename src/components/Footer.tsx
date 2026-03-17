@@ -212,6 +212,9 @@ const Footer = () => {
             <p className="flex items-center gap-1 font-bold">
               © 2026 Aiswarya Matrimony. All rights reserved.
             </p>
+            <Link to="/terms-conditions" className="font-medium text-foreground hover:text-primary transition-colors">
+              Terms and Conditions
+            </Link>
             <div className="flex items-center gap-3">
               <span className="text-foreground font-medium">Follow Us:</span>
               <div className="flex gap-2">
