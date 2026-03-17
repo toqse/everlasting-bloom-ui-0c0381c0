@@ -104,6 +104,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
           loading={loadingCountries}
           label="Country"
           placeholder="Select Country"
+          initialDisplayLabel={formData.country || undefined}
           onSearch={loadCountries}
           onSelect={handleSelect}
         />
@@ -116,6 +117,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
             loading={loadingStates}
             label="State"
             placeholder="Select State"
+            initialDisplayLabel={formData.state || undefined}
             onSearch={loadStates}
             onSelect={handleSelect}
           />
@@ -129,6 +131,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
             loading={loadingDistricts}
             label="District"
             placeholder="Select District"
+            initialDisplayLabel={formData.district || undefined}
             onSearch={loadDistricts}
             onSelect={handleSelect}
           />
@@ -142,6 +145,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
             loading={loadingCities}
             label="City"
             placeholder="Select City"
+            initialDisplayLabel={formData.city || undefined}
             onSearch={loadCities}
             onSelect={handleSelect}
           />

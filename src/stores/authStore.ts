@@ -1,7 +1,48 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { VerifyMobileData } from "@/lib/authApi";
+import type { VerifyMobileData, VerifyMobileProfile } from "@/lib/authApi";
+
+const MATRIMONY_STORAGE_KEY = "matrimony";
+const PROFILE_STEPS_STORAGE_KEY = "matrimony_profile_steps";
+
+function setMatrimonyTokens(accessToken: string | null, refreshToken: string | null) {
+  try {
+    if (accessToken && refreshToken) {
+      localStorage.setItem(
+        MATRIMONY_STORAGE_KEY,
+        JSON.stringify([{ accessToken, refreshToken }])
+      );
+    } else {
+      localStorage.removeItem(MATRIMONY_STORAGE_KEY);
+    }
+  } catch {
+    // ignore localStorage errors
+  }
+}
+
+function getProfileStepsFromStorage(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(PROFILE_STEPS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, boolean>;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function setProfileStepsToStorage(steps: Record<string, boolean> | null) {
+  try {
+    if (steps && Object.keys(steps).length > 0) {
+      localStorage.setItem(PROFILE_STEPS_STORAGE_KEY, JSON.stringify(steps));
+    } else {
+      localStorage.removeItem(PROFILE_STEPS_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 export interface User {
   name: string;
@@ -17,19 +58,42 @@ export interface User {
   matriId?: string;
 }
 
+const PROFILE_STEP_ORDER = ["location", "religion", "personal", "education", "about", "photos"] as const;
+const PROFILE_STEP_TO_SIGNUP_INDEX: Record<string, number> = {
+  location: 2,
+  religion: 3,
+  personal: 4,
+  education: 5,
+  about: 6,
+  photos: 7,
+};
+
 interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  /** When set, user has tokens but profile is incomplete; used to resume signup wizard. */
+  profileSteps: Record<string, boolean> | null;
+  profileNextStep: string | null;
+  /** Profile from verify/mobile for pre-filling the signup form (cleared on logout). */
+  profilePrefill: VerifyMobileProfile | null;
   /** Demo override: "Hindu" | "Christian" | "Muslim" | null. When set, isHindu() uses this instead of user.religion. */
   demoReligionOverride: string | null;
   login: (method: 'email' | 'phone', value: string) => void;
   /** Complete signup: set user with profile data including religion. */
   loginWithProfile: (profile: Partial<User> & { religion: string }) => void;
-  /** Set auth state from verify/mobile API response. Call only when profile_status === "completed". */
+  /** Set auth state from verify/mobile API response. */
   setAuthFromVerify: (mobile: string, data: VerifyMobileData) => void;
+  /** Clear stored profile incomplete state (e.g. after user completes all steps). */
+  clearProfileIncomplete: () => void;
+  /** Mark a profile step as completed (persisted so "Complete Profile" resumes correctly). */
+  markProfileStepComplete: (stepKey: string) => void;
   logout: () => void;
+  /** True if profile is complete (or unknown); false if we know it's incomplete. */
+  isProfileComplete: () => boolean;
+  /** If profile is incomplete, returns signup step index (2–7); otherwise null. */
+  getProfileIncompleteSignupStep: () => number | null;
   setDemoReligion: (religion: string | null) => void;
   /** Update user's plan after payment (e.g. "Gold", "Diamond", "Silver"). */
   setPlan: (plan: string) => void;
@@ -72,6 +136,9 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
+      profileSteps: null,
+      profileNextStep: null,
+      profilePrefill: null,
       demoReligionOverride: null,
       horoscopeCreditsUsed: 0,
       login: () => {
@@ -91,6 +158,11 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       setAuthFromVerify: (mobile, data) => {
+        const completed =
+          data.is_registration_profile_completed ||
+          data.profile_status === "completed" ||
+          (data.profile_steps && Object.values(data.profile_steps).every(Boolean));
+        const steps = completed ? null : (data.profile_steps ?? null);
         set({
           isLoggedIn: true,
           accessToken: data.access_token,
@@ -101,10 +173,58 @@ export const useAuthStore = create<AuthState>()(
             name: data.matri_id,
             matriId: data.matri_id,
           },
+          profileSteps: steps,
+          profileNextStep: completed ? null : (data.next_step ?? null),
+          profilePrefill: data.profile ?? null,
+        });
+        setMatrimonyTokens(data.access_token, data.refresh_token);
+        setProfileStepsToStorage(steps);
+      },
+      clearProfileIncomplete: () => {
+        setProfileStepsToStorage(null);
+        set({ profileSteps: null, profileNextStep: null });
+      },
+      markProfileStepComplete: (stepKey) => {
+        set((state) => {
+          const next = { ...(state.profileSteps ?? {}), [stepKey]: true };
+          setProfileStepsToStorage(next);
+          return { profileSteps: next };
         });
       },
       logout: () => {
-        set({ isLoggedIn: false, user: null, accessToken: null, refreshToken: null, demoReligionOverride: null });
+        setMatrimonyTokens(null, null);
+        setProfileStepsToStorage(null);
+        set({
+          isLoggedIn: false,
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          profileSteps: null,
+          profileNextStep: null,
+          profilePrefill: null,
+          demoReligionOverride: null,
+        });
+      },
+      isProfileComplete: () => {
+        const fromStore = get().profileSteps ?? {};
+        const fromStorage = getProfileStepsFromStorage();
+        const steps = { ...fromStore, ...fromStorage };
+        if (Object.keys(steps).length === 0) return true;
+        return PROFILE_STEP_ORDER.every((key) => steps[key] === true);
+      },
+      getProfileIncompleteSignupStep: () => {
+        const fromStore = get().profileSteps ?? {};
+        const fromStorage = getProfileStepsFromStorage();
+        const steps = { ...fromStore, ...fromStorage };
+        if (Object.keys(steps).length === 0) return null;
+        const nextStep = get().profileNextStep;
+        if (nextStep && PROFILE_STEP_TO_SIGNUP_INDEX[nextStep] != null) {
+          if (!steps[nextStep]) return PROFILE_STEP_TO_SIGNUP_INDEX[nextStep];
+        }
+        for (const key of PROFILE_STEP_ORDER) {
+          if (!steps[key]) return PROFILE_STEP_TO_SIGNUP_INDEX[key] ?? null;
+        }
+        return null;
       },
       setDemoReligion: (religion) => {
         set({ demoReligionOverride: religion || null });
@@ -144,9 +264,30 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-store',
-      partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user, accessToken: state.accessToken, refreshToken: state.refreshToken, horoscopeCreditsUsed: state.horoscopeCreditsUsed }),
+      partialize: (state) => ({
+        isLoggedIn: state.isLoggedIn,
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        profileSteps: state.profileSteps,
+        profileNextStep: state.profileNextStep,
+        profilePrefill: state.profilePrefill,
+        horoscopeCreditsUsed: state.horoscopeCreditsUsed,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken && state?.refreshToken) {
+          setMatrimonyTokens(state.accessToken, state.refreshToken);
+        }
+      },
       merge: (persisted, current) => {
-        const p = persisted as { isLoggedIn?: boolean; user?: User | null; horoscopeCreditsUsed?: number };
+        const p = persisted as {
+          isLoggedIn?: boolean;
+          user?: User | null;
+          horoscopeCreditsUsed?: number;
+          profileSteps?: Record<string, boolean> | null;
+          profileNextStep?: string | null;
+          profilePrefill?: VerifyMobileProfile | null;
+        };
         const user = p?.user;
         if (user?.name === "Anna Jaslin") {
           return {

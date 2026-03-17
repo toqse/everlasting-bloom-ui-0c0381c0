@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,13 +6,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { plansData, type Plan } from "@/components/Membership";
 import { Check, CreditCard, Smartphone, Building2, Wallet, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { purchasePlan, type PaymentMethod, type AvailablePlan } from "@/lib/plansApi";
+import { toast } from "sonner";
 
 interface PaymentPopupProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Real API plan object (preferred over defaultPlanId). */
+  apiPlan?: AvailablePlan;
+  /** Legacy: 0-based index into static plansData (ignored when apiPlan is set). */
   defaultPlanId?: number;
 }
 
@@ -23,78 +27,103 @@ const paymentMethods = [
   { id: "wallet", label: "Wallet", icon: Wallet, desc: "Paytm, Amazon Pay" },
 ];
 
-const PaymentPopup = ({ open, onOpenChange, defaultPlanId = 1 }: PaymentPopupProps) => {
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(defaultPlanId);
-  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
+const formatPrice = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
 
-  const selectedPlan = plansData[selectedPlanIndex];
+const buildApiFeatures = (plan: AvailablePlan): string[] => {
+  const list: string[] = [];
+  if (plan.profile_view_limit > 0) list.push(`${plan.profile_view_limit} Profile Views`);
+  if (plan.interest_limit > 0) list.push(`${plan.interest_limit} Interest Sends`);
+  if (plan.contact_view_limit > 0) list.push(`${plan.contact_view_limit} Contact Views`);
+  if (plan.chat_limit > 0) list.push(`${plan.chat_limit} Chat Starts`);
+  if (plan.horoscope_match_limit > 0) list.push(`${plan.horoscope_match_limit} Horoscope Matches`);
+  return list;
+};
+
+const PaymentPopup = ({ open, onOpenChange, apiPlan }: PaymentPopupProps) => {
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setSelectedPayment(null);
+    setSubmitting(false);
+  }, [apiPlan, open]);
+
+  if (!apiPlan) return null;
+
+  const priceLabel = formatPrice(apiPlan.price);
+  const activationLabel = apiPlan.first_payment > 0
+    ? formatPrice(apiPlan.first_payment)
+    : priceLabel;
+
+  const features = buildApiFeatures(apiPlan);
+
+  const handlePay = async () => {
+    if (!selectedPayment || !apiPlan) return;
+    setSubmitting(true);
+    try {
+      const res = await purchasePlan(apiPlan.id, selectedPayment);
+      toast.success(res.message ?? "Plan purchased successfully.");
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to purchase plan");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-3xl p-0 gap-0 border-0 shadow-elevated">
         <DialogHeader className="p-6 pb-4 border-b border-primary/10">
           <DialogTitle className="font-serif text-xl font-bold text-secondary">
-            Choose plan & pay
+            Complete your purchase
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid md:grid-cols-2 min-h-[420px]">
-          {/* Left: plan selector */}
-          <div className="p-6 border-b md:border-b-0 md:border-r border-primary/10 bg-accent-rose/5">
-            <h3 className="font-serif font-bold text-foreground mb-4">Select plan</h3>
-            <div className="space-y-3">
-              {plansData.map((plan: Plan, index: number) => (
-                <button
-                  key={plan.name}
-                  onClick={() => setSelectedPlanIndex(index)}
-                  className={cn(
-                    "w-full text-left rounded-2xl border-2 p-4 transition-all",
-                    selectedPlanIndex === index
-                      ? "border-primary bg-white shadow-soft"
-                      : "border-primary/10 bg-white/80 hover:border-primary/30"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <plan.icon className="w-5 h-5 text-secondary flex-shrink-0" />
-                        <span className="font-serif font-bold text-foreground">{plan.name}</span>
-                        {plan.isPopular && (
-                          <span className="text-xs font-medium text-secondary bg-secondary/15 px-2 py-0.5 rounded-full">
-                            Popular
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
-                      <p className="font-serif text-lg font-bold text-primary mt-2">
-                        {plan.price}
-                        <span className="text-sm font-normal text-muted-foreground">{plan.period}</span>
-                      </p>
-                    </div>
-                    <div
-                      className={cn(
-                        "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                        selectedPlanIndex === index ? "border-primary bg-primary" : "border-primary/30"
-                      )}
-                    >
-                      {selectedPlanIndex === index && (
-                        <Check className="w-4 h-4 text-primary-foreground" />
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
+          {/* Left: selected plan summary */}
+          <div className="p-6 border-b md:border-b-0 md:border-r border-primary/10 bg-accent-rose/5 flex flex-col">
+            <h3 className="font-serif font-bold text-foreground mb-4">Selected plan</h3>
+            <div className="rounded-2xl border-2 border-primary bg-white shadow-soft p-4 flex flex-col gap-3">
+              <span className="font-serif font-bold text-foreground text-lg">{apiPlan.name}</span>
+              {apiPlan.description && (
+                <p className="text-sm text-muted-foreground">{apiPlan.description}</p>
+              )}
+              <div>
+                <p className="font-serif text-2xl font-bold text-primary">{priceLabel}</p>
+                {apiPlan.duration_days > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Valid for {apiPlan.duration_days} days
+                  </p>
+                )}
+              </div>
+              {apiPlan.first_payment > 0 && (
+                <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800">
+                  <span className="font-semibold">Pay now:</span> {formatPrice(apiPlan.first_payment)}<br />
+                  <span className="text-green-600">
+                    Remaining service charge: {formatPrice(apiPlan.service_charge_remaining)}
+                  </span>
+                </div>
+              )}
+              <ul className="space-y-1 text-sm text-foreground">
+                {features.map((feat, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Right: payment method grid */}
+          {/* Right: payment method */}
           <div className="p-6 flex flex-col">
             <h3 className="font-serif font-bold text-foreground mb-4">Payment method</h3>
             <div className="grid grid-cols-2 gap-3 flex-1 content-start">
               {paymentMethods.map((method) => (
                 <button
                   key={method.id}
-                  onClick={() => setSelectedPayment(method.id)}
+                  onClick={() => setSelectedPayment(method.id as PaymentMethod)}
                   className={cn(
                     "rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 transition-all min-h-[100px]",
                     selectedPayment === method.id
@@ -118,10 +147,10 @@ const PaymentPopup = ({ open, onOpenChange, defaultPlanId = 1 }: PaymentPopupPro
               <Button
                 variant="hero"
                 className="flex-1"
-                disabled={!selectedPayment}
-                onClick={() => onOpenChange(false)}
+                disabled={!selectedPayment || submitting}
+                onClick={handlePay}
               >
-                Pay {selectedPlan?.price}
+                {submitting ? "Processing..." : `Pay ${activationLabel}`}
               </Button>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, UserPen } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLoading } from "@/contexts/LoadingContext";
@@ -10,7 +10,8 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsLoading } = useLoading();
-  const { isLoggedIn, logout } = useAuthStore();
+  const { isLoggedIn, logout, isProfileComplete } = useAuthStore();
+  const showCompleteProfile = isLoggedIn && !isProfileComplete();
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -64,10 +65,17 @@ const Navbar = () => {
         <div className="hidden lg:flex items-center gap-3 shrink-0">
           {isLoggedIn ? (
             <>
-              <Button variant="outline" className="gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Button>
+              {showCompleteProfile ? (
+                <Button variant="outline" className="gap-2" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                  <UserPen className="w-4 h-4" />
+                  Complete Profile
+                </Button>
+              ) : (
+                <Button variant="outline" className="gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              )}
               <Button variant="hero" className="gap-2" onClick={() => { logout(); navigate("/"); }}>
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -113,9 +121,15 @@ const Navbar = () => {
           <div className="flex gap-3 pt-2">
             {isLoggedIn ? (
               <>
-                <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
-                </Button>
+                {showCompleteProfile ? (
+                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                    <UserPen className="w-4 h-4" /> Complete Profile
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                    <LayoutDashboard className="w-4 h-4" /> Dashboard
+                  </Button>
+                )}
                 <Button variant="hero" className="flex-1 gap-2" onClick={() => { logout(); navigate("/"); setIsMobileMenuOpen(false); }}>
                   <LogOut className="w-4 h-4" /> Logout
                 </Button>

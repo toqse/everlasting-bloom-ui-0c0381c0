@@ -1,73 +1,102 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { useInterestStore } from "@/stores/interestStore";
 import { profilesData } from "@/components/FeaturedProfiles";
-import { 
-  ArrowLeft, Send, Heart, Sparkles, Shield, Crown,
-  Phone, Video, MoreVertical, Smile, Image, Paperclip,
-  Check, CheckCheck, Lock
+import {
+  ArrowLeft,
+  Send,
+  Sparkles,
+  Shield,
+  Crown,
+  Smile,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  senderId: number;
-  text: string;
-  timestamp: Date;
-  status: 'sent' | 'delivered' | 'read';
-}
+import { buildChatWebSocketUrl, getChatMessages, type ChatMessage } from "@/lib/chatApi";
+import { useAuthStore } from "@/stores/authStore";
 
 const ChatPage = () => {
-  const { profileId } = useParams();
+  const { profileId } = useParams(); // now conversation_id
   const navigate = useNavigate();
-  const { canChat } = useInterestStore();
+  const location = useLocation();
+  const otherUser = (location.state as { otherUser?: { matri_id: string; name: string; profile_photo: string | null } } | null)?.otherUser;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      senderId: Number(profileId),
-      text: "Hi! Thanks for accepting my interest. I'm excited to get to know you better! 😊",
-      timestamp: new Date(Date.now() - 3600000),
-      status: 'read',
-    },
-    {
-      id: '2',
-      senderId: 0,
-      text: "Hello! Nice to meet you too. I noticed we have a lot in common!",
-      timestamp: new Date(Date.now() - 3500000),
-      status: 'read',
-    },
-    {
-      id: '3',
-      senderId: Number(profileId),
-      text: "Yes! I saw that we both love traveling. What's your favorite destination?",
-      timestamp: new Date(Date.now() - 3400000),
-      status: 'read',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
-  const profile = profilesData.find(p => p.id === Number(profileId));
+  const fallbackProfile = profilesData[0];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-romantic">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold mb-4">Profile Not Found</h1>
-          <Button onClick={() => navigate("/search")}>Browse Profiles</Button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const idNum = Number(profileId);
+    if (!idNum) return;
 
-  if (!canChat(profile.id)) {
+    let socket: WebSocket | null = null;
+
+    const connect = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getChatMessages(idNum, 1, 100);
+        setMessages(res.data.messages);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load messages");
+      } finally {
+        setLoading(false);
+      }
+
+      const url = buildChatWebSocketUrl(idNum);
+      if (!url) return;
+
+      socket = new WebSocket(url);
+      setWs(socket);
+
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data) as {
+            message_id: number;
+            sender_id: string;
+            sender_matri_id: string;
+            sender_name: string;
+            text: string;
+            created_at: string;
+          };
+          const msg: ChatMessage = {
+            id: payload.message_id,
+            sender_id: payload.sender_id,
+            sender_matri_id: payload.sender_matri_id,
+            sender_name: payload.sender_name,
+            text: payload.text,
+            created_at: payload.created_at,
+            read_at: null,
+          };
+          setMessages((prev) => [...prev, msg]);
+        } catch {
+          // ignore malformed frames
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+      setWs(null);
+    };
+  }, [profileId]);
+
+  if (!profileId) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -94,7 +123,7 @@ const ChatPage = () => {
               <Button variant="outline" onClick={() => navigate(-1)}>
                 Go Back
               </Button>
-              <Button variant="hero" onClick={() => navigate(`/profile/${profile.id}`)}>
+              <Button variant="hero" onClick={() => navigate(-1)}>
                 View Profile
               </Button>
             </div>
@@ -107,30 +136,13 @@ const ChatPage = () => {
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      senderId: 0,
-      text: newMessage,
-      timestamp: new Date(),
-      status: 'sent',
-    };
-
-    setMessages(prev => [...prev, message]);
-    setNewMessage("");
-
-    // Simulate delivery
-    setTimeout(() => {
-      setMessages(prev => 
-        prev.map(m => m.id === message.id ? { ...m, status: 'delivered' } : m)
-      );
-    }, 500);
-
-    // Simulate read
-    setTimeout(() => {
-      setMessages(prev => 
-        prev.map(m => m.id === message.id ? { ...m, status: 'read' } : m)
-      );
-    }, 1500);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ message: newMessage }));
+      setNewMessage("");
+      setEmojiOpen(false);
+    } else {
+      toast.error("Chat connection is not active. Please try again.");
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -157,37 +169,30 @@ const ChatPage = () => {
                 <ArrowLeft className="w-5 h-5 text-primary" />
               </Button>
               
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${profile.id}`)}>
+              <div className="flex items-center gap-3 cursor-pointer">
                 <div className="relative">
                   <img
-                    src={profile.image}
-                    alt={profile.name}
+                    src={
+                      otherUser?.profile_photo ||
+                      fallbackProfile.image
+                    }
+                    alt={otherUser?.name ?? fallbackProfile.name}
                     className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                   />
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
                 </div>
                 <div>
                   <h2 className="font-serif font-bold text-foreground flex items-center gap-2">
-                    {profile.name}
-                    {profile.isVerified && <Shield className="w-4 h-4 text-primary" />}
-                    {profile.isPremium && <Crown className="w-4 h-4 text-secondary" />}
+                    {otherUser?.name ?? fallbackProfile.name}
+                    {fallbackProfile.isVerified && <Shield className="w-4 h-4 text-primary" />}
+                    {fallbackProfile.isPremium && <Crown className="w-4 h-4 text-secondary" />}
                   </h2>
                   <p className="text-xs text-green-600">Online now</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="hover:bg-accent-rose/50" onClick={() => toast.info("Voice call coming soon!")}>
-                <Phone className="w-5 h-5 text-primary" />
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-accent-rose/50" onClick={() => toast.info("Video call coming soon!")}>
-                <Video className="w-5 h-5 text-primary" />
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-accent-rose/50">
-                <MoreVertical className="w-5 h-5 text-primary" />
-              </Button>
-            </div>
+            {/* Top-right call / more actions removed as per UI requirement */}
           </div>
         </div>
       </motion.header>
@@ -206,7 +211,7 @@ const ChatPage = () => {
           <div className="space-y-4">
             <AnimatePresence>
               {messages.map((message, index) => {
-                const isOwn = message.senderId === 0;
+                const isOwn = message.sender_matri_id === useAuthStore.getState().user?.matriId;
                 
                 return (
                   <motion.div
@@ -227,16 +232,7 @@ const ChatPage = () => {
                         <p className="text-sm leading-relaxed">{message.text}</p>
                       </div>
                       <div className={`flex items-center gap-1 mt-1 text-xs text-muted-foreground ${isOwn ? 'justify-end' : ''}`}>
-                        <span>{formatTime(message.timestamp)}</span>
-                        {isOwn && (
-                          message.status === 'read' ? (
-                            <CheckCheck className="w-4 h-4 text-secondary" />
-                          ) : message.status === 'delivered' ? (
-                            <CheckCheck className="w-4 h-4" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )
-                        )}
+                        <span>{formatTime(new Date(message.created_at))}</span>
                       </div>
                     </div>
                   </motion.div>
@@ -256,15 +252,6 @@ const ChatPage = () => {
       >
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="hover:bg-accent-rose/50" onClick={() => toast.info("Attachments coming soon!")}>
-                <Paperclip className="w-5 h-5 text-muted-foreground" />
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-accent-rose/50" onClick={() => toast.info("Images coming soon!")}>
-                <Image className="w-5 h-5 text-muted-foreground" />
-              </Button>
-            </div>
-
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -274,9 +261,28 @@ const ChatPage = () => {
                 placeholder="Type a message..."
                 className="w-full px-4 py-3 bg-accent-rose/30 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
-              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 hover:bg-accent-rose/50"
+                onClick={() => setEmojiOpen((v) => !v)}
+              >
                 <Smile className="w-5 h-5 text-muted-foreground" />
               </Button>
+              {emojiOpen && (
+                <div className="absolute right-0 bottom-12 z-20 w-64 max-h-64 overflow-y-auto rounded-2xl bg-white shadow-elevated border border-primary/10 p-2 grid grid-cols-8 gap-1 text-lg">
+                  {["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😍","😘","😜","😎","🙂","🙃","🤗","🤔","🤨","😐","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","😴","😌","🤤","🤒","🤕","🤠","🥳","🥰","❤️","💖","💗","💓","💞","💕","💘","💝","👍","👎","👏","🙌","🙏","💪","💃","🕺","👋","🤝","👀","👩","👨","👫","💑","👩‍❤️‍👨"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className="hover:bg-accent-rose/40 rounded-md leading-none"
+                      onClick={() => setNewMessage((prev) => prev + emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <motion.div whileTap={{ scale: 0.9 }}>

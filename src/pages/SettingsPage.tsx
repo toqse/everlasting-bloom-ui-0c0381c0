@@ -1,127 +1,348 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
-import { Edit, LogOut } from "lucide-react";
+import { LogOut, Loader2, Check, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  getSettingsProfile,
+  updateProfileVisibility,
+  updateInterestPermission,
+  updateNotifications,
+  type SettingsProfile,
+  type ProfileVisibility,
+  type InterestPermission,
+  type SettingsNotifications,
+} from "@/lib/settingsApi";
+
+// ─── Small helpers ─────────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+        checked ? "bg-green-500" : "bg-gray-300"
+      }`}
+    >
+      <div
+        className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+          checked ? "right-0.5" : "left-0.5"
+        }`}
+      />
+    </button>
+  );
+}
+
+function StatusBadge({ status }: { status: "saving" | "saved" | "error" | null }) {
+  if (!status) return null;
+  return (
+    <AnimatePresence>
+      <motion.span
+        key={status}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0 }}
+        className={`text-xs flex items-center gap-1 ${
+          status === "saving"
+            ? "text-muted-foreground"
+            : status === "saved"
+            ? "text-green-600"
+            : "text-red-500"
+        }`}
+      >
+        {status === "saving" && <Loader2 className="w-3 h-3 animate-spin" />}
+        {status === "saved" && <Check className="w-3 h-3" />}
+        {status === "error" && <AlertCircle className="w-3 h-3" />}
+        {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "Error"}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, accessToken } = useAuthStore();
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState({
-    interestRequest: true,
+  // ── Server state ──
+  const [settings, setSettings] = useState<SettingsProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // ── Local UI state (kept in sync after fetch) ──
+  const [visibility, setVisibility] = useState<ProfileVisibility>("all_users");
+  const [interestPerm, setInterestPerm] = useState<InterestPermission>("all_users");
+  const [notifications, setNotifications] = useState<SettingsNotifications>({
+    interest_request: true,
     chat: true,
-    profileViews: true,
-    newProfileMatch: true,
+    profile_views: true,
+    new_matches: true,
   });
 
-  const accountInfo = [
-    { label: "Full name", value: user?.name || "Rahul" },
-    { label: "Mobile", value: user?.phone || "+91 98765 43210" },
-    { label: "Email id", value: user?.email || "anna.jaslin@gmail.com" },
-    { label: "Password", value: "••••••••••" },
-    { label: "Profile type", value: user?.plan || "Premium" },
-  ];
+  // ── Save-status indicators ──
+  const [visibilityStatus, setVisibilityStatus] = useState<"saving" | "saved" | "error" | null>(null);
+  const [interestStatus, setInterestStatus] = useState<"saving" | "saved" | "error" | null>(null);
+  const [notifStatus, setNotifStatus] = useState<"saving" | "saved" | "error" | null>(null);
+
+  // ── Debounce timers ──
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function clearSavedAfterDelay(setter: (v: null) => void) {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setter(null), 2500);
+  }
+
+  // ── Load settings on mount ──
+  useEffect(() => {
+    if (!accessToken) return;
+    setLoading(true);
+    getSettingsProfile()
+      .then((data) => {
+        setSettings(data);
+        setVisibility(data.profile_visibility);
+        setInterestPerm(data.interest_permission);
+        setNotifications(data.notifications);
+        setFetchError(null);
+      })
+      .catch((err: Error) => {
+        setFetchError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [accessToken]);
+
+  // ── Handlers ──
+
+  const handleVisibilityChange = async (val: ProfileVisibility) => {
+    setVisibility(val);
+    setVisibilityStatus("saving");
+    try {
+      await updateProfileVisibility(val);
+      setVisibilityStatus("saved");
+      clearSavedAfterDelay(setVisibilityStatus);
+    } catch {
+      setVisibilityStatus("error");
+    }
+  };
+
+  const handleInterestPermChange = async (val: InterestPermission) => {
+    setInterestPerm(val);
+    setInterestStatus("saving");
+    try {
+      await updateInterestPermission(val);
+      setInterestStatus("saved");
+      clearSavedAfterDelay(setInterestStatus);
+    } catch {
+      setInterestStatus("error");
+    }
+  };
+
+  const handleNotifToggle = async (key: keyof SettingsNotifications) => {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    setNotifStatus("saving");
+    try {
+      await updateNotifications(updated);
+      setNotifStatus("saved");
+      clearSavedAfterDelay(setNotifStatus);
+    } catch {
+      setNotifStatus("error");
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
+  // ── Derived display values ──
+  const displayName = settings?.name || user?.name || "—";
+  const displayPhoto = settings?.profile_photo || user?.avatar;
+  const displayPlan = settings?.plan || user?.plan || "—";
+  const displayLocation = settings?.location || user?.location || "—";
+
+  const visibilityOptions: { value: ProfileVisibility; label: string }[] = [
+    { value: "all_users", label: "All users" },
+    { value: "premium_only", label: "Premium users only" },
+    { value: "hidden", label: "Hidden" },
+  ];
+
+  const interestOptions: { value: InterestPermission; label: string }[] = [
+    { value: "all_users", label: "All users" },
+    { value: "premium_only", label: "Premium users only" },
+  ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">Profile settings</h1>
+        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+          Profile settings
+        </h1>
 
-        {/* Profile Section */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl shadow-card p-6">
+        {fetchError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-2xl px-4 py-3 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {fetchError}
+          </div>
+        )}
+
+        {/* ── Profile card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-3xl shadow-card p-6"
+        >
           <h3 className="text-secondary font-medium mb-4">Profile</h3>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img src={user?.avatar} alt={user?.name} className="w-14 h-14 rounded-full object-cover border-2 border-primary/20" />
+              {loading ? (
+                <div className="w-14 h-14 rounded-full bg-gray-100 animate-pulse" />
+              ) : (
+                <img
+                  src={displayPhoto}
+                  alt={displayName}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-primary/20"
+                />
+              )}
               <div>
-                <h4 className="font-serif font-bold text-foreground">{user?.name}</h4>
-                <p className="text-xs text-secondary">{user?.plan} user | {user?.location}</p>
+                {loading ? (
+                  <div className="space-y-1">
+                    <div className="h-4 w-28 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-3 w-40 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <h4 className="font-serif font-bold text-foreground">{displayName}</h4>
+                    <p className="text-xs text-secondary">
+                      {displayPlan} user | {displayLocation}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
-            <Button size="sm" className="bg-primary text-primary-foreground rounded-full gap-1" onClick={handleLogout}>
-              Sign Out
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground rounded-full gap-1"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-3 h-3" /> Sign Out
             </Button>
           </div>
         </motion.div>
 
-        {/* Visibility Settings */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-3xl shadow-card p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
+        {/* ── Visibility settings ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-3xl shadow-card p-6 space-y-6"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <h3 className="font-serif font-bold text-secondary">Profile visible</h3>
-              <p className="text-xs text-muted-foreground">You can set-up who can able to view your profile.</p>
+              <p className="text-xs text-muted-foreground">
+                You can set-up who can able to view your profile.
+              </p>
             </div>
-            <select className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white">
-              <option>All users</option>
-              <option>Premium users only</option>
-              <option>Hidden</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={visibilityStatus} />
+              <select
+                value={visibility}
+                onChange={(e) => handleVisibilityChange(e.target.value as ProfileVisibility)}
+                disabled={loading}
+                className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white disabled:opacity-50 cursor-pointer"
+              >
+                {visibilityOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
           <div className="border-t border-primary/5" />
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-serif font-bold text-secondary">Who can send you Interest requests?</h3>
-              <p className="text-xs text-muted-foreground">You can set-up who can able to make Interest request here.</p>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-serif font-bold text-secondary">
+                Who can send you Interest requests?
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                You can set-up who can able to make Interest request here.
+              </p>
             </div>
-            <select className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white">
-              <option>All users</option>
-              <option>Premium users only</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={interestStatus} />
+              <select
+                value={interestPerm}
+                onChange={(e) => handleInterestPermChange(e.target.value as InterestPermission)}
+                disabled={loading}
+                className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white disabled:opacity-50 cursor-pointer"
+              >
+                {interestOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </motion.div>
 
-        {/* Account Info */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-3xl shadow-card p-6">
+        {/* ── Notifications ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-3xl shadow-card p-6"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold text-secondary">Account</h3>
-            <Button variant="outline" size="sm" className="gap-1 rounded-full text-xs">
-              <Edit className="w-3 h-3" /> Edit
-            </Button>
+            <h3 className="font-serif font-bold text-secondary">Notifications</h3>
+            <StatusBadge status={notifStatus} />
           </div>
-          <div className="space-y-0">
-            {accountInfo.map((item) => (
-              <div key={item.label} className="flex justify-between py-3 border-b border-primary/5 last:border-0">
-                <span className="text-muted-foreground text-sm">{item.label}</span>
-                <span className="text-foreground text-sm">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Notifications */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white rounded-3xl shadow-card p-6">
-          <h3 className="font-serif font-bold text-secondary mb-4">Notifications</h3>
           <div className="space-y-6">
-            {[
-              { key: "interestRequest", title: "Interest request", desc: "Interest request email notifications" },
-              { key: "chat", title: "Chat", desc: "New chat notifications" },
-              { key: "profileViews", title: "Profile views", desc: "If anyone views your profile means you get the notifications at end of the day" },
-              { key: "newProfileMatch", title: "New profile match", desc: "You get the profile match emails" },
-            ].map((item) => (
+            {(
+              [
+                {
+                  key: "interest_request" as const,
+                  title: "Interest request",
+                  desc: "Interest request email notifications",
+                },
+                {
+                  key: "chat" as const,
+                  title: "Chat",
+                  desc: "New chat notifications",
+                },
+                {
+                  key: "profile_views" as const,
+                  title: "Profile views",
+                  desc: "If anyone views your profile means you get the notifications at end of the day",
+                },
+                {
+                  key: "new_matches" as const,
+                  title: "New profile match",
+                  desc: "You get the profile match emails",
+                },
+              ] satisfies { key: keyof SettingsNotifications; title: string; desc: string }[]
+            ).map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div>
                   <h4 className="font-serif font-bold text-foreground text-sm">{item.title}</h4>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
-                <button
-                  onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${notifications[item.key as keyof typeof notifications] ? "bg-green-500" : "bg-gray-300"}`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${notifications[item.key as keyof typeof notifications] ? "right-0.5" : "left-0.5"}`} />
-                </button>
+                <Toggle
+                  checked={notifications[item.key]}
+                  onChange={() => handleNotifToggle(item.key)}
+                />
               </div>
             ))}
           </div>
         </motion.div>
       </div>
+
     </DashboardLayout>
   );
 };

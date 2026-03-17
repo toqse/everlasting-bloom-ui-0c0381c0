@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
-import { registerMobile, verifyMobile, register as registerApi, verifyOtp, type VerifyMobileData } from "@/lib/authApi";
+import { registerMobile, verifyMobile, register as registerApi, verifyOtp, type VerifyMobileData, type VerifyMobileProfile } from "@/lib/authApi";
 import { postLocation, postReligion, postPersonal, postEducation, getGenerateAbout, postAbout, postPhotos } from "@/lib/profileApi";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
 import ProfileForStep from "@/components/signup/steps/ProfileForStep";
@@ -63,12 +63,77 @@ const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null =>
   return null;
 };
 
+function mapProfileToFormData(profile: VerifyMobileProfile | null | undefined): Partial<Record<string, string>> {
+  if (!profile) return {};
+  const b = profile.basic_details;
+  const loc = profile.location_details;
+  const rel = profile.religion_details;
+  const pers = profile.personal_details;
+  const edu = profile.education_details;
+  const phoneStr = b?.phone ?? "";
+  const phoneDigits = phoneStr.replace(/\D/g, "").replace(/^91/, "").slice(0, 10);
+  const gender = b?.gender?.toLowerCase();
+  const genderDisplay = gender === "female" ? "Female" : gender === "male" ? "Male" : b?.gender ?? "";
+
+  return {
+    ...(b?.name != null && b.name !== "" && { name: b.name }),
+    ...(phoneDigits !== "" && { phone: phoneDigits }),
+    ...(b?.email != null && b.email !== "" && { email: b.email }),
+    ...(b?.dob != null && b.dob !== "" && { dob: b.dob }),
+    ...(genderDisplay !== "" && { gender: genderDisplay }),
+    ...(loc?.country_id != null && { country_id: String(loc.country_id) }),
+    ...(loc?.country != null && loc.country !== "" && { country: loc.country }),
+    ...(loc?.state_id != null && { state_id: String(loc.state_id) }),
+    ...(loc?.state != null && loc.state !== "" && { state: loc.state }),
+    ...(loc?.district_id != null && { district_id: String(loc.district_id) }),
+    ...(loc?.district != null && loc.district !== "" && { district: loc.district }),
+    ...(loc?.city_id != null && { city_id: String(loc.city_id) }),
+    ...(loc?.city != null && loc.city !== "" && { city: loc.city }),
+    ...(loc?.address != null && loc.address !== "" && { address: loc.address }),
+    ...(rel?.religion_id != null && { religion_id: String(rel.religion_id) }),
+    ...(rel?.religion != null && rel.religion !== "" && { religion: rel.religion }),
+    ...(rel?.caste_id != null && { caste_id: String(rel.caste_id) }),
+    ...(rel?.caste != null && rel.caste !== "" && { caste: rel.caste }),
+    ...(rel?.mother_tongue_id != null && { mother_tongue_id: String(rel.mother_tongue_id) }),
+    ...(rel?.mother_tongue != null && rel.mother_tongue !== "" && { motherTongue: rel.mother_tongue }),
+    ...(pers?.marital_status != null && pers.marital_status !== "" && { maritalStatus: pers.marital_status }),
+    ...(pers?.height != null && { height: String(pers.height) }),
+    ...(pers?.weight != null && { weight: String(pers.weight) }),
+    ...(pers?.complexion != null && pers.complexion !== "" && { skinTone: pers.complexion }),
+    ...(edu?.highest_education != null && edu.highest_education !== "" && { education: edu.highest_education }),
+    ...(edu?.education_subject != null && edu.education_subject !== "" && { educationSubject: edu.education_subject }),
+    ...(edu?.employment != null && edu.employment !== "" && { employmentStatus: edu.employment }),
+    ...(edu?.occupation != null && edu.occupation !== "" && { occupation: edu.occupation }),
+    ...(edu?.annual_income != null && edu.annual_income !== "" && { annualIncome: edu.annual_income }),
+    ...(profile.about_me != null && profile.about_me !== "" && { aboutMe: profile.about_me }),
+  };
+}
+
 const AuthPage = () => {
   const navigate = useNavigate();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const getProfileIncompleteSignupStep = useAuthStore((s) => s.getProfileIncompleteSignupStep);
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
+
+  const profilePrefill = useAuthStore((s) => s.profilePrefill);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    const step = getProfileIncompleteSignupStep();
+    if (step != null) {
+      setMode("signup");
+      setPhoneVerified(true);
+      setDirection(1);
+      setSignupStep(step);
+      const prefill = mapProfileToFormData(profilePrefill);
+      if (Object.keys(prefill).length > 0) {
+        setFormData((prev) => ({ ...prev, ...prefill }));
+      }
+    }
+  }, [accessToken, getProfileIncompleteSignupStep, profilePrefill]);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [hasChildren, setHasChildren] = useState<"yes" | "no">("no");
   const [interCaste, setInterCaste] = useState(false);
@@ -76,12 +141,11 @@ const AuthPage = () => {
   const [signupOtpSent, setSignupOtpSent] = useState(false);
   const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
   const [photos, setPhotos] = useState<Record<string, { file: File; previewUrl: string }>>({});
-  const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [aboutSuggestions, setAboutSuggestions] = useState<string[]>([]);
   const [aboutSuggestionIndex, setAboutSuggestionIndex] = useState(0);
-  const [signupErrors, setSignupErrors] = useState<{ email?: string; dob?: string; general?: string }>({});
+  const [signupErrors, setSignupErrors] = useState<{ email?: string; dob?: string; phone?: string; general?: string }>({});
 
   const [formData, setFormData] = useState({
     profileFor: "", name: "", phone: "", email: "", dob: "", gender: "", password: "",
@@ -94,14 +158,15 @@ const AuthPage = () => {
     familyType: "", fathersName: "", fathersOccupation: "", mothersName: "", mothersOccupation: "",
     familyStatus: "", numberOfBrothers: "", numberOfMarriedBrothers: "", numberOfSisters: "", numberOfMarriedSisters: "", aboutMyFamily: "",
     education: "", educationSubject: "", employmentStatus: "", occupation: "", annualIncome: "",
-    aboutMe: "", aadhaarNumber: "",
+    aboutMe: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "phone") {
-      const digitsOnly = value.replace(/\D/g, "").slice(0, 12);
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
       setFormData((prev) => ({ ...prev, phone: digitsOnly }));
+      setSignupErrors((prev) => ({ ...prev, phone: undefined }));
       return;
     }
     if (name === "dob") {
@@ -140,7 +205,7 @@ const AuthPage = () => {
     if (!formData.phone) { toast.error("Please enter your phone number"); return; }
     const digits = formData.phone.replace(/\D/g, "");
     const len = digits.length;
-    if (len < 10 || len > 12) { toast.error("Phone number must be 10–12 digits"); return; }
+    if (len !== 10) { toast.error("Phone number must be 10 digits"); return; }
     const mobile = "+91" + digits;
     try {
       await registerMobile({ mobile });
@@ -195,6 +260,10 @@ const AuthPage = () => {
       setPhoneVerified(true);
       setDirection(1);
       setSignupStep(nextStepIndex);
+      const prefill = mapProfileToFormData(data.profile);
+      if (Object.keys(prefill).length > 0) {
+        setFormData((prev) => ({ ...prev, ...prefill }));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
     }
@@ -205,7 +274,7 @@ const AuthPage = () => {
   const handleSignupSendOtp = async () => {
     if (!formData.name?.trim()) { toast.error("Please enter full name"); return; }
     const digits = formData.phone.replace(/\D/g, "");
-    if (digits.length < 10 || digits.length > 12) { toast.error("Phone number must be 10–12 digits"); return; }
+    if (digits.length !== 10) { toast.error("Phone number must be 10 digits"); return; }
     if (!formData.dob?.trim()) { toast.error("Please enter date of birth"); return; }
     if (!formData.gender?.trim()) { toast.error("Please select gender"); return; }
     if (!agreeTerms) { toast.error("Please agree to Terms & Conditions and Privacy Policy"); return; }
@@ -228,9 +297,10 @@ const AuthPage = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send OTP";
       const lower = msg.toLowerCase();
-      const nextErrors: { email?: string; dob?: string; general?: string } = {};
+      const nextErrors: { email?: string; dob?: string; phone?: string; general?: string } = {};
       if (lower.includes("email")) nextErrors.email = msg;
       else if (lower.includes("dob") || lower.includes("birth")) nextErrors.dob = msg;
+      else if (lower.includes("phone") || lower.includes("already registered")) nextErrors.phone = msg;
       else nextErrors.general = msg;
       setSignupErrors(nextErrors);
     }
@@ -288,6 +358,7 @@ const AuthPage = () => {
       if (!formData.address?.trim()) { toast.error("Please enter your address"); return; }
       try {
         await postLocation({ country_id: cid, state_id: sid, district_id: did, city_id: cityId, address: formData.address.trim() });
+        useAuthStore.getState().markProfileStepComplete("location");
         toast.success("Location saved");
         setDirection(1);
         setSignupStep(3);
@@ -316,6 +387,7 @@ const AuthPage = () => {
           partner_preference_type: prefType,
           partner_religion_ids: partnerReligionIds,
         });
+        useAuthStore.getState().markProfileStepComplete("religion");
         toast.success("Religious details saved");
         setDirection(1);
         setSignupStep(4);
@@ -361,6 +433,7 @@ const AuthPage = () => {
           weight: Number.isFinite(weightNumber) ? weightNumber : null,
           complexion: formData.skinTone,
         });
+        useAuthStore.getState().markProfileStepComplete("personal");
         toast.success("Personal details saved");
         setDirection(1);
         setSignupStep(5);
@@ -384,6 +457,7 @@ const AuthPage = () => {
           occupation: formData.occupation.trim(),
           annual_income: formData.annualIncome,
         });
+        useAuthStore.getState().markProfileStepComplete("education");
         toast.success("Education details saved");
         setDirection(1);
         setSignupStep(6);
@@ -395,6 +469,7 @@ const AuthPage = () => {
     if (signupStep === 6) {
       try {
         await postAbout({ about_me: formData.aboutMe || "" });
+        useAuthStore.getState().markProfileStepComplete("about");
         toast.success("About me saved");
         setDirection(1);
         setSignupStep(7);
@@ -414,6 +489,8 @@ const AuthPage = () => {
             full_photo: photos.full?.file,
             selfie_photo: photos.selfie?.file,
             family_photo: photos.family?.file,
+            aadhaar_front: photos.aadhaar_front?.file,
+            aadhaar_back: photos.aadhaar_back?.file,
           });
           toast.success("Photos uploaded successfully");
         }
@@ -422,7 +499,7 @@ const AuthPage = () => {
         return;
       }
 
-      const { loginWithProfile } = useAuthStore.getState();
+      const { loginWithProfile, clearProfileIncomplete } = useAuthStore.getState();
       loginWithProfile({
         name: formData.name,
         phone: formData.phone,
@@ -430,6 +507,7 @@ const AuthPage = () => {
         religion: formData.religion || "",
         location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
       });
+      clearProfileIncomplete();
       toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
       navigate("/dashboard");
     }
@@ -456,18 +534,11 @@ const AuthPage = () => {
 
   const handleAboutSkip = () => { setFormData((prev) => ({ ...prev, aboutMe: "" })); toast.success("Skipped. You can add this later."); };
 
-  const handleVerifyAadhaar = () => {
-    if (formData.aadhaarNumber.replace(/\D/g, "").length !== 12) { toast.error("Enter a valid 12-digit Aadhaar number"); return; }
-    setAadhaarVerified(true);
-    toast.success("Aadhaar verified. Verified badge will show on your profile.");
-  };
-
   const handleSignupPrev = () => { if (signupStep > 0) { setDirection(-1); setSignupStep(signupStep - 1); } };
 
   const canSendSignupOtp =
     !!formData.name?.trim() &&
-    formData.phone.replace(/\D/g, "").length >= 10 &&
-    formData.phone.replace(/\D/g, "").length <= 12 &&
+    formData.phone.replace(/\D/g, "").length === 10 &&
     !!formData.dob?.trim() &&
     !!formData.gender?.trim() &&
     agreeTerms;
@@ -482,7 +553,7 @@ const AuthPage = () => {
       case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
       case 5: return <EducationStep {...props} />;
       case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
-      case 7: return <PhotosStep photos={photos} setPhotos={setPhotos} aadhaarNumber={formData.aadhaarNumber} onAadhaarChange={(value) => setFormData((prev) => ({ ...prev, aadhaarNumber: value }))} aadhaarVerified={aadhaarVerified} onVerifyAadhaar={handleVerifyAadhaar} onSkipOrCompleteLater={handleSignupNext} />;
+      case 7: return <PhotosStep photos={photos} setPhotos={setPhotos} onSkipOrCompleteLater={handleSignupNext} />;
       default: return null;
     }
   };
@@ -556,7 +627,7 @@ const AuthPage = () => {
                     <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
                       <Phone className="absolute left-6 w-7 h-7 text-primary/50" />
                       <span className="pl-16 pr-2 text-lg text-foreground">+91</span>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
                     </div>
                     <Button type="submit" variant="hero" size="xl" className="w-full gap-2 text-lg py-7">
                       Send OTP <ArrowRight className="w-6 h-6" />
@@ -594,7 +665,7 @@ const AuthPage = () => {
                   <div className="text-center">
                     <p className="text-muted-foreground text-lg">
                       Don't have an account?{" "}
-                      <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); setAadhaarVerified(false); }}
+                      <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); }}
                         className="text-primary font-bold hover:text-primary-dark transition-colors">Register free</button>
                     </p>
                   </div>

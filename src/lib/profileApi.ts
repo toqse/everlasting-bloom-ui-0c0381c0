@@ -1,6 +1,78 @@
 import { BASE_URL } from "./config";
 import { useAuthStore } from "@/stores/authStore";
 
+/** GET v1/profile/ response */
+export interface ProfileData {
+  id?: string;
+  matri_id?: string;
+  basic_details?: {
+    name?: string;
+    gender?: string;
+    dob?: string;
+    email?: string;
+    phone?: string;
+  };
+  photos?: Record<string, string | null>;
+  religion_details?: {
+    religion_id?: number;
+    religion?: string;
+    caste_id?: number;
+    caste?: string;
+    mother_tongue_id?: number;
+    mother_tongue?: string;
+    partner_preference_type?: string;
+    partner_religion_ids?: number[];
+  };
+  personal_details?: {
+    marital_status_id?: number;
+    marital_status?: string;
+    children_count?: number;
+    height_cm?: string;
+    weight_kg?: string;
+    colour?: string;
+    blood_group?: string;
+  };
+  location_details?: {
+    country_id?: number;
+    country?: string;
+    state_id?: number;
+    state?: string;
+    district_id?: number;
+    district?: string;
+    city_id?: number;
+    city?: string;
+    address?: string;
+  };
+  family_details?: Record<string, unknown> & {
+    father_name?: string;
+    father_occupation?: string;
+    mother_name?: string;
+    mother_occupation?: string;
+    brothers?: number;
+    married_brothers?: number;
+    sisters?: number;
+    married_sisters?: number;
+    about_family?: string;
+  };
+  education_details?: {
+    highest_education_id?: number;
+    highest_education?: string;
+    education_subject_id?: number;
+    education_subject?: string;
+    employment_status?: string;
+    occupation_id?: number;
+    occupation?: string;
+    annual_income_id?: number;
+    annual_income?: string;
+  };
+  about_me?: string;
+}
+
+export interface ProfileResponse {
+  success: boolean;
+  data: ProfileData;
+}
+
 export interface LocationBody {
   country_id: number;
   state_id: number;
@@ -46,11 +118,34 @@ export interface AboutBody {
   about_me: string;
 }
 
+/** PATCH v1/profile/basic/ — name, gender, dob, email only */
+export interface BasicBody {
+  name: string;
+  gender: string;
+  dob: string;
+  email: string;
+}
+
+/** PATCH v1/profile/family/ */
+export interface FamilyBody {
+  father_name: string;
+  father_occupation: string;
+  mother_name: string;
+  mother_occupation: string;
+  brothers: number;
+  married_brothers: number;
+  sisters: number;
+  married_sisters: number;
+  about_family: string;
+}
+
 export interface PhotosBody {
   profile_photo?: File;
   full_photo?: File;
   selfie_photo?: File;
   family_photo?: File;
+  aadhaar_front?: File;
+  aadhaar_back?: File;
 }
 
 type ProfileErrorPayload = {
@@ -131,44 +226,98 @@ const getProfileErrorMessage = (data: ProfileErrorPayload | unknown, fallback: s
   return fallback;
 };
 
-async function authedPost<TReq extends object, TRes = unknown>(path: string, body: TReq): Promise<TRes> {
+function logApi(endpoint: string, method: string, body?: unknown, response?: { status: number; data: unknown }) {
+  console.log("[API] Endpoint:", method, endpoint);
+  if (body !== undefined) console.log("[API] Request body:", body);
+  if (response) console.log("[API] Response:", response);
+}
+
+async function authedFetch<TRes = unknown>(
+  path: string,
+  opts: { method: string; body?: string }
+): Promise<TRes> {
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
-  console.log("[profileApi] request:", { path, body });
   const res = await fetch(url, {
-    method: "POST",
+    method: opts.method,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify(body),
+    ...(opts.body !== undefined && { body: opts.body }),
   });
   const data = (await res.json().catch(() => ({}))) as TRes & ProfileErrorPayload;
-  console.log("[profileApi] response:", { path, status: res.status, data });
+  logApi(path, opts.method, opts.body != null ? JSON.parse(opts.body) : undefined, { status: res.status, data });
   if (!res.ok) throw new Error(getProfileErrorMessage(data, "Request failed"));
   return data;
+}
+
+async function authedPost<TReq extends object, TRes = unknown>(path: string, body: TReq): Promise<TRes> {
+  logApi(path, "POST", body);
+  return authedFetch<TRes>(path, { method: "POST", body: JSON.stringify(body) });
+}
+
+async function authedPatch<TReq extends object, TRes = unknown>(path: string, body: TReq): Promise<TRes> {
+  logApi(path, "PATCH", body);
+  return authedFetch<TRes>(path, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export async function getProfile(): Promise<ProfileResponse> {
+  const path = "v1/profile/";
+  const url = `${BASE_URL}${path}`;
+  const token = useAuthStore.getState().accessToken;
+  logApi(path, "GET");
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  const data = (await res.json().catch(() => ({}))) as ProfileResponse & ProfileErrorPayload;
+  logApi(path, "GET", undefined, { status: res.status, data });
+  if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to load profile"));
+  return data as ProfileResponse;
 }
 
 export async function postLocation(body: LocationBody): Promise<unknown> {
   return authedPost("v1/profile/location/", body);
 }
 
+export async function patchBasic(body: BasicBody): Promise<unknown> {
+  return authedPatch("v1/profile/basic/", body);
+}
+
+export async function patchLocation(body: LocationBody): Promise<unknown> {
+  return authedPatch("v1/profile/location/", body);
+}
+
 export async function postReligion(body: ReligionBody): Promise<unknown> {
   return authedPost("v1/profile/religion/", body);
+}
+
+export async function patchReligion(body: ReligionBody): Promise<unknown> {
+  return authedPatch("v1/profile/religion/", body);
 }
 
 export async function postPersonal(body: PersonalBody): Promise<unknown> {
   return authedPost("v1/profile/personal/", body);
 }
 
+export async function patchPersonal(body: PersonalBody): Promise<unknown> {
+  return authedPatch("v1/profile/personal/", body);
+}
+
 export async function postEducation(body: EducationBody): Promise<unknown> {
   return authedPost("v1/profile/education/", body);
 }
 
+export async function patchEducation(body: EducationBody): Promise<unknown> {
+  return authedPatch("v1/profile/education/", body);
+}
+
 export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
-  const url = `${BASE_URL}v1/profile/generate-about/`;
+  const path = "v1/profile/generate-about/";
+  const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
-  console.log("[profileApi] request: GET v1/profile/generate-about/");
+  logApi(path, "GET");
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -176,13 +325,79 @@ export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
     },
   });
   const data = (await res.json().catch(() => ({}))) as GenerateAboutResponse & ProfileErrorPayload;
-  console.log("[profileApi] response:", { path: "v1/profile/generate-about/", status: res.status, data });
+  logApi(path, "GET", undefined, { status: res.status, data });
   if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to generate about me"));
   return data;
 }
 
 export async function postAbout(body: AboutBody): Promise<unknown> {
   return authedPost("v1/profile/about/", body);
+}
+
+export async function patchAbout(body: AboutBody): Promise<unknown> {
+  return authedPatch("v1/profile/about/", body);
+}
+
+export async function patchFamily(body: FamilyBody): Promise<unknown> {
+  return authedPatch("v1/profile/family/", body);
+}
+
+export async function getProfileBasic(): Promise<{
+  success: boolean;
+  data: {
+    name?: string;
+    gender?: string;
+    dob?: string;
+    email?: string;
+    phone?: string;
+    profile_photo?: string | null;
+    location?: string | null;
+    matri_id?: string;
+  };
+}> {
+  const path = "v1/profile/basic/";
+  const url = `${BASE_URL}${path}`;
+  const token = useAuthStore.getState().accessToken;
+  logApi(path, "GET");
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    success: boolean;
+    data: { name?: string; gender?: string; dob?: string; email?: string; phone?: string };
+  } & ProfileErrorPayload;
+  logApi(path, "GET", undefined, { status: res.status, data });
+  if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to load basic profile"));
+  return data;
+}
+
+export async function getProfileCompletion(): Promise<{
+  success: boolean;
+  data: { percentage: number; steps_remaining: string[] };
+}> {
+  return authedFetch("v1/profile/completion/", { method: "GET" });
+}
+
+export async function getProfileViews(): Promise<{
+  success: boolean;
+  data: { total: number };
+}> {
+  return authedFetch("v1/profile/views/", { method: "GET" });
+}
+
+export interface PartnerPreferenceBody {
+  partner_preference_type: "own_religion_only" | "open_to_all" | "specific_religions";
+  partner_religion_ids?: number[];
+  partner_caste_preference?: "any" | "own_caste_only";
+}
+
+export async function postPartnerPreference(body: PartnerPreferenceBody): Promise<unknown> {
+  return authedPost("v1/profile/partner-preference/", body);
+}
+
+export async function patchPartnerPreferences(body: PartnerPreferenceBody): Promise<unknown> {
+  return authedPatch("v1/profile/partner-preferences/", body);
 }
 
 export async function postPhotos(body: PhotosBody): Promise<unknown> {
@@ -194,13 +409,19 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
   if (body.full_photo) formData.append("full_photo", body.full_photo);
   if (body.selfie_photo) formData.append("selfie_photo", body.selfie_photo);
   if (body.family_photo) formData.append("family_photo", body.family_photo);
+  if (body.aadhaar_front) formData.append("aadhaar_front", body.aadhaar_front);
+  if (body.aadhaar_back) formData.append("aadhaar_back", body.aadhaar_back);
 
-  console.log("[profileApi] request: POST v1/profile/photos/", {
-    has_profile: !!body.profile_photo,
-    has_full: !!body.full_photo,
-    has_selfie: !!body.selfie_photo,
-    has_family: !!body.family_photo,
-  });
+  const path = "v1/profile/photos/";
+  const bodyLog = {
+    has_profile_photo: !!body.profile_photo,
+    has_full_photo: !!body.full_photo,
+    has_selfie_photo: !!body.selfie_photo,
+    has_family_photo: !!body.family_photo,
+    has_aadhaar_front: !!body.aadhaar_front,
+    has_aadhaar_back: !!body.aadhaar_back,
+  };
+  logApi(path, "POST", bodyLog);
 
   const res = await fetch(url, {
     method: "POST",
@@ -211,11 +432,7 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
   });
 
   const data = (await res.json().catch(() => ({}))) as ProfileErrorPayload;
-  console.log("[profileApi] response:", {
-    path: "v1/profile/photos/",
-    status: res.status,
-    data,
-  });
+  logApi(path, "POST", bodyLog, { status: res.status, data });
 
   if (!res.ok) {
     throw new Error(getProfileErrorMessage(data, "Failed to upload photos"));

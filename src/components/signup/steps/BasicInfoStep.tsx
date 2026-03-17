@@ -16,7 +16,7 @@ interface Props {
   onBackFromOtp: () => void;
   phoneVerified: boolean;
   canSendOtp?: boolean;
-  fieldErrors?: { email?: string; dob?: string; general?: string };
+  fieldErrors?: { email?: string; dob?: string; phone?: string; general?: string };
 }
 
 const BasicInfoStep = ({
@@ -85,8 +85,11 @@ const BasicInfoStep = ({
           <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
             <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
             <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
           </div>
+          {fieldErrors?.phone && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.phone}</p>
+          )}
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
@@ -144,8 +147,11 @@ const BasicInfoStep = ({
           <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
             <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
             <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={12} inputMode="numeric" pattern="[0-9]{10,12}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
           </div>
+          {fieldErrors?.phone && (
+            <p className="text-xs text-red-500 text-left">{fieldErrors.phone}</p>
+          )}
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />

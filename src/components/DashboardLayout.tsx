@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
@@ -18,7 +18,7 @@ const baseSidebarLinks = [
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
-  { name: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
+  //{ name: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ];
 
 const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => (
@@ -43,10 +43,16 @@ const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; siz
 );
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout, isHindu } = useAuthStore();
+  const { user, logout, isHindu, accessToken, isProfileComplete } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
+
+  useEffect(() => {
+    if (accessToken && !isProfileComplete()) {
+      navigate("/auth", { replace: true });
+    }
+  }, [accessToken, isProfileComplete, navigate]);
 
   const handleLogout = () => {
     logout();

@@ -17,6 +17,8 @@ interface SearchableSelectProps {
   loading: boolean;
   label: string;
   placeholder: string;
+  /** When value is set but options not yet loaded (e.g. prefill), show this until option is found. */
+  initialDisplayLabel?: string;
   disabled?: boolean;
   onSearch: (term: string) => void;
   onSelect: (name: string, value: string) => void;
@@ -29,6 +31,7 @@ export function SearchableSelect({
   loading,
   label,
   placeholder,
+  initialDisplayLabel,
   disabled,
   onSearch,
   onSelect,
@@ -88,7 +91,7 @@ export function SearchableSelect({
   }, [open, handleClickOutside]);
 
   const selectedOption = value ? options.find((o) => o.id === Number(value)) : null;
-  const displayLabel = selectedOption?.name ?? placeholder;
+  const displayLabel = selectedOption?.name ?? (value && initialDisplayLabel ? initialDisplayLabel : null) ?? placeholder;
 
   const handleSelect = (option: SearchableOption) => {
     onSelect(name, String(option.id));

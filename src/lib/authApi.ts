@@ -85,6 +85,52 @@ export interface VerifyMobileBody {
   otp: string;
 }
 
+export interface VerifyMobileProfile {
+  id?: string;
+  matri_id?: string;
+  basic_details?: {
+    name?: string;
+    gender?: string;
+    dob?: string;
+    email?: string;
+    phone?: string;
+  };
+  location_details?: {
+    country_id?: number;
+    country?: string;
+    state_id?: number;
+    state?: string;
+    district_id?: number;
+    district?: string;
+    city_id?: number;
+    city?: string;
+    address?: string;
+  };
+  religion_details?: Record<string, unknown> & {
+    religion_id?: number;
+    religion?: string;
+    caste_id?: number;
+    caste?: string;
+    mother_tongue_id?: number;
+    mother_tongue?: string;
+  };
+  personal_details?: Record<string, unknown> & {
+    marital_status?: string;
+    height?: number;
+    weight?: number;
+    complexion?: string;
+  };
+  education_details?: Record<string, unknown> & {
+    highest_education?: string;
+    education_subject?: string;
+    employment?: string;
+    occupation?: string;
+    annual_income?: string;
+  };
+  about_me?: string;
+  photos?: Record<string, unknown>;
+}
+
 export interface VerifyMobileData {
   access_token: string;
   refresh_token: string;
@@ -95,6 +141,7 @@ export interface VerifyMobileData {
   profile_steps: Record<string, boolean>;
   profile_completion_percentage: number;
   next_step: string | null;
+  profile?: VerifyMobileProfile;
 }
 
 export interface VerifyMobileResponse {
