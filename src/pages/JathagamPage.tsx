@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
@@ -26,13 +28,13 @@ const PORUTHAM_CHECKS = [
 ];
 
 export default function JathagamPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const isHinduFn = useAuthStore((s) => s.isHindu);
 
   useEffect(() => {
     if (typeof isHinduFn !== "function") return;
-    if (!isHinduFn()) navigate("/dashboard", { replace: true });
-  }, [isHinduFn, navigate]);
+    if (!isHinduFn()) router.replace("/dashboard");
+  }, [isHinduFn, router]);
 
   const [rasi, setRasi] = useState("");
   const [nakshatra, setNakshatra] = useState("");

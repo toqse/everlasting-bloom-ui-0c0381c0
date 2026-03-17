@@ -1,6 +1,8 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { profilesData } from "@/components/FeaturedProfiles";
@@ -18,10 +20,13 @@ import { buildChatWebSocketUrl, getChatMessages, type ChatMessage } from "@/lib/
 import { useAuthStore } from "@/stores/authStore";
 
 const ChatPage = () => {
-  const { profileId } = useParams(); // now conversation_id
-  const navigate = useNavigate();
-  const location = useLocation();
-  const otherUser = (location.state as { otherUser?: { matri_id: string; name: string; profile_photo: string | null } } | null)?.otherUser;
+  const params = useParams();
+  const profileId = (params?.profileId as string | undefined) ?? undefined;
+  const router = useRouter();
+  const profileFromList = profileId ? profilesData.find((p) => p.id === Number(profileId)) : null;
+  const otherUser = profileFromList
+    ? { matri_id: String(profileFromList.id), name: profileFromList.name, profile_photo: profileFromList.image ?? null }
+    : undefined;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -120,10 +125,10 @@ const ChatPage = () => {
               You can only chat with this person once your interest has been accepted or you've accepted their interest.
             </p>
             <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={() => navigate(-1)}>
+              <Button variant="outline" onClick={() => router.back()}>
                 Go Back
               </Button>
-              <Button variant="hero" onClick={() => navigate(-1)}>
+              <Button variant="hero" onClick={() => router.back()}>
                 View Profile
               </Button>
             </div>
@@ -163,7 +168,7 @@ const ChatPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(-1)}
+                onClick={() => router.back()}
                 className="hover:bg-accent-rose/50"
               >
                 <ArrowLeft className="w-5 h-5 text-primary" />

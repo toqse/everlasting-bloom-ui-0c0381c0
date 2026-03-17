@@ -1,10 +1,12 @@
+"use client";
+
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2, Check, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   getSettingsProfile,
   updateProfileVisibility,
@@ -66,7 +68,7 @@ function StatusBadge({ status }: { status: "saving" | "saved" | "error" | null }
 
 const SettingsPage = () => {
   const { user, logout, accessToken } = useAuthStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // ── Server state ──
   const [settings, setSettings] = useState<SettingsProfile | null>(null);
@@ -154,7 +156,7 @@ const SettingsPage = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    router.push("/");
   };
 
   // ── Derived display values ──

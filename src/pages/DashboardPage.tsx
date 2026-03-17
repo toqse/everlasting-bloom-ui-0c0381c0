@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -8,7 +10,7 @@ import {
   Users, Loader2, AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import UploadPhotosModal from "@/components/UploadPhotosModal";
@@ -189,7 +191,7 @@ const DashboardPage = () => {
   const showHoroscope = () => isHindu() && hasPaidPlan();
   const horoscopeRemaining = getHoroscopeRemaining();
   const horoscopeQuota = getHoroscopeQuota();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Data state
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -272,7 +274,7 @@ const DashboardPage = () => {
   };
 
   const quickActionsList = [
-    ...(showHoroscope() ? [{ label: "Add horoscope details", icon: Star, action: () => navigate("/dashboard/jathagam") }] : []),
+    ...(showHoroscope() ? [{ label: "Add horoscope details", icon: Star, action: () => router.push("/dashboard/jathagam") }] : []),
     { label: "Upload more photos", icon: Camera, action: () => setUploadPhotosOpen(true) },
     { label: "Set partner preferences", icon: Settings2, action: () => setPreferencesOpen(true) },
   ];
@@ -421,7 +423,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
               {"isAction" in stat && stat.isAction && (
-                <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate("/dashboard/plan")}>
+                <Button size="sm" variant="outline" className="shrink-0" onClick={() => router.push("/dashboard/plan")}>
                   Upgrade
                 </Button>
               )}
@@ -437,7 +439,7 @@ const DashboardPage = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-serif text-xl font-bold text-secondary">New Matches Found</h2>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/matches")} className="gap-1 text-primary">
+                <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/matches")} className="gap-1 text-primary">
                   View All <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -609,7 +611,7 @@ const DashboardPage = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   As a Hindu user, you get Jathagam-based Porutham scoring for all your matches.
                 </p>
-                <Button variant="hero" className="w-full gap-2" onClick={() => navigate("/dashboard/jathagam")}>
+                <Button variant="hero" className="w-full gap-2" onClick={() => router.push("/dashboard/jathagam")}>
                   Set Up Horoscope <ArrowRight className="w-4 h-4" />
                 </Button>
               </motion.div>

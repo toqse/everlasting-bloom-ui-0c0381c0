@@ -1,6 +1,8 @@
+"use client";
+
 import { Heart, Mail, Phone, MapPin, Facebook, Instagram, Youtube, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -112,7 +114,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8">
           {/* Brand Column */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-6 group">
+            <Link href="/" className="flex items-center gap-2 mb-6 group">
               <div className="relative">
                 <Heart className="w-8 h-8 text-primary fill-primary group-hover:animate-heart-beat" />
                 <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-secondary animate-sparkle" />
@@ -157,7 +159,7 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.name}
                   </Link>
                 </li>
@@ -170,7 +172,7 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.services.map((link) => (
                 <li key={link.name}>
-                  <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.name}
                   </Link>
                 </li>
@@ -212,7 +214,7 @@ const Footer = () => {
             <p className="flex items-center gap-1 font-bold">
               © 2026 Aiswarya Matrimony. All rights reserved.
             </p>
-            <Link to="/terms-conditions" className="font-medium text-foreground hover:text-primary transition-colors">
+            <Link href="/terms-conditions" className="font-medium text-foreground hover:text-primary transition-colors">
               Terms and Conditions
             </Link>
             <div className="flex items-center gap-3">

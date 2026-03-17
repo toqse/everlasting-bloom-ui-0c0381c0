@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,12 +11,12 @@ import { toast } from "sonner";
 import { Heart, Sparkles, Inbox, Filter, Check, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 type FilterType = 'all' | 'pending' | 'accepted' | 'rejected';
 
 const InterestReceived = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { receivedInterests, acceptInterest, rejectInterest, favorites, toggleFavorite, canChat } = useInterestStore();
   const [filter, setFilter] = useState<FilterType>('all');
 
@@ -38,7 +40,7 @@ const InterestReceived = () => {
   };
 
   const handleChat = (profileId: number) => {
-    navigate(`/chat/${profileId}`);
+    router.push(`/chat/${profileId}`);
   };
 
   const filters: { id: FilterType; label: string; icon: any }[] = [

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Heart, MapPin, Briefcase, GraduationCap, Star, Eye, MessageCircle, Shield, Crown, Check, X, Clock, Sparkles, Send } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Profile } from "./FeaturedProfiles";
 import { InterestStatus } from "@/stores/interestStore";
 
@@ -71,7 +71,7 @@ const GlassProfileCard = ({
   canChat = false,
   showHoroscopeBadge = false,
 }: GlassProfileCardProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <motion.div
@@ -190,7 +190,7 @@ const GlassProfileCard = ({
                 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer"
                 onClick={() => {
                   window.scrollTo(0, 0);
-                  navigate(`/profile/${profile.id}`);
+                  router.push(`/profile/${profile.id}`);
                 }}
               >
                 {profile.name}
@@ -293,7 +293,7 @@ const GlassProfileCard = ({
                   className="flex-1 gap-1"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate("/interests/sent");
+                    router.push("/interests/sent");
                   }}
                 >
                   <Send className="w-4 h-4" />
@@ -326,7 +326,7 @@ const GlassProfileCard = ({
                     onViewProfile();
                   } else {
                     window.scrollTo(0, 0);
-                    navigate(`/profile/${profile.id}`);
+                    router.push(`/profile/${profile.id}`);
                   }
                 }}
               >

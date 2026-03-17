@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, ArrowRight, Sparkles, Eye } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import ProfileViewDrawer from "./ProfileViewDrawer";
 
 export interface Profile {
@@ -117,7 +117,7 @@ export const profilesData: Profile[] = [
 ];
 
 const FeaturedProfiles = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
@@ -131,7 +131,7 @@ const FeaturedProfiles = () => {
 
   const handleViewProfile = (id: number) => {
     window.scrollTo(0, 0);
-    navigate(`/profile/${id}`);
+    router.push(`/profile/${id}`);
   };
 
   return (
@@ -188,7 +188,7 @@ const FeaturedProfiles = () => {
               } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
                 
                 {/* Image Container - click on image redirects to login */}
-                <div className="relative h-72 overflow-hidden cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate("/auth"); }}>
+                <div className="relative h-72 overflow-hidden cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push("/auth"); }}>
                   <img
                     src={profile.image}
                     alt={profile.name}
@@ -246,7 +246,7 @@ const FeaturedProfiles = () => {
                         className="flex-1 gap-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate("/auth");
+                          router.push("/auth");
                         }}
                       >
                         <Heart className="w-4 h-4" />
@@ -273,7 +273,7 @@ const FeaturedProfiles = () => {
                   className="p-5 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate("/auth");
+                    router.push("/auth");
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -310,7 +310,7 @@ const FeaturedProfiles = () => {
             variant="hero" 
             size="lg" 
             className="group"
-            onClick={() => navigate("/search")}
+            onClick={() => router.push("/search")}
           >
             View All Profiles
             <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />

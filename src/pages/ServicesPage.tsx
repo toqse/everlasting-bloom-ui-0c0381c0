@@ -1,8 +1,10 @@
+"use client";
+
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Users, Camera, Crown, Heart, MessageCircle, Search, Shield, Sparkles, ArrowRight, Star } from "lucide-react";
 
 const services = [
@@ -17,7 +19,7 @@ const services = [
 ];
 
 const ServicesPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,7 +71,7 @@ const ServicesPage = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="hero" size="lg" className="gap-2 group" onClick={() => navigate("/auth")}>
+            <Button variant="hero" size="lg" className="gap-2 group" onClick={() => router.push("/auth")}>
               Get Started Now
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>

@@ -1,6 +1,6 @@
 import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, Award } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 export interface Plan {
   name: string;
@@ -129,7 +129,7 @@ export const plansData: Plan[] = [
 ];
 
 const Membership = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <section id="membership" className="py-24 bg-gradient-romantic relative overflow-hidden">
@@ -242,7 +242,7 @@ const Membership = () => {
                   size="default" 
                   className="w-full group/btn mt-auto border-0 text-white hover:opacity-95"
                   style={{ background: "#b23272", boxShadow: "0 4px 14px -2px rgba(178, 50, 114, 0.35)" }}
-                  onClick={() => navigate("/auth")}
+                  onClick={() => router.push("/auth")}
                 >
                   Get Started
                   <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -270,7 +270,7 @@ const Membership = () => {
             variant="outline" 
             size="lg" 
             className="group"
-            onClick={() => navigate("/membership")}
+            onClick={() => router.push("/membership")}
           >
             Compare All Plans
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";

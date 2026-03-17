@@ -1,3 +1,5 @@
+"use client";
+
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion } from "framer-motion";
 import { HelpCircle, MessageCircle, Phone, Mail, ChevronDown, FileText, Shield, Clock } from "lucide-react";

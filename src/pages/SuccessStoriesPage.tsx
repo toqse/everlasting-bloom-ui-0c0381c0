@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -5,7 +7,7 @@ import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import { Heart, Quote, ChevronLeft, ChevronRight, Play, Calendar, MapPin, Star, Sparkles, ArrowRight } from "lucide-react";
 import { storiesData } from "@/components/SuccessStories";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const allStories = [
   ...storiesData,
@@ -15,7 +17,7 @@ const allStories = [
 ];
 
 const SuccessStoriesPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [selectedStory, setSelectedStory] = useState(allStories[0]);
   const [currentPage, setCurrentPage] = useState(0);
   const storiesPerPage = 3;
@@ -128,7 +130,7 @@ const SuccessStoriesPage = () => {
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">Ready to Write Your Own Love Story?</h2>
           <p className="text-white/80 max-w-xl mx-auto mb-8">Join thousands of happy couples who found their soulmate on Aiswarya Matrimony</p>
-          <Button variant="gold" size="xl" className="group" onClick={() => navigate("/auth")}>
+          <Button variant="gold" size="xl" className="group" onClick={() => router.push("/auth")}>
             Start Your Journey
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>

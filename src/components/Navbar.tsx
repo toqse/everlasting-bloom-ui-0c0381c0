@@ -1,14 +1,17 @@
+"use client";
+
 import { useState } from "react";
 import { Menu, X, User, LogOut, LayoutDashboard, UserPen } from "lucide-react";
 import { Button } from "./ui/button";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useLoading } from "@/contexts/LoadingContext";
 import { useAuthStore } from "@/stores/authStore";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const { setIsLoading } = useLoading();
   const { isLoggedIn, logout, isProfileComplete } = useAuthStore();
   const showCompleteProfile = isLoggedIn && !isProfileComplete();
@@ -22,7 +25,7 @@ const Navbar = () => {
     { name: "Contact", href: "/contact" },
   ];
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => pathname === href;
 
   const handleNavLinkClick = (href: string) => {
     setIsLoading(true);
@@ -33,7 +36,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
       <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14 overflow-visible">
         {/* Logo - larger than bar so it overflows; bar height stays fixed */}
-        <Link to="/" onClick={() => handleNavLinkClick("/")} className="flex flex-col items-start justify-center shrink-0 group min-w-0">
+        <Link href="/" onClick={() => handleNavLinkClick("/")} className="flex flex-col items-start justify-center shrink-0 group min-w-0">
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
@@ -47,7 +50,7 @@ const Navbar = () => {
           {navLinks.map((link) => (
             <Link
               key={link.name}
-              to={link.href}
+              href={link.href}
               onClick={() => handleNavLinkClick(link.href)}
               className={`relative font-medium transition-colors duration-300 group ${
                 isActive(link.href) ? "text-primary" : "text-foreground/80 hover:text-primary"
@@ -66,23 +69,23 @@ const Navbar = () => {
           {isLoggedIn ? (
             <>
               {showCompleteProfile ? (
-                <Button variant="outline" className="gap-2" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                <Button variant="outline" className="gap-2" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>
                   <UserPen className="w-4 h-4" />
                   Complete Profile
                 </Button>
               ) : (
-                <Button variant="outline" className="gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                <Button variant="outline" className="gap-2" onClick={() => { router.push("/dashboard"); setIsMobileMenuOpen(false); }}>
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Button>
               )}
-              <Button variant="hero" className="gap-2" onClick={() => { logout(); navigate("/"); }}>
+              <Button variant="hero" className="gap-2" onClick={() => { logout(); router.push("/"); }}>
                 <LogOut className="w-4 h-4" />
                 Logout
               </Button>
             </>
           ) : (
-            <Button variant="hero" className="gap-2 min-w-[160px] px-8" onClick={() => navigate("/auth")}>
+            <Button variant="hero" className="gap-2 min-w-[160px] px-8" onClick={() => router.push("/auth")}>
               <User className="w-4 h-4" />
               Login
             </Button>
@@ -108,7 +111,7 @@ const Navbar = () => {
           {navLinks.map((link, index) => (
             <Link
               key={link.name}
-              to={link.href}
+              href={link.href}
               className={`font-medium py-2 border-b border-accent-rose/30 transition-all duration-300 animate-slide-up ${
                 isActive(link.href) ? "text-primary" : "text-foreground/80"
               }`}
@@ -122,20 +125,20 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 {showCompleteProfile ? (
-                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>
                     <UserPen className="w-4 h-4" /> Complete Profile
                   </Button>
                 ) : (
-                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { router.push("/dashboard"); setIsMobileMenuOpen(false); }}>
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Button>
                 )}
-                <Button variant="hero" className="flex-1 gap-2" onClick={() => { logout(); navigate("/"); setIsMobileMenuOpen(false); }}>
+                <Button variant="hero" className="flex-1 gap-2" onClick={() => { logout(); router.push("/"); setIsMobileMenuOpen(false); }}>
                   <LogOut className="w-4 h-4" /> Logout
                 </Button>
               </>
             ) : (
-              <Button variant="hero" className="flex-1 min-w-[160px]" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
+              <Button variant="hero" className="flex-1 min-w-[160px]" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
             )}
           </div>
         </div>

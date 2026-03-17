@@ -1,9 +1,11 @@
+"use client";
+
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Send, Clock, Sparkles, Users, TrendingUp, Flame, ImageIcon, Ruler, BookOpen, Briefcase as BriefcaseIcon, ChevronDown, Heart, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
@@ -148,7 +150,7 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
 ];
 
 const MatchesPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [profiles, setProfiles] = useState<ApiMatchProfile[]>([]);
   const [totalProfiles, setTotalProfiles] = useState(0);
   const [page, setPage] = useState(1);
@@ -265,14 +267,14 @@ const MatchesPage = () => {
       const msg = err.message || "Failed to send interest";
       // If user has no active plan (403), send them to Plans & Pricing page.
       if (err.status === 403 || msg.toLowerCase().includes("plan")) {
-        navigate("/dashboard/plan");
+        router.push("/dashboard/plan");
         return;
       }
       toast.error(msg);
     } finally {
       setActionLoading(null);
     }
-  }, [navigate]);
+  }, [router]);
 
   const handleChat = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
@@ -282,19 +284,9 @@ const MatchesPage = () => {
       const convoId = res.data.conversation_id;
       if (convoId) {
         const other = profiles.find((p) => p.matri_id === matriId);
-        navigate(`/chat/${convoId}`, {
-          state: other
-            ? {
-                otherUser: {
-                  matri_id: other.matri_id,
-                  name: other.name,
-                  profile_photo: other.profile_photo,
-                },
-              }
-            : undefined,
-        });
+        router.push(`/chat/${convoId}`);
       } else {
-        navigate("/dashboard/chat-list");
+        router.push("/dashboard/chat-list");
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to start chat";
@@ -306,7 +298,7 @@ const MatchesPage = () => {
     } finally {
       setActionLoading(null);
     }
-  }, [navigate]);
+  }, [router]);
 
   const handleWishlist = useCallback(async (matriId: string) => {
     setActionLoading(matriId);

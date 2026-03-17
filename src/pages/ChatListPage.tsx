@@ -1,7 +1,9 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
 import { BASE_URL } from "@/lib/config";
 
@@ -15,7 +17,7 @@ function getAvatarUrl(path: string | null | undefined): string {
 }
 
 const ChatListPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [conversations, setConversations] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +70,7 @@ const ChatListPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() =>
-                  navigate(`/chat/${chat.conversation_id}`, {
-                    state: { otherUser: chat.other_user },
-                  })
+                  router.push(`/chat/${chat.conversation_id}`)
                 }
                 className="flex items-center gap-4 px-6 py-5 border-b border-primary/5 last:border-0 cursor-pointer hover:bg-accent-rose/30 transition-colors"
               >

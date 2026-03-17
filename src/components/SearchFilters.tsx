@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Calendar, Heart, Sparkles, ChevronDown, UserPlus } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { RELIGION_CASTE_MAP } from "@/data/religionCaste";
 import { toast } from "sonner";
 
@@ -9,7 +9,7 @@ const selectClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-w
 const inputClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all text-sm";
 
 const SearchFilters = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"register" | "search">("search");
 
   // Search state
@@ -47,7 +47,7 @@ const SearchFilters = () => {
     if (height) params.set("height", height);
     if (religion) params.set("religion", religion);
     if (caste) params.set("caste", caste);
-    navigate(`/search?${params.toString()}`);
+    router.push(`/search?${params.toString()}`);
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -56,7 +56,7 @@ const SearchFilters = () => {
       toast.error("Please fill Name and Mobile Number");
       return;
     }
-    navigate("/auth");
+    router.push("/auth");
   };
 
   return (

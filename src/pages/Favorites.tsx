@@ -1,3 +1,5 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,10 +9,10 @@ import { useInterestStore } from "@/stores/interestStore";
 import { profilesData } from "@/components/FeaturedProfiles";
 import { toast } from "sonner";
 import { Heart, Sparkles, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const Favorites = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { favorites, toggleFavorite, sendInterest, getSentInterestStatus, canChat } = useInterestStore();
 
   const favoriteProfiles = profilesData.filter(p => favorites.includes(p.id));
@@ -32,7 +34,7 @@ const Favorites = () => {
   };
 
   const handleChat = (profileId: number) => {
-    navigate(`/chat/${profileId}`);
+    router.push(`/chat/${profileId}`);
   };
 
   return (

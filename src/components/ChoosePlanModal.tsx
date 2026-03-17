@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -71,7 +71,7 @@ export default function ChoosePlanModal({
   onOpenChange,
   onPaySuccess,
 }: ChoosePlanModalProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const isHindu = useAuthStore((s) => s.isHindu());
   const [step, setStep] = useState<Step>("choose");
   const [progress, setProgress] = useState(0);
@@ -119,7 +119,7 @@ export default function ChoosePlanModal({
 
   const handleSetupHoroscope = () => {
     onOpenChange(false);
-    navigate("/dashboard/jathagam");
+    router.push("/dashboard/jathagam");
   };
 
   if (step === "processing") {

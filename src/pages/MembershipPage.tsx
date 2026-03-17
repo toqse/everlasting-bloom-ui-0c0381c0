@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -5,7 +7,7 @@ import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, HelpCircle, ChevronDown, Award } from "lucide-react";
 import { plansData } from "@/components/Membership";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const faqs = [
   {
@@ -31,7 +33,7 @@ const faqs = [
 ];
 
 const MembershipPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
@@ -142,7 +144,7 @@ const MembershipPage = () => {
                     size="lg" 
                     className="w-full group/btn border-0 text-white hover:opacity-95"
                     style={{ background: "#b23272", boxShadow: "0 4px 14px -2px rgba(178, 50, 114, 0.35)" }}
-                    onClick={() => navigate("/auth")}
+                    onClick={() => router.push("/auth")}
                   >
                     Get Started
                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

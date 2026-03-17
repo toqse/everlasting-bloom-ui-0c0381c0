@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -29,8 +31,9 @@ const StatusChip = ({ status }: { status: InterestStatus }) => {
 };
 
 const ProfileDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const params = useParams();
+  const id = (params?.id as string | undefined) ?? undefined;
+  const router = useRouter();
   const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan());
   const { favorites, toggleFavorite, sendInterest, getSentInterestStatus, canChat } = useInterestStore();
   const profile = profilesData.find(p => p.id === Number(id));
@@ -44,7 +47,7 @@ const ProfileDetail = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-serif text-2xl font-bold mb-4">Profile Not Found</h1>
-          <Button onClick={() => navigate("/search")}>Browse Profiles</Button>
+          <Button onClick={() => router.push("/search")}>Browse Profiles</Button>
         </div>
       </div>
     );
@@ -66,7 +69,7 @@ const ProfileDetail = () => {
   };
 
   const handleMessage = () => {
-    if (chatEnabled) navigate(`/chat/${profile.id}`);
+    if (chatEnabled) router.push(`/chat/${profile.id}`);
     else toast.info("Chat unavailable", { description: "You can chat once your interest is accepted." });
   };
 
@@ -105,7 +108,7 @@ const ProfileDetail = () => {
             className="mb-6"
           >
             <button
-              onClick={() => { if (window.history.length > 1) navigate(-1); else navigate("/search"); }}
+              onClick={() => { if (window.history.length > 1) router.back(); else router.push("/search"); }}
               className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

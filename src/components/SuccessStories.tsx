@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Heart, ChevronLeft, ChevronRight, Calendar, MapPin, Star, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface Story {
@@ -110,7 +110,7 @@ const FlowerBouquet = ({ className = "" }: { className?: string }) => (
 
 const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <motion.div
@@ -199,7 +199,7 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
                   variant="gold"
                   size="sm"
                   className="shadow-gold hover:scale-105 transition-transform"
-                  onClick={() => navigate("/success-stories")}
+                  onClick={() => router.push("/success-stories")}
                 >
                   View More
                 </Button>
@@ -262,7 +262,7 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
 };
 
 const SuccessStories = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -401,7 +401,7 @@ const SuccessStories = () => {
             variant="hero" 
             size="lg" 
             className="group"
-            onClick={() => navigate("/success-stories")}
+            onClick={() => router.push("/success-stories")}
           >
             Read All Stories
             <Heart className="w-5 h-5 group-hover:animate-heart-beat" />

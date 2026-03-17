@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { LucideIcon, Heart, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -12,7 +12,7 @@ interface EmptyStateProps {
 }
 
 const EmptyState = ({ icon: Icon, title, description, actionLabel, actionPath }: EmptyStateProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <motion.div
@@ -110,7 +110,7 @@ const EmptyState = ({ icon: Icon, title, description, actionLabel, actionPath }:
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Button variant="hero" onClick={() => navigate(actionPath)}>
+          <Button variant="hero" onClick={() => router.push(actionPath)}>
             {actionLabel}
           </Button>
         </motion.div>

@@ -1,16 +1,18 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { getReceivedInterests, getSentInterests, respondInterest } from "@/lib/interestsApi";
 
 type Tab = "received" | "sent";
 
 const DashboardInterests = () => {
   const [activeTab, setActiveTab] = useState<Tab>("received");
-  const navigate = useNavigate();
+  const router = useRouter();
   const [receivedInterests, setReceivedInterests] = useState<ReturnType<typeof Array.prototype.slice>>([]);
   const [sentInterests, setSentInterests] = useState<ReturnType<typeof Array.prototype.slice>>([]);
   const [loading, setLoading] = useState(false);
@@ -189,7 +191,7 @@ const DashboardInterests = () => {
                         })}
                       </p>
                       <button
-                        onClick={() => navigate(`/profiles/${interest.matri_id}/preview`)}
+                        onClick={() => router.push(`/profiles/${interest.matri_id}/preview`)}
                         className="mt-2 text-xs px-3 py-1.5 border border-primary/20 rounded-lg text-foreground hover:bg-accent-rose transition-colors"
                       >
                         View full profile

@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
@@ -110,7 +112,7 @@ function mapProfileToFormData(profile: VerifyMobileProfile | null | undefined): 
 }
 
 const AuthPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const getProfileIncompleteSignupStep = useAuthStore((s) => s.getProfileIncompleteSignupStep);
   const [mode, setMode] = useState<AuthMode>("login");
@@ -249,7 +251,7 @@ const AuthPage = () => {
 
       if (isProfileFullyCompleted(data)) {
         toast.success("OTP verified! Welcome back! 💕");
-        navigate("/dashboard");
+        router.push("/dashboard");
         return;
       }
 
@@ -509,7 +511,7 @@ const AuthPage = () => {
       });
       clearProfileIncomplete();
       toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
-      navigate("/dashboard");
+      router.push("/dashboard");
     }
   };
 
@@ -597,7 +599,7 @@ const AuthPage = () => {
                 className="h-36 sm:h-44 md:h-52 w-auto object-contain"
               />
             </div>
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 sm:mb-2 group">
+            <button onClick={() => router.push("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 sm:mb-2 group">
               <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform shrink-0" />
               <span className="font-medium text-lg">Back to Home</span>
             </button>

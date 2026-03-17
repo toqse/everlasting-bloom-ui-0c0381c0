@@ -288,15 +288,15 @@ export const useAuthStore = create<AuthState>()(
           profileNextStep?: string | null;
           profilePrefill?: VerifyMobileProfile | null;
         };
-        const user = p?.user;
+        const user = p?.user ?? null;
         if (user?.name === "Anna Jaslin") {
           return {
             ...current,
             ...p,
-            user: user ? { ...user, name: "Rahul", email: user.email === "anna.jaslin@gmail.com" ? "rahul@gmail.com" : user.email } : p.user,
+            user: user ? { ...user, name: "Rahul", email: user.email === "anna.jaslin@gmail.com" ? "rahul@gmail.com" : user.email } : null,
           };
         }
-        return { ...current, ...p };
+        return { ...current, ...p, user: p?.user ?? current.user };
       },
     }
   )

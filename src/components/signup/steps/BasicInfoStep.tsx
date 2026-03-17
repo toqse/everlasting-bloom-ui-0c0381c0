@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { User, Phone, Mail, Calendar, ArrowRight } from "lucide-react";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,7 @@ const BasicInfoStep = ({
             />
             <label htmlFor="agreeTerms" className="text-sm text-muted-foreground cursor-pointer">
               I agree to the{" "}
-              <Link to="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+              <Link href="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
               and Privacy Policy
@@ -182,7 +182,7 @@ const BasicInfoStep = ({
             />
             <label htmlFor="agreeTermsVerified" className="text-sm text-muted-foreground cursor-pointer">
               I agree to the{" "}
-              <Link to="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+              <Link href="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
               and Privacy Policy

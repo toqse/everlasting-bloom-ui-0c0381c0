@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Heart, Briefcase, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users, GraduationCap, Ruler } from "lucide-react";
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
@@ -22,7 +24,7 @@ const educationOptions = ["Aviation Degree", "B.A.", "B.A.M.S.", "B.Arch", "B.Co
 const occupationOptions = ["Accounts/Finance Professional", "Administrative Professional", "Advertising / PR Professional", "Adviser", "Agriculture & Farming Professional", "Architect", "Business Owner", "Civil Services", "Doctor", "Engineer", "IT Professional", "Lawyer", "Teacher/Professor", "Other"];
 
 const SearchProfiles = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
@@ -73,7 +75,7 @@ const SearchProfiles = () => {
             Lakhs of <span className="text-gradient-gold">Happy Marriages</span>
           </h1>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Button variant="hero" size="lg" className="mt-4 gap-2" onClick={() => navigate("/auth")}>
+            <Button variant="hero" size="lg" className="mt-4 gap-2" onClick={() => router.push("/auth")}>
               Join now for Free 💍
             </Button>
           </motion.div>
@@ -217,7 +219,7 @@ const SearchProfiles = () => {
 
               <div className="space-y-4 sm:space-y-6">
                 {allProfiles.map((profile, index) => (
-                  <ListProfileCard key={profile.id} profile={profile} index={index} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onMoreDetails={() => setViewProfile(profile)} onImageClick={() => navigate("/auth")} />
+                  <ListProfileCard key={profile.id} profile={profile} index={index} liked={likedProfiles.includes(profile.id)} onLike={() => toggleLike(profile.id)} onSendInterest={() => setPlanModalOpen(true)} onMoreDetails={() => setViewProfile(profile)} onImageClick={() => router.push("/auth")} />
                 ))}
               </div>
 

@@ -1,10 +1,12 @@
+"use client";
+
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import heroBg from "@/assets/hero-bg.png";
 
 const Hero = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const petals = Array.from({ length: 20 }, (_, i) => i);
   const sparkles = Array.from({ length: 8 }, (_, i) => i);
 
@@ -81,12 +83,12 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-              <Button variant="hero" size="xl" className="group w-full sm:w-auto" onClick={() => navigate("/auth")}>
+              <Button variant="hero" size="xl" className="group w-full sm:w-auto" onClick={() => router.push("/auth")}>
                 <Heart className="w-5 h-5 group-hover:animate-heart-beat" fill="currentColor" />
                 Start Your Journey
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="xl" className="group w-full sm:w-auto" onClick={() => navigate("/success-stories")}>
+              <Button variant="outline" size="xl" className="group w-full sm:w-auto" onClick={() => router.push("/success-stories")}>
                 <Sparkles className="w-5 h-5 group-hover:animate-sparkle" />
                 View Success Stories
               </Button>

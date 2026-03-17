@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { 
@@ -44,19 +47,20 @@ const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; siz
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout, isHindu, accessToken, isProfileComplete } = useAuthStore();
-  const navigate = useNavigate();
+  const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
 
   useEffect(() => {
     if (accessToken && !isProfileComplete()) {
-      navigate("/auth", { replace: true });
+      router.replace("/auth");
     }
-  }, [accessToken, isProfileComplete, navigate]);
+  }, [accessToken, isProfileComplete, router]);
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    router.push("/");
   };
 
   return (
@@ -130,23 +134,25 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
               {/* Nav Links - flex-1 so sidebar fills height, overflow for long lists */}
               <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:w-0">
-                {sidebarLinks.map((link) => (
-                  <NavLink
-                    key={link.name}
-                    to={link.href}
-                    end={link.href === "/dashboard"}
-                    onClick={() => setSidebarOpen(false)}
-                    className={({ isActive }) => cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
-                      isActive
-                        ? "text-secondary border-l-4 border-secondary bg-secondary/5"
-                        : "text-foreground hover:bg-accent-rose/50"
-                    )}
-                  >
-                    <link.icon className="w-5 h-5" />
-                    {link.name}
-                  </NavLink>
-                ))}
+                {sidebarLinks.map((link) => {
+                  const isActive = link.href === "/dashboard" ? pathname === "/dashboard" : (pathname ?? "").startsWith(link.href);
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                        isActive
+                          ? "text-secondary border-l-4 border-secondary bg-secondary/5"
+                          : "text-foreground hover:bg-accent-rose/50"
+                      )}
+                    >
+                      <link.icon className="w-5 h-5" />
+                      {link.name}
+                    </Link>
+                  );
+                })}
 
                 <button
                   onClick={handleLogout}
