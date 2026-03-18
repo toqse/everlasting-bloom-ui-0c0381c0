@@ -16,15 +16,23 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
+<<<<<<< Updated upstream
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
+=======
+    "/search/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/search/page.js"
+>>>>>>> Stashed changes
     ],
     "/auth/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/auth/page.js"
+<<<<<<< Updated upstream
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
@@ -65,6 +73,8 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/chat-list/page.js"
+=======
+>>>>>>> Stashed changes
     ]
   }
 }
