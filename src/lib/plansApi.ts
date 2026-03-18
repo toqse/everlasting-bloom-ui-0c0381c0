@@ -53,6 +53,29 @@ async function authedFetch<T>(path: string, opts: { method: string; body?: strin
   return data as T;
 }
 
+/** GET /api/v1/my/plan/ — current subscription & remaining quotas */
+export interface MyPlanDetails {
+  is_plan_active: boolean;
+  plan_name: string | null;
+  valid_until: string | null;
+  profile_views_remaining: number;
+  interests_remaining: number;
+  chat_remaining: number;
+  contact_view_remaining: number;
+  horoscope_remaining: number;
+  service_charge_remaining: number;
+  service_charge_paid: number;
+}
+
+export interface MyPlanResponse {
+  success: boolean;
+  data: MyPlanDetails;
+}
+
+export async function getMyPlan(): Promise<MyPlanResponse> {
+  return authedFetch<MyPlanResponse>("v1/my/plan/", { method: "GET" });
+}
+
 export type PaymentMethod = "razorpay" | "stripe" | "upi" | "manual";
 
 export interface AvailablePlan {

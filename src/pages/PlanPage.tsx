@@ -5,9 +5,10 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
   Star, Crown, Sparkles, ArrowRight, Zap, Award, Check, Loader2,
+  CalendarDays, Eye, Heart, MessageCircle, IndianRupee,
 } from "lucide-react";
 import PaymentPopup from "@/components/PaymentPopup";
-import { getAvailablePlans, type AvailablePlan } from "@/lib/plansApi";
+import { getAvailablePlans, getMyPlan, type AvailablePlan, type MyPlanDetails } from "@/lib/plansApi";
 
 /* ─── Styling map by plan name ──────────────────────────────── */
 type PlanStyle = {
@@ -188,17 +189,17 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
       </ul>
 
       {/* Customer Care + Service Charge footer */}
-      <div className="mt-1 rounded-xl bg-black/80 text-white px-3 py-2.5 space-y-1.5">
+      <div className="mt-1 rounded-xl bg-card/70 text-card-foreground border border-border/60 px-3 py-2.5 space-y-1.5 backdrop-blur">
         <p className="text-xs font-semibold">Customer Care Assistance</p>
-        <div className="flex items-center justify-between text-xs text-white/80">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Service Charge</span>
-          <span className="font-medium text-white">
+          <span className="font-medium text-foreground">
             ₹{(plan.service_charge ?? 0).toLocaleString("en-IN")}
           </span>
         </div>
-        <div className="border-t border-white/10 pt-1 flex items-center justify-between text-xs">
-          <span className="text-white/70">Remaining (Total)</span>
-          <span className="font-bold text-amber-300">
+        <div className="border-t border-border/60 pt-1 flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Remaining (Total)</span>
+          <span className="font-bold text-primary">
             ₹{(plan.total_price ?? 0).toLocaleString("en-IN")}
           </span>
         </div>
@@ -219,10 +220,103 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
 };
 
 /* ─── Page ──────────────────────────────────────────────────── */
+const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
+  const active = my.is_plan_active && my.plan_name;
+  const valid = my.valid_until
+    ? new Date(my.valid_until).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+
+  const rows: { icon: React.ElementType; label: string; value: number | string }[] = [
+    { icon: Eye, label: "Profile views left", value: my.profile_views_remaining },
+    { icon: Heart, label: "Interests left", value: my.interests_remaining },
+    { icon: MessageCircle, label: "Chats left", value: my.chat_remaining },
+    { icon: Sparkles, label: "Horoscope matches left", value: my.horoscope_remaining },
+  ];
+
+  return (
+    <div
+      className={`rounded-2xl border-2 p-6 shadow-card ${
+        active
+          ? "border-emerald-200 bg-gradient-to-br from-emerald-50/90 to-white"
+          : "border-dashed border-muted-foreground/25 bg-muted/30"
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your membership</p>
+          <h2 className="font-serif text-xl md:text-2xl font-bold text-foreground mt-1">
+            {active ? my.plan_name : "No active plan"}
+          </h2>
+          {active && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              Valid until <strong className="text-foreground">{valid}</strong>
+            </p>
+          )}
+        </div>
+        {active && (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shrink-0">
+            Active
+          </span>
+        )}
+      </div>
+
+      {!active && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Purchase a plan below to unlock profile views, interests, chat, and more.
+        </p>
+      )}
+
+      {active && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            {rows.map(({ icon: Icon, label, value }) => (
+              <div
+                key={label}
+                className="flex items-center gap-3 rounded-xl bg-white/80 border border-primary/10 px-3 py-2.5"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-muted-foreground leading-tight">{label}</p>
+                  <p className="font-bold text-foreground tabular-nums">{value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-4 pt-3 border-t border-primary/10 text-sm">
+            {/* <div className="flex items-center gap-2 text-muted-foreground">
+              <IndianRupee className="w-4 h-4" />
+              <span>
+                Service charge paid:{" "}
+                <strong className="text-foreground">
+                  ₹{(my.service_charge_paid ?? 0).toLocaleString("en-IN")}
+                </strong>
+              </span>
+            </div> */}
+            {(my.service_charge_remaining ?? 0) > 0 && (
+              <div className="text-amber-700 font-medium">
+                If you require our service, the service fee payable is: ₹{my.service_charge_remaining.toLocaleString("en-IN")}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const PlanPage = () => {
   const [apiPlans, setApiPlans] = useState<AvailablePlan[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [myPlan, setMyPlan] = useState<MyPlanDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [myPlanError, setMyPlanError] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<AvailablePlan | null>(null);
 
@@ -231,16 +325,31 @@ const PlanPage = () => {
     (async () => {
       setLoading(true);
       setError(null);
+      setMyPlanError(null);
       try {
-        const res = await getAvailablePlans();
-        if (mounted) setApiPlans(res.data.plans);
-      } catch (e) {
-        if (mounted) setError(e instanceof Error ? e.message : "Failed to load plans");
+        const [plansRes, myRes] = await Promise.allSettled([
+          getAvailablePlans(),
+          getMyPlan(),
+        ]);
+        if (!mounted) return;
+        if (plansRes.status === "fulfilled") {
+          setApiPlans(plansRes.value.data.plans);
+        } else {
+          setError(plansRes.reason instanceof Error ? plansRes.reason.message : "Failed to load plans");
+        }
+        if (myRes.status === "fulfilled") {
+          setMyPlan(myRes.value.data);
+        } else {
+          setMyPlanError(myRes.reason instanceof Error ? myRes.reason.message : "Could not load your plan");
+          setMyPlan(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const gridCols =
@@ -255,9 +364,23 @@ const PlanPage = () => {
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground pb-3 border-b border-gray-200">
           Plans &amp; Pricing
         </h1>
+        <p className="text-sm text-muted-foreground -mt-4 mb-2">
+          Your purchased plan and usage are loaded from your account. Upgrade or renew anytime below.
+        </p>
+
+        {myPlanError && (
+          <div className="rounded-xl bg-amber-500/10 text-amber-900 dark:text-amber-200 px-4 py-3 text-sm">
+            {myPlanError} — catalog below may still load.
+          </div>
+        )}
+        {!loading && myPlan && <CurrentPlanCard my={myPlan} />}
 
         {error && (
           <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">{error}</div>
+        )}
+
+        {!loading && apiPlans.length > 0 && (
+          <h2 className="font-serif text-lg font-semibold text-foreground pt-2">Available plans</h2>
         )}
 
         {loading ? (

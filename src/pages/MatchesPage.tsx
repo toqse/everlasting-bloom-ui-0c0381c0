@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import Navbar from "@/components/Navbar";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,10 +20,8 @@ import {
   ChevronRight,
   Heart,
   Eye,
-  Check,
-  X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
@@ -33,6 +30,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/stores/authStore";
 import {
   getMatches,
   getMatchFilters,
@@ -162,6 +160,47 @@ const CasteSelect = ({
   );
 };
 
+/** Opens profile drawer when landing with ?open=matri_id (e.g. from dashboard stories). */
+function MatchesOpenFromQuery({
+  onPreview,
+  setBusyMatriId,
+}: {
+  onPreview: (data: ProfilePreviewData) => void;
+  setBusyMatriId: (id: string | null) => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const openMatriId = searchParams?.get("open")?.trim() || null;
+
+  useEffect(() => {
+    if (!openMatriId) return;
+    const id = openMatriId;
+    let cancelled = false;
+    (async () => {
+      try {
+        setBusyMatriId(id);
+        const res = await getProfilePreview(id);
+        if (!cancelled) {
+          onPreview(res.data);
+          router.replace("/dashboard/matches", { scroll: false });
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : "Failed to load profile");
+          router.replace("/dashboard/matches", { scroll: false });
+        }
+      } finally {
+        if (!cancelled) setBusyMatriId(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [openMatriId, onPreview, router, setBusyMatriId]);
+
+  return null;
+}
+
 const DEFAULT_LIMIT = 10;
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "most_relevant", label: "Most relative" },
@@ -179,6 +218,7 @@ const MatchesPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MatchFiltersResponse["data"] | null>(null);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const me = useAuthStore((s) => s.user);
   const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 70]);
   const [heightRange, setHeightRange] = useState<[number, number]>([120, 200]);
@@ -200,11 +240,12 @@ const MatchesPage = () => {
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
-  const [matchedMatriIds, setMatchedMatriIds] = useState<string[]>([]);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
-  const groomProfile = useMemo(() => profiles[0] ?? null, [profiles]);
   const currentBride = brideProfiles[currentBrideIndex] ?? null;
+  const meGender = (me?.gender ?? "").trim().toLowerCase();
+  const leftLabel = meGender === "male" ? "Groom" : meGender === "female" ? "Bride" : "Profile";
+  const rightLabel = meGender === "male" ? "Bride" : meGender === "female" ? "Groom" : "Match";
 
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
@@ -302,8 +343,8 @@ const MatchesPage = () => {
   const handleSendInterest = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
     try {
-      await sendInterestApi(matriId);
-      toast.success("Interest sent successfully.");
+      const res = await sendInterestApi(matriId);
+      toast.success(res.message || "Interest sent successfully.");
       setViewPreview(null);
     } catch (e) {
       const err = e as Error & { status?: number };
@@ -330,7 +371,6 @@ const MatchesPage = () => {
       toast.success("Chat started.");
       const convoId = res.data.conversation_id;
       if (convoId) {
-        const other = profiles.find((p) => p.matri_id === matriId);
         router.push(`/chat/${convoId}`);
       } else {
         router.push("/dashboard/chat-list");
@@ -357,12 +397,9 @@ const MatchesPage = () => {
     setCurrentBrideIndex((prev) => (prev + 1) % brideProfiles.length);
   };
 
-  const handleMatchDecision = (accepted: boolean) => {
-    if (accepted && currentBride) {
-      setMatchedMatriIds((prev) => (prev.includes(currentBride.matri_id) ? prev : [...prev, currentBride.matri_id]));
-    }
-    goToNextBride();
-  };
+  const applyDeepLinkPreview = useCallback((data: ProfilePreviewData) => {
+    setViewPreview(data);
+  }, []);
 
   const handleWishlist = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
@@ -383,237 +420,237 @@ const MatchesPage = () => {
 
   return (
     <>
-      <Navbar />
-      <div className="pt-20">
-        <DashboardLayout>
-          <div className="space-y-6">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between flex-wrap gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-soft">
-                    <Sparkles className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">
-                    {totalProfiles}
-                  </span>
+      <DashboardLayout>
+        <Suspense fallback={null}>
+          <MatchesOpenFromQuery onPreview={applyDeepLinkPreview} setBusyMatriId={setActionLoading} />
+        </Suspense>
+        <div className="space-y-6">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between flex-wrap gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-soft">
+                  <Sparkles className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <div>
-                  <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">New Matches Found</h1>
-                  <p className="text-muted-foreground text-sm flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5 text-secondary" />
-                    {totalProfiles} compatible profiles waiting for you
-                  </p>
-                </div>
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">
+                  {totalProfiles}
+                </span>
               </div>
-
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent-gold/50 border border-secondary/20"
-              >
-                <TrendingUp className="w-4 h-4 text-secondary" />
-                <span className="text-sm font-medium text-secondary-foreground">+{Math.min(5, totalProfiles)} new today</span>
-              </motion.div>
-            </motion.div>
-
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Left Sidebar - Filters from API */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="lg:w-72 xl:w-80 flex-shrink-0"
-              >
-                <div className="bg-card rounded-2xl shadow-card p-4 border border-primary/5 space-y-0 sticky top-28">
-                  <FilterSection title="Profile Type" icon={<ImageIcon className="w-4 h-4 text-primary" />}>
-                    <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
-                      <Checkbox checked={onlyWithPhoto} onCheckedChange={(c) => setOnlyWithPhoto(!!c)} />
-                      Only with Photo
-                    </label>
-                  </FilterSection>
-
-                  <FilterSection title="Age" icon={<Clock className="w-4 h-4 text-primary" />}>
-                    <div className="space-y-3 pt-1">
-                      <Slider
-                        min={18}
-                        max={70}
-                        step={1}
-                        value={ageRange}
-                        onValueChange={(v) => setAgeRange(v as [number, number])}
-                        className="py-2"
-                      />
-                      <p className="text-xs text-muted-foreground text-center">
-                        {ageRange[0]} - {ageRange[1]} years
-                      </p>
-                    </div>
-                  </FilterSection>
-
-                  <FilterSection title="Height" icon={<Ruler className="w-4 h-4 text-primary" />}>
-                    <div className="space-y-3 pt-1">
-                      <Slider
-                        min={120}
-                        max={200}
-                        step={5}
-                        value={heightRange}
-                        onValueChange={(v) => setHeightRange(v as [number, number])}
-                        className="py-2"
-                      />
-                      <p className="text-xs text-muted-foreground text-center">
-                        {heightRange[0]}cm - {heightRange[1]}cm
-                      </p>
-                    </div>
-                  </FilterSection>
-
-                  {filters && (
-                    <>
-                      <FilterSection title="Marital Status" icon={<Heart className="w-4 h-4 text-primary" />}>
-                        <SearchableIdSelect
-                          placeholder="Search marital status..."
-                          options={filters.marital_status}
-                          valueId={maritalStatusId}
-                          onSelect={setMaritalStatusId}
-                          searchQuery={maritalSearch}
-                          onSearchChange={setMaritalSearch}
-                        />
-                      </FilterSection>
-
-                      <FilterSection title="Religion" icon={<Sparkles className="w-4 h-4 text-primary" />}>
-                        <SearchableIdSelect
-                          placeholder="Search religion..."
-                          options={filters.religions}
-                          valueId={religionId}
-                          onSelect={(id) => { setReligionId(id); setCasteId(null); }}
-                          searchQuery={religionSearch}
-                          onSearchChange={setReligionSearch}
-                        />
-                      </FilterSection>
-
-                      <FilterSection title="Caste" icon={<Users className="w-4 h-4 text-primary" />}>
-                        <CasteSelect
-                          castes={filters.castes}
-                          religionId={religionId}
-                          valueId={casteId}
-                          onSelect={setCasteId}
-                          searchQuery={casteSearch}
-                          onSearchChange={setCasteSearch}
-                        />
-                      </FilterSection>
-
-                      <FilterSection title="Education" icon={<BookOpen className="w-4 h-4 text-primary" />}>
-                        <SearchableIdSelect
-                          placeholder="Search education..."
-                          options={filters.educations}
-                          valueId={educationId}
-                          onSelect={setEducationId}
-                          searchQuery={educationSearch}
-                          onSearchChange={setEducationSearch}
-                        />
-                      </FilterSection>
-
-                      <FilterSection title="Occupation" icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}>
-                        <SearchableIdSelect
-                          placeholder="Search occupation..."
-                          options={filters.occupations}
-                          valueId={occupationId}
-                          onSelect={setOccupationId}
-                          searchQuery={occupationSearch}
-                          onSearchChange={setOccupationSearch}
-                        />
-                      </FilterSection>
-                    </>
-                  )}
-                  {filtersLoading && (
-                    <p className="text-sm text-muted-foreground py-2">Loading filters…</p>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Right - Profiles */}
-              <div className="flex-1 min-w-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="flex items-center justify-between mb-5 flex-wrap gap-3"
-                >
-                  <h2 className="font-serif text-lg font-bold text-foreground">
-                    Showing <span className="text-secondary">{profiles.length}</span> profiles
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => openMatchModal()}
-                    >
-                      <Sparkles className="w-4 h-4 shrink-0" />
-                      Check Match
-                    </Button>
-                    <span className="text-sm text-muted-foreground">Sort by:</span>
-                    <select
-                      className="px-3 py-2 rounded-lg border border-primary/10 text-sm bg-card"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as SortBy)}
-                    >
-                      {SORT_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </motion.div>
-
-                {error && (
-                  <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm mb-4">
-                    {error}
-                  </div>
-                )}
-
-                {loading && profiles.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">Loading matches…</div>
-                ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
-                    {profiles.map((profile, index) => (
-                      <MatchListCard
-                        key={profile.matri_id}
-                        profile={profile}
-                        index={index}
-                        liked={wishlistedMatriIds.has(profile.matri_id)}
-                        onLike={() => handleWishlist(profile.matri_id)}
-                        onSendInterest={() => handleSendInterest(profile.matri_id)}
-                        onViewDetails={() => handleViewDetails(profile.matri_id)}
-                        onChat={() => handleChat(profile.matri_id)}
-                        onCheckMatch={() => openMatchModal(profile.matri_id)}
-                        onOpenPlanModal={() => setPlanModalOpen(true)}
-                        actionLoading={actionLoading}
-                      />
-                    ))}
-                  </motion.div>
-                )}
-
-                {hasMore && !loading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="text-center mt-10"
-                  >
-                    <Button variant="outline" size="lg" className="group gap-2" onClick={loadMore} disabled={loading}>
-                      Load More Profiles
-                      <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
-                    </Button>
-                  </motion.div>
-                )}
+              <div>
+                <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">New Matches Found</h1>
+                <p className="text-muted-foreground text-sm flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-secondary" />
+                  {totalProfiles} compatible profiles waiting for you
+                </p>
               </div>
             </div>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent-gold/50 border border-secondary/20"
+            >
+              <TrendingUp className="w-4 h-4 text-secondary" />
+              <span className="text-sm font-medium text-secondary-foreground">+{Math.min(5, totalProfiles)} new today</span>
+            </motion.div>
+          </motion.div>
+
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Sidebar - Filters from API */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:w-72 xl:w-80 flex-shrink-0"
+            >
+              <div className="bg-card rounded-2xl shadow-card p-4 border border-primary/5 space-y-0 sticky top-28">
+                <FilterSection title="Profile Type" icon={<ImageIcon className="w-4 h-4 text-primary" />}>
+                  <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
+                    <Checkbox checked={onlyWithPhoto} onCheckedChange={(c) => setOnlyWithPhoto(!!c)} />
+                    Only with Photo
+                  </label>
+                </FilterSection>
+
+                <FilterSection title="Age" icon={<Clock className="w-4 h-4 text-primary" />}>
+                  <div className="space-y-3 pt-1">
+                    <Slider
+                      min={18}
+                      max={70}
+                      step={1}
+                      value={ageRange}
+                      onValueChange={(v) => setAgeRange(v as [number, number])}
+                      className="py-2"
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      {ageRange[0]} - {ageRange[1]} years
+                    </p>
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Height" icon={<Ruler className="w-4 h-4 text-primary" />}>
+                  <div className="space-y-3 pt-1">
+                    <Slider
+                      min={120}
+                      max={200}
+                      step={5}
+                      value={heightRange}
+                      onValueChange={(v) => setHeightRange(v as [number, number])}
+                      className="py-2"
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      {heightRange[0]}cm - {heightRange[1]}cm
+                    </p>
+                  </div>
+                </FilterSection>
+
+                {filters && (
+                  <>
+                    <FilterSection title="Marital Status" icon={<Heart className="w-4 h-4 text-primary" />}>
+                      <SearchableIdSelect
+                        placeholder="Search marital status..."
+                        options={filters.marital_status}
+                        valueId={maritalStatusId}
+                        onSelect={setMaritalStatusId}
+                        searchQuery={maritalSearch}
+                        onSearchChange={setMaritalSearch}
+                      />
+                    </FilterSection>
+
+                    <FilterSection title="Religion" icon={<Sparkles className="w-4 h-4 text-primary" />}>
+                      <SearchableIdSelect
+                        placeholder="Search religion..."
+                        options={filters.religions}
+                        valueId={religionId}
+                        onSelect={(id) => { setReligionId(id); setCasteId(null); }}
+                        searchQuery={religionSearch}
+                        onSearchChange={setReligionSearch}
+                      />
+                    </FilterSection>
+
+                    <FilterSection title="Caste" icon={<Users className="w-4 h-4 text-primary" />}>
+                      <CasteSelect
+                        castes={filters.castes}
+                        religionId={religionId}
+                        valueId={casteId}
+                        onSelect={setCasteId}
+                        searchQuery={casteSearch}
+                        onSearchChange={setCasteSearch}
+                      />
+                    </FilterSection>
+
+                    <FilterSection title="Education" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+                      <SearchableIdSelect
+                        placeholder="Search education..."
+                        options={filters.educations}
+                        valueId={educationId}
+                        onSelect={setEducationId}
+                        searchQuery={educationSearch}
+                        onSearchChange={setEducationSearch}
+                      />
+                    </FilterSection>
+
+                    <FilterSection title="Occupation" icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}>
+                      <SearchableIdSelect
+                        placeholder="Search occupation..."
+                        options={filters.occupations}
+                        valueId={occupationId}
+                        onSelect={setOccupationId}
+                        searchQuery={occupationSearch}
+                        onSearchChange={setOccupationSearch}
+                      />
+                    </FilterSection>
+                  </>
+                )}
+                {filtersLoading && (
+                  <p className="text-sm text-muted-foreground py-2">Loading filters…</p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Right - Profiles */}
+            <div className="flex-1 min-w-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="flex items-center justify-between mb-5 flex-wrap gap-3"
+              >
+                <h2 className="font-serif text-lg font-bold text-foreground">
+                  Showing <span className="text-secondary">{profiles.length}</span> profiles
+                </h2>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => openMatchModal()}
+                  >
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    Check Match
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Sort by:</span>
+                  <select
+                    className="px-3 py-2 rounded-lg border border-primary/10 text-sm bg-card"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortBy)}
+                  >
+                    {SORT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </motion.div>
+
+              {error && (
+                <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm mb-4">
+                  {error}
+                </div>
+              )}
+
+              {loading && profiles.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">Loading matches…</div>
+              ) : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                  {profiles.map((profile, index) => (
+                    <MatchListCard
+                      key={profile.matri_id}
+                      profile={profile}
+                      index={index}
+                      liked={wishlistedMatriIds.has(profile.matri_id)}
+                      onLike={() => handleWishlist(profile.matri_id)}
+                      onSendInterest={() => handleSendInterest(profile.matri_id)}
+                      onViewDetails={() => handleViewDetails(profile.matri_id)}
+                      onChat={() => handleChat(profile.matri_id)}
+                      onCheckMatch={() => openMatchModal(profile.matri_id)}
+                      onOpenPlanModal={() => setPlanModalOpen(true)}
+                      actionLoading={actionLoading}
+                    />
+                  ))}
+                </motion.div>
+              )}
+
+              {hasMore && !loading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center mt-10"
+                >
+                  <Button variant="outline" size="lg" className="group gap-2" onClick={loadMore} disabled={loading}>
+                    Load More Profiles
+                    <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+                  </Button>
+                </motion.div>
+              )}
+            </div>
           </div>
-        </DashboardLayout>
-      </div>
+        </div>
+      </DashboardLayout>
 
       <ProfileViewDrawer
         open={!!viewPreview}
@@ -629,14 +666,14 @@ const MatchesPage = () => {
         <DialogContent className="max-w-5xl p-6 sm:p-8">
           <DialogTitle className="mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            Check Match – Quick Horoscope View
+            Visual Pair Maker
           </DialogTitle>
 
-          {groomProfile && currentBride ? (
+          {me && currentBride ? (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.1fr] gap-6 items-center">
-                {/* Groom (fixed) – real photo with fade-in */}
-                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 flex flex-col items-center gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                {/* Profile owner (fixed) */}
+                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 flex flex-col items-center justify-center gap-3 min-h-[280px]">
                   <motion.div
                     className="w-32 h-32 rounded-2xl overflow-hidden bg-muted flex items-center justify-center"
                     initial={{ opacity: 0 }}
@@ -645,37 +682,24 @@ const MatchesPage = () => {
                   >
                     <img
                       src={
-                        groomProfile.profile_photo ||
+                        me.avatar ||
                         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop"
                       }
-                      alt={groomProfile.name}
+                      alt={me.name}
                       className="w-full h-full object-cover"
                     />
                   </motion.div>
                   <div className="text-center space-y-1">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Groom</p>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">{leftLabel}</p>
                     <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
-                      {groomProfile.name}
+                      {me.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">ID: {groomProfile.matri_id}</p>
+                    {me.matriId && <p className="text-xs text-muted-foreground">ID: {me.matriId}</p>}
                   </div>
                 </div>
 
-                {/* Match score in the middle */}
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Match score
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold text-secondary">
-                      {currentBride.match_percentage ?? 0}
-                    </span>
-                    <span className="text-sm font-medium text-secondary">%</span>
-                  </div>
-                </div>
-
-                {/* Bride carousel */}
-                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 relative">
+                {/* Match carousel */}
+                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 relative min-h-[280px] flex flex-col justify-center">
                   {/* Arrows */}
                   <button
                     type="button"
@@ -694,7 +718,7 @@ const MatchesPage = () => {
                     <ChevronRight className="w-4 h-4" />
                   </button>
 
-                  <div className="flex flex-col items-center gap-3 pt-2 pb-3 min-h-[200px]">
+                  <div className="flex flex-col items-center gap-3 pt-2 pb-3 flex-1 justify-center">
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.div
                         key={currentBride.matri_id}
@@ -715,7 +739,7 @@ const MatchesPage = () => {
                           />
                         </div>
                         <div className="text-center space-y-1">
-                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Bride</p>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">{rightLabel}</p>
                           <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
                             {currentBride.name}
                           </p>
@@ -741,70 +765,6 @@ const MatchesPage = () => {
                       ))}
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Match / Pass + matched list */}
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Button
-                    variant="hero"
-                    size="sm"
-                    className="gap-2 px-6"
-                    onClick={() => handleMatchDecision(true)}
-                  >
-                    <Check className="w-4 h-4" />
-                    Match
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 px-6 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => handleMatchDecision(false)}
-                  >
-                    <X className="w-4 h-4" />
-                    Pass
-                  </Button>
-                </div>
-
-                <div className="rounded-2xl border border-primary/10 bg-accent-rose/10 px-3 py-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    Matched profiles
-                  </p>
-                  {matchedMatriIds.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      Confirmed matches will appear here as you tap Match.
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {matchedMatriIds.map((id) => {
-                        const p = profiles.find((pr) => pr.matri_id === id);
-                        return (
-                          <div
-                            key={id}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-card border border-primary/20 shadow-soft"
-                          >
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                              <img
-                                src={
-                                  p?.profile_photo ||
-                                  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&h=200&fit=crop"
-                                }
-                                alt={p?.name ?? id}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="text-xs">
-                              <div className="font-semibold text-foreground truncate max-w-[90px]">
-                                {p?.name ?? "Match"}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">ID: {id}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -890,7 +850,8 @@ const MatchListCard = ({
             disabled={!profile.can_chat || busy}
             onClick={(e) => {
               e.stopPropagation();
-              profile.can_chat ? onChat() : onOpenPlanModal();
+              if (profile.can_chat) onChat();
+              else onOpenPlanModal();
             }}
           >
             <MessageCircle className="w-3.5 h-3.5 shrink-0" /> Chat now
@@ -902,7 +863,8 @@ const MatchListCard = ({
             disabled={!profile.can_send_interest || busy}
             onClick={(e) => {
               e.stopPropagation();
-              profile.can_send_interest ? onSendInterest() : onOpenPlanModal();
+              if (profile.can_send_interest) onSendInterest();
+              else onOpenPlanModal();
             }}
           >
             <Send className="w-3.5 h-3.5 shrink-0" /> Send interest

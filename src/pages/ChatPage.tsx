@@ -5,28 +5,81 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { profilesData } from "@/components/FeaturedProfiles";
 import {
   ArrowLeft,
   Send,
   Sparkles,
-  Shield,
-  Crown,
   Smile,
   Lock,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
-import { buildChatWebSocketUrl, getChatMessages, type ChatMessage } from "@/lib/chatApi";
+import {
+  buildChatWebSocketUrl,
+  getChatMessages,
+  type ChatMessage,
+  type ChatOtherUser,
+} from "@/lib/chatApi";
 import { useAuthStore } from "@/stores/authStore";
+import { BASE_URL } from "@/lib/config";
+
+function chatParticipantPhotoUrl(photo: string | null | undefined): string {
+  if (!photo?.trim()) return "";
+  const p = photo.trim();
+  if (/^https?:\/\//i.test(p)) return p;
+  const base = BASE_URL.replace(/\/api\/?$/i, "").replace(/\/$/, "");
+  return `${base}${p.startsWith("/") ? "" : "/"}${p}`;
+}
+
+function parseApiDate(input: unknown): Date | null {
+  if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
+  if (input === null || input === undefined) return null;
+
+  if (typeof input === "number" && Number.isFinite(input)) {
+    // backend may send seconds; JS Date expects ms
+    const ms = input < 1e12 ? input * 1000 : input;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (!s) return null;
+
+    // numeric string timestamp
+    if (/^\d+(\.\d+)?$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      const ms = n < 1e12 ? n * 1000 : n;
+      const d = new Date(ms);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    // normalize common API date formats: "YYYY-MM-DD HH:mm:ss(.uuuuuu)?(Z|+05:30)?"
+    let normalized = s.replace(" ", "T");
+    normalized = normalized.replace(/(\.\d{3})\d+/, "$1"); // trim microseconds to ms
+    const d = new Date(normalized);
+    if (!Number.isNaN(d.getTime())) return d;
+
+    const d2 = new Date(s);
+    return Number.isNaN(d2.getTime()) ? null : d2;
+  }
+
+  return null;
+}
+
+function formatLastSeen(value: string): string {
+  const raw = (value ?? "").trim();
+  if (!raw) return "";
+  const d = parseApiDate(raw);
+  if (!d) return raw; // API might already send "10 minutes ago"
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
 
 const ChatPage = () => {
   const params = useParams();
   const profileId = (params?.profileId as string | undefined) ?? undefined;
   const router = useRouter();
-  const profileFromList = profileId ? profilesData.find((p) => p.id === Number(profileId)) : null;
-  const otherUser = profileFromList
-    ? { matri_id: String(profileFromList.id), name: profileFromList.name, profile_photo: profileFromList.image ?? null }
-    : undefined;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -34,38 +87,52 @@ const ChatPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  /** Header: from GET chat/messages/{id}/ → other_user */
+  const [otherUser, setOtherUser] = useState<ChatOtherUser | null>(null);
 
-  const fallbackProfile = profilesData[0];
+  const visibleMessages = messages.filter((m) => (m.text ?? "").trim().length > 0);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [visibleMessages.length]);
 
   useEffect(() => {
     const idNum = Number(profileId);
     if (!idNum) return;
 
-    let socket: WebSocket | null = null;
+    let cancelled = false;
+    const wsRef = { current: null as WebSocket | null };
+    /** IDs already shown (from GET or WS) — skip WS echoes / history replay / double sockets */
+    const seenMessageIds = new Set<number>();
 
     const connect = async () => {
       setLoading(true);
       setError(null);
+      setOtherUser(null);
       try {
         const res = await getChatMessages(idNum, 1, 100);
-        setMessages(res.data.messages);
+        if (cancelled) return;
+        const list = res.data.messages ?? [];
+        list.forEach((m) => seenMessageIds.add(m.id));
+        setMessages(list);
+        if (res.data.other_user) setOtherUser(res.data.other_user);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load messages");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load messages");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+
+      if (cancelled) return;
 
       const url = buildChatWebSocketUrl(idNum);
       if (!url) return;
 
-      socket = new WebSocket(url);
+      const socket = new WebSocket(url);
+      wsRef.current = socket;
       setWs(socket);
 
       socket.onmessage = (event) => {
+        if (cancelled) return;
         try {
           const payload = JSON.parse(event.data) as {
             message_id: number;
@@ -75,8 +142,12 @@ const ChatPage = () => {
             text: string;
             created_at: string;
           };
+          const mid = payload.message_id;
+          if (seenMessageIds.has(mid)) return;
+          seenMessageIds.add(mid);
+
           const msg: ChatMessage = {
-            id: payload.message_id,
+            id: mid,
             sender_id: payload.sender_id,
             sender_matri_id: payload.sender_matri_id,
             sender_name: payload.sender_name,
@@ -94,9 +165,9 @@ const ChatPage = () => {
     connect();
 
     return () => {
-      if (socket) {
-        socket.close();
-      }
+      cancelled = true;
+      wsRef.current?.close();
+      wsRef.current = null;
       setWs(null);
     };
   }, [profileId]);
@@ -174,25 +245,50 @@ const ChatPage = () => {
                 <ArrowLeft className="w-5 h-5 text-primary" />
               </Button>
               
-              <div className="flex items-center gap-3 cursor-pointer">
-                <div className="relative">
-                  <img
-                    src={
-                      otherUser?.profile_photo ||
-                      fallbackProfile.image
-                    }
-                    alt={otherUser?.name ?? fallbackProfile.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                  />
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative shrink-0">
+                  {(() => {
+                    const src = chatParticipantPhotoUrl(otherUser?.profile_photo);
+                    const initial = (otherUser?.name ?? "?").trim().charAt(0).toUpperCase();
+                    return src ? (
+                      <img
+                        src={src}
+                        alt={otherUser?.name ?? ""}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 bg-muted"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full border-2 border-primary/20 bg-accent-rose/40 flex items-center justify-center">
+                        {loading ? (
+                          <User className="w-6 h-6 text-primary/40" />
+                        ) : (
+                          <span className="text-lg font-bold text-primary/60">{initial}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  {otherUser?.is_online === true && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                  )}
                 </div>
-                <div>
-                  <h2 className="font-serif font-bold text-foreground flex items-center gap-2">
-                    {otherUser?.name ?? fallbackProfile.name}
-                    {fallbackProfile.isVerified && <Shield className="w-4 h-4 text-primary" />}
-                    {fallbackProfile.isPremium && <Crown className="w-4 h-4 text-secondary" />}
+                <div className="min-w-0">
+                  <h2 className="font-serif font-bold text-foreground truncate">
+                    {loading && !otherUser ? "Loading…" : otherUser?.name ?? "Chat"}
                   </h2>
-                  <p className="text-xs text-green-600">Online now</p>
+                  {otherUser && (
+                    <p
+                      className={
+                        otherUser.is_online === true
+                          ? "text-xs text-green-600 font-medium"
+                          : "text-xs text-muted-foreground"
+                      }
+                    >
+                      {otherUser.is_online === true
+                        ? "Online now"
+                        : otherUser.last_seen
+                          ? `Last seen ${formatLastSeen(otherUser.last_seen)}`
+                          : "Offline"}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -215,12 +311,13 @@ const ChatPage = () => {
           {/* Messages */}
           <div className="space-y-4">
             <AnimatePresence>
-              {messages.map((message, index) => {
+              {visibleMessages.map((message, index) => {
                 const isOwn = message.sender_matri_id === useAuthStore.getState().user?.matriId;
-                
+                const messageKey = `${message.id}-${message.created_at}-${index}`;
+
                 return (
                   <motion.div
-                    key={message.id}
+                    key={messageKey}
                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
@@ -237,13 +334,21 @@ const ChatPage = () => {
                         <p className="text-sm leading-relaxed">{message.text}</p>
                       </div>
                       <div className={`flex items-center gap-1 mt-1 text-xs text-muted-foreground ${isOwn ? 'justify-end' : ''}`}>
-                        <span>{formatTime(new Date(message.created_at))}</span>
+                        <span>
+                          {(() => {
+                            const d = parseApiDate(message.created_at);
+                            return d ? formatTime(d) : "";
+                          })()}
+                        </span>
                       </div>
                     </div>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
+            {!loading && visibleMessages.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground py-8">No messages yet.</div>
+            )}
           </div>
           <div ref={messagesEndRef} />
         </div>

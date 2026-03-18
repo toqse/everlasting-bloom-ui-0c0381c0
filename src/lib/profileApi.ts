@@ -277,6 +277,84 @@ export async function getProfile(): Promise<ProfileResponse> {
   return data as ProfileResponse;
 }
 
+/** Absolute URL for a profile media path from the API. */
+export function profileMediaUrl(path: string | null | undefined): string {
+  if (path == null || typeof path !== "string") return "";
+  const t = path.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  const base = BASE_URL.replace(/\/api\/?$/i, "").replace(/\/$/, "");
+  const p = t.startsWith("/") ? t : `/${t}`;
+  return `${base}${p}`;
+}
+
+/** First available profile photo URL from GET v1/profile `photos`. */
+export function pickProfilePrimaryPhoto(photos: ProfileData["photos"]): string {
+  if (!photos || typeof photos !== "object") return "";
+  const rec = photos as Record<string, string | null | undefined>;
+  for (const k of ["profile_photo", "full_photo", "selfie_photo", "profile"] as const) {
+    const u = rec[k];
+    if (typeof u === "string" && u.trim()) return profileMediaUrl(u);
+  }
+  return "";
+}
+
+/** Maps GET v1/profile into auth `user` (name, avatar, location, matri id, religion, etc.). */
+export function syncMeProfileToStore(profile: ProfileData): void {
+  const b = profile.basic_details;
+  const loc = profile.location_details;
+  const rel = profile.religion_details;
+  const avatar = pickProfilePrimaryPhoto(profile.photos);
+  const matriId = profile.matri_id?.trim();
+  const displayName =
+    (b?.name && String(b.name).trim()) ||
+    matriId ||
+    undefined;
+  const gender = b?.gender != null ? String(b.gender).trim().toLowerCase() : undefined;
+
+  useAuthStore.setState((s) => {
+    const u = s.user;
+    if (!u) return {};
+    const location =
+      [loc?.city, loc?.state]
+        .map((x) => (x != null ? String(x).trim() : ""))
+        .filter(Boolean)
+        .join(", ") || u.location;
+
+    return {
+      user: {
+        ...u,
+        name: displayName || u.name,
+        email: (b?.email && String(b.email).trim()) || u.email,
+        phone: (b?.phone && String(b.phone).trim()) || u.phone,
+        matriId: matriId || u.matriId,
+        location,
+        religion: (rel?.religion && String(rel.religion).trim()) || u.religion,
+        gender: gender || u.gender,
+        avatar: avatar || u.avatar,
+      },
+    };
+  });
+}
+
+/** Call after login or when entering dashboard — loads v1/profile and updates store. */
+export async function fetchAndSyncMeProfile(): Promise<boolean> {
+  try {
+    const res = await getProfile();
+    const profile =
+      res?.data ??
+      (typeof res === "object" && res !== null && "basic_details" in res
+        ? (res as unknown as ProfileData)
+        : null);
+    if (!profile || typeof profile !== "object") return false;
+    syncMeProfileToStore(profile);
+    return true;
+  } catch (e) {
+    console.warn("[profile] fetchAndSyncMeProfile:", e);
+    return false;
+  }
+}
+
 export async function postLocation(body: LocationBody): Promise<unknown> {
   return authedPost("v1/profile/location/", body);
 }

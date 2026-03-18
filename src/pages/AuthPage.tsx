@@ -4,11 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone } from "lucide-react";
+import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
-import { registerMobile, verifyMobile, register as registerApi, verifyOtp, type VerifyMobileData, type VerifyMobileProfile } from "@/lib/authApi";
-import { postLocation, postReligion, postPersonal, postEducation, getGenerateAbout, postAbout, postPhotos } from "@/lib/profileApi";
+import {
+  registerMobile,
+  verifyMobile,
+  register as registerApi,
+  verifyOtp,
+  normalizeRegisterProfileFor,
+  type VerifyMobileData,
+  type VerifyMobileProfile,
+} from "@/lib/authApi";
+import { postLocation, postReligion, postPersonal, postEducation, getGenerateAbout, postAbout, postPhotos, fetchAndSyncMeProfile } from "@/lib/profileApi";
 import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
 import ProfileForStep from "@/components/signup/steps/ProfileForStep";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
@@ -119,6 +127,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const profilePrefill = useAuthStore((s) => s.profilePrefill);
 
@@ -249,6 +258,8 @@ const AuthPage = () => {
       setOtpSent(false);
       setOtp(["", "", "", "", "", ""]);
 
+      await fetchAndSyncMeProfile();
+
       if (isProfileFullyCompleted(data)) {
         toast.success("OTP verified! Welcome back! 💕");
         router.push("/dashboard");
@@ -281,17 +292,24 @@ const AuthPage = () => {
     if (!formData.gender?.trim()) { toast.error("Please select gender"); return; }
     if (!agreeTerms) { toast.error("Please agree to Terms & Conditions and Privacy Policy"); return; }
     const phone_number = "+91" + digits;
-    // Convert yyyy-mm-dd (input type="date") to dd-mm-yyyy
+    // Convert yyyy-mm-dd (input type="date") to DD-MM-YYYY
     const [y, m, d] = formData.dob.split("-");
     const dob = d && m && y ? `${d}-${m}-${y}` : formData.dob;
-    const gender = formData.gender.toLowerCase().startsWith("f") ? "F" : "M";
+    const g = formData.gender.toLowerCase();
+    const gender: "M" | "F" | "O" = g.startsWith("f")
+      ? "F"
+      : g.startsWith("o")
+        ? "O"
+        : "M";
+    const profile_for = normalizeRegisterProfileFor(formData.profileFor);
     try {
       await registerApi({
         name: formData.name.trim(),
         phone_number,
-        email: formData.email?.trim() || "",
+        ...(formData.email?.trim() ? { email: formData.email.trim() } : {}),
         dob,
         gender,
+        ...(profile_for ? { profile_for } : {}),
       });
       setSignupOtpSent(true);
       setSignupOtp(["", "", "", "", "", ""]);
@@ -318,6 +336,7 @@ const AuthPage = () => {
       const response = await verifyOtp({ mobile, otp: otpCode });
       if (response.data?.access_token) {
         useAuthStore.getState().setAuthFromVerify(mobile, response.data);
+        await fetchAndSyncMeProfile();
       }
       setPhoneVerified(true);
       setSignupOtpSent(false);
@@ -482,6 +501,9 @@ const AuthPage = () => {
     }
     if (signupStep < SIGNUP_STEPS.length - 1) { setDirection(1); setSignupStep(signupStep + 1); }
     else {
+      if (isCreatingAccount) return;
+      setIsCreatingAccount(true);
+      let shouldReset = true;
       try {
         const hasAnyPhoto = Object.keys(photos).length > 0;
         if (hasAnyPhoto) {
@@ -496,22 +518,25 @@ const AuthPage = () => {
           });
           toast.success("Photos uploaded successfully");
         }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to upload photos");
-        return;
-      }
 
-      const { loginWithProfile, clearProfileIncomplete } = useAuthStore.getState();
-      loginWithProfile({
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email || undefined,
-        religion: formData.religion || "",
-        location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
-      });
-      clearProfileIncomplete();
-      toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
-      router.push("/dashboard");
+        const { loginWithProfile, clearProfileIncomplete } = useAuthStore.getState();
+        loginWithProfile({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email || undefined,
+          religion: formData.religion || "",
+          location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
+        });
+        clearProfileIncomplete();
+        await fetchAndSyncMeProfile();
+        toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
+        shouldReset = false;
+        router.push("/dashboard");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to create account");
+      } finally {
+        if (shouldReset) setIsCreatingAccount(false);
+      }
     }
   };
 
@@ -738,9 +763,31 @@ const AuthPage = () => {
 
           <div className="mt-8 space-y-3">
             {canShowContinue && (
-              <Button variant="hero" size="lg" className="w-full gap-2" onClick={handleSignupNext}>
-                {signupStep === SIGNUP_STEPS.length - 1 ? "Create Account" : "Continue"}
-                <ArrowRight className="w-5 h-5" />
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full gap-2"
+                onClick={handleSignupNext}
+                disabled={signupStep === SIGNUP_STEPS.length - 1 && isCreatingAccount}
+              >
+                {signupStep === SIGNUP_STEPS.length - 1 ? (
+                  isCreatingAccount ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </Button>
             )}
             {signupStep > 0 && (

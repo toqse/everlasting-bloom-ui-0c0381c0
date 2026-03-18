@@ -85,6 +85,15 @@ export interface ChatMessage {
   read_at: string | null;
 }
 
+/** Other participant in the conversation (from GET messages response). */
+export interface ChatOtherUser {
+  matri_id: string;
+  name: string;
+  profile_photo: string | null;
+  is_online?: boolean;
+  last_seen?: string | null;
+}
+
 export interface ChatMessagesResponse {
   success: boolean;
   data: {
@@ -93,6 +102,7 @@ export interface ChatMessagesResponse {
     page: number;
     limit: number;
     messages: ChatMessage[];
+    other_user?: ChatOtherUser;
   };
 }
 
@@ -102,9 +112,33 @@ export async function getChatList(): Promise<ChatListResponse> {
   return authedFetch<ChatListResponse>(`${CHAT_BASE}/list/`, { method: "GET" });
 }
 
+function unwrapMessagesBlock(raw: unknown): Record<string, unknown> | null {
+  const top = raw as { data?: Record<string, unknown> };
+  let block = top?.data;
+  if (!block || typeof block !== "object") return null;
+  const inner = block.data as Record<string, unknown> | undefined;
+  if (inner && Array.isArray(inner.messages)) return inner;
+  if (Array.isArray(block.messages)) return block;
+  return null;
+}
+
 export async function getChatMessages(conversationId: number, page = 1, limit = 50): Promise<ChatMessagesResponse> {
   const path = `${CHAT_BASE}/messages/${conversationId}/?page=${page}&limit=${limit}`;
-  return authedFetch<ChatMessagesResponse>(path, { method: "GET" });
+  const raw = await authedFetch<unknown>(path, { method: "GET" });
+  const block = unwrapMessagesBlock(raw);
+  const messages = (block?.messages as ChatMessage[]) ?? [];
+  const ou = block?.other_user as ChatOtherUser | undefined;
+  return {
+    success: true,
+    data: {
+      conversation_id: Number(block?.conversation_id) || conversationId,
+      total: Number(block?.total) ?? messages.length,
+      page: Number(block?.page) || page,
+      limit: Number(block?.limit) || limit,
+      messages,
+      ...(ou && typeof ou === "object" ? { other_user: ou } : {}),
+    },
+  };
 }
 
 /** Build websocket URL from BASE_URL like http://host:8000/api/ → ws://host:8000/ws/chat/{id}/?token=... */

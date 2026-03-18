@@ -140,6 +140,13 @@ export interface ProfilePreviewData {
   about_me: string;
   family_background: string;
   contact_locked: boolean;
+  /**
+   * If true, API indicates the user has access to full details already.
+   * Some deployments include a nested `profile` object (sectioned shape) with phone/email.
+   */
+  is_viewed_by_me?: boolean;
+  /** Optional nested profile payload (same shape as /profiles/{id}/full/ `data.profile`) */
+  profile?: unknown;
 }
 
 export interface ProfilePreviewResponse {
@@ -147,10 +154,8 @@ export interface ProfilePreviewResponse {
   data: ProfilePreviewData;
 }
 
-export interface SendInterestResponse {
-  success: boolean;
-  message: string;
-}
+export type { SendInterestResponse } from "./interestsApi";
+export { sendInterest } from "./interestsApi";
 
 export interface ChatStartResponse {
   success: boolean;
@@ -171,7 +176,6 @@ export interface WishlistToggleResponse {
 
 const MATCHES_BASE = "v1/matches";
 const PROFILES_BASE = "v1/profiles";
-const INTERESTS_BASE = "v1/interests";
 const CHAT_BASE = "v1/chat";
 const WISHLIST_BASE = "v1/wishlist";
 
@@ -209,15 +213,32 @@ export async function getProfilePreview(matriId: string): Promise<ProfilePreview
   return authedFetch<ProfilePreviewResponse>(path, { method: "GET" });
 }
 
-export async function getProfileFull(matriId: string): Promise<{ success: boolean; data: { profile: unknown; plan?: unknown } }> {
-  const path = `${PROFILES_BASE}/${encodeURIComponent(matriId)}/full/`;
-  return authedFetch(path, { method: "GET" });
+export interface ProfileFullResponse {
+  success: boolean;
+  data: {
+    profile: unknown;
+    plan?: {
+      name?: string;
+      profile_views_remaining?: number;
+      interests_remaining?: number;
+      chat_remaining?: number;
+    };
+  };
 }
 
-export async function sendInterest(receiverMatriId: string): Promise<SendInterestResponse> {
-  return authedFetch<SendInterestResponse>(`${INTERESTS_BASE}/send/`, {
+export async function getProfileFull(matriId: string): Promise<ProfileFullResponse> {
+  const path = `${PROFILES_BASE}/${encodeURIComponent(matriId)}/full/`;
+  return authedFetch<ProfileFullResponse>(path, { method: "GET" });
+}
+
+/** POST /api/v1/contact/unlock/ — phone & email (uses contact_view quota) */
+export async function unlockContactDetails(matriId: string): Promise<{
+  success: boolean;
+  data: { phone: string; email: string };
+}> {
+  return authedFetch<{ success: boolean; data: { phone: string; email: string } }>("v1/contact/unlock/", {
     method: "POST",
-    body: JSON.stringify({ receiver_matri_id: receiverMatriId }),
+    body: JSON.stringify({ matri_id: matriId }),
   });
 }
 

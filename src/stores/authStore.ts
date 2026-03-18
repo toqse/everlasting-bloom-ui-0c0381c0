@@ -54,6 +54,8 @@ export interface User {
   memberSince: string;
   /** Religion from registration (Step 4). Used for Horoscope visibility and post-payment redirect. */
   religion: string;
+  /** Gender from v1/profile/basic_details.gender ("male" | "female"). */
+  gender?: string;
   /** Matri ID from auth verify (e.g. AM100006). */
   matriId?: string;
 }

@@ -15,7 +15,7 @@ const HEIGHTS = [
 ];
 const EDUCATION_OPTIONS = ["Any","10th","12th","Diploma","Bachelor's","Master's","PhD","Professional"];
 const INCOME_OPTIONS = ["Any","Below ₹2 Lakhs","₹2–5 Lakhs","₹5–8 Lakhs","₹8–12 Lakhs","₹12–20 Lakhs","₹20+ Lakhs"];
-const MARITAL_OPTIONS = ["Never Married","Divorced","Widowed","Any"];
+const MARITAL_OPTIONS = ["Never Married","Divorced","Widower","Any"];
 const LOCATIONS = ["Any","Kerala","Tamil Nadu","Karnataka","Andhra Pradesh","Maharashtra","Delhi","Gujarat","Others"];
 
 type CastePref = "own" | "open" | "specific";

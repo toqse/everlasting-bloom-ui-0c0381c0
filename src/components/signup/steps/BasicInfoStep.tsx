@@ -105,7 +105,7 @@ const BasicInfoStep = ({
           {fieldErrors?.dob && (
             <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
           )}
-          <SelectField label="Gender" name="gender" options={["Male", "Female"]} value={formData.gender} onChange={onChange} />
+          <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={onChange} />
           <div className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -171,7 +171,7 @@ const BasicInfoStep = ({
           {fieldErrors?.dob && (
             <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
           )}
-          <SelectField label="Gender" name="gender" options={["Male", "Female"]} value={formData.gender} onChange={onChange} />
+          <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={onChange} />
           <div className="flex items-start gap-3">
             <input
               type="checkbox"

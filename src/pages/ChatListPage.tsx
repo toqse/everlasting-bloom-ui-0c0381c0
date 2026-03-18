@@ -16,6 +16,40 @@ function getAvatarUrl(path: string | null | undefined): string {
   return `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
+function parseApiDate(input: unknown): Date | null {
+  if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
+  if (input === null || input === undefined) return null;
+
+  if (typeof input === "number" && Number.isFinite(input)) {
+    const ms = input < 1e12 ? input * 1000 : input;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (!s) return null;
+
+    if (/^\d+(\.\d+)?$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      const ms = n < 1e12 ? n * 1000 : n;
+      const d = new Date(ms);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    let normalized = s.replace(" ", "T");
+    normalized = normalized.replace(/(\.\d{3})\d+/, "$1");
+    const d = new Date(normalized);
+    if (!Number.isNaN(d.getTime())) return d;
+
+    const d2 = new Date(s);
+    return Number.isNaN(d2.getTime()) ? null : d2;
+  }
+
+  return null;
+}
+
 const ChatListPage = () => {
   const router = useRouter();
   const [conversations, setConversations] = useState<ChatListItem[]>([]);
@@ -93,12 +127,15 @@ const ChatListPage = () => {
 
                 <div className="text-right flex-shrink-0">
                   <p className="text-xs text-muted-foreground">
-                    {chat.last_message?.timestamp
-                      ? new Date(chat.last_message.timestamp).toLocaleTimeString(undefined, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : ""}
+                    {(() => {
+                      const d = parseApiDate(chat.last_message?.timestamp);
+                      return d
+                        ? d.toLocaleTimeString(undefined, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "";
+                    })()}
                   </p>
                   {chat.unread_count > 0 && (
                     <span className="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white text-[10px] font-bold rounded-full mt-1">

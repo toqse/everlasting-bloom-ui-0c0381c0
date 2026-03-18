@@ -49,8 +49,19 @@ async function authedFetch<T>(path: string, opts: { method: string; body?: strin
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   logApi(path, opts.method, undefined, { status: res.status, data });
 
-  if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
+  if (!res.ok) {
+    const error = new Error(getErrorMessage(data, "Request failed")) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
   return data as T;
+}
+
+function clampPageLimit(page: number, limit: number): { page: number; limit: number } {
+  return {
+    page: Math.max(1, Math.floor(page) || 1),
+    limit: Math.min(50, Math.max(1, Math.floor(limit) || 10)),
+  };
 }
 
 export interface InterestCard {
@@ -74,23 +85,83 @@ export interface InterestsListResponse {
   };
 }
 
+/** Combined sent + received (no pagination). */
+export interface MyInterestsResponse {
+  success: boolean;
+  data: {
+    sent: { total: number; results: InterestCard[] };
+    received: { total: number; results: InterestCard[] };
+  };
+}
+
+export interface SendInterestResponse {
+  success: boolean;
+  message: string;
+}
+
+/** GET /api/v1/interests/my/ */
+export async function getMyInterests(): Promise<MyInterestsResponse> {
+  return authedFetch<MyInterestsResponse>("v1/interests/my/", { method: "GET" });
+}
+
+/** GET /api/v1/interests/received/ — limit max 50 */
 export async function getReceivedInterests(page = 1, limit = 10): Promise<InterestsListResponse> {
-  const path = `v1/interests/received/?page=${page}&limit=${limit}`;
+  const { page: p, limit: l } = clampPageLimit(page, limit);
+  const path = `v1/interests/received/?page=${p}&limit=${l}`;
   return authedFetch<InterestsListResponse>(path, { method: "GET" });
 }
 
+/** GET /api/v1/interests/sent/ — limit max 50 */
 export async function getSentInterests(page = 1, limit = 10): Promise<InterestsListResponse> {
-  const path = `v1/interests/sent/?page=${page}&limit=${limit}`;
+  const { page: p, limit: l } = clampPageLimit(page, limit);
+  const path = `v1/interests/sent/?page=${p}&limit=${l}`;
   return authedFetch<InterestsListResponse>(path, { method: "GET" });
 }
 
-export async function respondInterest(interestId: number, action: "accept" | "reject"): Promise<{ success: boolean; message: string }> {
+/**
+ * Load all pages from sent/ or received/ (some backends return empty from /my/).
+ */
+export async function fetchAllInterestPages(
+  kind: "received" | "sent",
+  pageSize = 50,
+  maxPages = 30,
+): Promise<{ total: number; results: InterestCard[] }> {
+  const fetchPage = kind === "received" ? getReceivedInterests : getSentInterests;
+  const first = await fetchPage(1, pageSize);
+  const total = first.data.total;
+  const results = [...first.data.results];
+  let page = 2;
+  while (results.length < total && page <= maxPages) {
+    const res = await fetchPage(page, pageSize);
+    if (!res.data.results.length) break;
+    results.push(...res.data.results);
+    page++;
+  }
+  return { total, results };
+}
+
+/** POST /api/v1/interests/send/ */
+export async function sendInterest(receiverMatriId: string): Promise<SendInterestResponse> {
+  const trimmed = receiverMatriId?.trim();
+  if (!trimmed) throw new Error("receiver_matri_id is required");
+  return authedFetch<SendInterestResponse>("v1/interests/send/", {
+    method: "POST",
+    body: JSON.stringify({ receiver_matri_id: trimmed }),
+  });
+}
+
+/** POST /api/v1/interests/respond/ */
+export async function respondInterest(
+  interestId: number,
+  action: "accept" | "reject",
+): Promise<{ success: boolean; message: string }> {
   return authedFetch<{ success: boolean; message: string }>("v1/interests/respond/", {
     method: "POST",
     body: JSON.stringify({ interest_id: interestId, action }),
   });
 }
 
+/** POST /api/v1/interests/cancel/ — sender only, pending only */
 export async function cancelInterest(interestId: number): Promise<{ success: boolean; message: string }> {
   return authedFetch<{ success: boolean; message: string }>("v1/interests/cancel/", {
     method: "POST",

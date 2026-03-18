@@ -28,22 +28,70 @@ const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): str
   return fallback;
 };
 
-/** POST v1/auth/register/ — registration step 2 (sends OTP) */
+/** POST v1/auth/register/ — sends OTP after basic details */
+export type RegisterProfileFor =
+  | "myself"
+  | "son"
+  | "daughter"
+  | "brother"
+  | "sister"
+  | "friend"
+  | "relative";
+
 export interface RegisterBody {
   name: string;
   phone_number: string;
-  email: string;
-  dob: string; // dd-mm-yyyy
-  gender: "M" | "F";
+  /** Omit or leave empty — not sent if blank */
+  email?: string;
+  dob: string; // DD-MM-YYYY
+  gender: "M" | "F" | "O";
+  /** Who the profile is for; always sent lowercase to API */
+  profile_for?: RegisterProfileFor;
+}
+
+const REGISTER_PROFILE_FOR_VALUES: readonly RegisterProfileFor[] = [
+  "myself",
+  "son",
+  "daughter",
+  "brother",
+  "sister",
+  "friend",
+  "relative",
+] as const;
+
+/** Normalize UI value to API `profile_for` (lowercase). */
+export function normalizeRegisterProfileFor(s: string): RegisterProfileFor | undefined {
+  const raw = s.toLowerCase().trim();
+  return (REGISTER_PROFILE_FOR_VALUES as readonly string[]).includes(raw)
+    ? (raw as RegisterProfileFor)
+    : undefined;
+}
+
+function buildRegisterPayload(body: RegisterBody): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    name: body.name.trim(),
+    phone_number: body.phone_number.trim(),
+    dob: body.dob.trim(),
+    gender: body.gender,
+  };
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  if (email) payload.email = email;
+  const pf =
+    typeof body.profile_for === "string"
+      ? normalizeRegisterProfileFor(body.profile_for)
+      : body.profile_for;
+  if (pf) payload.profile_for = pf;
+  return payload;
 }
 
 export async function register(body: RegisterBody): Promise<unknown> {
   const url = `${BASE_URL}v1/auth/register/`;
-  console.log("[authApi] register request body:", body);
+  const payload = buildRegisterPayload(body);
+  console.log("[authApi] register request body:", payload);
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
   console.log("[authApi] register response:", { status: res.status, data });
