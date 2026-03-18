@@ -9,26 +9,34 @@ import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, HelpCircl
 import { plansData } from "@/components/Membership";
 import { useRouter } from "next/navigation";
 
-const faqs = [
+const faqs: { question: string; answer: string | string[] }[] = [
   {
-    question: "How does the matching algorithm work?",
-    answer: "Our advanced matching algorithm considers multiple factors including interests, values, lifestyle preferences, and location to suggest compatible matches.",
+    question: "Why is Aiswarya Matrimonial better compared to other matrimonial websites?",
+    answer:
+      "M/s Aiswarya Vivaha Bureau is following remarkable way of operations, that is I any customer can enter at any time of our schedule and collect all details and either accept or reject asper their desire. Our collection of data, newly implementing way of approach (different sources of information from rural, urban, city & abroad ) on the light of the above our website is outstanding than that of other websites.",
   },
   {
-    question: "Is my privacy protected?",
-    answer: "Absolutely! We take privacy very seriously. Your contact details are only visible to members you choose to connect with.",
+    question: "Is Aiswarya Matrimonial a trustworthy matchmaking platform?",
+    answer:
+      'Yes, our website is chiefly operating on the base of customer\'s trust and their evaluation. Our website promote different choices and making "Newly Constructive Attitude". So we have an opinion that the dream of customers will be materializing on the base of our offering.',
   },
   {
-    question: "Can I upgrade or downgrade my plan?",
-    answer: "Yes, you can upgrade your plan anytime. When you upgrade, you'll immediately get access to premium features.",
+    question: "What is the difference between free membership vs paid membership?",
+    answer:
+      "Our website stands for the satisfaction of customers by choosing there database collection. But we allow all details except key point.",
   },
   {
-    question: "What's included in the verification process?",
-    answer: "Our verification process includes ID verification, phone number verification, and optional photo verification.",
+    question: "What additional benefits do I get as a Premium Member?",
+    answer:
+      "Surely our customers will get maximum benefit at the time of there contact with the attempt, surprise benefit, extraordinary offerings and benefits will be releasing to the eligible customers.",
   },
   {
-    question: "How do I cancel my subscription?",
-    answer: "You can cancel your subscription anytime from your account settings. Your premium features will remain active until the end of your current billing period.",
+    question: "How can I contact other members Aiswarya Matrimonial?",
+    answer: [
+      "No wonder our website is everywhere and easy to open without any obstacle if the customers are ready to contact with our website. The meaning is the M/s Aiswarya Vivaha Bureau and its operation is as omni present.",
+      "In shot our reputed website is a remedy for the customers those who are interested to select marriage alliance and share with us, maximum level of co-operation constructive attitude and spontaneous way of behavior. Our motto is maximum satisfaction with minimum level of customers attitude.",
+      "A significant merit is Rs. 499/- (as fees) no other website can clarify because they are imposing than that of this amount. We had had 37 years experiences, during this experiences which proves the original quality of website and how can maintain a website (Vivaha bureau). With full meaning full level.",
+    ],
   },
 ];
 
@@ -203,8 +211,12 @@ const MembershipPage = () => {
                   <ChevronDown className={`w-5 h-5 text-primary transition-transform flex-shrink-0 ${openFaq === index ? "rotate-180" : ""}`} />
                 </button>
                 {openFaq === index && (
-                  <div className="px-6 pb-6 pt-0 animate-fade-in-up">
-                    <p className="text-muted-foreground">{faq.answer}</p>
+                  <div className="px-6 pb-6 pt-0 animate-fade-in-up space-y-3">
+                    {(Array.isArray(faq.answer) ? faq.answer : [faq.answer]).map((para, i) => (
+                      <p key={i} className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                        {para}
+                      </p>
+                    ))}
                   </div>
                 )}
               </div>

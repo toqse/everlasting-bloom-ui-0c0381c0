@@ -3,7 +3,6 @@
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
-import heroBg from "@/assets/hero-bg.png";
 
 const Hero = () => {
   const router = useRouter();
@@ -12,10 +11,10 @@ const Hero = () => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image (same as public/images/ChatGPT Image Mar 10, 2026, 10_56_02 AM.png) */}
+      {/* Background image from public/images/hero-bg.png */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroBg})` }}
+        style={{ backgroundImage: 'url("/images/hero-bg.png")' }}
         aria-hidden
       />
       {/* Light gradient overlay for text readability */}
