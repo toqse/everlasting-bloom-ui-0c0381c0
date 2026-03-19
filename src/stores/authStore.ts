@@ -160,11 +160,12 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       setAuthFromVerify: (mobile, data) => {
+        const stepsFromApi = data.profile_steps ?? {};
+        const trackedStepsComplete = PROFILE_STEP_ORDER.every((key) => stepsFromApi[key] === true);
         const completed =
           data.is_registration_profile_completed ||
-          data.profile_status === "completed" ||
-          (data.profile_steps && Object.values(data.profile_steps).every(Boolean));
-        const steps = completed ? null : (data.profile_steps ?? null);
+          trackedStepsComplete;
+        const steps = completed ? null : (stepsFromApi ?? null);
         set({
           isLoggedIn: true,
           accessToken: data.access_token,
@@ -279,7 +280,21 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken && state?.refreshToken) {
           setMatrimonyTokens(state.accessToken, state.refreshToken);
+          return;
         }
+        // If tokens are missing after hydration, force a clean logout state.
+        setMatrimonyTokens(null, null);
+        setProfileStepsToStorage(null);
+        set({
+          isLoggedIn: false,
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          profileSteps: null,
+          profileNextStep: null,
+          profilePrefill: null,
+          demoReligionOverride: null,
+        });
       },
       merge: (persisted, current) => {
         const p = persisted as {

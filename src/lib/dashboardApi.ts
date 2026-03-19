@@ -20,7 +20,12 @@ function getErrorMessage(data: ApiErrorPayload | unknown, fallback: string): str
 
 async function authedGet<T>(path: string): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
+  const store = useAuthStore.getState();
+  const token = store.accessToken;
+  if (!token) {
+    store.logout();
+    throw new Error("Session expired. Please log in again.");
+  }
   console.log("[dashboardApi] GET", path);
   const res = await fetch(url, {
     method: "GET",
@@ -31,6 +36,9 @@ async function authedGet<T>(path: string): Promise<T> {
   });
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   console.log("[dashboardApi] response", { status: res.status, data });
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+  }
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
   return data as T;
 }
@@ -149,7 +157,12 @@ export async function getProfileBasicExtended(): Promise<ProfileBasicExtendedRes
 
 export async function postPartnerPreference(body: PartnerPreferenceBody): Promise<{ success: boolean; data: unknown }> {
   const url = `${BASE_URL}v1/profile/partner-preference/`;
-  const token = useAuthStore.getState().accessToken;
+  const store = useAuthStore.getState();
+  const token = store.accessToken;
+  if (!token) {
+    store.logout();
+    throw new Error("Session expired. Please log in again.");
+  }
   console.log("[dashboardApi] POST v1/profile/partner-preference/", body);
   const res = await fetch(url, {
     method: "POST",
@@ -161,6 +174,9 @@ export async function postPartnerPreference(body: PartnerPreferenceBody): Promis
   });
   const data = (await res.json().catch(() => ({}))) as { success: boolean; data: unknown } & ApiErrorPayload;
   console.log("[dashboardApi] response", { status: res.status, data });
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+  }
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to update partner preference"));
   return data;
 }

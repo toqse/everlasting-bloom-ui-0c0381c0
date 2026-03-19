@@ -1,14 +1,9 @@
 {
-<<<<<<< Updated upstream
-  "/dashboard/plan/page": "app/dashboard/plan/page.js",
-  "/dashboard/matches/page": "app/dashboard/matches/page.js",
-  "/dashboard/profile/page": "app/dashboard/profile/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/auth/page": "app/auth/page.js",
-  "/dashboard/transactions/page": "app/dashboard/transactions/page.js"
-=======
   "/page": "app/page.js",
-  "/auth/page": "app/auth/page.js",
-  "/search/page": "app/search/page.js"
->>>>>>> Stashed changes
+  "/dashboard/page": "app/dashboard/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/matches/page": "app/dashboard/matches/page.js",
+  "/dashboard/interests/page": "app/dashboard/interests/page.js",
+  "/dashboard/chat-list/page": "app/dashboard/chat-list/page.js",
+  "/auth/page": "app/auth/page.js"
 }

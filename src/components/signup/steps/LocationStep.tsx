@@ -26,8 +26,37 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const handleSelect = useCallback(
     (name: string, value: string) => {
       onChange({ target: { name, value } } as React.ChangeEvent<HTMLSelectElement>);
+
+      if (name === "country_id") {
+        const selected = countries.find((c) => String(c.id) === value);
+        onChange({ target: { name: "country", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "state", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        return;
+      }
+
+      if (name === "state_id") {
+        const selected = states.find((s) => String(s.id) === value);
+        onChange({ target: { name: "state", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        return;
+      }
+
+      if (name === "district_id") {
+        const selected = districts.find((d) => String(d.id) === value);
+        onChange({ target: { name: "district", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        return;
+      }
+
+      if (name === "city_id") {
+        const selected = cities.find((c) => String(c.id) === value);
+        onChange({ target: { name: "city", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
+      }
     },
-    [onChange]
+    [cities, countries, districts, onChange, states]
   );
 
   const loadCountries = useCallback(async (search: string) => {

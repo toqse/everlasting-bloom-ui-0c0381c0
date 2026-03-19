@@ -89,6 +89,19 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     if (religionId) loadCastes("");
   }, [religionId, loadCastes]);
 
+  useEffect(() => {
+    const pref = formData.partner_preference_type;
+    if (pref === "own_religion_only") setPrefKey("own");
+    else if (pref === "specific_religions") setPrefKey("specific");
+    else setPrefKey("open");
+
+    const ids = (formData.partner_religion_ids || "")
+      .split(",")
+      .map((v) => Number(v.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    setPartnerReligionIds(ids);
+  }, [formData.partner_preference_type, formData.partner_religion_ids]);
+
   const handleSelectReligion = (name: string, value: string) => {
     const id = Number(value);
     const rel = religions.find((r) => r.id === id);
@@ -156,6 +169,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
             loading={loadingReligions}
             label="Religion *"
             placeholder="Select Religion"
+            initialDisplayLabel={formData.religion || undefined}
             onSearch={loadReligions}
             onSelect={handleSelectReligion}
           />
@@ -167,6 +181,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
               loading={loadingCastes}
               label="Caste"
               placeholder="Select Caste"
+              initialDisplayLabel={formData.caste || undefined}
               onSearch={loadCastes}
               onSelect={handleSelectCaste}
             />
@@ -180,6 +195,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
           loading={loadingMotherTongues}
           label="Mother Tongue *"
           placeholder="Select Mother Tongue"
+          initialDisplayLabel={formData.motherTongue || undefined}
           onSearch={loadMotherTongues}
           onSelect={handleSelectMotherTongue}
         />

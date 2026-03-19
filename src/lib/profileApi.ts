@@ -24,12 +24,15 @@ export interface ProfileData {
     partner_religion_ids?: number[];
   };
   personal_details?: {
-    marital_status_id?: number;
+    marital_status_id?: number | string;
     marital_status?: string;
+    has_children?: boolean;
+    number_of_children?: number;
     children_count?: number;
     height_cm?: string;
     weight_kg?: string;
     colour?: string;
+    complexion?: string;
     blood_group?: string;
   };
   location_details?: {
@@ -93,9 +96,10 @@ export interface PersonalBody {
   marital_status: string;
   has_children: boolean;
   number_of_children: number | null;
-  height: number;
-  weight: number | null;
+  height_cm: number;
+  weight_kg: number | null;
   complexion: string;
+  blood_group: string;
 }
 
 export interface EducationBody {

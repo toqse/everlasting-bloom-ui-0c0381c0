@@ -28,6 +28,7 @@ import AboutMeStep from "@/components/signup/steps/AboutMeStep";
 import PhotosStep from "@/components/signup/steps/PhotosStep";
 
 type AuthMode = "login" | "signup";
+const SIGNUP_DRAFT_STORAGE_KEY = "matrimony_signup_draft_v1";
 
 const stepVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
@@ -45,13 +46,55 @@ const PROFILE_STEP_TO_SIGNUP_INDEX: Record<string, number> = {
 };
 
 const PROFILE_STEP_ORDER: string[] = ["location", "religion", "personal", "education", "about", "photos"];
+const MARITAL_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated"] as const;
+const COLOR_OPTIONS = ["Fair", "Wheatish", "Dark", "Very Fair"] as const;
+const EMPLOYMENT_OPTIONS = ["Employed", "Self-Employed", "Business", "Unemployed", "Student", "Freelancer"] as const;
+const INCOME_RANGES = ["Not specified", "Below 1 Lakh", "1-2 Lakh", "2-5 Lakh", "5-10 Lakh", "10-25 Lakh", "25 Lakh+"] as const;
+
+const normalizeToken = (v: string) => v.toLowerCase().replace(/[_\-\s]+/g, "");
+
+const matchOption = (value: unknown, options: readonly string[]): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const normalized = normalizeToken(raw);
+  const exact = options.find((opt) => normalizeToken(opt) === normalized);
+  if (exact) return exact;
+  // Fallback for API values like "employment_status"
+  if (normalized === "selfemployed") return "Self-Employed";
+  return raw;
+};
+
+const normalizeDateForInput = (value: unknown): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
+    const [dd, mm, yyyy] = raw.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return "";
+};
+
+const normalizeNumberForInput = (value: unknown): string => {
+  if (value == null) return "";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  const direct = Number(raw);
+  if (Number.isFinite(direct)) return String(direct);
+  const match = raw.match(/\d+(\.\d+)?/);
+  if (!match) return "";
+  const n = Number(match[0]);
+  return Number.isFinite(n) ? String(n) : "";
+};
 
 const isProfileFullyCompleted = (data?: VerifyMobileData): boolean => {
   if (!data) return false;
   if (data.is_registration_profile_completed) return true;
-  if (data.profile_status === "completed") return true;
-  const steps = data.profile_steps;
-  if (steps && Object.values(steps).every(Boolean)) return true;
+  const steps = data.profile_steps ?? {};
+  if (PROFILE_STEP_ORDER.every((key) => steps[key] === true)) return true;
   return false;
 };
 
@@ -59,8 +102,10 @@ const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null =>
   if (!data) return null;
   const steps = data.profile_steps ?? {};
 
-  if (data.next_step && PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step]) {
-    return PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step];
+  if (data.next_step && PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step] != null) {
+    if (!steps[data.next_step]) {
+      return PROFILE_STEP_TO_SIGNUP_INDEX[data.next_step];
+    }
   }
 
   for (const key of PROFILE_STEP_ORDER) {
@@ -73,23 +118,31 @@ const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null =>
   return null;
 };
 
-function mapProfileToFormData(profile: VerifyMobileProfile | null | undefined): Partial<Record<string, string>> {
-  if (!profile) return {};
+function mapProfileToFormData(
+  profile: VerifyMobileProfile | null | undefined
+): { form: Partial<Record<string, string>>; hasChildren?: "yes" | "no" } {
+  if (!profile) return { form: {} };
   const b = profile.basic_details;
   const loc = profile.location_details;
   const rel = profile.religion_details;
-  const pers = profile.personal_details;
-  const edu = profile.education_details;
+  const pers = (profile.personal_details ?? {}) as Record<string, unknown>;
+  const edu = (profile.education_details ?? {}) as Record<string, unknown>;
   const phoneStr = b?.phone ?? "";
   const phoneDigits = phoneStr.replace(/\D/g, "").replace(/^91/, "").slice(0, 10);
   const gender = b?.gender?.toLowerCase();
   const genderDisplay = gender === "female" ? "Female" : gender === "male" ? "Male" : b?.gender ?? "";
+  const childrenCount = Number(
+    pers.number_of_children ??
+    pers.children_count ??
+    0
+  );
+  const hasChildrenValue = Number.isFinite(childrenCount) && childrenCount > 0 ? "yes" : "no";
 
-  return {
+  return { form: {
     ...(b?.name != null && b.name !== "" && { name: b.name }),
     ...(phoneDigits !== "" && { phone: phoneDigits }),
     ...(b?.email != null && b.email !== "" && { email: b.email }),
-    ...(b?.dob != null && b.dob !== "" && { dob: b.dob }),
+    ...(b?.dob != null && b.dob !== "" && { dob: normalizeDateForInput(b.dob) }),
     ...(genderDisplay !== "" && { gender: genderDisplay }),
     ...(loc?.country_id != null && { country_id: String(loc.country_id) }),
     ...(loc?.country != null && loc.country !== "" && { country: loc.country }),
@@ -106,17 +159,31 @@ function mapProfileToFormData(profile: VerifyMobileProfile | null | undefined): 
     ...(rel?.caste != null && rel.caste !== "" && { caste: rel.caste }),
     ...(rel?.mother_tongue_id != null && { mother_tongue_id: String(rel.mother_tongue_id) }),
     ...(rel?.mother_tongue != null && rel.mother_tongue !== "" && { motherTongue: rel.mother_tongue }),
-    ...(pers?.marital_status != null && pers.marital_status !== "" && { maritalStatus: pers.marital_status }),
-    ...(pers?.height != null && { height: String(pers.height) }),
-    ...(pers?.weight != null && { weight: String(pers.weight) }),
-    ...(pers?.complexion != null && pers.complexion !== "" && { skinTone: pers.complexion }),
-    ...(edu?.highest_education != null && edu.highest_education !== "" && { education: edu.highest_education }),
-    ...(edu?.education_subject != null && edu.education_subject !== "" && { educationSubject: edu.education_subject }),
-    ...(edu?.employment != null && edu.employment !== "" && { employmentStatus: edu.employment }),
-    ...(edu?.occupation != null && edu.occupation !== "" && { occupation: edu.occupation }),
-    ...(edu?.annual_income != null && edu.annual_income !== "" && { annualIncome: edu.annual_income }),
+    ...(pers.marital_status != null && String(pers.marital_status) !== "" && {
+      maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
+    }),
+    ...((pers.height ?? pers.height_cm) != null && {
+      height: normalizeNumberForInput(pers.height ?? pers.height_cm),
+    }),
+    ...((pers.weight ?? pers.weight_kg) != null && {
+      weight: normalizeNumberForInput(pers.weight ?? pers.weight_kg),
+    }),
+    ...((pers.complexion ?? pers.colour) != null && String(pers.complexion ?? pers.colour) !== "" && {
+      skinTone: matchOption(pers.complexion ?? pers.colour, COLOR_OPTIONS),
+    }),
+    ...(pers.number_of_children != null && { numberOfChildren: String(pers.number_of_children) }),
+    ...(pers.children_count != null && { numberOfChildren: String(pers.children_count) }),
+    ...(edu.highest_education != null && String(edu.highest_education) !== "" && { education: String(edu.highest_education) }),
+    ...(edu.education_subject != null && String(edu.education_subject) !== "" && { educationSubject: String(edu.education_subject) }),
+    ...((edu.employment ?? edu.employment_status) != null && String(edu.employment ?? edu.employment_status) !== "" && {
+      employmentStatus: matchOption(edu.employment ?? edu.employment_status, EMPLOYMENT_OPTIONS),
+    }),
+    ...(edu.occupation != null && String(edu.occupation) !== "" && { occupation: String(edu.occupation) }),
+    ...(edu.annual_income != null && String(edu.annual_income) !== "" && {
+      annualIncome: matchOption(edu.annual_income, INCOME_RANGES),
+    }),
     ...(profile.about_me != null && profile.about_me !== "" && { aboutMe: profile.about_me }),
-  };
+  }, hasChildren: hasChildrenValue };
 }
 
 const AuthPage = () => {
@@ -128,6 +195,7 @@ const AuthPage = () => {
   const [signupStep, setSignupStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isProfileResumeFlow, setIsProfileResumeFlow] = useState(false);
 
   const profilePrefill = useAuthStore((s) => s.profilePrefill);
 
@@ -136,12 +204,16 @@ const AuthPage = () => {
     const step = getProfileIncompleteSignupStep();
     if (step != null) {
       setMode("signup");
+      setIsProfileResumeFlow(true);
       setPhoneVerified(true);
       setDirection(1);
-      setSignupStep(step);
+      setSignupStep(Math.max(2, step));
       const prefill = mapProfileToFormData(profilePrefill);
-      if (Object.keys(prefill).length > 0) {
-        setFormData((prev) => ({ ...prev, ...prefill }));
+      if (Object.keys(prefill.form).length > 0) {
+        setFormData((prev) => ({ ...prev, ...prefill.form }));
+      }
+      if (prefill.hasChildren) {
+        setHasChildren(prefill.hasChildren);
       }
     }
   }, [accessToken, getProfileIncompleteSignupStep, profilePrefill]);
@@ -171,6 +243,53 @@ const AuthPage = () => {
     education: "", educationSubject: "", employmentStatus: "", occupation: "", annualIncome: "",
     aboutMe: "",
   });
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(SIGNUP_DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        formData?: Record<string, string>;
+        hasChildren?: "yes" | "no";
+      };
+      if (parsed.formData && typeof parsed.formData === "object") {
+        setFormData((prev) => ({ ...prev, ...parsed.formData }));
+      }
+      if (parsed.hasChildren === "yes" || parsed.hasChildren === "no") {
+        setHasChildren(parsed.hasChildren);
+      }
+    } catch {
+      // ignore malformed draft data
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SIGNUP_DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          formData,
+          hasChildren,
+        })
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [formData, hasChildren]);
+
+  useEffect(() => {
+    const clearSignupDraft = () => {
+      try {
+        sessionStorage.removeItem(SIGNUP_DRAFT_STORAGE_KEY);
+      } catch {
+        // ignore storage errors
+      }
+    };
+    window.addEventListener("beforeunload", clearSignupDraft);
+    return () => {
+      window.removeEventListener("beforeunload", clearSignupDraft);
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -270,12 +389,16 @@ const AuthPage = () => {
 
       toast.success("OTP verified. Please complete your profile.");
       setMode("signup");
+      setIsProfileResumeFlow(true);
       setPhoneVerified(true);
       setDirection(1);
-      setSignupStep(nextStepIndex);
+      setSignupStep(Math.max(2, nextStepIndex));
       const prefill = mapProfileToFormData(data.profile);
-      if (Object.keys(prefill).length > 0) {
-        setFormData((prev) => ({ ...prev, ...prefill }));
+      if (Object.keys(prefill.form).length > 0) {
+        setFormData((prev) => ({ ...prev, ...prefill.form }));
+      }
+      if (prefill.hasChildren) {
+        setHasChildren(prefill.hasChildren);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
@@ -450,9 +573,10 @@ const AuthPage = () => {
           marital_status: maritalStatus,
           has_children: hasChildrenFlag,
           number_of_children: numberOfChildren,
-          height: heightNumber,
-          weight: Number.isFinite(weightNumber) ? weightNumber : null,
+          height_cm: heightNumber,
+          weight_kg: Number.isFinite(weightNumber) ? weightNumber : null,
           complexion: formData.skinTone,
+          blood_group: formData.bloodGroup || "",
         });
         useAuthStore.getState().markProfileStepComplete("personal");
         toast.success("Personal details saved");
@@ -528,6 +652,11 @@ const AuthPage = () => {
           location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
         });
         clearProfileIncomplete();
+        try {
+          sessionStorage.removeItem(SIGNUP_DRAFT_STORAGE_KEY);
+        } catch {
+          // ignore localStorage errors
+        }
         await fetchAndSyncMeProfile();
         toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
         shouldReset = false;
@@ -561,7 +690,14 @@ const AuthPage = () => {
 
   const handleAboutSkip = () => { setFormData((prev) => ({ ...prev, aboutMe: "" })); toast.success("Skipped. You can add this later."); };
 
-  const handleSignupPrev = () => { if (signupStep > 0) { setDirection(-1); setSignupStep(signupStep - 1); } };
+  const minSignupStep = isProfileResumeFlow ? 2 : 0;
+
+  const handleSignupPrev = () => {
+    if (signupStep > minSignupStep) {
+      setDirection(-1);
+      setSignupStep(signupStep - 1);
+    }
+  };
 
   const canSendSignupOtp =
     !!formData.name?.trim() &&
@@ -692,7 +828,7 @@ const AuthPage = () => {
                   <div className="text-center">
                     <p className="text-muted-foreground text-lg">
                       Don't have an account?{" "}
-                      <button type="button" onClick={() => { setMode("signup"); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); }}
+                      <button type="button" onClick={() => { setMode("signup"); setIsProfileResumeFlow(false); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); }}
                         className="text-primary font-bold hover:text-primary-dark transition-colors">Register free</button>
                     </p>
                   </div>
@@ -742,12 +878,12 @@ const AuthPage = () => {
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Back to Sign In</span>
           </button>
-        ) : (
+        ) : signupStep > minSignupStep ? (
           <button onClick={handleSignupPrev} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Previous Step</span>
           </button>
-        )}
+        ) : <div className="mb-1" />}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5">
@@ -790,7 +926,7 @@ const AuthPage = () => {
                 )}
               </Button>
             )}
-            {signupStep > 0 && (
+            {signupStep > minSignupStep && (
               <button onClick={handleSignupPrev} className="w-full text-center text-foreground font-medium hover:text-primary transition-colors py-2">Previous</button>
             )}
           </div>

@@ -72,10 +72,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   })();
 
   useEffect(() => {
+    if (!accessToken) {
+      logout();
+      router.replace("/auth");
+      return;
+    }
     if (accessToken && !isProfileComplete()) {
       router.replace("/auth");
     }
-  }, [accessToken, isProfileComplete, router]);
+  }, [accessToken, isProfileComplete, logout, router]);
 
   useEffect(() => {
     if (!accessToken) return;

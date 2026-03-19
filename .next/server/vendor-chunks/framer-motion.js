@@ -1251,7 +1251,6 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 
 /***/ }),
 
-<<<<<<< Updated upstream
 /***/ "(ssr)/./node_modules/framer-motion/dist/es/utils/reduced-motion/use-reduced-motion.mjs":
 /*!****************************************************************************************!*\
   !*** ./node_modules/framer-motion/dist/es/utils/reduced-motion/use-reduced-motion.mjs ***!
@@ -1262,8 +1261,6 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 
 /***/ }),
 
-=======
->>>>>>> Stashed changes
 /***/ "(ssr)/./node_modules/framer-motion/dist/es/utils/shallow-compare.mjs":
 /*!**********************************************************************!*\
   !*** ./node_modules/framer-motion/dist/es/utils/shallow-compare.mjs ***!

@@ -33,7 +33,8 @@ const FAMILY_TYPES = ["Nuclear", "Joint", "Extended", "Other"];
 const FAMILY_STATUS_OPTIONS = ["Middle Class", "Upper Middle Class", "Rich", "Affluent", "Other"];
 const EMPLOYMENT_STATUS_OPTIONS = ["Employed", "Self Employed", "Business", "Not Working", "Student", "Other"];
 const PARTNER_RELIGION_OPTIONS = ["Same Religion Only", "Open to All Religions", "No Preference", "Other"];
-const BLOOD_GROUP_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const BLOOD_GROUP_OPTIONS = ["A+", "A-ve", "A-", "B+", "B-ve", "B-", "AB+", "AB-ve", "AB-", "O+", "O+ve", "O-ve", "O-"];
+const MARITAL_STATUS_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated", "Spearated"];
 
 type SectionKey =
   | "Basic Info"
@@ -95,6 +96,7 @@ interface ProfileFormData {
   height: string;
   weight: string;
   maritalStatus: string;
+  hasChildren: string;
   numberOfChildren: string;
   color: string;
   bloodGroup: string;
@@ -129,7 +131,7 @@ function mapProfileDataToForm(
   const education = data.education_details ?? {};
   const raw = (v: unknown) => (v != null ? String(v) : "");
   const num = (v: unknown): number => (typeof v === "number" ? v : 0);
-  const children = personal.children_count ?? 0;
+  const children = personal.number_of_children ?? personal.children_count ?? 0;
   const heightStr = personal.height_cm ?? "";
   const heightNum = parseInt(heightStr.replace(/\D/g, ""), 10) || 0;
   const weightNum = parseFloat(String(personal.weight_kg ?? "").replace(/[^\d.]/g, "")) || null;
@@ -164,9 +166,10 @@ function mapProfileDataToForm(
     mother_tongue_id: religion.mother_tongue_id,
     height: heightStr || (heightNum ? `${heightNum} cm` : ""),
     weight: personal.weight_kg ? String(weightNum ?? personal.weight_kg) : "",
-    maritalStatus: raw(personal.marital_status),
+    maritalStatus: raw(personal.marital_status ?? personal.marital_status_id),
+    hasChildren: personal.has_children != null ? (personal.has_children ? "yes" : "no") : (children > 0 ? "yes" : "no"),
     numberOfChildren: String(children),
-    color: raw(personal.colour),
+    color: raw(personal.complexion ?? personal.colour),
     bloodGroup: raw(personal.blood_group),
     familyType: "",
     fathersName: raw(family.father_name),
@@ -210,6 +213,7 @@ const defaultProfileData = (user: { name?: string; phone?: string; email?: strin
   height: "",
   weight: "",
   maritalStatus: "",
+  hasChildren: "no",
   numberOfChildren: "",
   color: "",
   bloodGroup: "",
@@ -679,12 +683,36 @@ function EditSectionForm({
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
             <Label htmlFor="maritalStatus">Marital Status</Label>
-            <Input
+            <select
               id="maritalStatus"
               value={data.maritalStatus}
               onChange={(e) => update("maritalStatus", e.target.value)}
-              placeholder="e.g. Never Married, Divorced"
-            />
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Select marital status</option>
+              {MARITAL_STATUS_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="hasChildren">Has Children</Label>
+            <select
+              id="hasChildren"
+              value={data.hasChildren}
+              onChange={(e) => {
+                const has = e.target.value;
+                onChange({
+                  ...data,
+                  hasChildren: has,
+                  numberOfChildren: has === "yes" ? data.numberOfChildren : "0",
+                });
+              }}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="numberOfChildren">No. of Children</Label>
@@ -695,6 +723,7 @@ function EditSectionForm({
               value={data.numberOfChildren}
               onChange={(e) => update("numberOfChildren", e.target.value)}
               placeholder="0"
+              disabled={data.hasChildren !== "yes"}
             />
           </div>
           <div className="grid gap-2">
@@ -1069,6 +1098,7 @@ function ViewSectionContent({
       return (
         <div className="space-y-0">
           {row("Marital Status", data.maritalStatus)}
+          {row("Has Children", data.hasChildren === "yes" ? "Yes" : "No")}
           {row("Number of Children", data.numberOfChildren)}
           {row("Height", data.height)}
           {row("Weight", data.weight)}
@@ -1297,11 +1327,13 @@ const UserProfilePage = () => {
 
   const buildPersonalBody = (): PersonalBody => ({
     marital_status: profileData.maritalStatus || "",
-    has_children: parseInt(profileData.numberOfChildren, 10) > 0,
-    number_of_children: parseInt(profileData.numberOfChildren, 10) || null,
-    height: parseInt(profileData.height.replace(/\D/g, ""), 10) || 0,
-    weight: parseFloat(profileData.weight.replace(/[^\d.]/g, "")) || null,
+    has_children: profileData.hasChildren === "yes",
+    number_of_children:
+      profileData.hasChildren === "yes" ? (parseInt(profileData.numberOfChildren, 10) || null) : null,
+    height_cm: parseInt(profileData.height.replace(/\D/g, ""), 10) || 0,
+    weight_kg: parseFloat(profileData.weight.replace(/[^\d.]/g, "")) || null,
     complexion: profileData.color || "",
+    blood_group: profileData.bloodGroup || "",
   });
 
   const buildEducationBody = (): EducationBody => ({
