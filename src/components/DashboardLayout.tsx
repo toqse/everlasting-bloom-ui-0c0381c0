@@ -10,6 +10,7 @@ import {
   LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { stableUnit } from "@/lib/stableRandom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,18 +35,22 @@ const baseSidebarLinks = [
   //{ name: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ];
 
-const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => (
+const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => {
+  const seed = `${delay}-${left}-${size}`;
+  const driftX = stableUnit(`${seed}-x`) * 40 - 20;
+  const duration = 12 + stableUnit(`${seed}-dur`) * 8;
+  return (
   <motion.div
     className="absolute pointer-events-none text-primary/10"
     style={{ left, top: "100%" }}
     animate={{
       y: [0, -800],
-      x: [0, Math.random() * 40 - 20],
+      x: [0, driftX],
       opacity: [0, 0.6, 0],
       rotate: [0, 360],
     }}
     transition={{
-      duration: 12 + Math.random() * 8,
+      duration,
       delay,
       repeat: Infinity,
       ease: "easeOut",
@@ -53,15 +58,20 @@ const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; siz
   >
     <Heart className={`w-${size} h-${size}`} style={{ width: size * 4, height: size * 4 }} />
   </motion.div>
-);
+  );
+};
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout, isHindu, accessToken, isProfileComplete } = useAuthStore();
+  const { user, logout, isHindu, accessToken, isProfileComplete, hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  const sidebarLinks = baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
+  // Keep initial server/client markup identical; apply profile-based filtering
+  // only after auth store hydration completes on the client.
+  const sidebarLinks = !hasHydrated
+    ? baseSidebarLinks
+    : baseSidebarLinks.filter((link) => link.name !== "Horoscope" || isHindu());
   const reduceMotion = useReducedMotion();
 
   const pageTitle = (() => {
@@ -72,6 +82,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   })();
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!accessToken) {
       logout();
       router.replace("/auth");
@@ -80,12 +91,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     if (accessToken && !isProfileComplete()) {
       router.replace("/auth");
     }
-  }, [accessToken, isProfileComplete, logout, router]);
+  }, [accessToken, hasHydrated, isProfileComplete, logout, router]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!accessToken) return;
     fetchAndSyncMeProfile();
-  }, [accessToken]);
+  }, [accessToken, hasHydrated]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;

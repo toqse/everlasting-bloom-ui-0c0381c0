@@ -17,7 +17,8 @@ function getAvatarUrl(path: string | null | undefined): string {
 }
 
 function parseApiDate(input: unknown): Date | null {
-  if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
+  if (input instanceof Date)
+    return Number.isNaN(input.getTime()) ? null : input;
   if (input === null || input === undefined) return null;
 
   if (typeof input === "number" && Number.isFinite(input)) {
@@ -65,7 +66,8 @@ const ChatListPage = () => {
         const res = await getChatList();
         if (mounted) setConversations(res.data.conversations);
       } catch (e) {
-        if (mounted) setError(e instanceof Error ? e.message : "Failed to load chats");
+        if (mounted)
+          setError(e instanceof Error ? e.message : "Failed to load chats");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -79,7 +81,9 @@ const ChatListPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">Chat list</h1>
+        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+          Chat list
+        </h1>
 
         {error && (
           <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">
@@ -93,9 +97,13 @@ const ChatListPage = () => {
           className="bg-white rounded-3xl shadow-card overflow-hidden"
         >
           {loading && conversations.length === 0 ? (
-            <div className="px-6 py-8 text-sm text-muted-foreground">Loading conversations…</div>
+            <div className="px-6 py-8 text-sm text-muted-foreground">
+              Loading conversations…
+            </div>
           ) : conversations.length === 0 ? (
-            <div className="px-6 py-8 text-sm text-muted-foreground">No conversations yet.</div>
+            <div className="px-6 py-8 text-sm text-muted-foreground">
+              No conversations yet.
+            </div>
           ) : (
             conversations.map((chat, index) => (
               <motion.div
@@ -103,9 +111,7 @@ const ChatListPage = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() =>
-                  router.push(`/chat/${chat.conversation_id}`)
-                }
+                onClick={() => router.push(`/chat/${chat.conversation_id}`)}
                 className="flex items-center gap-4 px-6 py-5 border-b border-primary/5 last:border-0 cursor-pointer hover:bg-accent-rose/30 transition-colors"
               >
                 <div className="relative flex-shrink-0">

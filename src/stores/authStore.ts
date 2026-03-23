@@ -71,6 +71,7 @@ const PROFILE_STEP_TO_SIGNUP_INDEX: Record<string, number> = {
 };
 
 interface AuthState {
+  hasHydrated: boolean;
   isLoggedIn: boolean;
   user: User | null;
   accessToken: string | null;
@@ -134,6 +135,7 @@ const defaultUser: User = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
+      hasHydrated: false,
       isLoggedIn: false,
       user: null,
       accessToken: null,
@@ -198,6 +200,7 @@ export const useAuthStore = create<AuthState>()(
         setMatrimonyTokens(null, null);
         setProfileStepsToStorage(null);
         set({
+          hasHydrated: true,
           isLoggedIn: false,
           user: null,
           accessToken: null,
@@ -278,14 +281,17 @@ export const useAuthStore = create<AuthState>()(
         horoscopeCreditsUsed: state.horoscopeCreditsUsed,
       }),
       onRehydrateStorage: () => (state) => {
+        // `set` from create() is not in scope here; use the store's API after hydration.
         if (state?.accessToken && state?.refreshToken) {
           setMatrimonyTokens(state.accessToken, state.refreshToken);
+          useAuthStore.setState({ hasHydrated: true });
           return;
         }
         // If tokens are missing after hydration, force a clean logout state.
         setMatrimonyTokens(null, null);
         setProfileStepsToStorage(null);
-        set({
+        useAuthStore.setState({
+          hasHydrated: true,
           isLoggedIn: false,
           user: null,
           accessToken: null,

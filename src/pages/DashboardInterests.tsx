@@ -22,7 +22,9 @@ const DEFAULT_PHOTO =
 const DashboardInterests = () => {
   const [activeTab, setActiveTab] = useState<Tab>("received");
   const router = useRouter();
-  const [receivedInterests, setReceivedInterests] = useState<InterestCard[]>([]);
+  const [receivedInterests, setReceivedInterests] = useState<InterestCard[]>(
+    [],
+  );
   const [sentInterests, setSentInterests] = useState<InterestCard[]>([]);
   const [receivedTotal, setReceivedTotal] = useState(0);
   const [sentTotal, setSentTotal] = useState(0);
@@ -84,7 +86,8 @@ const DashboardInterests = () => {
 
   const summary = {
     receivedTotal,
-    receivedPending: receivedInterests.filter((i) => i.status === "pending").length,
+    receivedPending: receivedInterests.filter((i) => i.status === "pending")
+      .length,
     sentTotal,
     sentPending: sentInterests.filter((i) => i.status === "pending").length,
   };
@@ -99,7 +102,9 @@ const DashboardInterests = () => {
     try {
       const res = await respondInterest(id, "accept");
       setReceivedInterests((prev) =>
-        prev.map((i) => (i.interest_id === id ? { ...i, status: "accepted" as const } : i)),
+        prev.map((i) =>
+          i.interest_id === id ? { ...i, status: "accepted" as const } : i,
+        ),
       );
       toast.success(res.message || `Accepted ${name}'s interest!`);
     } catch (e) {
@@ -114,7 +119,9 @@ const DashboardInterests = () => {
     try {
       const res = await respondInterest(id, "reject");
       setReceivedInterests((prev) =>
-        prev.map((i) => (i.interest_id === id ? { ...i, status: "rejected" as const } : i)),
+        prev.map((i) =>
+          i.interest_id === id ? { ...i, status: "rejected" as const } : i,
+        ),
       );
       toast.info(res.message || `Declined ${name}'s interest`);
     } catch (e) {
@@ -129,7 +136,9 @@ const DashboardInterests = () => {
     try {
       const res = await cancelInterest(id);
       setSentInterests((prev) =>
-        prev.map((i) => (i.interest_id === id ? { ...i, status: "cancelled" as const } : i)),
+        prev.map((i) =>
+          i.interest_id === id ? { ...i, status: "cancelled" as const } : i,
+        ),
       );
       toast.success(res.message || "Interest cancelled.");
     } catch (e) {
@@ -152,28 +161,54 @@ const DashboardInterests = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">Interest request</h1>
+        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+          Interest request
+        </h1>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100 border border-primary/10 p-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Received</p>
-            <p className="text-xl font-serif font-bold text-primary">{summary.receivedTotal}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">Total interests</p>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Received
+            </p>
+            <p className="text-xl font-serif font-bold text-primary">
+              {summary.receivedTotal}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Total interests
+            </p>
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 border border-primary/10 p-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Pending</p>
-            <p className="text-xl font-serif font-bold text-amber-700">{summary.receivedPending}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">Awaiting your response</p>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Pending
+            </p>
+            <p className="text-xl font-serif font-bold text-amber-700">
+              {summary.receivedPending}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Awaiting your response
+            </p>
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100 border border-primary/10 p-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sent</p>
-            <p className="text-xl font-serif font-bold text-sky-700">{summary.sentTotal}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">You have sent</p>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Sent
+            </p>
+            <p className="text-xl font-serif font-bold text-sky-700">
+              {summary.sentTotal}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              You have sent
+            </p>
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-primary/10 p-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sent pending</p>
-            <p className="text-xl font-serif font-bold text-emerald-700">{summary.sentPending}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">Waiting for reply</p>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Sent pending
+            </p>
+            <p className="text-xl font-serif font-bold text-emerald-700">
+              {summary.sentPending}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Waiting for reply
+            </p>
           </div>
         </div>
 
@@ -220,14 +255,19 @@ const DashboardInterests = () => {
 
           <div className="space-y-6">
             {loading && filteredList.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Loading interests…</p>
+              <p className="text-center text-muted-foreground py-8">
+                Loading interests…
+              </p>
             ) : filteredList.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No {activeTab} interests at the moment.</p>
+              <p className="text-center text-muted-foreground py-8">
+                No {activeTab} interests at the moment.
+              </p>
             ) : (
               filteredList.map(({ interest, isReceived }) => {
                 const planBadge = "MEMBER";
                 const badgeColor = "bg-primary text-primary-foreground";
-                const showAcceptDeny = isReceived && interest.status === "pending";
+                const showAcceptDeny =
+                  isReceived && interest.status === "pending";
                 const showCancel = !isReceived && interest.status === "pending";
                 const disabled = busyId === interest.interest_id;
 
@@ -253,34 +293,51 @@ const DashboardInterests = () => {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-serif font-bold text-foreground">{interest.name}</h3>
+                        <h3 className="font-serif font-bold text-foreground">
+                          {interest.name}
+                        </h3>
                         <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {statusLabel(interest.status)}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
                         <span>
-                          • Location: <strong className="text-foreground">{interest.location}</strong>
+                          • Location:{" "}
+                          <strong className="text-foreground">
+                            {interest.location}
+                          </strong>
                         </span>
                         <span>
-                          • Age: <strong className="text-foreground">{interest.age}</strong>
+                          • Age:{" "}
+                          <strong className="text-foreground">
+                            {interest.age}
+                          </strong>
                         </span>
                         <span>
-                          • Education: <strong className="text-foreground">{interest.education}</strong>
+                          • Education:{" "}
+                          <strong className="text-foreground">
+                            {interest.education}
+                          </strong>
                         </span>
                         <span>
-                          • Job: <strong className="text-foreground">{interest.occupation}</strong>
+                          • Job:{" "}
+                          <strong className="text-foreground">
+                            {interest.occupation}
+                          </strong>
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         • Request on:{" "}
-                        {new Date(interest.created_at).toLocaleString(undefined, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {new Date(interest.created_at).toLocaleString(
+                          undefined,
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
                       </p>
                       <button
                         type="button"
@@ -302,7 +359,9 @@ const DashboardInterests = () => {
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 text-white text-xs rounded-full"
                             disabled={disabled}
-                            onClick={() => handleAccept(interest.interest_id, interest.name)}
+                            onClick={() =>
+                              handleAccept(interest.interest_id, interest.name)
+                            }
                           >
                             Accept
                           </Button>
@@ -311,7 +370,9 @@ const DashboardInterests = () => {
                             variant="outline"
                             className="text-xs rounded-full border-primary"
                             disabled={disabled}
-                            onClick={() => handleReject(interest.interest_id, interest.name)}
+                            onClick={() =>
+                              handleReject(interest.interest_id, interest.name)
+                            }
                           >
                             Deny
                           </Button>

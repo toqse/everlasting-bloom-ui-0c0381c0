@@ -8,22 +8,35 @@ type ApiErrorPayload = {
   [key: string]: unknown;
 };
 
-const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): string => {
+const getErrorMessage = (
+  data: ApiErrorPayload | unknown,
+  fallback: string,
+): string => {
   const payload = (data ?? {}) as ApiErrorPayload;
 
-  if (typeof payload.detail === "string" && payload.detail.trim()) return payload.detail;
-  if (Array.isArray(payload.detail) && payload.detail[0]) return String(payload.detail[0]);
+  if (typeof payload.detail === "string" && payload.detail.trim())
+    return payload.detail;
+  if (Array.isArray(payload.detail) && payload.detail[0])
+    return String(payload.detail[0]);
 
-  if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+  if (typeof payload.message === "string" && payload.message.trim())
+    return payload.message;
 
-  if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
-  if (payload.error && typeof payload.error === "object" && "message" in payload.error) {
+  if (typeof payload.error === "string" && payload.error.trim())
+    return payload.error;
+  if (
+    payload.error &&
+    typeof payload.error === "object" &&
+    "message" in payload.error
+  ) {
     const msg = (payload.error as { message?: string }).message;
     if (msg && msg.trim()) return msg;
   }
 
-  if (typeof payload.errors === "string" && payload.errors.trim()) return payload.errors;
-  if (Array.isArray(payload.errors) && payload.errors[0]) return String(payload.errors[0]);
+  if (typeof payload.errors === "string" && payload.errors.trim())
+    return payload.errors;
+  if (Array.isArray(payload.errors) && payload.errors[0])
+    return String(payload.errors[0]);
 
   return fallback;
 };
@@ -60,7 +73,9 @@ const REGISTER_PROFILE_FOR_VALUES: readonly RegisterProfileFor[] = [
 ] as const;
 
 /** Normalize UI value to API `profile_for` (lowercase). */
-export function normalizeRegisterProfileFor(s: string): RegisterProfileFor | undefined {
+export function normalizeRegisterProfileFor(
+  s: string,
+): RegisterProfileFor | undefined {
   const raw = s.toLowerCase().trim();
   return (REGISTER_PROFILE_FOR_VALUES as readonly string[]).includes(raw)
     ? (raw as RegisterProfileFor)
@@ -110,7 +125,9 @@ export interface VerifyOtpResponse {
   data?: VerifyMobileData;
 }
 
-export async function verifyOtp(body: VerifyOtpBody): Promise<VerifyOtpResponse> {
+export async function verifyOtp(
+  body: VerifyOtpBody,
+): Promise<VerifyOtpResponse> {
   const url = `${BASE_URL}v1/auth/verify-otp/`;
   console.log("[authApi] verifyOtp request body:", body);
   const res = await fetch(url, {
@@ -118,9 +135,10 @@ export async function verifyOtp(body: VerifyOtpBody): Promise<VerifyOtpResponse>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({})) as VerifyOtpResponse;
+  const data = (await res.json().catch(() => ({}))) as VerifyOtpResponse;
   console.log("[authApi] verifyOtp response:", { status: res.status, data });
-  if (!res.ok) throw new Error(getErrorMessage(data, "OTP verification failed"));
+  if (!res.ok)
+    throw new Error(getErrorMessage(data, "OTP verification failed"));
   return data;
 }
 
@@ -198,7 +216,9 @@ export interface VerifyMobileResponse {
 }
 
 /** POST v1/auth/register/mobile/ — send OTP to mobile */
-export async function registerMobile(body: RegisterMobileBody): Promise<unknown> {
+export async function registerMobile(
+  body: RegisterMobileBody,
+): Promise<unknown> {
   const url = `${BASE_URL}v1/auth/register/mobile/`;
   console.log("[authApi] registerMobile request body:", body);
   const res = await fetch(url, {
@@ -207,13 +227,18 @@ export async function registerMobile(body: RegisterMobileBody): Promise<unknown>
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  console.log("[authApi] registerMobile response:", { status: res.status, data });
+  console.log("[authApi] registerMobile response:", {
+    status: res.status,
+    data,
+  });
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to send OTP"));
   return data;
 }
 
 /** POST v1/auth/verify/mobile/ — verify OTP and get tokens */
-export async function verifyMobile(body: VerifyMobileBody): Promise<VerifyMobileResponse> {
+export async function verifyMobile(
+  body: VerifyMobileBody,
+): Promise<VerifyMobileResponse> {
   const url = `${BASE_URL}v1/auth/verify/mobile/`;
   console.log("[authApi] verifyMobile request body:", body);
   const res = await fetch(url, {
@@ -221,7 +246,7 @@ export async function verifyMobile(body: VerifyMobileBody): Promise<VerifyMobile
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({})) as VerifyMobileResponse;
+  const data = (await res.json().catch(() => ({}))) as VerifyMobileResponse;
   console.log("[authApi] verifyMobile response:", { status: res.status, data });
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to verify OTP"));
   return data;

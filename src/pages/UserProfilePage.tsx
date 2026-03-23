@@ -3,7 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
-import { Edit, Eye, Sun, UsersRound, User, BookOpen, GraduationCap, Image, MapPin, UserCircle, FileText, type LucideIcon } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  Sun,
+  UsersRound,
+  User,
+  BookOpen,
+  GraduationCap,
+  Image,
+  MapPin,
+  UserCircle,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,17 +37,114 @@ import {
   type EducationBody,
   type FamilyBody,
 } from "@/lib/profileApi";
-import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
-import type { Country, State, District, City } from "@/lib/masterApi";
+import {
+  getCountries,
+  getStates,
+  getDistricts,
+  getCities,
+  getReligions,
+  getCastes,
+  getMotherTongues,
+} from "@/lib/masterApi";
+import type {
+  Country,
+  State,
+  District,
+  City,
+  Religion,
+  Caste,
+  MotherTongue,
+} from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { BASE_URL } from "@/lib/config";
 
 const FAMILY_TYPES = ["Nuclear", "Joint", "Extended", "Other"];
-const FAMILY_STATUS_OPTIONS = ["Middle Class", "Upper Middle Class", "Rich", "Affluent", "Other"];
-const EMPLOYMENT_STATUS_OPTIONS = ["Employed", "Self Employed", "Business", "Not Working", "Student", "Other"];
-const PARTNER_RELIGION_OPTIONS = ["Same Religion Only", "Open to All Religions", "No Preference", "Other"];
-const BLOOD_GROUP_OPTIONS = ["A+", "A-ve", "A-", "B+", "B-ve", "B-", "AB+", "AB-ve", "AB-", "O+", "O+ve", "O-ve", "O-"];
-const MARITAL_STATUS_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated", "Spearated"];
+const FAMILY_STATUS_OPTIONS = [
+  "Middle Class",
+  "Upper Middle Class",
+  "Rich",
+  "Affluent",
+  "Other",
+];
+const EMPLOYMENT_STATUS_OPTIONS = [
+  "Employed",
+  "Self Employed",
+  "Business",
+  "Not Working",
+  "Student",
+  "Other",
+];
+const PARTNER_RELIGION_OPTIONS = [
+  "Same Religion Only",
+  "Open to All Religions",
+  "No Preference",
+  "Other",
+];
+const BLOOD_GROUP_OPTIONS = [
+  "A+",
+  "A-ve",
+  "A-",
+  "B+",
+  "B-ve",
+  "B-",
+  "AB+",
+  "AB-ve",
+  "AB-",
+  "O+",
+  "O+ve",
+  "O-ve",
+  "O-",
+];
+const MARITAL_STATUS_OPTIONS = [
+  "Never Married",
+  "Divorced",
+  "Widowed",
+  "Separated",
+  "Spearated",
+];
+const PARTNER_PREFERENCE_OPTIONS = [
+  { value: "own_religion_only", label: "Same Religion Only" },
+  { value: "open_to_all", label: "Open to All Religions" },
+  { value: "specific_religions", label: "Specific Religions" },
+] as const;
+
+function normalizeDobForDateInput(value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  const dmy = /^(\d{2})-(\d{2})-(\d{4})$/.exec(v);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  return v;
+}
+
+function normalizeDobForApi(value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (ymd) return `${ymd[3]}-${ymd[2]}-${ymd[1]}`;
+  const dmy = /^(\d{2})-(\d{2})-(\d{4})$/.exec(v);
+  if (dmy) return `${dmy[1]}-${dmy[2]}-${dmy[3]}`;
+  return v;
+}
+
+const GENDER_VALUES = ["male", "female", "other"] as const;
+
+function normalizeGenderValue(value: string): string {
+  const v = value.trim().toLowerCase();
+  return (GENDER_VALUES as readonly string[]).includes(v) ? v : "";
+}
+
+function formatGenderLabel(value: string): string {
+  const v = value.trim().toLowerCase();
+  if (v === "male") return "Male";
+  if (v === "female") return "Female";
+  if (v === "other") return "Other";
+  return value.trim();
+}
+
+const genderSelectClassName =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm";
 
 type SectionKey =
   | "Basic Info"
@@ -52,15 +162,48 @@ const allProfileSections: {
   description: string;
   icon?: LucideIcon;
 }[] = [
-  { title: "Basic Info", description: "Name, Gender, DOB, Phone, Email", icon: User },
-  { title: "Religion", description: "Religion, Caste, Mother Tongue, Partner Preference", icon: BookOpen },
-  { title: "Education", description: "Qualification, Subject, Employment, Job, Income", icon: GraduationCap },
-  { title: "Photos", description: "Profile photos and verification", icon: Image },
-  { title: "Location", description: "Country, State, District, City, Address", icon: MapPin },
-  { title: "Personal", description: "Marital Status, Children, Height, Weight, Colour, Blood Group", icon: UserCircle },
-  { title: "Family", description: "Family type, parents, siblings", icon: UsersRound },
-  { title: "About Me", description: "Bio and interests", icon: FileText },
-  { title: "Horoscope", description: "Jathagam details (Hindu only)", icon: Sun },
+  {
+    title: "Basic Info",
+    description: "Name, Gender, DOB, Phone, Email",
+    icon: User,
+  },
+  {
+    title: "Religion",
+    description: "Religion, Caste, Mother Tongue, Partner Preference",
+    icon: BookOpen,
+  },
+  {
+    title: "Education",
+    description: "Qualification, Subject, Employment, Job, Income",
+    icon: GraduationCap,
+  },
+  {
+    title: "Photos",
+    description: "Profile photos and verification",
+    icon: Image,
+  },
+  {
+    title: "Location",
+    description: "Country, State, District, City, Address",
+    icon: MapPin,
+  },
+  {
+    title: "Personal",
+    description:
+      "Marital Status, Children, Height, Weight, Colour, Blood Group",
+    icon: UserCircle,
+  },
+  {
+    title: "Family",
+    description: "Family type, parents, siblings",
+    icon: UsersRound,
+  },
+  { title: "About Me", description: "Bio", icon: FileText },
+  {
+    title: "Horoscope",
+    description: "Jathagam details (Hindu only)",
+    icon: Sun,
+  },
 ];
 
 // Profile form data (display + ids for PATCH bodies)
@@ -74,8 +217,14 @@ interface ProfileFormData {
   caste: string;
   motherTongue: string;
   partnerReligionPreference: string;
-  partner_preference_type?: "own_religion_only" | "open_to_all" | "specific_religions";
-  partner_religion_ids?: number[];
+  partner_preference_type?:
+    | "own_religion_only"
+    | "open_to_all"
+    | "specific_religions";
+  partner_religion_ids?: Array<
+    number | { id?: number; name?: string; religion?: string }
+  >;
+  partner_religion_names?: string[];
   qualification: string;
   educationSubject: string;
   employmentStatus: string;
@@ -112,7 +261,6 @@ interface ProfileFormData {
   numberOfMarriedSisters: string;
   aboutMyFamily: string;
   bio: string;
-  interests: string;
   rashi: string;
   nakshatra: string;
   manglikStatus: string;
@@ -121,7 +269,12 @@ interface ProfileFormData {
 /** Map GET v1/profile/ data to form state (including ids for PATCH). */
 function mapProfileDataToForm(
   data: ProfileData,
-  user: { name?: string; phone?: string; email?: string; location?: string } | null
+  user: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    location?: string;
+  } | null,
 ): ProfileFormData {
   const basic = data.basic_details ?? {};
   const religion = data.religion_details ?? {};
@@ -130,23 +283,69 @@ function mapProfileDataToForm(
   const family = data.family_details ?? {};
   const education = data.education_details ?? {};
   const raw = (v: unknown) => (v != null ? String(v) : "");
-  const num = (v: unknown): number => (typeof v === "number" ? v : 0);
   const children = personal.number_of_children ?? personal.children_count ?? 0;
   const heightStr = personal.height_cm ?? "";
-  const heightNum = parseInt(heightStr.replace(/\D/g, ""), 10) || 0;
-  const weightNum = parseFloat(String(personal.weight_kg ?? "").replace(/[^\d.]/g, "")) || null;
+  const heightParsed = parseInt(String(heightStr).replace(/\D/g, ""), 10);
+  const heightForm = Number.isFinite(heightParsed) ? String(heightParsed) : "";
+  const weightRaw =
+    personal.weight_kg != null && String(personal.weight_kg).trim() !== ""
+      ? String(personal.weight_kg)
+      : "";
+  const weightParsed = parseFloat(weightRaw.replace(/[^\d.]/g, ""));
+  const weightForm = Number.isFinite(weightParsed) ? String(weightParsed) : "";
+  const namesFromPreference = Array.isArray(
+    religion.partner_religion_preference,
+  )
+    ? religion.partner_religion_preference
+        .map((item) =>
+          item?.religion != null ? String(item.religion).trim() : "",
+        )
+        .filter(Boolean)
+    : [];
+
+  const namesFromIds = Array.isArray(religion.partner_religion_ids)
+    ? religion.partner_religion_ids
+        .map((item) => {
+          if (typeof item === "number") return "";
+          if (!item || typeof item !== "object") return "";
+          return String(item.name ?? item.religion ?? "").trim();
+        })
+        .filter(Boolean)
+    : [];
+
+  const partnerReligionNames = Array.from(
+    new Set([...namesFromPreference, ...namesFromIds]),
+  );
+
+  const preferenceType =
+    (religion.partner_preference_type as ProfileFormData["partner_preference_type"]) ||
+    "open_to_all";
+
+  const preferenceLabelMap: Record<
+    NonNullable<ProfileFormData["partner_preference_type"]>,
+    string
+  > = {
+    own_religion_only: "Same Religion Only",
+    open_to_all: "Open to All Religions",
+    specific_religions: "Specific Religions",
+  };
   return {
     name: raw(basic.name) || (user?.name ?? ""),
     phone: raw(basic.phone) || (user?.phone ?? ""),
     email: raw(basic.email) || (user?.email ?? ""),
-    dob: raw(basic.dob),
-    gender: raw(basic.gender),
+    dob: normalizeDobForDateInput(raw(basic.dob)),
+    gender: normalizeGenderValue(raw(basic.gender)),
     religion: raw(religion.religion),
     caste: raw(religion.caste),
     motherTongue: raw(religion.mother_tongue),
-    partnerReligionPreference: raw(religion.partner_preference_type).replace(/_/g, " ") || "",
-    partner_preference_type: (religion.partner_preference_type as ProfileFormData["partner_preference_type"]) || "open_to_all",
-    partner_religion_ids: religion.partner_religion_ids ?? [],
+    partnerReligionPreference:
+      preferenceLabelMap[preferenceType] ||
+      raw(religion.partner_preference_type).replace(/_/g, " "),
+    partner_preference_type: preferenceType,
+    partner_religion_ids: (religion.partner_religion_ids ?? [])
+      .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
+      .filter((id): id is number => Number.isFinite(id) && id > 0),
+    partner_religion_names: partnerReligionNames,
     qualification: raw(education.highest_education),
     educationSubject: raw(education.education_subject),
     employmentStatus: raw(education.employment_status),
@@ -164,10 +363,17 @@ function mapProfileDataToForm(
     religion_id: religion.religion_id,
     caste_id: religion.caste_id ?? null,
     mother_tongue_id: religion.mother_tongue_id,
-    height: heightStr || (heightNum ? `${heightNum} cm` : ""),
-    weight: personal.weight_kg ? String(weightNum ?? personal.weight_kg) : "",
+    height: heightForm,
+    weight: weightForm,
     maritalStatus: raw(personal.marital_status ?? personal.marital_status_id),
-    hasChildren: personal.has_children != null ? (personal.has_children ? "yes" : "no") : (children > 0 ? "yes" : "no"),
+    hasChildren:
+      personal.has_children != null
+        ? personal.has_children
+          ? "yes"
+          : "no"
+        : children > 0
+          ? "yes"
+          : "no",
     numberOfChildren: String(children),
     color: raw(personal.complexion ?? personal.colour),
     bloodGroup: raw(personal.blood_group),
@@ -178,19 +384,27 @@ function mapProfileDataToForm(
     mothersOccupation: raw(family.mother_occupation),
     familyStatus: "",
     numberOfBrothers: family.brothers != null ? String(family.brothers) : "",
-    numberOfMarriedBrothers: family.married_brothers != null ? String(family.married_brothers) : "",
+    numberOfMarriedBrothers:
+      family.married_brothers != null ? String(family.married_brothers) : "",
     numberOfSisters: family.sisters != null ? String(family.sisters) : "",
-    numberOfMarriedSisters: family.married_sisters != null ? String(family.married_sisters) : "",
+    numberOfMarriedSisters:
+      family.married_sisters != null ? String(family.married_sisters) : "",
     aboutMyFamily: raw(family.about_family),
     bio: raw(data.about_me),
-    interests: "",
     rashi: "",
     nakshatra: "",
     manglikStatus: "",
   };
 }
 
-const defaultProfileData = (user: { name?: string; phone?: string; email?: string; location?: string } | null): ProfileFormData => ({
+const defaultProfileData = (
+  user: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    location?: string;
+  } | null,
+): ProfileFormData => ({
   name: user?.name ?? "",
   phone: user?.phone ?? "",
   email: user?.email ?? "",
@@ -229,7 +443,6 @@ const defaultProfileData = (user: { name?: string; phone?: string; email?: strin
   numberOfMarriedSisters: "",
   aboutMyFamily: "",
   bio: "",
-  interests: "",
   rashi: "",
   nakshatra: "",
   manglikStatus: "",
@@ -257,9 +470,13 @@ function ProfileSectionCard({
           </div>
         )}
         <div className="min-w-0">
-          <h3 className="font-serif text-lg font-bold text-foreground">{title}</h3>
+          <h3 className="font-serif text-lg font-bold text-foreground">
+            {title}
+          </h3>
           {summary && (
-            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{summary}</p>
+            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+              {summary}
+            </p>
           )}
         </div>
       </div>
@@ -310,6 +527,10 @@ function EditSectionForm({
   locationLoading,
   locationLoaders,
   onLocationChange,
+  religionOptions,
+  religionLoading,
+  religionLoaders,
+  onReligionChange,
   photoFiles,
   existingPhotos,
   onPhotoChange,
@@ -317,8 +538,18 @@ function EditSectionForm({
   section: SectionKey;
   data: ProfileFormData;
   onChange: (data: ProfileFormData) => void;
-  locationOptions?: { countries: Country[]; states: State[]; districts: District[]; cities: City[] };
-  locationLoading?: { countries: boolean; states: boolean; districts: boolean; cities: boolean };
+  locationOptions?: {
+    countries: Country[];
+    states: State[];
+    districts: District[];
+    cities: City[];
+  };
+  locationLoading?: {
+    countries: boolean;
+    states: boolean;
+    districts: boolean;
+    cities: boolean;
+  };
   locationLoaders?: {
     loadCountries: (search: string) => void;
     loadStates: (search: string) => void;
@@ -326,6 +557,22 @@ function EditSectionForm({
     loadCities: (search: string) => void;
   };
   onLocationChange?: (updates: Partial<ProfileFormData>) => void;
+  religionOptions?: {
+    religions: Religion[];
+    castes: Caste[];
+    motherTongues: MotherTongue[];
+  };
+  religionLoading?: {
+    religions: boolean;
+    castes: boolean;
+    motherTongues: boolean;
+  };
+  religionLoaders?: {
+    loadReligions: (search: string) => void;
+    loadCastes: (search: string) => void;
+    loadMotherTongues: (search: string) => void;
+  };
+  onReligionChange?: (updates: Partial<ProfileFormData>) => void;
   photoFiles?: Record<string, File | null>;
   existingPhotos?: Record<string, string | null>;
   onPhotoChange?: (key: string, file: File | null) => void;
@@ -348,12 +595,19 @@ function EditSectionForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="gender">Gender</Label>
-            <Input
+            <select
               id="gender"
+              className={genderSelectClassName}
               value={data.gender}
               onChange={(e) => update("gender", e.target.value)}
-              placeholder="e.g. Male, Female"
-            />
+            >
+              <option value="" disabled>
+                Select gender
+              </option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="dob">Date of Birth</Label>
@@ -386,59 +640,180 @@ function EditSectionForm({
           </div>
         </div>
       );
-    case "Religion":
+    case "Religion": {
+      const religions = religionOptions?.religions ?? [];
+      const castes = religionOptions?.castes ?? [];
+      const motherTongues = religionOptions?.motherTongues ?? [];
+      const loading = religionLoading ?? {
+        religions: false,
+        castes: false,
+        motherTongues: false,
+      };
+      const loaders = religionLoaders ?? {
+        loadReligions: () => {},
+        loadCastes: () => {},
+        loadMotherTongues: () => {},
+      };
+      const selectedPreference = (data.partner_preference_type ??
+        "open_to_all") as
+        | "own_religion_only"
+        | "open_to_all"
+        | "specific_religions";
+      const selectedPartnerReligionIds = (data.partner_religion_ids ?? [])
+        .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
+        .filter((id): id is number => Number.isFinite(id) && id > 0);
+
+      const handleReligionSelect = (_name: string, value: string) => {
+        if (!onReligionChange) return;
+        const id = Number(value);
+        const selected = religions.find((r) => r.id === id);
+        onReligionChange({
+          religion_id: id,
+          religion: selected?.name ?? "",
+          caste_id: undefined,
+          caste: "",
+        });
+      };
+
+      const handleCasteSelect = (_name: string, value: string) => {
+        if (!onReligionChange) return;
+        const id = Number(value);
+        const selected = castes.find((c) => c.id === id);
+        onReligionChange({ caste_id: id, caste: selected?.name ?? "" });
+      };
+
+      const handleMotherTongueSelect = (_name: string, value: string) => {
+        if (!onReligionChange) return;
+        const id = Number(value);
+        const selected = motherTongues.find((m) => m.id === id);
+        onReligionChange({
+          mother_tongue_id: id,
+          motherTongue: selected?.name ?? "",
+        });
+      };
+
+      const toggleSpecificReligion = (id: number) => {
+        if (!onReligionChange) return;
+        const next = selectedPartnerReligionIds.includes(id)
+          ? selectedPartnerReligionIds.filter((x) => x !== id)
+          : [...selectedPartnerReligionIds, id];
+        const nextNames = religions
+          .filter((r) => next.includes(r.id))
+          .map((r) => r.name)
+          .filter(Boolean);
+        onReligionChange({
+          partner_religion_ids: next,
+          partner_religion_names: nextNames,
+        });
+      };
+
       return (
         <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label htmlFor="religion">Religion</Label>
-            <Input
-              id="religion"
-              value={data.religion}
-              onChange={(e) => update("religion", e.target.value)}
-              placeholder="e.g. Hindu, Christian"
+          <SearchableSelect
+            name="religion_id"
+            value={data.religion_id != null ? String(data.religion_id) : ""}
+            options={religions}
+            loading={loading.religions}
+            label="Religion"
+            placeholder="Select Religion"
+            initialDisplayLabel={data.religion || undefined}
+            onSearch={loaders.loadReligions}
+            onSelect={handleReligionSelect}
+          />
+          {(data.religion_id ?? 0) > 0 ? (
+            <SearchableSelect
+              name="caste_id"
+              value={data.caste_id != null ? String(data.caste_id) : ""}
+              options={castes}
+              loading={loading.castes}
+              label="Caste"
+              placeholder="Select Caste"
+              initialDisplayLabel={data.caste || undefined}
+              onSearch={loaders.loadCastes}
+              onSelect={handleCasteSelect}
             />
-          </div>
+          ) : null}
+          <SearchableSelect
+            name="mother_tongue_id"
+            value={
+              data.mother_tongue_id != null ? String(data.mother_tongue_id) : ""
+            }
+            options={motherTongues}
+            loading={loading.motherTongues}
+            label="Mother Tongue"
+            placeholder="Select Mother Tongue"
+            initialDisplayLabel={data.motherTongue || undefined}
+            onSearch={loaders.loadMotherTongues}
+            onSelect={handleMotherTongueSelect}
+          />
           <div className="grid gap-2">
-            <Label htmlFor="caste">Caste</Label>
-            <Input
-              id="caste"
-              value={data.caste}
-              onChange={(e) => update("caste", e.target.value)}
-              placeholder="Caste"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="motherTongue">Mother Tongue</Label>
-            <Input
-              id="motherTongue"
-              value={data.motherTongue}
-              onChange={(e) => update("motherTongue", e.target.value)}
-              placeholder="e.g. Malayalam, Hindi"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="partnerReligionPreference">Partner Religion Preference</Label>
+            <Label htmlFor="partnerReligionPreference">
+              Partner Religion Preference
+            </Label>
             <select
               id="partnerReligionPreference"
-              value={(data.partner_preference_type ?? data.partnerReligionPreference) || ""}
+              value={selectedPreference}
               onChange={(e) => {
-                const v = e.target.value as "own_religion_only" | "open_to_all" | "specific_religions" | "";
+                const v = e.target.value as
+                  | "own_religion_only"
+                  | "open_to_all"
+                  | "specific_religions"
+                  | "";
                 onChange({
                   ...data,
                   partner_preference_type: v || "open_to_all",
                   partnerReligionPreference: v ? v.replace(/_/g, " ") : "",
+                  ...(v !== "specific_religions"
+                    ? { partner_religion_ids: [], partner_religion_names: [] }
+                    : {}),
                 });
               }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <option value="">Select preference</option>
-              <option value="own_religion_only">Same Religion Only</option>
-              <option value="open_to_all">Open to All Religions</option>
-              <option value="specific_religions">Specific Religions</option>
+              {PARTNER_PREFERENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
+          {selectedPreference === "specific_religions" ? (
+            <div className="grid gap-2">
+              <Label>Specific Religions</Label>
+              <div className="rounded-md border border-input bg-background p-3">
+                {religions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No religions loaded. Search in Religion dropdown first.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {religions.map((rel) => {
+                      const isSelected = selectedPartnerReligionIds.includes(
+                        rel.id,
+                      );
+                      return (
+                        <button
+                          key={rel.id}
+                          type="button"
+                          onClick={() => toggleSpecificReligion(rel.id)}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground hover:bg-primary/10"
+                          }`}
+                        >
+                          {rel.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       );
+    }
     case "Education":
       return (
         <div className="grid gap-4 py-2">
@@ -470,7 +845,9 @@ function EditSectionForm({
             >
               <option value="">Select status</option>
               {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </div>
@@ -500,7 +877,8 @@ function EditSectionForm({
       return (
         <div className="grid gap-6 py-2">
           <p className="text-sm text-muted-foreground">
-            Upload and manage your profile photos. Verification photos can be added for a verified badge.
+            Upload and manage your profile photos. Verification photos can be
+            added for a verified badge.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {PHOTO_KEYS.map((key) => {
@@ -561,7 +939,12 @@ function EditSectionForm({
       const states = locationOptions?.states ?? [];
       const districts = locationOptions?.districts ?? [];
       const cities = locationOptions?.cities ?? [];
-      const loading = locationLoading ?? { countries: false, states: false, districts: false, cities: false };
+      const loading = locationLoading ?? {
+        countries: false,
+        states: false,
+        districts: false,
+        cities: false,
+      };
       const countryId = data.country_id ?? 0;
       const stateId = data.state_id ?? 0;
       const districtId = data.district_id ?? 0;
@@ -691,7 +1074,9 @@ function EditSectionForm({
             >
               <option value="">Select marital status</option>
               {MARITAL_STATUS_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </div>
@@ -727,21 +1112,29 @@ function EditSectionForm({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="height">Height</Label>
+            <Label htmlFor="height">Height (cm)</Label>
             <Input
               id="height"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
               value={data.height}
               onChange={(e) => update("height", e.target.value)}
-              placeholder="e.g. 168 cm or 5'6&quot;"
+              placeholder="e.g. 168"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="weight">Weight</Label>
+            <Label htmlFor="weight">Weight (kg)</Label>
             <Input
               id="weight"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={0.01}
               value={data.weight}
               onChange={(e) => update("weight", e.target.value)}
-              placeholder="e.g. 65 Kg"
+              placeholder="e.g. 65"
             />
           </div>
           <div className="grid gap-2">
@@ -763,7 +1156,9 @@ function EditSectionForm({
             >
               <option value="">Select blood group</option>
               {BLOOD_GROUP_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </div>
@@ -782,7 +1177,9 @@ function EditSectionForm({
             >
               <option value="">Select Family Type</option>
               {FAMILY_TYPES.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </div>
@@ -832,7 +1229,9 @@ function EditSectionForm({
             >
               <option value="">Select Family Status</option>
               {FAMILY_STATUS_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </div>
@@ -849,13 +1248,17 @@ function EditSectionForm({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="numberOfMarriedBrothers">No. of Married Brothers</Label>
+              <Label htmlFor="numberOfMarriedBrothers">
+                No. of Married Brothers
+              </Label>
               <Input
                 id="numberOfMarriedBrothers"
                 type="number"
                 min={0}
                 value={data.numberOfMarriedBrothers}
-                onChange={(e) => update("numberOfMarriedBrothers", e.target.value)}
+                onChange={(e) =>
+                  update("numberOfMarriedBrothers", e.target.value)
+                }
                 placeholder="0"
               />
             </div>
@@ -871,13 +1274,17 @@ function EditSectionForm({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="numberOfMarriedSisters">No. of Married Sisters</Label>
+              <Label htmlFor="numberOfMarriedSisters">
+                No. of Married Sisters
+              </Label>
               <Input
                 id="numberOfMarriedSisters"
                 type="number"
                 min={0}
                 value={data.numberOfMarriedSisters}
-                onChange={(e) => update("numberOfMarriedSisters", e.target.value)}
+                onChange={(e) =>
+                  update("numberOfMarriedSisters", e.target.value)
+                }
                 placeholder="0"
               />
             </div>
@@ -907,15 +1314,6 @@ function EditSectionForm({
               placeholder="Tell others about yourself"
               rows={4}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="interests">Interests</Label>
-            <Input
-              id="interests"
-              value={data.interests}
-              onChange={(e) => update("interests", e.target.value)}
-              placeholder="Hobbies, interests (comma separated)"
             />
           </div>
         </div>
@@ -963,23 +1361,66 @@ function EditSectionForm({
 function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
   switch (section) {
     case "Basic Info":
-      return [data.name, data.gender, data.dob, data.email].filter(Boolean).join(" · ") || "—";
+      return (
+        [
+          data.name,
+          data.gender ? formatGenderLabel(data.gender) : "",
+          data.dob,
+          data.email,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "—"
+      );
     case "Religion":
-      return [data.religion, data.caste, data.motherTongue].filter(Boolean).join(" · ") || "—";
+      return (
+        [data.religion, data.caste, data.motherTongue]
+          .filter(Boolean)
+          .join(" · ") || "—"
+      );
     case "Education":
-      return [data.qualification, data.educationSubject, data.job, data.income].filter(Boolean).join(" · ") || "—";
+      return (
+        [data.qualification, data.educationSubject, data.job, data.income]
+          .filter(Boolean)
+          .join(" · ") || "—"
+      );
     case "Photos":
       return "Profile and verification photos";
     case "Location":
-      return [data.city, data.state, data.district, data.country].filter(Boolean).join(", ") || data.address || "—";
-    case "Personal":
-      return [data.maritalStatus, data.height, data.weight, data.color].filter(Boolean).join(" · ") || "—";
+      return (
+        [data.city, data.state, data.district, data.country]
+          .filter(Boolean)
+          .join(", ") ||
+        data.address ||
+        "—"
+      );
+    case "Personal": {
+      const h = data.height.trim();
+      const w = data.weight.trim();
+      const parts = [
+        data.maritalStatus,
+        h ? `${h} cm` : "",
+        w ? `${w} kg` : "",
+        data.color,
+      ].filter(Boolean);
+      return parts.join(" · ") || "—";
+    }
     case "Family":
-      return [data.fathersName, data.mothersName, data.aboutMyFamily].filter(Boolean).slice(0, 2).join(" · ") || "—";
+      return (
+        [data.fathersName, data.mothersName, data.aboutMyFamily]
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(" · ") || "—"
+      );
     case "About Me":
-      return data.bio ? `${data.bio.slice(0, 80)}${data.bio.length > 80 ? "…" : ""}` : "—";
+      return data.bio
+        ? `${data.bio.slice(0, 80)}${data.bio.length > 80 ? "…" : ""}`
+        : "—";
     case "Horoscope":
-      return [data.rashi, data.nakshatra, data.manglikStatus].filter(Boolean).join(" · ") || "—";
+      return (
+        [data.rashi, data.nakshatra, data.manglikStatus]
+          .filter(Boolean)
+          .join(" · ") || "—"
+      );
     default:
       return "";
   }
@@ -997,7 +1438,9 @@ const PHOTO_LABELS: Record<string, string> = {
 function getMediaUrl(path: string | null | undefined): string {
   if (!path) return "";
   const base = BASE_URL.replace(/\/api\/?$/, "");
-  return path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path.startsWith("http")
+    ? path
+    : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 function ViewSectionContent({
@@ -1010,19 +1453,42 @@ function ViewSectionContent({
   photos?: Record<string, string | null>;
 }) {
   const row = (label: string, value: string) =>
-    (value != null && String(value).trim() !== "" ? (
-      <div key={label} className="flex flex-wrap gap-x-2 py-1.5 border-b border-border/50 last:border-0">
-        <span className="font-medium text-muted-foreground min-w-[140px]">{label}</span>
+    value != null && String(value).trim() !== "" ? (
+      <div
+        key={label}
+        className="flex flex-wrap gap-x-2 py-1.5 border-b border-border/50 last:border-0"
+      >
+        <span className="font-medium text-muted-foreground min-w-[140px]">
+          {label}
+        </span>
         <span className="text-foreground">{String(value).trim()}</span>
       </div>
-    ) : null);
+    ) : null;
+
+  const preferenceLabelMap: Record<
+    NonNullable<ProfileFormData["partner_preference_type"]>,
+    string
+  > = {
+    own_religion_only: "Same Religion Only",
+    open_to_all: "Open to All Religions",
+    specific_religions: "Specific Religions",
+  };
+
+  const partnerPreferenceType = data.partner_preference_type;
+  const partnerPreferenceLabel =
+    (partnerPreferenceType ? preferenceLabelMap[partnerPreferenceType] : "") ||
+    data.partnerReligionPreference ||
+    "";
+  const specificReligionNames = (data.partner_religion_names ?? []).filter(
+    (x) => String(x).trim() !== "",
+  );
 
   switch (section) {
     case "Basic Info":
       return (
         <div className="space-y-0 divide-y-0">
           {row("Name", data.name)}
-          {row("Gender", data.gender)}
+          {row("Gender", formatGenderLabel(data.gender) || "—")}
           {row("Date of Birth", data.dob)}
           {row("Phone", data.phone)}
           {row("Email", data.email)}
@@ -1034,7 +1500,10 @@ function ViewSectionContent({
           {row("Religion", data.religion)}
           {row("Caste", data.caste)}
           {row("Mother Tongue", data.motherTongue)}
-          {row("Partner Religion Preference", data.partnerReligionPreference || (data.partner_preference_type ?? "").replace(/_/g, " "))}
+          {row("Partner Religion Preference", partnerPreferenceLabel)}
+          {partnerPreferenceType === "specific_religions"
+            ? row("Specific Religions", specificReligionNames.join(", "))
+            : null}
         </div>
       );
     case "Education":
@@ -1050,13 +1519,14 @@ function ViewSectionContent({
     case "Photos": {
       const entries = photos
         ? Object.entries(photos).filter(
-            ([, path]) => path != null && String(path).trim() !== ""
+            ([, path]) => path != null && String(path).trim() !== "",
           )
         : [];
       if (entries.length === 0) {
         return (
           <p className="text-sm text-muted-foreground">
-            No photos uploaded yet. Use Edit to upload profile and verification photos.
+            No photos uploaded yet. Use Edit to upload profile and verification
+            photos.
           </p>
         );
       }
@@ -1100,8 +1570,8 @@ function ViewSectionContent({
           {row("Marital Status", data.maritalStatus)}
           {row("Has Children", data.hasChildren === "yes" ? "Yes" : "No")}
           {row("Number of Children", data.numberOfChildren)}
-          {row("Height", data.height)}
-          {row("Weight", data.weight)}
+          {row("Height (cm)", data.height)}
+          {row("Weight (kg)", data.weight)}
           {row("Colour / Complexion", data.color)}
           {row("Blood Group", data.bloodGroup)}
         </div>
@@ -1121,12 +1591,7 @@ function ViewSectionContent({
         </div>
       );
     case "About Me":
-      return (
-        <div className="space-y-0">
-          {row("Bio", data.bio)}
-          {data.interests ? row("Interests", data.interests) : null}
-        </div>
-      );
+      return <div className="space-y-0">{row("Bio", data.bio)}</div>;
     case "Horoscope":
       return (
         <div className="space-y-0">
@@ -1142,16 +1607,20 @@ function ViewSectionContent({
 
 const UserProfilePage = () => {
   const { user, isHindu } = useAuthStore();
-  const profileSections = allProfileSections.filter((s) => s.title !== "Horoscope" || isHindu());
+  const profileSections = allProfileSections.filter(
+    (s) => s.title !== "Horoscope" || isHindu(),
+  );
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [profileData, setProfileData] = useState<ProfileFormData>(() =>
-    defaultProfileData(user)
+    defaultProfileData(user),
   );
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [viewingSection, setViewingSection] = useState<SectionKey | null>(null);
-  const [profileApiData, setProfileApiData] = useState<ProfileData | null>(null);
+  const [profileApiData, setProfileApiData] = useState<ProfileData | null>(
+    null,
+  );
   const [photoFiles, setPhotoFiles] = useState<Record<string, File | null>>({});
   const editPanelRef = useRef<HTMLDivElement>(null);
 
@@ -1159,10 +1628,18 @@ const UserProfilePage = () => {
   const [locationStates, setLocationStates] = useState<State[]>([]);
   const [locationDistricts, setLocationDistricts] = useState<District[]>([]);
   const [locationCities, setLocationCities] = useState<City[]>([]);
+  const [religionOptions, setReligionOptions] = useState<Religion[]>([]);
+  const [casteOptions, setCasteOptions] = useState<Caste[]>([]);
+  const [motherTongueOptions, setMotherTongueOptions] = useState<
+    MotherTongue[]
+  >([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingReligions, setLoadingReligions] = useState(false);
+  const [loadingCastes, setLoadingCastes] = useState(false);
+  const [loadingMotherTongues, setLoadingMotherTongues] = useState(false);
 
   const loadLocationCountries = useCallback(async (search: string) => {
     setLoadingCountries(true);
@@ -1190,7 +1667,7 @@ const UserProfilePage = () => {
         setLoadingStates(false);
       }
     },
-    [profileData.country_id]
+    [profileData.country_id],
   );
 
   const loadLocationDistricts = useCallback(
@@ -1207,7 +1684,7 @@ const UserProfilePage = () => {
         setLoadingDistricts(false);
       }
     },
-    [profileData.state_id]
+    [profileData.state_id],
   );
 
   const loadLocationCities = useCallback(
@@ -1224,28 +1701,66 @@ const UserProfilePage = () => {
         setLoadingCities(false);
       }
     },
-    [profileData.district_id]
+    [profileData.district_id],
   );
 
-  const updateAvatarFromProfile = useCallback(
-    (data: ProfileData) => {
-      const profilePhoto = data.photos?.profile_photo ?? null;
-      if (!profilePhoto) return;
-      const url = getMediaUrl(profilePhoto);
-      if (!url) return;
-      useAuthStore.setState((state) =>
-        state.user
-          ? {
-              user: {
-                ...state.user,
-                avatar: url,
-              },
-            }
-          : state
-      );
+  const loadReligionsList = useCallback(async (search: string) => {
+    setLoadingReligions(true);
+    try {
+      const list = await getReligions(search || undefined);
+      setReligionOptions(list);
+    } catch {
+      setReligionOptions([]);
+    } finally {
+      setLoadingReligions(false);
+    }
+  }, []);
+
+  const loadCastesList = useCallback(
+    async (search: string) => {
+      const rid = profileData.religion_id ?? 0;
+      if (!rid) return;
+      setLoadingCastes(true);
+      try {
+        const list = await getCastes(rid, search || undefined);
+        setCasteOptions(list);
+      } catch {
+        setCasteOptions([]);
+      } finally {
+        setLoadingCastes(false);
+      }
     },
-    []
+    [profileData.religion_id],
   );
+
+  const loadMotherTonguesList = useCallback(async (search: string) => {
+    setLoadingMotherTongues(true);
+    try {
+      const list = await getMotherTongues(search || undefined);
+      setMotherTongueOptions(list);
+    } catch {
+      setMotherTongueOptions([]);
+    } finally {
+      setLoadingMotherTongues(false);
+    }
+  }, []);
+
+  const updateAvatarFromProfile = useCallback((data: ProfileData) => {
+    const profilePhoto = data.photos?.profile_photo ?? null;
+    if (!profilePhoto) return;
+    const url = getMediaUrl(profilePhoto);
+    if (!url) return;
+    useAuthStore.setState((state) =>
+      state.user
+        ? {
+            user: {
+              ...state.user,
+              avatar: url,
+            },
+          }
+        : state,
+    );
+  }, []);
 
   useEffect(() => {
     if (editingSection !== "Location") return;
@@ -1271,6 +1786,19 @@ const UserProfilePage = () => {
   }, [editingSection, profileData.district_id, loadLocationCities]);
 
   useEffect(() => {
+    if (editingSection !== "Religion") return;
+    loadReligionsList("");
+    loadMotherTonguesList("");
+  }, [editingSection, loadReligionsList, loadMotherTonguesList]);
+
+  useEffect(() => {
+    if (editingSection !== "Religion") return;
+    const rid = profileData.religion_id ?? 0;
+    setCasteOptions([]);
+    if (rid) loadCastesList("");
+  }, [editingSection, profileData.religion_id, loadCastesList]);
+
+  useEffect(() => {
     let cancelled = false;
     setProfileError(null);
     getProfile()
@@ -1281,12 +1809,17 @@ const UserProfilePage = () => {
         updateAvatarFromProfile(res.data);
       })
       .catch((e) => {
-        if (!cancelled) setProfileError(e instanceof Error ? e.message : "Failed to load profile");
+        if (!cancelled)
+          setProfileError(
+            e instanceof Error ? e.message : "Failed to load profile",
+          );
       })
       .finally(() => {
         if (!cancelled) setProfileLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.name, user?.phone, user?.email, user?.location]);
 
   const handleViewSection = (title: SectionKey) => {
@@ -1306,7 +1839,10 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     if (editingSection !== "Photos") return;
-    editPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    editPanelRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }, [editingSection, photoFiles]);
 
   const buildLocationBody = (): LocationBody => ({
@@ -1321,20 +1857,29 @@ const UserProfilePage = () => {
     religion_id: profileData.religion_id ?? 0,
     caste_id: profileData.caste_id ?? null,
     mother_tongue_id: profileData.mother_tongue_id ?? 0,
-    partner_preference_type: profileData.partner_preference_type ?? "open_to_all",
-    partner_religion_ids: profileData.partner_religion_ids ?? [],
+    partner_preference_type:
+      profileData.partner_preference_type ?? "open_to_all",
+    partner_religion_ids: (profileData.partner_religion_ids ?? [])
+      .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
+      .filter((id): id is number => Number.isFinite(id) && id > 0),
   });
 
-  const buildPersonalBody = (): PersonalBody => ({
-    marital_status: profileData.maritalStatus || "",
-    has_children: profileData.hasChildren === "yes",
-    number_of_children:
-      profileData.hasChildren === "yes" ? (parseInt(profileData.numberOfChildren, 10) || null) : null,
-    height_cm: parseInt(profileData.height.replace(/\D/g, ""), 10) || 0,
-    weight_kg: parseFloat(profileData.weight.replace(/[^\d.]/g, "")) || null,
-    complexion: profileData.color || "",
-    blood_group: profileData.bloodGroup || "",
-  });
+  const buildPersonalBody = (): PersonalBody => {
+    const h = parseInt(String(profileData.height).replace(/\D/g, ""), 10);
+    const w = parseFloat(String(profileData.weight).replace(/[^\d.]/g, ""));
+    return {
+      marital_status: profileData.maritalStatus || "",
+      has_children: profileData.hasChildren === "yes",
+      number_of_children:
+        profileData.hasChildren === "yes"
+          ? parseInt(profileData.numberOfChildren, 10) || null
+          : null,
+      height_cm: Number.isFinite(h) ? h : 0,
+      weight_kg: Number.isFinite(w) ? w : null,
+      complexion: profileData.color || "",
+      blood_group: profileData.bloodGroup || "",
+    };
+  };
 
   const buildEducationBody = (): EducationBody => ({
     highest_education: profileData.qualification || "",
@@ -1365,8 +1910,8 @@ const UserProfilePage = () => {
         case "Basic Info":
           await patchBasic({
             name: profileData.name,
-            gender: profileData.gender,
-            dob: profileData.dob,
+            gender: profileData.gender.trim().toLowerCase(),
+            dob: normalizeDobForApi(profileData.dob),
             email: profileData.email,
           });
           if (user) {
@@ -1398,7 +1943,14 @@ const UserProfilePage = () => {
           await patchFamily(buildFamilyBody());
           break;
         case "Photos": {
-          const body: { profile_photo?: File; full_photo?: File; selfie_photo?: File; family_photo?: File; aadhaar_front?: File; aadhaar_back?: File } = {};
+          const body: {
+            profile_photo?: File;
+            full_photo?: File;
+            selfie_photo?: File;
+            family_photo?: File;
+            aadhaar_front?: File;
+            aadhaar_back?: File;
+          } = {};
           PHOTO_KEYS.forEach((k) => {
             const f = photoFiles[k];
             if (f) body[k] = f;
@@ -1533,12 +2085,54 @@ const UserProfilePage = () => {
                   }
                   onLocationChange={
                     editingSection === "Location"
-                      ? (updates) => setProfileData((prev) => ({ ...prev, ...updates }))
+                      ? (updates) =>
+                          setProfileData((prev) => ({ ...prev, ...updates }))
                       : undefined
                   }
-                  photoFiles={editingSection === "Photos" ? photoFiles : undefined}
-                  existingPhotos={editingSection === "Photos" ? profileApiData?.photos : undefined}
-                  onPhotoChange={editingSection === "Photos" ? handlePhotoChange : undefined}
+                  religionOptions={
+                    editingSection === "Religion"
+                      ? {
+                          religions: religionOptions,
+                          castes: casteOptions,
+                          motherTongues: motherTongueOptions,
+                        }
+                      : undefined
+                  }
+                  religionLoading={
+                    editingSection === "Religion"
+                      ? {
+                          religions: loadingReligions,
+                          castes: loadingCastes,
+                          motherTongues: loadingMotherTongues,
+                        }
+                      : undefined
+                  }
+                  religionLoaders={
+                    editingSection === "Religion"
+                      ? {
+                          loadReligions: loadReligionsList,
+                          loadCastes: loadCastesList,
+                          loadMotherTongues: loadMotherTonguesList,
+                        }
+                      : undefined
+                  }
+                  onReligionChange={
+                    editingSection === "Religion"
+                      ? (updates) =>
+                          setProfileData((prev) => ({ ...prev, ...updates }))
+                      : undefined
+                  }
+                  photoFiles={
+                    editingSection === "Photos" ? photoFiles : undefined
+                  }
+                  existingPhotos={
+                    editingSection === "Photos"
+                      ? profileApiData?.photos
+                      : undefined
+                  }
+                  onPhotoChange={
+                    editingSection === "Photos" ? handlePhotoChange : undefined
+                  }
                 />
                 <div className="flex justify-end gap-2 mt-4">
                   <Button
@@ -1551,7 +2145,11 @@ const UserProfilePage = () => {
                   >
                     Cancel
                   </Button>
-                  <Button variant="hero" type="button" onClick={handleSaveSection}>
+                  <Button
+                    variant="hero"
+                    type="button"
+                    onClick={handleSaveSection}
+                  >
                     Save
                   </Button>
                 </div>

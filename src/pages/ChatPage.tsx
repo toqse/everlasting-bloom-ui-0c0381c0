@@ -5,14 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  Send,
-  Sparkles,
-  Smile,
-  Lock,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Smile, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildChatWebSocketUrl,
@@ -32,7 +25,8 @@ function chatParticipantPhotoUrl(photo: string | null | undefined): string {
 }
 
 function parseApiDate(input: unknown): Date | null {
-  if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
+  if (input instanceof Date)
+    return Number.isNaN(input.getTime()) ? null : input;
   if (input === null || input === undefined) return null;
 
   if (typeof input === "number" && Number.isFinite(input)) {
@@ -73,7 +67,10 @@ function formatLastSeen(value: string): string {
   if (!raw) return "";
   const d = parseApiDate(raw);
   if (!d) return raw; // API might already send "10 minutes ago"
-  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 const ChatPage = () => {
@@ -90,7 +87,9 @@ const ChatPage = () => {
   /** Header: from GET chat/messages/{id}/ → other_user */
   const [otherUser, setOtherUser] = useState<ChatOtherUser | null>(null);
 
-  const visibleMessages = messages.filter((m) => (m.text ?? "").trim().length > 0);
+  const visibleMessages = messages.filter(
+    (m) => (m.text ?? "").trim().length > 0,
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -117,7 +116,8 @@ const ChatPage = () => {
         setMessages(list);
         if (res.data.other_user) setOtherUser(res.data.other_user);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load messages");
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Failed to load messages");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -193,7 +193,8 @@ const ChatPage = () => {
               Chat Not Available
             </h2>
             <p className="text-muted-foreground mb-6">
-              You can only chat with this person once your interest has been accepted or you've accepted their interest.
+              You can only chat with this person once your interest has been
+              accepted or you've accepted their interest.
             </p>
             <div className="flex gap-3 justify-center">
               <Button variant="outline" onClick={() => router.back()}>
@@ -222,7 +223,10 @@ const ChatPage = () => {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -244,12 +248,17 @@ const ChatPage = () => {
               >
                 <ArrowLeft className="w-5 h-5 text-primary" />
               </Button>
-              
+
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative shrink-0">
                   {(() => {
-                    const src = chatParticipantPhotoUrl(otherUser?.profile_photo);
-                    const initial = (otherUser?.name ?? "?").trim().charAt(0).toUpperCase();
+                    const src = chatParticipantPhotoUrl(
+                      otherUser?.profile_photo,
+                    );
+                    const initial = (otherUser?.name ?? "?")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase();
                     return src ? (
                       <img
                         src={src}
@@ -261,7 +270,9 @@ const ChatPage = () => {
                         {loading ? (
                           <User className="w-6 h-6 text-primary/40" />
                         ) : (
-                          <span className="text-lg font-bold text-primary/60">{initial}</span>
+                          <span className="text-lg font-bold text-primary/60">
+                            {initial}
+                          </span>
                         )}
                       </div>
                     );
@@ -272,7 +283,9 @@ const ChatPage = () => {
                 </div>
                 <div className="min-w-0">
                   <h2 className="font-serif font-bold text-foreground truncate">
-                    {loading && !otherUser ? "Loading…" : otherUser?.name ?? "Chat"}
+                    {loading && !otherUser
+                      ? "Loading…"
+                      : (otherUser?.name ?? "Chat")}
                   </h2>
                   {otherUser && (
                     <p
@@ -312,7 +325,9 @@ const ChatPage = () => {
           <div className="space-y-4">
             <AnimatePresence>
               {visibleMessages.map((message, index) => {
-                const isOwn = message.sender_matri_id === useAuthStore.getState().user?.matriId;
+                const isOwn =
+                  message.sender_matri_id ===
+                  useAuthStore.getState().user?.matriId;
                 const messageKey = `${message.id}-${message.created_at}-${index}`;
 
                 return (
@@ -321,19 +336,23 @@ const ChatPage = () => {
                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                   >
-                    <div className={`max-w-[75%] ${isOwn ? 'order-2' : ''}`}>
+                    <div className={`max-w-[75%] ${isOwn ? "order-2" : ""}`}>
                       <div
                         className={`px-4 py-3 rounded-2xl shadow-soft ${
                           isOwn
-                            ? 'bg-gradient-to-br from-primary to-primary-light text-primary-foreground rounded-br-sm'
-                            : 'bg-white/90 backdrop-blur-sm text-foreground rounded-bl-sm'
+                            ? "bg-gradient-to-br from-primary to-primary-light text-primary-foreground rounded-br-sm"
+                            : "bg-white/90 backdrop-blur-sm text-foreground rounded-bl-sm"
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <p className="text-sm leading-relaxed">
+                          {message.text}
+                        </p>
                       </div>
-                      <div className={`flex items-center gap-1 mt-1 text-xs text-muted-foreground ${isOwn ? 'justify-end' : ''}`}>
+                      <div
+                        className={`flex items-center gap-1 mt-1 text-xs text-muted-foreground ${isOwn ? "justify-end" : ""}`}
+                      >
                         <span>
                           {(() => {
                             const d = parseApiDate(message.created_at);
@@ -347,7 +366,9 @@ const ChatPage = () => {
               })}
             </AnimatePresence>
             {!loading && visibleMessages.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground py-8">No messages yet.</div>
+              <div className="text-center text-sm text-muted-foreground py-8">
+                No messages yet.
+              </div>
             )}
           </div>
           <div ref={messagesEndRef} />
@@ -367,7 +388,7 @@ const ChatPage = () => {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Type a message..."
                 className="w-full px-4 py-3 bg-accent-rose/30 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
@@ -381,7 +402,70 @@ const ChatPage = () => {
               </Button>
               {emojiOpen && (
                 <div className="absolute right-0 bottom-12 z-20 w-64 max-h-64 overflow-y-auto rounded-2xl bg-white shadow-elevated border border-primary/10 p-2 grid grid-cols-8 gap-1 text-lg">
-                  {["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😍","😘","😜","😎","🙂","🙃","🤗","🤔","🤨","😐","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","😴","😌","🤤","🤒","🤕","🤠","🥳","🥰","❤️","💖","💗","💓","💞","💕","💘","💝","👍","👎","👏","🙌","🙏","💪","💃","🕺","👋","🤝","👀","👩","👨","👫","💑","👩‍❤️‍👨"].map((emoji) => (
+                  {[
+                    "😀",
+                    "😁",
+                    "😂",
+                    "🤣",
+                    "😃",
+                    "😄",
+                    "😅",
+                    "😆",
+                    "😉",
+                    "😊",
+                    "😍",
+                    "😘",
+                    "😜",
+                    "😎",
+                    "🙂",
+                    "🙃",
+                    "🤗",
+                    "🤔",
+                    "🤨",
+                    "😐",
+                    "😶",
+                    "🙄",
+                    "😏",
+                    "😣",
+                    "😥",
+                    "😮",
+                    "🤐",
+                    "😯",
+                    "😪",
+                    "😫",
+                    "😴",
+                    "😌",
+                    "🤤",
+                    "🤒",
+                    "🤕",
+                    "🤠",
+                    "🥳",
+                    "🥰",
+                    "❤️",
+                    "💖",
+                    "💗",
+                    "💓",
+                    "💞",
+                    "💕",
+                    "💘",
+                    "💝",
+                    "👍",
+                    "👎",
+                    "👏",
+                    "🙌",
+                    "🙏",
+                    "💪",
+                    "💃",
+                    "🕺",
+                    "👋",
+                    "🤝",
+                    "👀",
+                    "👩",
+                    "👨",
+                    "👫",
+                    "💑",
+                    "👩‍❤️‍👨",
+                  ].map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
@@ -418,7 +502,7 @@ const ChatPage = () => {
           style={{
             left: `${20 + i * 30}%`,
             top: `${30 + i * 20}%`,
-            width: '24px',
+            width: "24px",
             animationDelay: `${i * 0.5}s`,
           }}
         />

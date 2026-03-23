@@ -21,7 +21,13 @@ export interface ProfileData {
     mother_tongue_id?: number;
     mother_tongue?: string;
     partner_preference_type?: string;
-    partner_religion_ids?: number[];
+    partner_religion_ids?: Array<
+      number | { id?: number; name?: string; religion?: string }
+    >;
+    partner_religion_preference?: Array<{
+      religion_id?: number;
+      religion?: string;
+    }>;
   };
   personal_details?: {
     marital_status_id?: number | string;
@@ -88,7 +94,10 @@ export interface ReligionBody {
   religion_id: number;
   caste_id: number | null;
   mother_tongue_id: number;
-  partner_preference_type: "own_religion_only" | "open_to_all" | "specific_religions";
+  partner_preference_type:
+    | "own_religion_only"
+    | "open_to_all"
+    | "specific_religions";
   partner_religion_ids: number[];
 }
 
@@ -175,13 +184,19 @@ type ProfileErrorPayload = {
   [key: string]: unknown;
 };
 
-const getProfileErrorMessage = (data: ProfileErrorPayload | unknown, fallback: string): string => {
+const getProfileErrorMessage = (
+  data: ProfileErrorPayload | unknown,
+  fallback: string,
+): string => {
   const payload = (data ?? {}) as ProfileErrorPayload;
 
-  if (typeof payload.detail === "string" && payload.detail.trim()) return payload.detail;
-  if (Array.isArray(payload.detail) && payload.detail[0]) return String(payload.detail[0]);
+  if (typeof payload.detail === "string" && payload.detail.trim())
+    return payload.detail;
+  if (Array.isArray(payload.detail) && payload.detail[0])
+    return String(payload.detail[0]);
 
-  if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+  if (typeof payload.message === "string" && payload.message.trim())
+    return payload.message;
   if (payload.message && typeof payload.message === "object") {
     const msgObj = payload.message as Record<string, unknown>;
     for (const key of Object.keys(msgObj)) {
@@ -191,11 +206,17 @@ const getProfileErrorMessage = (data: ProfileErrorPayload | unknown, fallback: s
     }
   }
 
-  if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
+  if (typeof payload.error === "string" && payload.error.trim())
+    return payload.error;
   if (payload.error && typeof payload.error === "object") {
-    const errObj = payload.error as { message?: unknown; detail?: unknown; errors?: unknown };
+    const errObj = payload.error as {
+      message?: unknown;
+      detail?: unknown;
+      errors?: unknown;
+    };
 
-    if (typeof errObj.message === "string" && errObj.message.trim()) return errObj.message;
+    if (typeof errObj.message === "string" && errObj.message.trim())
+      return errObj.message;
     if (errObj.message && typeof errObj.message === "object") {
       const inner = errObj.message as Record<string, unknown>;
       for (const key of Object.keys(inner)) {
@@ -205,22 +226,32 @@ const getProfileErrorMessage = (data: ProfileErrorPayload | unknown, fallback: s
       }
     }
 
-    if (typeof errObj.detail === "string" && errObj.detail.trim()) return errObj.detail;
-    if (Array.isArray(errObj.detail) && errObj.detail[0]) return String(errObj.detail[0]);
+    if (typeof errObj.detail === "string" && errObj.detail.trim())
+      return errObj.detail;
+    if (Array.isArray(errObj.detail) && errObj.detail[0])
+      return String(errObj.detail[0]);
 
-    if (typeof errObj.errors === "string" && errObj.errors.trim()) return errObj.errors;
-    if (Array.isArray(errObj.errors) && errObj.errors[0]) return String(errObj.errors[0]);
+    if (typeof errObj.errors === "string" && errObj.errors.trim())
+      return errObj.errors;
+    if (Array.isArray(errObj.errors) && errObj.errors[0])
+      return String(errObj.errors[0]);
   }
 
-  if (typeof payload.errors === "string" && payload.errors.trim()) return payload.errors;
-  if (Array.isArray(payload.errors) && payload.errors[0]) return String(payload.errors[0]);
+  if (typeof payload.errors === "string" && payload.errors.trim())
+    return payload.errors;
+  if (Array.isArray(payload.errors) && payload.errors[0])
+    return String(payload.errors[0]);
 
   if (payload.errors && typeof payload.errors === "object") {
     for (const key of Object.keys(payload.errors)) {
       const val = (payload.errors as Record<string, unknown>)[key];
       if (typeof val === "string" && val.trim()) return val;
       if (Array.isArray(val) && val[0]) return String(val[0]);
-      if (val && typeof val === "object" && "message" in (val as { message?: string })) {
+      if (
+        val &&
+        typeof val === "object" &&
+        "message" in (val as { message?: string })
+      ) {
         const msg = (val as { message?: string }).message;
         if (msg && msg.trim()) return msg;
       }
@@ -230,7 +261,12 @@ const getProfileErrorMessage = (data: ProfileErrorPayload | unknown, fallback: s
   return fallback;
 };
 
-function logApi(endpoint: string, method: string, body?: unknown, response?: { status: number; data: unknown }) {
+function logApi(
+  endpoint: string,
+  method: string,
+  body?: unknown,
+  response?: { status: number; data: unknown },
+) {
   console.log("[API] Endpoint:", method, endpoint);
   if (body !== undefined) console.log("[API] Request body:", body);
   if (response) console.log("[API] Response:", response);
@@ -238,7 +274,7 @@ function logApi(endpoint: string, method: string, body?: unknown, response?: { s
 
 async function authedFetch<TRes = unknown>(
   path: string,
-  opts: { method: string; body?: string }
+  opts: { method: string; body?: string },
 ): Promise<TRes> {
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
@@ -250,20 +286,38 @@ async function authedFetch<TRes = unknown>(
     },
     ...(opts.body !== undefined && { body: opts.body }),
   });
-  const data = (await res.json().catch(() => ({}))) as TRes & ProfileErrorPayload;
-  logApi(path, opts.method, opts.body != null ? JSON.parse(opts.body) : undefined, { status: res.status, data });
+  const data = (await res.json().catch(() => ({}))) as TRes &
+    ProfileErrorPayload;
+  logApi(
+    path,
+    opts.method,
+    opts.body != null ? JSON.parse(opts.body) : undefined,
+    { status: res.status, data },
+  );
   if (!res.ok) throw new Error(getProfileErrorMessage(data, "Request failed"));
   return data;
 }
 
-async function authedPost<TReq extends object, TRes = unknown>(path: string, body: TReq): Promise<TRes> {
+async function authedPost<TReq extends object, TRes = unknown>(
+  path: string,
+  body: TReq,
+): Promise<TRes> {
   logApi(path, "POST", body);
-  return authedFetch<TRes>(path, { method: "POST", body: JSON.stringify(body) });
+  return authedFetch<TRes>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
-async function authedPatch<TReq extends object, TRes = unknown>(path: string, body: TReq): Promise<TRes> {
+async function authedPatch<TReq extends object, TRes = unknown>(
+  path: string,
+  body: TReq,
+): Promise<TRes> {
   logApi(path, "PATCH", body);
-  return authedFetch<TRes>(path, { method: "PATCH", body: JSON.stringify(body) });
+  return authedFetch<TRes>(path, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function getProfile(): Promise<ProfileResponse> {
@@ -275,9 +329,11 @@ export async function getProfile(): Promise<ProfileResponse> {
     method: "GET",
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   });
-  const data = (await res.json().catch(() => ({}))) as ProfileResponse & ProfileErrorPayload;
+  const data = (await res.json().catch(() => ({}))) as ProfileResponse &
+    ProfileErrorPayload;
   logApi(path, "GET", undefined, { status: res.status, data });
-  if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to load profile"));
+  if (!res.ok)
+    throw new Error(getProfileErrorMessage(data, "Failed to load profile"));
   return data as ProfileResponse;
 }
 
@@ -296,7 +352,12 @@ export function profileMediaUrl(path: string | null | undefined): string {
 export function pickProfilePrimaryPhoto(photos: ProfileData["photos"]): string {
   if (!photos || typeof photos !== "object") return "";
   const rec = photos as Record<string, string | null | undefined>;
-  for (const k of ["profile_photo", "full_photo", "selfie_photo", "profile"] as const) {
+  for (const k of [
+    "profile_photo",
+    "full_photo",
+    "selfie_photo",
+    "profile",
+  ] as const) {
     const u = rec[k];
     if (typeof u === "string" && u.trim()) return profileMediaUrl(u);
   }
@@ -311,10 +372,9 @@ export function syncMeProfileToStore(profile: ProfileData): void {
   const avatar = pickProfilePrimaryPhoto(profile.photos);
   const matriId = profile.matri_id?.trim();
   const displayName =
-    (b?.name && String(b.name).trim()) ||
-    matriId ||
-    undefined;
-  const gender = b?.gender != null ? String(b.gender).trim().toLowerCase() : undefined;
+    (b?.name && String(b.name).trim()) || matriId || undefined;
+  const gender =
+    b?.gender != null ? String(b.gender).trim().toLowerCase() : undefined;
 
   useAuthStore.setState((s) => {
     const u = s.user;
@@ -406,9 +466,13 @@ export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-  const data = (await res.json().catch(() => ({}))) as GenerateAboutResponse & ProfileErrorPayload;
+  const data = (await res.json().catch(() => ({}))) as GenerateAboutResponse &
+    ProfileErrorPayload;
   logApi(path, "GET", undefined, { status: res.status, data });
-  if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to generate about me"));
+  if (!res.ok)
+    throw new Error(
+      getProfileErrorMessage(data, "Failed to generate about me"),
+    );
   return data;
 }
 
@@ -447,10 +511,19 @@ export async function getProfileBasic(): Promise<{
   });
   const data = (await res.json().catch(() => ({}))) as {
     success: boolean;
-    data: { name?: string; gender?: string; dob?: string; email?: string; phone?: string };
+    data: {
+      name?: string;
+      gender?: string;
+      dob?: string;
+      email?: string;
+      phone?: string;
+    };
   } & ProfileErrorPayload;
   logApi(path, "GET", undefined, { status: res.status, data });
-  if (!res.ok) throw new Error(getProfileErrorMessage(data, "Failed to load basic profile"));
+  if (!res.ok)
+    throw new Error(
+      getProfileErrorMessage(data, "Failed to load basic profile"),
+    );
   return data;
 }
 
@@ -469,16 +542,23 @@ export async function getProfileViews(): Promise<{
 }
 
 export interface PartnerPreferenceBody {
-  partner_preference_type: "own_religion_only" | "open_to_all" | "specific_religions";
+  partner_preference_type:
+    | "own_religion_only"
+    | "open_to_all"
+    | "specific_religions";
   partner_religion_ids?: number[];
   partner_caste_preference?: "any" | "own_caste_only";
 }
 
-export async function postPartnerPreference(body: PartnerPreferenceBody): Promise<unknown> {
+export async function postPartnerPreference(
+  body: PartnerPreferenceBody,
+): Promise<unknown> {
   return authedPost("v1/profile/partner-preference/", body);
 }
 
-export async function patchPartnerPreferences(body: PartnerPreferenceBody): Promise<unknown> {
+export async function patchPartnerPreferences(
+  body: PartnerPreferenceBody,
+): Promise<unknown> {
   return authedPatch("v1/profile/partner-preferences/", body);
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import ScrollToTop from "@/components/ScrollToTop";
+import { inter, playfair } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Aiswarya Matrimony",
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body>
         <Providers>
           <ScrollToTop />

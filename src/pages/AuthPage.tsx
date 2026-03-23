@@ -4,7 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Heart, Lock, Eye, EyeOff, Sparkles, ArrowRight, ArrowLeft, Phone, Loader2 } from "lucide-react";
+import {
+  Heart,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  Phone,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -16,8 +26,19 @@ import {
   type VerifyMobileData,
   type VerifyMobileProfile,
 } from "@/lib/authApi";
-import { postLocation, postReligion, postPersonal, postEducation, getGenerateAbout, postAbout, postPhotos, fetchAndSyncMeProfile } from "@/lib/profileApi";
-import SignupStepIndicator, { SIGNUP_STEPS } from "@/components/signup/SignupStepIndicator";
+import {
+  postLocation,
+  postReligion,
+  postPersonal,
+  postEducation,
+  getGenerateAbout,
+  postAbout,
+  postPhotos,
+  fetchAndSyncMeProfile,
+} from "@/lib/profileApi";
+import SignupStepIndicator, {
+  SIGNUP_STEPS,
+} from "@/components/signup/SignupStepIndicator";
 import ProfileForStep from "@/components/signup/steps/ProfileForStep";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
 import LocationStep from "@/components/signup/steps/LocationStep";
@@ -45,11 +66,38 @@ const PROFILE_STEP_TO_SIGNUP_INDEX: Record<string, number> = {
   photos: 7,
 };
 
-const PROFILE_STEP_ORDER: string[] = ["location", "religion", "personal", "education", "about", "photos"];
-const MARITAL_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated"] as const;
+const PROFILE_STEP_ORDER: string[] = [
+  "location",
+  "religion",
+  "personal",
+  "education",
+  "about",
+  "photos",
+];
+const MARITAL_OPTIONS = [
+  "Never Married",
+  "Divorced",
+  "Widowed",
+  "Separated",
+] as const;
 const COLOR_OPTIONS = ["Fair", "Wheatish", "Dark", "Very Fair"] as const;
-const EMPLOYMENT_OPTIONS = ["Employed", "Self-Employed", "Business", "Unemployed", "Student", "Freelancer"] as const;
-const INCOME_RANGES = ["Not specified", "Below 1 Lakh", "1-2 Lakh", "2-5 Lakh", "5-10 Lakh", "10-25 Lakh", "25 Lakh+"] as const;
+const EMPLOYMENT_OPTIONS = [
+  "Employed",
+  "Self-Employed",
+  "Business",
+  "Unemployed",
+  "Student",
+  "Freelancer",
+] as const;
+const INCOME_RANGES = [
+  "Not specified",
+  "Below 1 Lakh",
+  "1-2 Lakh",
+  "2-5 Lakh",
+  "5-10 Lakh",
+  "10-25 Lakh",
+  "25 Lakh+",
+] as const;
 
 const normalizeToken = (v: string) => v.toLowerCase().replace(/[_\-\s]+/g, "");
 
@@ -79,7 +127,8 @@ const normalizeDateForInput = (value: unknown): string => {
 
 const normalizeNumberForInput = (value: unknown): string => {
   if (value == null) return "";
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
+  if (typeof value === "number")
+    return Number.isFinite(value) ? String(value) : "";
   const raw = String(value).trim();
   if (!raw) return "";
   const direct = Number(raw);
@@ -98,7 +147,9 @@ const isProfileFullyCompleted = (data?: VerifyMobileData): boolean => {
   return false;
 };
 
-const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null => {
+const getNextSignupStepFromProfile = (
+  data?: VerifyMobileData,
+): number | null => {
   if (!data) return null;
   const steps = data.profile_steps ?? {};
 
@@ -119,7 +170,7 @@ const getNextSignupStepFromProfile = (data?: VerifyMobileData): number | null =>
 };
 
 function mapProfileToFormData(
-  profile: VerifyMobileProfile | null | undefined
+  profile: VerifyMobileProfile | null | undefined,
 ): { form: Partial<Record<string, string>>; hasChildren?: "yes" | "no" } {
   if (!profile) return { form: {} };
   const b = profile.basic_details;
@@ -128,68 +179,113 @@ function mapProfileToFormData(
   const pers = (profile.personal_details ?? {}) as Record<string, unknown>;
   const edu = (profile.education_details ?? {}) as Record<string, unknown>;
   const phoneStr = b?.phone ?? "";
-  const phoneDigits = phoneStr.replace(/\D/g, "").replace(/^91/, "").slice(0, 10);
+  const phoneDigits = phoneStr
+    .replace(/\D/g, "")
+    .replace(/^91/, "")
+    .slice(0, 10);
   const gender = b?.gender?.toLowerCase();
-  const genderDisplay = gender === "female" ? "Female" : gender === "male" ? "Male" : b?.gender ?? "";
+  const genderDisplay =
+    gender === "female"
+      ? "Female"
+      : gender === "male"
+        ? "Male"
+        : (b?.gender ?? "");
   const childrenCount = Number(
-    pers.number_of_children ??
-    pers.children_count ??
-    0
+    pers.number_of_children ?? pers.children_count ?? 0,
   );
-  const hasChildrenValue = Number.isFinite(childrenCount) && childrenCount > 0 ? "yes" : "no";
+  const hasChildrenValue =
+    Number.isFinite(childrenCount) && childrenCount > 0 ? "yes" : "no";
 
-  return { form: {
-    ...(b?.name != null && b.name !== "" && { name: b.name }),
-    ...(phoneDigits !== "" && { phone: phoneDigits }),
-    ...(b?.email != null && b.email !== "" && { email: b.email }),
-    ...(b?.dob != null && b.dob !== "" && { dob: normalizeDateForInput(b.dob) }),
-    ...(genderDisplay !== "" && { gender: genderDisplay }),
-    ...(loc?.country_id != null && { country_id: String(loc.country_id) }),
-    ...(loc?.country != null && loc.country !== "" && { country: loc.country }),
-    ...(loc?.state_id != null && { state_id: String(loc.state_id) }),
-    ...(loc?.state != null && loc.state !== "" && { state: loc.state }),
-    ...(loc?.district_id != null && { district_id: String(loc.district_id) }),
-    ...(loc?.district != null && loc.district !== "" && { district: loc.district }),
-    ...(loc?.city_id != null && { city_id: String(loc.city_id) }),
-    ...(loc?.city != null && loc.city !== "" && { city: loc.city }),
-    ...(loc?.address != null && loc.address !== "" && { address: loc.address }),
-    ...(rel?.religion_id != null && { religion_id: String(rel.religion_id) }),
-    ...(rel?.religion != null && rel.religion !== "" && { religion: rel.religion }),
-    ...(rel?.caste_id != null && { caste_id: String(rel.caste_id) }),
-    ...(rel?.caste != null && rel.caste !== "" && { caste: rel.caste }),
-    ...(rel?.mother_tongue_id != null && { mother_tongue_id: String(rel.mother_tongue_id) }),
-    ...(rel?.mother_tongue != null && rel.mother_tongue !== "" && { motherTongue: rel.mother_tongue }),
-    ...(pers.marital_status != null && String(pers.marital_status) !== "" && {
-      maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
-    }),
-    ...((pers.height ?? pers.height_cm) != null && {
-      height: normalizeNumberForInput(pers.height ?? pers.height_cm),
-    }),
-    ...((pers.weight ?? pers.weight_kg) != null && {
-      weight: normalizeNumberForInput(pers.weight ?? pers.weight_kg),
-    }),
-    ...((pers.complexion ?? pers.colour) != null && String(pers.complexion ?? pers.colour) !== "" && {
-      skinTone: matchOption(pers.complexion ?? pers.colour, COLOR_OPTIONS),
-    }),
-    ...(pers.number_of_children != null && { numberOfChildren: String(pers.number_of_children) }),
-    ...(pers.children_count != null && { numberOfChildren: String(pers.children_count) }),
-    ...(edu.highest_education != null && String(edu.highest_education) !== "" && { education: String(edu.highest_education) }),
-    ...(edu.education_subject != null && String(edu.education_subject) !== "" && { educationSubject: String(edu.education_subject) }),
-    ...((edu.employment ?? edu.employment_status) != null && String(edu.employment ?? edu.employment_status) !== "" && {
-      employmentStatus: matchOption(edu.employment ?? edu.employment_status, EMPLOYMENT_OPTIONS),
-    }),
-    ...(edu.occupation != null && String(edu.occupation) !== "" && { occupation: String(edu.occupation) }),
-    ...(edu.annual_income != null && String(edu.annual_income) !== "" && {
-      annualIncome: matchOption(edu.annual_income, INCOME_RANGES),
-    }),
-    ...(profile.about_me != null && profile.about_me !== "" && { aboutMe: profile.about_me }),
-  }, hasChildren: hasChildrenValue };
+  return {
+    form: {
+      ...(b?.name != null && b.name !== "" && { name: b.name }),
+      ...(phoneDigits !== "" && { phone: phoneDigits }),
+      ...(b?.email != null && b.email !== "" && { email: b.email }),
+      ...(b?.dob != null &&
+        b.dob !== "" && { dob: normalizeDateForInput(b.dob) }),
+      ...(genderDisplay !== "" && { gender: genderDisplay }),
+      ...(loc?.country_id != null && { country_id: String(loc.country_id) }),
+      ...(loc?.country != null &&
+        loc.country !== "" && { country: loc.country }),
+      ...(loc?.state_id != null && { state_id: String(loc.state_id) }),
+      ...(loc?.state != null && loc.state !== "" && { state: loc.state }),
+      ...(loc?.district_id != null && { district_id: String(loc.district_id) }),
+      ...(loc?.district != null &&
+        loc.district !== "" && { district: loc.district }),
+      ...(loc?.city_id != null && { city_id: String(loc.city_id) }),
+      ...(loc?.city != null && loc.city !== "" && { city: loc.city }),
+      ...(loc?.address != null &&
+        loc.address !== "" && { address: loc.address }),
+      ...(rel?.religion_id != null && { religion_id: String(rel.religion_id) }),
+      ...(rel?.religion != null &&
+        rel.religion !== "" && { religion: rel.religion }),
+      ...(rel?.caste_id != null && { caste_id: String(rel.caste_id) }),
+      ...(rel?.caste != null && rel.caste !== "" && { caste: rel.caste }),
+      ...(rel?.mother_tongue_id != null && {
+        mother_tongue_id: String(rel.mother_tongue_id),
+      }),
+      ...(rel?.mother_tongue != null &&
+        rel.mother_tongue !== "" && { motherTongue: rel.mother_tongue }),
+      ...(pers.marital_status != null &&
+        String(pers.marital_status) !== "" && {
+          maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
+        }),
+      ...((pers.height ?? pers.height_cm) != null && {
+        height: normalizeNumberForInput(pers.height ?? pers.height_cm),
+      }),
+      ...((pers.weight ?? pers.weight_kg) != null && {
+        weight: normalizeNumberForInput(pers.weight ?? pers.weight_kg),
+      }),
+      ...((pers.complexion ?? pers.colour) != null &&
+        String(pers.complexion ?? pers.colour) !== "" && {
+          skinTone: matchOption(pers.complexion ?? pers.colour, COLOR_OPTIONS),
+        }),
+      ...(pers.blood_group != null &&
+        String(pers.blood_group) !== "" && {
+          bloodGroup: String(pers.blood_group),
+        }),
+      ...(pers.number_of_children != null && {
+        numberOfChildren: String(pers.number_of_children),
+      }),
+      ...(pers.children_count != null && {
+        numberOfChildren: String(pers.children_count),
+      }),
+      ...(edu.highest_education != null &&
+        String(edu.highest_education) !== "" && {
+          education: String(edu.highest_education),
+        }),
+      ...(edu.education_subject != null &&
+        String(edu.education_subject) !== "" && {
+          educationSubject: String(edu.education_subject),
+        }),
+      ...((edu.employment ?? edu.employment_status) != null &&
+        String(edu.employment ?? edu.employment_status) !== "" && {
+          employmentStatus: matchOption(
+            edu.employment ?? edu.employment_status,
+            EMPLOYMENT_OPTIONS,
+          ),
+        }),
+      ...(edu.occupation != null &&
+        String(edu.occupation) !== "" && {
+          occupation: String(edu.occupation),
+        }),
+      ...(edu.annual_income != null &&
+        String(edu.annual_income) !== "" && {
+          annualIncome: matchOption(edu.annual_income, INCOME_RANGES),
+        }),
+      ...(profile.about_me != null &&
+        profile.about_me !== "" && { aboutMe: profile.about_me }),
+    },
+    hasChildren: hasChildrenValue,
+  };
 }
 
 const AuthPage = () => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const getProfileIncompleteSignupStep = useAuthStore((s) => s.getProfileIncompleteSignupStep);
+  const getProfileIncompleteSignupStep = useAuthStore(
+    (s) => s.getProfileIncompleteSignupStep,
+  );
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
@@ -223,24 +319,69 @@ const AuthPage = () => {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [signupOtpSent, setSignupOtpSent] = useState(false);
   const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
-  const [photos, setPhotos] = useState<Record<string, { file: File; previewUrl: string }>>({});
+  const [photos, setPhotos] = useState<
+    Record<string, { file: File; previewUrl: string }>
+  >({});
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [aboutSuggestions, setAboutSuggestions] = useState<string[]>([]);
   const [aboutSuggestionIndex, setAboutSuggestionIndex] = useState(0);
-  const [signupErrors, setSignupErrors] = useState<{ email?: string; dob?: string; phone?: string; general?: string }>({});
+  const [signupErrors, setSignupErrors] = useState<{
+    email?: string;
+    dob?: string;
+    phone?: string;
+    general?: string;
+  }>({});
 
   const [formData, setFormData] = useState({
-    profileFor: "", name: "", phone: "", email: "", dob: "", gender: "", password: "",
-    country: "", state: "", district: "", city: "", address: "", addressType: "",
-    country_id: "", state_id: "", district_id: "", city_id: "",
-    religion: "", religion_id: "", caste: "", caste_id: "", subCaste: "",
-    motherTongue: "", mother_tongue_id: "",
-    partner_preference_type: "", partner_religion_ids: "",
-    maritalStatus: "", numberOfChildren: "", height: "", weight: "", skinTone: "",
-    familyType: "", fathersName: "", fathersOccupation: "", mothersName: "", mothersOccupation: "",
-    familyStatus: "", numberOfBrothers: "", numberOfMarriedBrothers: "", numberOfSisters: "", numberOfMarriedSisters: "", aboutMyFamily: "",
-    education: "", educationSubject: "", employmentStatus: "", occupation: "", annualIncome: "",
+    profileFor: "",
+    name: "",
+    phone: "",
+    email: "",
+    dob: "",
+    gender: "",
+    password: "",
+    country: "",
+    state: "",
+    district: "",
+    city: "",
+    address: "",
+    addressType: "",
+    country_id: "",
+    state_id: "",
+    district_id: "",
+    city_id: "",
+    religion: "",
+    religion_id: "",
+    caste: "",
+    caste_id: "",
+    subCaste: "",
+    motherTongue: "",
+    mother_tongue_id: "",
+    partner_preference_type: "",
+    partner_religion_ids: "",
+    maritalStatus: "",
+    numberOfChildren: "",
+    height: "",
+    weight: "",
+    skinTone: "",
+    bloodGroup: "",
+    familyType: "",
+    fathersName: "",
+    fathersOccupation: "",
+    mothersName: "",
+    mothersOccupation: "",
+    familyStatus: "",
+    numberOfBrothers: "",
+    numberOfMarriedBrothers: "",
+    numberOfSisters: "",
+    numberOfMarriedSisters: "",
+    aboutMyFamily: "",
+    education: "",
+    educationSubject: "",
+    employmentStatus: "",
+    occupation: "",
+    annualIncome: "",
     aboutMe: "",
   });
 
@@ -270,7 +411,7 @@ const AuthPage = () => {
         JSON.stringify({
           formData,
           hasChildren,
-        })
+        }),
       );
     } catch {
       // ignore localStorage errors
@@ -291,7 +432,11 @@ const AuthPage = () => {
     };
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = e.target;
     if (name === "phone") {
       const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
@@ -313,11 +458,22 @@ const AuthPage = () => {
       return;
     }
     if (name === "country_id") {
-      setFormData((prev) => ({ ...prev, country_id: value, state_id: "", district_id: "", city_id: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        country_id: value,
+        state_id: "",
+        district_id: "",
+        city_id: "",
+      }));
       return;
     }
     if (name === "state_id") {
-      setFormData((prev) => ({ ...prev, state_id: value, district_id: "", city_id: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        state_id: value,
+        district_id: "",
+        city_id: "",
+      }));
       return;
     }
     if (name === "district_id") {
@@ -326,16 +482,26 @@ const AuthPage = () => {
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === "email") {
-      setSignupErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+      setSignupErrors((prev) => ({
+        ...prev,
+        email: undefined,
+        general: undefined,
+      }));
     }
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.phone) { toast.error("Please enter your phone number"); return; }
+    if (!formData.phone) {
+      toast.error("Please enter your phone number");
+      return;
+    }
     const digits = formData.phone.replace(/\D/g, "");
     const len = digits.length;
-    if (len !== 10) { toast.error("Phone number must be 10 digits"); return; }
+    if (len !== 10) {
+      toast.error("Phone number must be 10 digits");
+      return;
+    }
     const mobile = "+91" + digits;
     try {
       await registerMobile({ mobile });
@@ -352,17 +518,25 @@ const AuthPage = () => {
     const next = [...otp];
     next[index] = value.slice(-1);
     setOtp(next);
-    if (value && index < 5) document.getElementById(`otp-${index + 1}`)?.focus();
+    if (value && index < 5)
+      document.getElementById(`otp-${index + 1}`)?.focus();
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) document.getElementById(`otp-${index - 1}`)?.focus();
+  const handleOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0)
+      document.getElementById(`otp-${index - 1}`)?.focus();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    if (otpCode.length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
+    if (otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
     const digits = formData.phone.replace(/\D/g, "");
     const mobile = "+91" + digits;
     try {
@@ -405,15 +579,33 @@ const AuthPage = () => {
     }
   };
 
-  const handleBackToPhone = () => { setOtpSent(false); setOtp(["", "", "", "", "", ""]); };
+  const handleBackToPhone = () => {
+    setOtpSent(false);
+    setOtp(["", "", "", "", "", ""]);
+  };
 
   const handleSignupSendOtp = async () => {
-    if (!formData.name?.trim()) { toast.error("Please enter full name"); return; }
+    if (!formData.name?.trim()) {
+      toast.error("Please enter full name");
+      return;
+    }
     const digits = formData.phone.replace(/\D/g, "");
-    if (digits.length !== 10) { toast.error("Phone number must be 10 digits"); return; }
-    if (!formData.dob?.trim()) { toast.error("Please enter date of birth"); return; }
-    if (!formData.gender?.trim()) { toast.error("Please select gender"); return; }
-    if (!agreeTerms) { toast.error("Please agree to Terms & Conditions and Privacy Policy"); return; }
+    if (digits.length !== 10) {
+      toast.error("Phone number must be 10 digits");
+      return;
+    }
+    if (!formData.dob?.trim()) {
+      toast.error("Please enter date of birth");
+      return;
+    }
+    if (!formData.gender?.trim()) {
+      toast.error("Please select gender");
+      return;
+    }
+    if (!agreeTerms) {
+      toast.error("Please agree to Terms & Conditions and Privacy Policy");
+      return;
+    }
     const phone_number = "+91" + digits;
     // Convert yyyy-mm-dd (input type="date") to DD-MM-YYYY
     const [y, m, d] = formData.dob.split("-");
@@ -440,10 +632,17 @@ const AuthPage = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send OTP";
       const lower = msg.toLowerCase();
-      const nextErrors: { email?: string; dob?: string; phone?: string; general?: string } = {};
+      const nextErrors: {
+        email?: string;
+        dob?: string;
+        phone?: string;
+        general?: string;
+      } = {};
       if (lower.includes("email")) nextErrors.email = msg;
-      else if (lower.includes("dob") || lower.includes("birth")) nextErrors.dob = msg;
-      else if (lower.includes("phone") || lower.includes("already registered")) nextErrors.phone = msg;
+      else if (lower.includes("dob") || lower.includes("birth"))
+        nextErrors.dob = msg;
+      else if (lower.includes("phone") || lower.includes("already registered"))
+        nextErrors.phone = msg;
       else nextErrors.general = msg;
       setSignupErrors(nextErrors);
     }
@@ -452,7 +651,10 @@ const AuthPage = () => {
   const handleSignupVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = signupOtp.join("");
-    if (otpCode.length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
+    if (otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
     const digits = formData.phone.replace(/\D/g, "");
     const mobile = "+91" + digits;
     try {
@@ -477,47 +679,98 @@ const AuthPage = () => {
     const next = [...signupOtp];
     next[index] = value.slice(-1);
     setSignupOtp(next);
-    if (value && index < 5) (document.getElementById(`signup-otp-${index + 1}`) as HTMLInputElement)?.focus();
+    if (value && index < 5)
+      (
+        document.getElementById(`signup-otp-${index + 1}`) as HTMLInputElement
+      )?.focus();
   };
 
-  const handleSignupOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !signupOtp[index] && index > 0) (document.getElementById(`signup-otp-${index - 1}`) as HTMLInputElement)?.focus();
+  const handleSignupOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !signupOtp[index] && index > 0)
+      (
+        document.getElementById(`signup-otp-${index - 1}`) as HTMLInputElement
+      )?.focus();
   };
 
-  const handleSignupBackFromOtp = () => { setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); };
+  const handleSignupBackFromOtp = () => {
+    setSignupOtpSent(false);
+    setSignupOtp(["", "", "", "", "", ""]);
+  };
 
   const handleSignupNext = async () => {
-    if (signupStep === 0 && !formData.profileFor) { toast.error("Please select who this profile is for"); return; }
+    if (signupStep === 0 && !formData.profileFor) {
+      toast.error("Please select who this profile is for");
+      return;
+    }
     if (signupStep === 1) {
-      if (!phoneVerified) { toast.error("Please verify your phone with OTP first"); return; }
-      if (!formData.name?.trim() || !formData.dob || !formData.gender) { toast.error("Please fill name, date of birth, and gender"); return; }
-      if (!agreeTerms) { toast.error("Please agree to Terms & Conditions"); return; }
+      if (!phoneVerified) {
+        toast.error("Please verify your phone with OTP first");
+        return;
+      }
+      if (!formData.name?.trim() || !formData.dob || !formData.gender) {
+        toast.error("Please fill name, date of birth, and gender");
+        return;
+      }
+      if (!agreeTerms) {
+        toast.error("Please agree to Terms & Conditions");
+        return;
+      }
     }
     if (signupStep === 2) {
       const cid = formData.country_id ? Number(formData.country_id) : 0;
       const sid = formData.state_id ? Number(formData.state_id) : 0;
       const did = formData.district_id ? Number(formData.district_id) : 0;
       const cityId = formData.city_id ? Number(formData.city_id) : 0;
-      if (!cid || !sid || !did || !cityId) { toast.error("Please select Country, State, District and City"); return; }
-      if (!formData.address?.trim()) { toast.error("Please enter your address"); return; }
+      if (!cid || !sid || !did || !cityId) {
+        toast.error("Please select Country, State, District and City");
+        return;
+      }
+      if (!formData.address?.trim()) {
+        toast.error("Please enter your address");
+        return;
+      }
       try {
-        await postLocation({ country_id: cid, state_id: sid, district_id: did, city_id: cityId, address: formData.address.trim() });
+        await postLocation({
+          country_id: cid,
+          state_id: sid,
+          district_id: did,
+          city_id: cityId,
+          address: formData.address.trim(),
+        });
         useAuthStore.getState().markProfileStepComplete("location");
         toast.success("Location saved");
         setDirection(1);
         setSignupStep(3);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save location");
+        toast.error(
+          err instanceof Error ? err.message : "Failed to save location",
+        );
       }
       return;
     }
     if (signupStep === 3) {
-      const religionId = formData.religion_id ? Number(formData.religion_id) : 0;
+      const religionId = formData.religion_id
+        ? Number(formData.religion_id)
+        : 0;
       const casteId = formData.caste_id ? Number(formData.caste_id) : 0;
-      const motherTongueId = formData.mother_tongue_id ? Number(formData.mother_tongue_id) : 0;
-      if (!religionId) { toast.error("Please select your religion"); return; }
-      if (!motherTongueId) { toast.error("Please select your mother tongue"); return; }
-      const prefType = (formData.partner_preference_type || "open_to_all") as "own_religion_only" | "open_to_all" | "specific_religions";
+      const motherTongueId = formData.mother_tongue_id
+        ? Number(formData.mother_tongue_id)
+        : 0;
+      if (!religionId) {
+        toast.error("Please select your religion");
+        return;
+      }
+      if (!motherTongueId) {
+        toast.error("Please select your mother tongue");
+        return;
+      }
+      const prefType = (formData.partner_preference_type || "open_to_all") as
+        | "own_religion_only"
+        | "open_to_all"
+        | "specific_religions";
       const partnerReligionIds =
         formData.partner_religion_ids
           ?.split(",")
@@ -536,20 +789,37 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(4);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save religious details");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Failed to save religious details",
+        );
       }
       return;
     }
     if (signupStep === 4) {
-      if (!formData.maritalStatus) { toast.error("Please select marital status"); return; }
-      if (!formData.height?.trim()) { toast.error("Please enter your height"); return; }
-      if (!formData.skinTone) { toast.error("Please select complexion / color"); return; }
+      if (!formData.maritalStatus) {
+        toast.error("Please select marital status");
+        return;
+      }
+      if (!formData.height?.trim()) {
+        toast.error("Please enter your height");
+        return;
+      }
+      if (!formData.skinTone) {
+        toast.error("Please select complexion / color");
+        return;
+      }
 
       const maritalStatus = formData.maritalStatus;
       const isStatusWithChildren =
-        maritalStatus === "Divorced" || maritalStatus === "Widowed" || maritalStatus === "Separated";
+        maritalStatus === "Divorced" ||
+        maritalStatus === "Widowed" ||
+        maritalStatus === "Separated";
 
-      const hasChildrenFlag = isStatusWithChildren ? hasChildren === "yes" : false;
+      const hasChildrenFlag = isStatusWithChildren
+        ? hasChildren === "yes"
+        : false;
 
       let numberOfChildren: number | null = null;
       if (hasChildrenFlag) {
@@ -563,7 +833,8 @@ const AuthPage = () => {
 
       const heightNumber = Number(formData.height);
       if (!Number.isFinite(heightNumber) || heightNumber <= 0) {
-        toast.error("Please enter a valid height"); return;
+        toast.error("Please enter a valid height");
+        return;
       }
 
       const weightNumber = formData.weight ? Number(formData.weight) : NaN;
@@ -583,16 +854,35 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(5);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save personal details");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Failed to save personal details",
+        );
       }
       return;
     }
     if (signupStep === 5) {
-      if (!formData.education) { toast.error("Please select highest education"); return; }
-      if (!formData.educationSubject) { toast.error("Please select subject"); return; }
-      if (!formData.employmentStatus) { toast.error("Please select employment"); return; }
-      if (!formData.occupation?.trim()) { toast.error("Please enter occupation"); return; }
-      if (!formData.annualIncome) { toast.error("Please select annual income"); return; }
+      if (!formData.education) {
+        toast.error("Please select highest education");
+        return;
+      }
+      if (!formData.educationSubject) {
+        toast.error("Please select subject");
+        return;
+      }
+      if (!formData.employmentStatus) {
+        toast.error("Please select employment");
+        return;
+      }
+      if (!formData.occupation?.trim()) {
+        toast.error("Please enter occupation");
+        return;
+      }
+      if (!formData.annualIncome) {
+        toast.error("Please select annual income");
+        return;
+      }
 
       try {
         await postEducation({
@@ -607,7 +897,11 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(6);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save education details");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Failed to save education details",
+        );
       }
       return;
     }
@@ -619,12 +913,16 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(7);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save about me");
+        toast.error(
+          err instanceof Error ? err.message : "Failed to save about me",
+        );
       }
       return;
     }
-    if (signupStep < SIGNUP_STEPS.length - 1) { setDirection(1); setSignupStep(signupStep + 1); }
-    else {
+    if (signupStep < SIGNUP_STEPS.length - 1) {
+      setDirection(1);
+      setSignupStep(signupStep + 1);
+    } else {
       if (isCreatingAccount) return;
       setIsCreatingAccount(true);
       let shouldReset = true;
@@ -643,13 +941,16 @@ const AuthPage = () => {
           toast.success("Photos uploaded successfully");
         }
 
-        const { loginWithProfile, clearProfileIncomplete } = useAuthStore.getState();
+        const { loginWithProfile, clearProfileIncomplete } =
+          useAuthStore.getState();
         loginWithProfile({
           name: formData.name,
           phone: formData.phone,
           email: formData.email || undefined,
           religion: formData.religion || "",
-          location: [formData.city, formData.state].filter(Boolean).join(", ") || undefined,
+          location:
+            [formData.city, formData.state].filter(Boolean).join(", ") ||
+            undefined,
         });
         clearProfileIncomplete();
         try {
@@ -658,11 +959,15 @@ const AuthPage = () => {
           // ignore localStorage errors
         }
         await fetchAndSyncMeProfile();
-        toast.success("Account created successfully! 🎉", { description: "Welcome to Aiswarya Matrimony!" });
+        toast.success("Account created successfully! 🎉", {
+          description: "Welcome to Aiswarya Matrimony!",
+        });
         shouldReset = false;
         router.push("/dashboard");
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to create account");
+        toast.error(
+          err instanceof Error ? err.message : "Failed to create account",
+        );
       } finally {
         if (shouldReset) setIsCreatingAccount(false);
       }
@@ -674,7 +979,10 @@ const AuthPage = () => {
       let suggestions = aboutSuggestions;
       if (!suggestions.length) {
         const res = await getGenerateAbout();
-        suggestions = res.data.suggestions && res.data.suggestions.length ? res.data.suggestions : [res.data.about_me];
+        suggestions =
+          res.data.suggestions && res.data.suggestions.length
+            ? res.data.suggestions
+            : [res.data.about_me];
         setAboutSuggestions(suggestions);
         setAboutSuggestionIndex(0);
       }
@@ -684,11 +992,16 @@ const AuthPage = () => {
       setAboutSuggestionIndex(index + 1);
       toast.success("Suggestion added. You can edit it.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to generate about me");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to generate about me",
+      );
     }
   };
 
-  const handleAboutSkip = () => { setFormData((prev) => ({ ...prev, aboutMe: "" })); toast.success("Skipped. You can add this later."); };
+  const handleAboutSkip = () => {
+    setFormData((prev) => ({ ...prev, aboutMe: "" }));
+    toast.success("Skipped. You can add this later.");
+  };
 
   const minSignupStep = isProfileResumeFlow ? 2 : 0;
 
@@ -709,15 +1022,71 @@ const AuthPage = () => {
   const renderStep = () => {
     const props = { formData, onChange: handleChange };
     switch (signupStep) {
-      case 0: return <ProfileForStep profileFor={formData.profileFor} onChange={(v) => setFormData((prev) => ({ ...prev, profileFor: v }))} />;
-      case 1: return <BasicInfoStep {...props} agreeTerms={agreeTerms} setAgreeTerms={setAgreeTerms} otpSent={signupOtpSent} otp={signupOtp} onSendOtp={handleSignupSendOtp} onVerifyOtp={handleSignupVerifyOtp} onOtpChange={handleSignupOtpChange} onOtpKeyDown={handleSignupOtpKeyDown} onBackFromOtp={handleSignupBackFromOtp} phoneVerified={phoneVerified} canSendOtp={canSendSignupOtp} fieldErrors={signupErrors} />;
-      case 2: return <LocationStep {...props} />;
-      case 3: return <ReligiousStep {...props} interCaste={false} setInterCaste={() => {}} />;
-      case 4: return <PersonalStep {...props} hasChildren={hasChildren} setHasChildren={setHasChildren} />;
-      case 5: return <EducationStep {...props} />;
-      case 6: return <AboutMeStep {...props} onHelpMeWrite={handleAboutHelpMeWrite} onSkip={handleAboutSkip} />;
-      case 7: return <PhotosStep photos={photos} setPhotos={setPhotos} onSkipOrCompleteLater={handleSignupNext} />;
-      default: return null;
+      case 0:
+        return (
+          <ProfileForStep
+            profileFor={formData.profileFor}
+            onChange={(v) =>
+              setFormData((prev) => ({ ...prev, profileFor: v }))
+            }
+          />
+        );
+      case 1:
+        return (
+          <BasicInfoStep
+            {...props}
+            agreeTerms={agreeTerms}
+            setAgreeTerms={setAgreeTerms}
+            otpSent={signupOtpSent}
+            otp={signupOtp}
+            onSendOtp={handleSignupSendOtp}
+            onVerifyOtp={handleSignupVerifyOtp}
+            onOtpChange={handleSignupOtpChange}
+            onOtpKeyDown={handleSignupOtpKeyDown}
+            onBackFromOtp={handleSignupBackFromOtp}
+            phoneVerified={phoneVerified}
+            canSendOtp={canSendSignupOtp}
+            fieldErrors={signupErrors}
+          />
+        );
+      case 2:
+        return <LocationStep {...props} />;
+      case 3:
+        return (
+          <ReligiousStep
+            {...props}
+            interCaste={false}
+            setInterCaste={() => {}}
+          />
+        );
+      case 4:
+        return (
+          <PersonalStep
+            {...props}
+            hasChildren={hasChildren}
+            setHasChildren={setHasChildren}
+          />
+        );
+      case 5:
+        return <EducationStep {...props} />;
+      case 6:
+        return (
+          <AboutMeStep
+            {...props}
+            onHelpMeWrite={handleAboutHelpMeWrite}
+            onSkip={handleAboutSkip}
+          />
+        );
+      case 7:
+        return (
+          <PhotosStep
+            photos={photos}
+            setPhotos={setPhotos}
+            onSkipOrCompleteLater={handleSignupNext}
+          />
+        );
+      default:
+        return null;
     }
   };
 
@@ -737,15 +1106,24 @@ const AuthPage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[hsl(340,60%,93%)/0.3]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <div className="absolute bottom-8 left-8 right-8 text-white">
-            <h2 className="font-serif text-3xl font-bold mb-2 drop-shadow-lg">Find Your Soulmate</h2>
-            <p className="text-white/90 text-sm drop-shadow-md">39 Years of Trust & Tradition — Join millions of happy couples</p>
+            <h2 className="font-serif text-3xl font-bold mb-2 drop-shadow-lg">
+              Find Your Soulmate
+            </h2>
+            <p className="text-white/90 text-sm drop-shadow-md">
+              39 Years of Trust & Tradition — Join millions of happy couples
+            </p>
           </div>
         </div>
 
         {/* Right side - Login Form with ring background */}
         <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
           <div className="absolute inset-0">
-            <img src="/images/ring.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
+            <img
+              src="/images/ring.jpg"
+              alt=""
+              className="w-full h-full object-cover object-center"
+              aria-hidden
+            />
             <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-primary/25" />
           </div>
           <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
@@ -753,88 +1131,149 @@ const AuthPage = () => {
 
           <div className="flex-1 min-h-0 overflow-hidden flex items-start justify-center pt-0 pb-6 px-3 sm:px-4 relative z-10">
             <div className="w-full max-w-xl min-w-0">
-            <div className="flex justify-center mb-0">
-              <img
-                src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
-                alt="AVB - 39 Years of Trust & Tradition"
-                className="h-36 sm:h-44 md:h-52 w-auto object-contain"
-              />
-            </div>
-            <button onClick={() => router.push("/")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 sm:mb-2 group">
-              <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform shrink-0" />
-              <span className="font-medium text-lg">Back to Home</span>
-            </button>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-5 sm:p-8 md:p-10 border border-primary/5"
-            >
-              <div className="text-center mb-6 sm:mb-10">
-                <div className="inline-flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5">
-                  <div className="relative">
-                    <Heart className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-primary fill-primary animate-heart-beat" />
-                    <Sparkles className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 text-secondary animate-sparkle" />
-                  </div>
-                  <span className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold text-primary">
-                    Aiswarya <span className="text-secondary">Matrimony</span>
-                  </span>
-                </div>
-                <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">Welcome Back</h1>
-                <p className="text-muted-foreground text-lg">Sign in to continue your journey</p>
+              <div className="flex justify-center mb-0">
+                <img
+                  src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+                  alt="AVB - 39 Years of Trust & Tradition"
+                  className="h-36 sm:h-44 md:h-52 w-auto object-contain"
+                />
               </div>
+              <button
+                onClick={() => router.push("/")}
+                className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 sm:mb-2 group"
+              >
+                <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform shrink-0" />
+                <span className="font-medium text-lg">Back to Home</span>
+              </button>
 
-              {!otpSent ? (
-                <>
-                  <form onSubmit={handleSendOtp} className="space-y-6">
-                    <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                      <Phone className="absolute left-6 w-7 h-7 text-primary/50" />
-                      <span className="pl-16 pr-2 text-lg text-foreground">+91</span>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-5 sm:p-8 md:p-10 border border-primary/5"
+              >
+                <div className="text-center mb-6 sm:mb-10">
+                  <div className="inline-flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5">
+                    <div className="relative">
+                      <Heart className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 text-primary fill-primary animate-heart-beat" />
+                      <Sparkles className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 text-secondary animate-sparkle" />
                     </div>
-                    <Button type="submit" variant="hero" size="xl" className="w-full gap-2 text-lg py-7">
-                      Send OTP <ArrowRight className="w-6 h-6" />
-                    </Button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <p className="text-muted-foreground text-lg mb-4 text-center">
-                    Enter the 6-digit OTP sent to <span className="font-medium text-foreground">+91 {formData.phone}</span>
+                    <span className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold text-primary">
+                      Aiswarya <span className="text-secondary">Matrimony</span>
+                    </span>
+                  </div>
+                  <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
+                    Welcome Back
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Sign in to continue your journey
                   </p>
-                  <form onSubmit={handleVerifyOtp} className="space-y-6">
-                    <div className="flex justify-center gap-2 sm:gap-3">
-                      {otp.map((digit, index) => (
-                        <input key={index} id={`otp-${index}`} type="text" inputMode="numeric" maxLength={1} value={digit}
-                          onChange={(e) => handleOtpChange(index, e.target.value)} onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                          className="w-14 h-16 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white transition-colors" />
-                      ))}
-                    </div>
-                    <Button type="submit" variant="hero" size="lg" className="w-full gap-2 text-lg py-7">Verify & Continue <ArrowRight className="w-6 h-6" /></Button>
-                    <button type="button" onClick={handleBackToPhone} className="w-full text-center text-lg text-muted-foreground hover:text-primary transition-colors">
-                      Change number
-                    </button>
-                  </form>
-                </>
-              )}
+                </div>
 
-              {!otpSent && (
-                <>
-                  <div className="my-6 sm:my-8 flex items-center gap-4">
-                    <div className="flex-1 border-t border-primary/10" />
-                    <span className="text-lg text-muted-foreground">OR</span>
-                    <div className="flex-1 border-t border-primary/10" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-muted-foreground text-lg">
-                      Don't have an account?{" "}
-                      <button type="button" onClick={() => { setMode("signup"); setIsProfileResumeFlow(false); setSignupStep(0); setPhoneVerified(false); setSignupOtpSent(false); setSignupOtp(["", "", "", "", "", ""]); }}
-                        className="text-primary font-bold hover:text-primary-dark transition-colors">Register free</button>
+                {!otpSent ? (
+                  <>
+                    <form onSubmit={handleSendOtp} className="space-y-6">
+                      <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
+                        <Phone className="absolute left-6 w-7 h-7 text-primary/50" />
+                        <span className="pl-16 pr-2 text-lg text-foreground">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          placeholder="Phone Number"
+                          minLength={10}
+                          maxLength={10}
+                          inputMode="numeric"
+                          pattern="[0-9]{10}"
+                          className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        variant="hero"
+                        size="xl"
+                        className="w-full gap-2 text-lg py-7"
+                      >
+                        Send OTP <ArrowRight className="w-6 h-6" />
+                      </Button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground text-lg mb-4 text-center">
+                      Enter the 6-digit OTP sent to{" "}
+                      <span className="font-medium text-foreground">
+                        +91 {formData.phone}
+                      </span>
                     </p>
-                  </div>
-                </>
-              )}
-            </motion.div>
+                    <form onSubmit={handleVerifyOtp} className="space-y-6">
+                      <div className="flex justify-center gap-2 sm:gap-3">
+                        {otp.map((digit, index) => (
+                          <input
+                            key={index}
+                            id={`otp-${index}`}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) =>
+                              handleOtpChange(index, e.target.value)
+                            }
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            className="w-14 h-16 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white transition-colors"
+                          />
+                        ))}
+                      </div>
+                      <Button
+                        type="submit"
+                        variant="hero"
+                        size="lg"
+                        className="w-full gap-2 text-lg py-7"
+                      >
+                        Verify & Continue <ArrowRight className="w-6 h-6" />
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={handleBackToPhone}
+                        className="w-full text-center text-lg text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Change number
+                      </button>
+                    </form>
+                  </>
+                )}
+
+                {!otpSent && (
+                  <>
+                    <div className="my-6 sm:my-8 flex items-center gap-4">
+                      <div className="flex-1 border-t border-primary/10" />
+                      <span className="text-lg text-muted-foreground">OR</span>
+                      <div className="flex-1 border-t border-primary/10" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-lg">
+                        Don't have an account?{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode("signup");
+                            setIsProfileResumeFlow(false);
+                            setSignupStep(0);
+                            setPhoneVerified(false);
+                            setSignupOtpSent(false);
+                            setSignupOtp(["", "", "", "", "", ""]);
+                          }}
+                          className="text-primary font-bold hover:text-primary-dark transition-colors"
+                        >
+                          Register free
+                        </button>
+                      </p>
+                    </div>
+                  </>
+                )}
+              </motion.div>
             </div>
           </div>
         </div>
@@ -859,87 +1298,124 @@ const AuthPage = () => {
       {/* Right side - Signup form with background image */}
       <div className="flex-1 min-h-0 flex items-center justify-center relative overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4">
         <div className="absolute inset-0">
-          <img src="/images/image2.jpg" alt="" className="w-full h-full object-cover object-center" aria-hidden />
+          <img
+            src="/images/image2.jpg"
+            alt=""
+            className="w-full h-full object-cover object-center"
+            aria-hidden
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/75 to-primary/20" />
         </div>
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
         <div className="w-full max-w-4xl relative z-10 min-w-0">
-        <div className="flex justify-center mb-0">
-          <img
-            src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
-            alt="AVB - 39 Years of Trust & Tradition"
-            className="h-28 sm:h-36 md:h-40 w-auto object-contain"
-          />
-        </div>
-        {signupStep === 0 ? (
-          <button onClick={() => setMode("login")} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Sign In</span>
-          </button>
-        ) : signupStep > minSignupStep ? (
-          <button onClick={handleSignupPrev} className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Previous Step</span>
-          </button>
-        ) : <div className="mb-1" />}
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5">
-          <SignupStepIndicator currentStep={signupStep} />
-
-          <div className="min-h-[320px] sm:min-h-[380px] max-h-[50vh] sm:max-h-[55vh] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:thin]">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div key={signupStep} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }}>
-                {renderStep()}
-              </motion.div>
-            </AnimatePresence>
+          <div className="flex justify-center mb-0">
+            <img
+              src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+              alt="AVB - 39 Years of Trust & Tradition"
+              className="h-28 sm:h-36 md:h-40 w-auto object-contain"
+            />
           </div>
+          {signupStep === 0 ? (
+            <button
+              onClick={() => setMode("login")}
+              className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium">Back to Sign In</span>
+            </button>
+          ) : signupStep > minSignupStep ? (
+            <button
+              onClick={handleSignupPrev}
+              className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-1 group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium">Previous Step</span>
+            </button>
+          ) : (
+            <div className="mb-1" />
+          )}
 
-          <div className="mt-8 space-y-3">
-            {canShowContinue && (
-              <Button
-                variant="hero"
-                size="lg"
-                className="w-full gap-2"
-                onClick={handleSignupNext}
-                disabled={signupStep === SIGNUP_STEPS.length - 1 && isCreatingAccount}
-              >
-                {signupStep === SIGNUP_STEPS.length - 1 ? (
-                  isCreatingAccount ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Creating Account...
-                    </>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-elevated p-4 sm:p-6 md:p-8 border border-primary/5"
+          >
+            <SignupStepIndicator currentStep={signupStep} />
+
+            <div className="min-h-[320px] sm:min-h-[380px] max-h-[50vh] sm:max-h-[55vh] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:thin]">
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.div
+                  key={signupStep}
+                  custom={direction}
+                  variants={stepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  {renderStep()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-8 space-y-3">
+              {canShowContinue && (
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="w-full gap-2"
+                  onClick={handleSignupNext}
+                  disabled={
+                    signupStep === SIGNUP_STEPS.length - 1 && isCreatingAccount
+                  }
+                >
+                  {signupStep === SIGNUP_STEPS.length - 1 ? (
+                    isCreatingAccount ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        Create Account
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )
                   ) : (
                     <>
-                      Create Account
+                      Continue
                       <ArrowRight className="w-5 h-5" />
                     </>
-                  )
-                ) : (
-                  <>
-                    Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </Button>
-            )}
-            {signupStep > minSignupStep && (
-              <button onClick={handleSignupPrev} className="w-full text-center text-foreground font-medium hover:text-primary transition-colors py-2">Previous</button>
-            )}
-          </div>
-
-          {signupStep === 0 && (
-            <div className="mt-6 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{" "}
-                <button type="button" onClick={() => setMode("login")} className="text-primary font-bold hover:text-primary-dark transition-colors">Sign In</button>
-              </p>
+                  )}
+                </Button>
+              )}
+              {signupStep > minSignupStep && (
+                <button
+                  onClick={handleSignupPrev}
+                  className="w-full text-center text-foreground font-medium hover:text-primary transition-colors py-2"
+                >
+                  Previous
+                </button>
+              )}
             </div>
-          )}
-        </motion.div>
+
+            {signupStep === 0 && (
+              <div className="mt-6 text-center">
+                <p className="text-muted-foreground">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-primary font-bold hover:text-primary-dark transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </p>
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
     </div>

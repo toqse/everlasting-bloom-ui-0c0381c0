@@ -3,6 +3,7 @@
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { stableUnit } from "@/lib/stableRandom";
 
 const Hero = () => {
   const router = useRouter();
@@ -25,15 +26,42 @@ const Hero = () => {
       {/* Animated Background Particles */}
       <div className="absolute inset-0 overflow-hidden">
         {petals.map((_, i) => (
-          <div key={`petal-${i}`} className="absolute animate-petal-fall"
-            style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 10}s`, animationDuration: `${10 + Math.random() * 8}s` }}>
-            <Heart className="text-primary/20" style={{ width: `${14 + Math.random() * 20}px`, height: `${14 + Math.random() * 20}px` }} fill="currentColor" />
+          <div
+            key={`petal-${i}`}
+            className="absolute animate-petal-fall"
+            style={{
+              left: `${stableUnit(`petal-${i}-L`) * 100}%`,
+              animationDelay: `${stableUnit(`petal-${i}-D`) * 10}s`,
+              animationDuration: `${10 + stableUnit(`petal-${i}-T`) * 8}s`,
+            }}
+          >
+            <Heart
+              className="text-primary/20"
+              style={{
+                width: `${14 + stableUnit(`petal-${i}-W`) * 20}px`,
+                height: `${14 + stableUnit(`petal-${i}-H`) * 20}px`,
+              }}
+              fill="currentColor"
+            />
           </div>
         ))}
         {sparkles.map((_, i) => (
-          <div key={`sparkle-${i}`} className="absolute animate-sparkle"
-            style={{ left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 80}%`, animationDelay: `${Math.random() * 3}s` }}>
-            <Sparkles className="text-secondary/40" style={{ width: `${16 + Math.random() * 12}px`, height: `${16 + Math.random() * 12}px` }} />
+          <div
+            key={`sparkle-${i}`}
+            className="absolute animate-sparkle"
+            style={{
+              left: `${10 + stableUnit(`sparkle-${i}-L`) * 80}%`,
+              top: `${10 + stableUnit(`sparkle-${i}-T`) * 80}%`,
+              animationDelay: `${stableUnit(`sparkle-${i}-D`) * 3}s`,
+            }}
+          >
+            <Sparkles
+              className="text-secondary/40"
+              style={{
+                width: `${16 + stableUnit(`sparkle-${i}-W`) * 12}px`,
+                height: `${16 + stableUnit(`sparkle-${i}-H`) * 12}px`,
+              }}
+            />
           </div>
         ))}
       </div>

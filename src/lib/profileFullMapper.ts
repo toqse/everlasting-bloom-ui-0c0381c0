@@ -34,7 +34,9 @@ function ageFromDob(dob: unknown): number {
   return Math.max(0, age);
 }
 
-export function mapFullProfileToDrawerDisplay(profile: unknown): FullProfileDrawerDisplay | null {
+export function mapFullProfileToDrawerDisplay(
+  profile: unknown,
+): FullProfileDrawerDisplay | null {
   if (!profile || typeof profile !== "object") return null;
   const p = profile as Record<string, unknown>;
 
@@ -46,22 +48,41 @@ export function mapFullProfileToDrawerDisplay(profile: unknown): FullProfileDraw
   const fam = (p.family_details as Record<string, unknown>) ?? {};
   const photos = (p.photos as Record<string, unknown>) ?? {};
 
-  const phone = bd.phone != null && String(bd.phone).trim() ? String(bd.phone).trim() : null;
-  const email = bd.email != null && String(bd.email).trim() ? String(bd.email).trim() : null;
+  const phone =
+    bd.phone != null && String(bd.phone).trim()
+      ? String(bd.phone).trim()
+      : null;
+  const email =
+    bd.email != null && String(bd.email).trim()
+      ? String(bd.email).trim()
+      : null;
 
   const city = loc.city != null ? String(loc.city) : "";
   const district = loc.district != null ? String(loc.district) : "";
   const state = loc.state != null ? String(loc.state) : "";
-  const location = [city, district, state].filter(Boolean).join(", ") || String(loc.address ?? "");
+  const location =
+    [city, district, state].filter(Boolean).join(", ") ||
+    String(loc.address ?? "");
 
   const famLines: string[] = [];
-  if (fam.father_name) famLines.push(`Father: ${fam.father_name}${fam.father_occupation ? ` (${fam.father_occupation})` : ""}`);
-  if (fam.mother_name) famLines.push(`Mother: ${fam.mother_name}${fam.mother_occupation ? ` (${fam.mother_occupation})` : ""}`);
+  if (fam.father_name)
+    famLines.push(
+      `Father: ${fam.father_name}${fam.father_occupation ? ` (${fam.father_occupation})` : ""}`,
+    );
+  if (fam.mother_name)
+    famLines.push(
+      `Mother: ${fam.mother_name}${fam.mother_occupation ? ` (${fam.mother_occupation})` : ""}`,
+    );
   const sib: string[] = [];
-  if (fam.brothers != null) sib.push(`Brothers: ${fam.brothers} (married: ${fam.married_brothers ?? 0})`);
-  if (fam.sisters != null) sib.push(`Sisters: ${fam.sisters} (married: ${fam.married_sisters ?? 0})`);
+  if (fam.brothers != null)
+    sib.push(
+      `Brothers: ${fam.brothers} (married: ${fam.married_brothers ?? 0})`,
+    );
+  if (fam.sisters != null)
+    sib.push(`Sisters: ${fam.sisters} (married: ${fam.married_sisters ?? 0})`);
   if (sib.length) famLines.push(sib.join(". "));
-  const aboutFamily = fam.about_family != null ? String(fam.about_family).trim() : "";
+  const aboutFamily =
+    fam.about_family != null ? String(fam.about_family).trim() : "";
   const familyText = aboutFamily || famLines.join(". ") || "";
 
   const heightRaw = per.height_cm;
@@ -80,14 +101,18 @@ export function mapFullProfileToDrawerDisplay(profile: unknown): FullProfileDraw
     familyText,
     religion: rel.religion != null ? String(rel.religion) : "",
     caste: rel.caste != null ? String(rel.caste) : "",
-    education: edu.highest_education != null ? String(edu.highest_education) : "",
+    education:
+      edu.highest_education != null ? String(edu.highest_education) : "",
     occupation: edu.occupation != null ? String(edu.occupation) : "",
     annual_income: edu.annual_income != null ? String(edu.annual_income) : "",
-    employment: edu.employment_status != null ? String(edu.employment_status) : "",
-    marital_status: per.marital_status != null ? String(per.marital_status) : "",
+    employment:
+      edu.employment_status != null ? String(edu.employment_status) : "",
+    marital_status:
+      per.marital_status != null ? String(per.marital_status) : "",
     height,
     mother_tongue: rel.mother_tongue != null ? String(rel.mother_tongue) : "",
-    profile_photo: photos.profile_photo != null ? String(photos.profile_photo) : null,
+    profile_photo:
+      photos.profile_photo != null ? String(photos.profile_photo) : null,
     phone,
     email,
     hasContactInProfile: !!(phone || email),
