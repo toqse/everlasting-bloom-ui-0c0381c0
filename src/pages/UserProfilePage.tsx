@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import PhotoCropDialog, {
+  type PhotoCropDialogState,
+} from "@/components/signup/steps/PhotoCropDialog";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -519,6 +523,62 @@ const PHOTO_KEYS = [
   "aadhaar_back",
 ] as const;
 
+const PHOTO_LABELS: Record<string, string> = {
+  profile_photo: "Profile Photo",
+  full_photo: "Full Photo",
+  selfie_photo: "Selfie Photo",
+  family_photo: "Family Photo",
+  aadhaar_front: "Aadhaar (Front)",
+  aadhaar_back: "Aadhaar (Back)",
+};
+
+/** Same tolerances and ratios as signup `PhotosStep` (see `PhotoCropDialog`). */
+const PHOTO_ASPECT_TOLERANCE = 0.02;
+const PHOTO_SLOT_ASPECTS: Partial<
+  Record<(typeof PHOTO_KEYS)[number], number>
+> = {
+  profile_photo: 4 / 5,
+  full_photo: 1,
+  selfie_photo: 1,
+  family_photo: 20 / 9,
+};
+
+function PhotoSlotPreview({
+  file,
+  existingPath,
+  label,
+}: {
+  file: File | null | undefined;
+  existingPath: string | null | undefined;
+  label: string;
+}) {
+  const [objectUrl, setObjectUrl] = useState("");
+  useEffect(() => {
+    if (!file) {
+      setObjectUrl("");
+      return;
+    }
+    const u = URL.createObjectURL(file);
+    setObjectUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  const previewUrl = file
+    ? objectUrl
+    : existingPath
+      ? getMediaUrl(existingPath)
+      : "";
+  if (!previewUrl) return null;
+  return (
+    <div className="rounded-xl overflow-hidden border border-border bg-muted/30 w-full max-w-[200px] aspect-[3/4]">
+      <img
+        src={previewUrl}
+        alt={label}
+        className="w-full h-full object-cover object-center"
+      />
+    </div>
+  );
+}
+
 function EditSectionForm({
   section,
   data,
@@ -577,6 +637,73 @@ function EditSectionForm({
   existingPhotos?: Record<string, string | null>;
   onPhotoChange?: (key: string, file: File | null) => void;
 }) {
+  const [cropState, setCropState] = useState<PhotoCropDialogState | null>(null);
+
+  const dismissCrop = useCallback(() => {
+    setCropState((s) => {
+      if (s?.src) URL.revokeObjectURL(s.src);
+      return null;
+    });
+  }, []);
+
+  const handleApplyCropped = useCallback(
+    (slotKey: string, file: File) => {
+      setCropState((s) => {
+        if (s?.src) URL.revokeObjectURL(s.src);
+        return null;
+      });
+      onPhotoChange?.(slotKey, file);
+    },
+    [onPhotoChange],
+  );
+
+  useEffect(() => {
+    if (section !== "Photos") dismissCrop();
+  }, [section, dismissCrop]);
+
+  const processPhotoFile = useCallback(
+    (key: string, file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please choose an image file.");
+        return;
+      }
+      if (key === "aadhaar_front" || key === "aadhaar_back") {
+        onPhotoChange?.(key, file);
+        return;
+      }
+      const aspect = PHOTO_SLOT_ASPECTS[key as keyof typeof PHOTO_SLOT_ASPECTS];
+      if (aspect === undefined) {
+        onPhotoChange?.(key, file);
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        const imageAspect = img.naturalWidth / img.naturalHeight;
+        const needsCrop =
+          Math.abs(imageAspect - aspect) > PHOTO_ASPECT_TOLERANCE;
+        if (needsCrop) {
+          setCropState({
+            src: url,
+            aspect,
+            slotKey: key,
+            fileName: file.name,
+            label: PHOTO_LABELS[key] ?? key.replace(/_/g, " "),
+          });
+        } else {
+          URL.revokeObjectURL(url);
+          onPhotoChange?.(key, file);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        toast.error("Could not read this image.");
+      };
+      img.src = url;
+    },
+    [onPhotoChange],
+  );
+
   const update = (key: keyof ProfileFormData, value: string) =>
     onChange({ ...data, [key]: value });
 
@@ -875,63 +1002,62 @@ function EditSectionForm({
       const files = photoFiles ?? {};
       const existing = existingPhotos ?? {};
       return (
-        <div className="grid gap-6 py-2">
-          <p className="text-sm text-muted-foreground">
-            Upload and manage your profile photos. Verification photos can be
-            added for a verified badge.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {PHOTO_KEYS.map((key) => {
-              const file = files[key];
-              const existingPath = existing[key];
-              const previewUrl = file
-                ? URL.createObjectURL(file)
-                : existingPath
-                  ? getMediaUrl(existingPath)
-                  : "";
-              const label = PHOTO_LABELS[key] ?? key.replace(/_/g, " ");
-              return (
-                <div key={key} className="flex flex-col gap-2">
-                  <Label className="text-sm font-medium">{label}</Label>
-                  <div className="flex flex-col sm:flex-row gap-3 items-start">
-                    <label className="cursor-pointer inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary border-dashed shrink-0">
-                      <Image className="w-4 h-4" />
-                      {file ? "Change" : "Choose file"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] ?? null;
-                          onPhotoChange?.(key, f);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                    {file && (
-                      <button
-                        type="button"
-                        onClick={() => onPhotoChange?.(key, null)}
-                        className="text-sm text-muted-foreground hover:text-destructive underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  {previewUrl ? (
-                    <div className="rounded-xl overflow-hidden border border-border bg-muted/30 w-full max-w-[200px] aspect-[3/4]">
-                      <img
-                        src={previewUrl}
-                        alt={label}
-                        className="w-full h-full object-cover object-center"
-                      />
+        <>
+          <PhotoCropDialog
+            state={cropState}
+            onClose={dismissCrop}
+            onApplyCropped={handleApplyCropped}
+          />
+          <div className="grid gap-6 py-2">
+            <p className="text-sm text-muted-foreground">
+              Upload and manage your profile photos. Verification photos can be
+              added for a verified badge. If a photo doesn&apos;t match the
+              suggested shape, you can crop it to fit.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {PHOTO_KEYS.map((key) => {
+                const file = files[key];
+                const existingPath = existing[key];
+                const label = PHOTO_LABELS[key] ?? key.replace(/_/g, " ");
+                return (
+                  <div key={key} className="flex flex-col gap-2">
+                    <Label className="text-sm font-medium">{label}</Label>
+                    <div className="flex flex-col sm:flex-row gap-3 items-start">
+                      <label className="cursor-pointer inline-flex items-center justify-center gap-2 h-10 rounded-md px-4 text-sm font-medium border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary border-dashed shrink-0">
+                        <Image className="w-4 h-4" />
+                        {file ? "Change" : "Choose file"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            if (f) processPhotoFile(key, f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      {file && (
+                        <button
+                          type="button"
+                          onClick={() => onPhotoChange?.(key, null)}
+                          className="text-sm text-muted-foreground hover:text-destructive underline"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                    <PhotoSlotPreview
+                      file={file ?? null}
+                      existingPath={existingPath ?? null}
+                      label={label}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       );
     }
     case "Location": {
@@ -1425,15 +1551,6 @@ function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
       return "";
   }
 }
-
-const PHOTO_LABELS: Record<string, string> = {
-  profile_photo: "Profile Photo",
-  full_photo: "Full Photo",
-  selfie_photo: "Selfie Photo",
-  family_photo: "Family Photo",
-  aadhaar_front: "Aadhaar (Front)",
-  aadhaar_back: "Aadhaar (Back)",
-};
 
 function getMediaUrl(path: string | null | undefined): string {
   if (!path) return "";

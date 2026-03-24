@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  type LucideIcon,
   X,
   Heart,
   Sparkles,
@@ -19,6 +20,7 @@ import {
   Phone,
   Eye,
   Loader2,
+  MessageCircle,
 } from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
 import { useAuthStore } from "@/stores/authStore";
@@ -28,12 +30,74 @@ import UseCreditDialog, {
   type CreditDialogVariant,
 } from "@/components/UseCreditDialog";
 import type { ProfilePreviewData } from "@/lib/matchesApi";
-import { getProfileFull, unlockContactDetails } from "@/lib/matchesApi";
+import { getProfilePreview, unlockContactDetails } from "@/lib/matchesApi";
 import {
   mapFullProfileToDrawerDisplay,
   type FullProfileDrawerDisplay,
 } from "@/lib/profileFullMapper";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+
+/** KYC / ID slots — omit from the profile gallery (API may still return URLs). */
+function isHiddenProfilePhotoKey(key: string): boolean {
+  const n = String(key).toLowerCase().replace(/-/g, "_");
+  return (
+    n === "aadhaar_front" ||
+    n === "aadhaar_back" ||
+    n === "aadhar_front" ||
+    n === "aadhar_back"
+  );
+}
+
+type FieldItem = { label: string; value: string; wide?: boolean };
+
+function ProfileFieldGrid({ items }: { items: FieldItem[] }) {
+  return (
+    <div className="grid gap-px overflow-hidden rounded-lg border border-border/60 bg-border/70 sm:grid-cols-2">
+      {items.map((item, i) => (
+        <div
+          key={`${item.label}-${i}`}
+          className={cn(
+            "bg-background px-4 py-3.5",
+            item.wide && "sm:col-span-2",
+          )}
+        >
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            {item.label}
+          </p>
+          <p className="mt-1.5 text-sm font-medium leading-snug text-foreground">
+            {item.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SectionTitle({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mb-4 flex items-center gap-2.5 border-b border-border/50 pb-2.5">
+      <Icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
+      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+        {children}
+      </h3>
+    </div>
+  );
+}
+
+function SubsectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      {children}
+    </h4>
+  );
+}
 
 interface Props {
   open: boolean;
@@ -42,6 +106,10 @@ interface Props {
   /** When from My Matches, pass API preview data; drawer shows this and Send Interest uses onSendInterest (API). */
   preview?: ProfilePreviewData | null;
   onSendInterest?: () => void;
+  /** My Matches: whether chat is allowed for this profile (GET v1/matches can_chat). */
+  canChat?: boolean;
+  /** My Matches: start chat (e.g. POST v1/chat/start/). Omit to hide Chat in the footer. */
+  onChat?: () => void;
   /** When credits are exhausted or user clicks Upgrade in credit dialog */
   onOpenPlanModal?: () => void;
 }
@@ -52,6 +120,8 @@ const ProfileViewDrawer = ({
   profile,
   preview,
   onSendInterest,
+  canChat = false,
+  onChat,
   onOpenPlanModal,
 }: Props) => {
   const isHindu = useAuthStore((s) => s.isHindu);
@@ -59,7 +129,7 @@ const ProfileViewDrawer = ({
   const sendInterest = useInterestStore((s) => s.sendInterest);
   const getHoroscopeRemaining = useAuthStore((s) => s.getHoroscopeRemaining);
   const getHoroscopeQuota = useAuthStore((s) => s.getHoroscopeQuota);
-  const useHoroscopeCredit = useAuthStore((s) => s.useHoroscopeCredit);
+  const spendHoroscopeCredit = useAuthStore((s) => s.useHoroscopeCredit);
   const router = useRouter();
 
   const [contactRevealed, setContactRevealed] = useState(false);
@@ -75,7 +145,6 @@ const ProfileViewDrawer = ({
     string,
     unknown
   > | null>(null);
-  const [fullLoading, setFullLoading] = useState(false);
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [unlockedContact, setUnlockedContact] = useState<{
     phone: string;
@@ -90,6 +159,13 @@ const ProfileViewDrawer = ({
   const activePreview = livePreview ?? preview ?? null;
   const isPreviewMode = !!activePreview;
   const isViewedByMe = !!activePreview?.is_viewed_by_me;
+  const interestStatus = String(activePreview?.interest_status ?? "")
+    .trim()
+    .toLowerCase();
+  const isInterestSent = !!activePreview?.is_interest_sent;
+  const showInterestAccepted = interestStatus === "accepted";
+  const showInterestSent = interestStatus === "sent" || isInterestSent;
+  const showSendInterestButton = interestStatus === "pending";
 
   useEffect(() => {
     if (!open) {
@@ -98,13 +174,12 @@ const ProfileViewDrawer = ({
       setFullDisplay(null);
       setFullRawProfile(null);
       setUnlockedContact(null);
-      setFullLoading(false);
       setUnlockLoading(false);
       setLivePreview(preview ?? null);
       setExpandedFull(false);
       setPhotoPreviewUrl(null);
     }
-  }, [open, profile?.id, preview?.matri_id]);
+  }, [open, profile?.id, preview]);
 
   useEffect(() => {
     if (!open) return;
@@ -140,9 +215,12 @@ const ProfileViewDrawer = ({
     (fd?.name && fd.name.trim()) || activePreview?.name || profile?.name || "";
   const displayAge =
     fd && fd.age > 0 ? fd.age : (activePreview?.age ?? profile?.age ?? 0);
-  const displayLocation =
+  const displayLocationFull =
     (fd?.location && fd.location.trim()) ||
-    (activePreview?.location ?? profile?.location)?.split(",")[0] ||
+    (typeof activePreview?.location === "string"
+      ? activePreview.location.trim()
+      : "") ||
+    (typeof profile?.location === "string" ? profile.location : "") ||
     "";
   const displayEducation =
     (fd?.education && fd.education.trim()) ||
@@ -153,12 +231,13 @@ const ProfileViewDrawer = ({
     activePreview?.occupation ||
     profile?.profession ||
     "";
-  const displayAbout =
+  const displayAboutRaw =
     (fd?.about_me && fd.about_me.trim()) ||
-    activePreview?.about_me ||
-    (profile
-      ? `${profile.education} graduate working in the ${profile.profession?.toLowerCase() ?? ""} sector in ${displayLocation}. I love music, dancing and exploring new places.`
-      : "No description provided.");
+    (typeof activePreview?.about_me === "string"
+      ? activePreview.about_me.trim()
+      : "");
+  /** Avoid inventing long copy that repeats structured fields below — API `about_me` only. */
+  const displayAbout = displayAboutRaw || "";
   const displayFamily =
     (fd?.familyText && fd.familyText.trim()) ||
     activePreview?.family_background ||
@@ -207,7 +286,7 @@ const ProfileViewDrawer = ({
   };
 
   const handleCreditConfirm = () => {
-    const used = useHoroscopeCredit();
+    const used = spendHoroscopeCredit();
     if (used) {
       if (creditDialogVariant === "contact") setContactRevealed(true);
       else setHoroscopeRevealed(true);
@@ -241,40 +320,6 @@ const ProfileViewDrawer = ({
     setCreditDialogOpen(true);
   };
 
-  const handleViewFullProfile = async () => {
-    if (!activePreview?.matri_id) return;
-    setFullLoading(true);
-    try {
-      const res = await getProfileFull(activePreview.matri_id);
-      const raw = (res.data.profile ?? null) as unknown as Record<
-        string,
-        unknown
-      > | null;
-      setFullRawProfile(raw);
-      const mapped = mapFullProfileToDrawerDisplay(raw);
-      if (mapped) {
-        setFullDisplay(mapped);
-        setExpandedFull(true);
-        const rem = res.data.plan?.profile_views_remaining;
-        if (rem != null) {
-          toast.success("Full profile loaded", {
-            description: `${rem} profile view${rem === 1 ? "" : "s"} remaining on your plan.`,
-          });
-        } else {
-          toast.success("Full profile loaded");
-        }
-      } else {
-        toast.error("Could not read profile data from server.");
-      }
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Failed to load full profile",
-      );
-    } finally {
-      setFullLoading(false);
-    }
-  };
-
   const handleUnlockContactApi = async () => {
     if (!activePreview?.matri_id) return;
     setUnlockLoading(true);
@@ -285,19 +330,24 @@ const ProfileViewDrawer = ({
         email: res.data.email ?? "",
       });
 
-      // After unlock succeeds, hydrate from FULL profile (not preview).
+      // Refresh preview after unlock so drawer reflects the latest server flags/data.
       try {
-        const full = await getProfileFull(activePreview.matri_id);
-        const raw = (full.data.profile ?? null) as unknown as Record<
-          string,
-          unknown
-        > | null;
-        setFullRawProfile(raw);
-        const mapped = mapFullProfileToDrawerDisplay(raw);
-        if (mapped) setFullDisplay(mapped);
-        setExpandedFull(true);
+        const refreshed = await getProfilePreview(activePreview.matri_id);
+        setLivePreview(refreshed.data);
+
+        const candidate =
+          (refreshed.data as unknown as { profile?: unknown })?.profile ??
+          (refreshed.data as unknown);
+        const mapped = mapFullProfileToDrawerDisplay(candidate);
+        if (mapped) {
+          setFullDisplay(mapped);
+          if (candidate && typeof candidate === "object") {
+            setFullRawProfile(candidate as Record<string, unknown>);
+          }
+          if (refreshed.data.is_viewed_by_me) setExpandedFull(true);
+        }
       } catch {
-        // ignore: we can still show phone/email from unlock response
+        // Unlock response already has phone/email; keep UI usable even if preview refresh fails.
       }
 
       toast.success("Contact details unlocked");
@@ -363,26 +413,57 @@ const ProfileViewDrawer = ({
   const photos =
     (fullRawProfile?.photos as Record<string, unknown> | undefined) ??
     undefined;
+  const photoEntriesVisible =
+    photos &&
+    Object.entries(photos).filter(
+      ([k, v]) =>
+        !isHiddenProfilePhotoKey(k) &&
+        typeof v === "string" &&
+        String(v).trim(),
+    );
   const fam =
     (fullRawProfile?.family_details as Record<string, unknown> | undefined) ??
     undefined;
 
-  const basicDetails = [
-    { label: "AGE", value: `${displayAge} years` },
-    { label: "LOCATION", value: displayLocation || "—" },
-    { label: "RELIGION", value: displayReligion },
-    { label: "CASTE", value: displayCaste },
-    { label: "EDUCATION", value: displayEducation },
-    { label: "MARITAL STATUS", value: displayMaritalStatus },
-    { label: "HEIGHT", value: displayHeight },
-    { label: "MOTHER TONGUE", value: displayMotherTongue },
+  const aboutFamilyNarrative =
+    fam?.about_family != null && String(fam.about_family).trim()
+      ? String(fam.about_family).trim()
+      : null;
+
+  const stateStr = loc?.state != null ? String(loc.state).trim() : "";
+  const districtStr = loc?.district != null ? String(loc.district).trim() : "";
+  const locationFieldRows: { label: string; value: string }[] = [
+    {
+      label: "Country",
+      value: loc?.country != null ? String(loc.country) : "—",
+    },
+    ...(stateStr && districtStr && stateStr === districtStr
+      ? [{ label: "State & District", value: stateStr }]
+      : [
+          { label: "State", value: stateStr || "—" },
+          { label: "District", value: districtStr || "—" },
+        ]),
+    { label: "City", value: loc?.city != null ? String(loc.city) : "—" },
   ];
 
-  const careerDetails = [
-    { label: "OCCUPATION", value: displayOccupation || "—" },
-    { label: "EMPLOYMENT", value: displayEmployment },
-    { label: "ANNUAL INCOME", value: displayAnnualIncome },
-    { label: "FIELD", value: displayField },
+  /** When full API profile is expanded, structured fields live in "Full Profile Details" only. */
+  const hideSummaryGrids = !!(expandedFull && fullRawProfile);
+  const hasFullFamilyGrid = !!(fam && Object.keys(fam).length);
+
+  /** Header shows age + religion/caste chips; omit fields repeated in Basic Details & badges. */
+  const basicDetailItems: FieldItem[] = [
+    { label: "Location", value: displayLocationFull || "—", wide: true },
+    { label: "Education", value: displayEducation },
+    { label: "Marital status", value: displayMaritalStatus },
+    { label: "Height", value: displayHeight },
+    { label: "Mother tongue", value: displayMotherTongue },
+  ];
+
+  const careerDetailItems: FieldItem[] = [
+    { label: "Occupation", value: displayOccupation || "—" },
+    { label: "Employment", value: displayEmployment },
+    { label: "Annual income", value: displayAnnualIncome },
+    { label: "Field", value: displayField },
   ];
 
   const horoscopeInfo = [
@@ -392,60 +473,93 @@ const ProfileViewDrawer = ({
     { label: "MANGAL DOSHA", value: "No" },
   ];
 
+  const horoscopeBlock =
+    isHindu() && hasPaidPlan() ? (
+      <div className={cn(hideSummaryGrids ? "mt-8" : "mt-6")}>
+        <SectionTitle icon={Moon}>Horoscope</SectionTitle>
+        {horoscopeRevealed ? (
+          <ProfileFieldGrid
+            items={horoscopeInfo.map((d) => ({
+              label: d.label,
+              value: d.value,
+            }))}
+          />
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full gap-2 border-border/80"
+            type="button"
+            onClick={handleCheckHoroscopeClick}
+          >
+            <Sparkles className="h-4 w-4" /> View horoscope details
+          </Button>
+        )}
+      </div>
+    ) : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className={`${expandedFull ? "max-w-5xl" : "max-w-2xl"} w-[95vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 gap-0 border-0 shadow-elevated`}
+        className="flex max-h-[min(92vh,1200px)] w-[min(96vw,1280px)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl border border-border/50 bg-card p-0 shadow-2xl"
       >
         <DialogTitle className="sr-only">{displayName}</DialogTitle>
         <DialogDescription className="sr-only">
           Profile preview and contact details
         </DialogDescription>
-        <div className="bg-gradient-to-r from-primary via-primary-dark to-primary p-6 text-primary-foreground relative">
+
+        {/* Header */}
+        <div className="relative shrink-0 bg-gradient-to-br from-primary via-primary to-primary-dark px-6 py-6 text-primary-foreground md:px-8 md:py-7">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="absolute right-4 top-4 rounded-md border border-white/25 bg-white/10 p-2 text-primary-foreground transition-colors hover:bg-white/20"
+            aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
 
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-accent-rose/30 overflow-hidden flex items-center justify-center text-xl font-bold border-2 border-white/30 shrink-0">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-white/25 bg-white/10 shadow-lg md:h-[7.25rem] md:w-[7.25rem]">
               {headerPhoto ? (
                 <img
                   src={headerPhoto}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                displayName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
+                <div className="flex h-full w-full items-center justify-center font-serif text-2xl font-semibold text-white/90">
+                  {displayName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </div>
               )}
             </div>
-            <div>
-              <h2 className="font-serif text-2xl font-bold">{displayName}</h2>
-              <p className="text-sm opacity-90">
-                {displayAge} yrs · {displayLocation} · {displayEducation}
+            <div className="min-w-0 flex-1 pr-10">
+              <h2 className="font-serif text-2xl font-semibold tracking-tight md:text-3xl">
+                {displayName}
+              </h2>
+              <p className="mt-1.5 text-sm text-white/85">
+                {displayAge} yrs
+                {displayOccupation ? ` · ${displayOccupation}` : ""}
               </p>
-              <div className="flex gap-2 mt-2 flex-wrap">
-                <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-semibold">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
                   {displayReligion}
                 </span>
-                <span className="px-2.5 py-0.5 bg-secondary/80 text-secondary-foreground rounded-full text-xs font-semibold flex items-center gap-1">
-                  <span>◆</span> {displayCaste}
+                <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                  {displayCaste}
                 </span>
                 {isHindu() && (
-                  <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Jathagam Available
+                  <span className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                    <Sparkles className="h-3 w-3 opacity-90" />
+                    Jathagam available
                   </span>
                 )}
                 {isPreviewMode && (fullDisplay || isViewedByMe) && (
-                  <span className="px-2.5 py-0.5 bg-emerald-500/90 rounded-full text-xs font-semibold">
-                    Full profile
+                  <span className="inline-flex items-center rounded-md border border-emerald-400/50 bg-emerald-600/35 px-2.5 py-1 text-xs font-medium text-white">
+                    Full profile loaded
                   </span>
                 )}
               </div>
@@ -453,200 +567,189 @@ const ProfileViewDrawer = ({
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> About Me
-              </h3>
-              <div className="p-4 rounded-xl border border-primary/10 bg-accent-rose/5">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {displayAbout || "No description provided."}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-primary" /> Career &
-                Education
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {careerDetails.map((d, i) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-xl border border-primary/10 bg-card"
-                  >
-                    <p className="text-[10px] font-bold text-primary uppercase">
-                      {d.label}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
-                      {d.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-primary" /> Basic Details
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {basicDetails.map((d, i) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-xl border border-primary/10 bg-card"
-                  >
-                    <p className="text-[10px] font-bold text-primary uppercase">
-                      {d.label}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
-                      {d.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" /> Family Background
-              </h3>
-              <div className="p-4 rounded-xl border border-primary/10 bg-accent-rose/5">
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {displayFamily || "No family details provided."}
-                </p>
-              </div>
-
-              {isHindu() && hasPaidPlan() && (
-                <div className="mt-4">
-                  <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                    <Moon className="w-5 h-5 text-primary" /> Horoscope Info
-                  </h3>
-                  {horoscopeRevealed ? (
-                    <div className="grid grid-cols-2 gap-2 p-4 rounded-xl bg-primary/5 border border-primary/15">
-                      {horoscopeInfo.map((d, i) => (
-                        <div key={i} className="p-2">
-                          <p className="text-[10px] font-bold text-primary uppercase">
-                            {d.label}
-                          </p>
-                          <p className="text-sm font-semibold text-foreground mt-0.5">
-                            {d.value}
-                          </p>
-                        </div>
-                      ))}
+        {/* Body — scrolls; footer stays visible */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]">
+          <div className="space-y-8 px-6 py-6 md:px-8 md:py-8">
+            {!hideSummaryGrids ? (
+              <>
+                <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                  <div>
+                    <SectionTitle icon={User}>About</SectionTitle>
+                    <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
+                      <p className="text-sm leading-relaxed text-foreground/90">
+                        {displayAbout || "No description provided."}
+                      </p>
                     </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      type="button"
-                      onClick={handleCheckHoroscopeClick}
-                    >
-                      <Sparkles className="w-4 h-4" /> Check Horoscope
-                    </Button>
-                  )}
+                  </div>
+
+                  <div>
+                    <SectionTitle icon={Briefcase}>
+                      Career & education
+                    </SectionTitle>
+                    <ProfileFieldGrid items={careerDetailItems} />
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div>
-            <h3 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-              <Phone className="w-5 h-5 text-primary" /> Contact Details
-            </h3>
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 relative min-h-[100px]">
-              {isPreviewMode ? (
-                <>
-                  {!fullDisplay && !isViewedByMe && (
-                    <div className="flex flex-col items-center justify-center gap-4 py-6 text-center">
-                      <div className="blur-sm select-none pointer-events-none opacity-50">
-                        <p className="text-sm text-foreground">
-                          +91 ••••• •••••
-                        </p>
-                        <p className="text-sm text-foreground mt-1">
-                          ••••••••@••••.com
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted-foreground max-w-sm">
-                        Phone and email may require unlocking based on your plan
-                        quota.
+                <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                  <div>
+                    <SectionTitle icon={ClipboardList}>
+                      Basic details
+                    </SectionTitle>
+                    <ProfileFieldGrid items={basicDetailItems} />
+                  </div>
+
+                  <div>
+                    <SectionTitle icon={Phone}>Contact</SectionTitle>
+                    <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-6">
+                      {isPreviewMode ? (
+                        <>
+                          {!fullDisplay && !isViewedByMe && (
+                            <div className="flex flex-col items-center justify-center gap-4 text-center">
+                              <div className="blur-sm select-none pointer-events-none opacity-50">
+                                <p className="text-sm text-foreground">
+                                  +91 ••••• •••••
+                                </p>
+                                <p className="mt-1 text-sm text-foreground">
+                                  ••••••••@••••.com
+                                </p>
+                              </div>
+                              <p className="max-w-sm text-sm text-muted-foreground">
+                                Phone and email may require unlocking based on
+                                your plan quota.
+                              </p>
+                              <Button
+                                type="button"
+                                variant="hero"
+                                className="gap-2"
+                                disabled={unlockLoading}
+                                onClick={handleUnlockContactApi}
+                              >
+                                {unlockLoading ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                    Unlocking…
+                                  </>
+                                ) : (
+                                  <>
+                                    <Phone className="h-4 w-4" /> View contact
+                                    details
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+
+                          {fullDisplay && !contactVisiblePreview && (
+                            <div className="flex flex-col items-center justify-center gap-3 text-center">
+                              <Lock className="h-8 w-8 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">
+                                Phone and email are not included in this profile
+                                view. Unlock contact details using your plan
+                                quota.
+                              </p>
+                              <Button
+                                type="button"
+                                variant="hero"
+                                className="gap-2"
+                                disabled={unlockLoading}
+                                onClick={handleUnlockContactApi}
+                              >
+                                {unlockLoading ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                    Unlocking…
+                                  </>
+                                ) : (
+                                  <>
+                                    <Phone className="h-4 w-4" /> View contact
+                                    details
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+
+                          {contactVisiblePreview && (
+                            <p className="text-center text-sm text-muted-foreground">
+                              Phone and email are listed in the Contact section
+                              below.
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-4 text-center">
+                          {!hasPaidPlan() ? (
+                            <p className="text-sm text-muted-foreground">
+                              Upgrade your plan to view contact details. See the
+                              Contact section below.
+                            </p>
+                          ) : !contactRevealed ? (
+                            <Button
+                              type="button"
+                              variant="hero"
+                              className="gap-2"
+                              onClick={handleViewContactClick}
+                            >
+                              <Eye className="h-4 w-4" /> View contact details
+                            </Button>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Contact details are shown in the section below.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {horoscopeBlock}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <SectionTitle icon={User}>About</SectionTitle>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      {displayAbout || "No description provided."}
+                    </p>
+                  </div>
+                </div>
+                {horoscopeBlock}
+              </>
+            )}
+
+            {/* Preview: unlock CTA lives in the column above; here only show phone/email once unlocked. */}
+            {isPreviewMode && contactVisiblePreview ? (
+              <div>
+                <SectionTitle icon={Phone}>Contact details</SectionTitle>
+                <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
+                  <div className="space-y-2">
+                    {phoneShown ? (
+                      <p className="text-sm font-medium text-foreground">
+                        <span className="font-normal text-muted-foreground">
+                          Phone:{" "}
+                        </span>
+                        {phoneShown}
                       </p>
-                      <Button
-                        type="button"
-                        variant="hero"
-                        className="gap-2"
-                        disabled={unlockLoading}
-                        onClick={handleUnlockContactApi}
-                      >
-                        {unlockLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                            Unlocking…
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="w-4 h-4" /> View contact details
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  {fullDisplay && !contactVisiblePreview && (
-                    <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
-                      <Lock className="w-8 h-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Phone and email are not included in this profile view.
-                        Unlock contact details using your plan quota.
+                    ) : null}
+                    {emailShown ? (
+                      <p className="break-all text-sm font-medium text-foreground">
+                        <span className="font-normal text-muted-foreground">
+                          Email:{" "}
+                        </span>
+                        {emailShown}
                       </p>
-                      <Button
-                        type="button"
-                        variant="hero"
-                        className="gap-2"
-                        disabled={unlockLoading}
-                        onClick={handleUnlockContactApi}
-                      >
-                        {unlockLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                            Unlocking…
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="w-4 h-4" /> View contact details
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
-                  {fullDisplay && contactVisiblePreview && (
-                    <div className="space-y-2">
-                      {phoneShown ? (
-                        <p className="text-sm font-medium text-foreground">
-                          <span className="text-muted-foreground font-normal">
-                            Phone:{" "}
-                          </span>
-                          {phoneShown}
-                        </p>
-                      ) : null}
-                      {emailShown ? (
-                        <p className="text-sm font-medium text-foreground break-all">
-                          <span className="text-muted-foreground font-normal">
-                            Email:{" "}
-                          </span>
-                          {emailShown}
-                        </p>
-                      ) : null}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
+            {!isPreviewMode ? (
+              <div>
+                <SectionTitle icon={Phone}>Contact</SectionTitle>
+                <div className="relative min-h-[100px] rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
                   <div
                     className={
                       hasPaidPlan() && contactRevealed
@@ -660,9 +763,9 @@ const ProfileViewDrawer = ({
                     </p>
                   </div>
                   {!hasPaidPlan() ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-xl">
-                      <div className="text-center flex items-center gap-2 justify-center px-2">
-                        <Lock className="w-4 h-4 text-secondary shrink-0" />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 backdrop-blur-[2px]">
+                      <div className="flex items-center justify-center gap-2 px-2 text-center">
+                        <Lock className="h-4 w-4 shrink-0 text-secondary" />
                         <p className="text-sm font-semibold text-secondary">
                           Upgrade to Gold or Diamond plan to view contact
                         </p>
@@ -670,257 +773,186 @@ const ProfileViewDrawer = ({
                     </div>
                   ) : null}
                   {hasPaidPlan() && !contactRevealed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-[2px] rounded-xl">
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-[2px]">
                       <Button
                         variant="hero"
                         className="gap-2"
                         type="button"
                         onClick={handleViewContactClick}
                       >
-                        <Eye className="w-4 h-4" /> View Contact
+                        <Eye className="h-4 w-4" /> View Contact
                       </Button>
                     </div>
                   )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {expandedFull && fullRawProfile ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="font-serif text-lg font-bold text-foreground">
-                  Full Profile Details
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setExpandedFull(false)}
-                >
-                  Collapse
-                </Button>
+                </div>
               </div>
+            ) : null}
 
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Basic
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      {
-                        label: "Matri ID",
-                        value: fullRawProfile.matri_id ?? "—",
-                      },
-                      { label: "Gender", value: bd?.gender ?? "—" },
-                      { label: "DOB", value: bd?.dob ?? "—" },
-                      { label: "Profile for", value: bd?.profile_for ?? "—" },
-                    ].map((d, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-primary/10 bg-card"
-                      >
-                        <p className="text-[10px] font-bold text-primary uppercase">
-                          {d.label}
-                        </p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {String(d.value)}
-                        </p>
-                      </div>
-                    ))}
+            {expandedFull && fullRawProfile ? (
+              <div className="space-y-8 border-t border-border/50 pt-8">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
+                  <h3 className="font-serif text-lg font-semibold tracking-tight text-foreground">
+                    Full profile
+                  </h3>
+                  {/* <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-border/80"
+                    onClick={() => setExpandedFull(false)}
+                  >
+                    Collapse
+                  </Button> */}
+                </div>
+
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div>
+                    <SubsectionTitle>Basic</SubsectionTitle>
+                    <ProfileFieldGrid
+                      items={[
+                        {
+                          label: "Matri ID",
+                          value: String(fullRawProfile.matri_id ?? "—"),
+                        },
+                        { label: "Gender", value: String(bd?.gender ?? "—") },
+                        {
+                          label: "DOB",
+                          value: String(bd?.dob ?? "—"),
+                          wide: true,
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <SubsectionTitle>Personal</SubsectionTitle>
+                    <ProfileFieldGrid
+                      items={[
+                        {
+                          label: "Marital status",
+                          value: String(per?.marital_status ?? "—"),
+                        },
+                        {
+                          label: "Children",
+                          value: String(per?.children_count ?? "—"),
+                        },
+                        {
+                          label: "Height",
+                          value: String(per?.height_cm ?? "—"),
+                        },
+                        {
+                          label: "Weight",
+                          value: String(per?.weight_kg ?? "—"),
+                        },
+                        { label: "Colour", value: String(per?.colour ?? "—") },
+                        {
+                          label: "Blood group",
+                          value: String(per?.blood_group ?? "—"),
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Personal
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      {
-                        label: "Marital status",
-                        value: per?.marital_status ?? "—",
-                      },
-                      { label: "Children", value: per?.children_count ?? "—" },
-                      { label: "Height", value: per?.height_cm ?? "—" },
-                      { label: "Weight", value: per?.weight_kg ?? "—" },
-                      { label: "Colour", value: per?.colour ?? "—" },
-                      { label: "Blood group", value: per?.blood_group ?? "—" },
-                    ].map((d, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-primary/10 bg-card"
-                      >
-                        <p className="text-[10px] font-bold text-primary uppercase">
-                          {d.label}
-                        </p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {String(d.value)}
-                        </p>
-                      </div>
-                    ))}
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div>
+                    <SubsectionTitle>Location</SubsectionTitle>
+                    <ProfileFieldGrid
+                      items={[
+                        ...locationFieldRows.map((d) => ({
+                          label: d.label,
+                          value: String(d.value),
+                        })),
+                        {
+                          label: "Address",
+                          value: String(loc?.address ?? "—"),
+                          wide: true,
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <SubsectionTitle>Education & work</SubsectionTitle>
+                    <ProfileFieldGrid
+                      items={[
+                        {
+                          label: "Education",
+                          value: String(edu?.highest_education ?? "—"),
+                        },
+                        {
+                          label: "Subject",
+                          value: String(edu?.education_subject ?? "—"),
+                        },
+                        {
+                          label: "Employment",
+                          value: String(edu?.employment_status ?? "—"),
+                        },
+                        {
+                          label: "Occupation",
+                          value: String(edu?.occupation ?? "—"),
+                        },
+                        {
+                          label: "Annual income",
+                          value: String(edu?.annual_income ?? "—"),
+                          wide: true,
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Location
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "Country", value: loc?.country ?? "—" },
-                      { label: "State", value: loc?.state ?? "—" },
-                      { label: "District", value: loc?.district ?? "—" },
-                      { label: "City", value: loc?.city ?? "—" },
-                    ].map((d, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-primary/10 bg-card"
-                      >
-                        <p className="text-[10px] font-bold text-primary uppercase">
-                          {d.label}
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div>
+                    <SubsectionTitle>Religion</SubsectionTitle>
+                    <ProfileFieldGrid
+                      items={[
+                        {
+                          label: "Religion",
+                          value: String(rel?.religion ?? "—"),
+                        },
+                        { label: "Caste", value: String(rel?.caste ?? "—") },
+                        {
+                          label: "Mother tongue",
+                          value: String(rel?.mother_tongue ?? "—"),
+                          wide: true,
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <SubsectionTitle>Family</SubsectionTitle>
+                    <div className="rounded-lg border border-border/60 bg-muted/10 px-4 py-4">
+                      {fam && Object.keys(fam).length ? (
+                        <ProfileFieldGrid
+                          items={Object.entries(fam).map(([k, v]) => ({
+                            label: k.replace(/_/g, " "),
+                            value: String(v ?? "—"),
+                          }))}
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No family details provided.
                         </p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {String(d.value)}
-                        </p>
-                      </div>
-                    ))}
-                    <div className="col-span-2 p-3 rounded-xl border border-primary/10 bg-card">
-                      <p className="text-[10px] font-bold text-primary uppercase">
-                        Address
-                      </p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5 whitespace-pre-wrap">
-                        {String(loc?.address ?? "—")}
-                      </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Education & Work
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      {
-                        label: "Education",
-                        value: edu?.highest_education ?? "—",
-                      },
-                      {
-                        label: "Subject",
-                        value: edu?.education_subject ?? "—",
-                      },
-                      {
-                        label: "Employment",
-                        value: edu?.employment_status ?? "—",
-                      },
-                      { label: "Occupation", value: edu?.occupation ?? "—" },
-                      {
-                        label: "Annual income",
-                        value: edu?.annual_income ?? "—",
-                      },
-                    ].map((d, i) => (
-                      <div
-                        key={i}
-                        className={`${d.label === "Annual income" ? "col-span-2" : ""} p-3 rounded-xl border border-primary/10 bg-card`}
-                      >
-                        <p className="text-[10px] font-bold text-primary uppercase">
-                          {d.label}
-                        </p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {String(d.value)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Religion
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "Religion", value: rel?.religion ?? "—" },
-                      { label: "Caste", value: rel?.caste ?? "—" },
-                      {
-                        label: "Mother tongue",
-                        value: rel?.mother_tongue ?? "—",
-                      },
-                      {
-                        label: "Preference type",
-                        value: rel?.partner_preference_type ?? "—",
-                      },
-                    ].map((d, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-primary/10 bg-card"
-                      >
-                        <p className="text-[10px] font-bold text-primary uppercase">
-                          {d.label}
-                        </p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {String(d.value)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Family
-                  </h4>
-                  <div className="p-4 rounded-xl border border-primary/10 bg-accent-rose/5">
-                    {fam && Object.keys(fam).length ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(fam).map(([k, v]) => (
-                          <div
-                            key={k}
-                            className="p-3 rounded-xl border border-primary/10 bg-card"
-                          >
-                            <p className="text-[10px] font-bold text-primary uppercase">
-                              {k.replace(/_/g, " ")}
-                            </p>
-                            <p className="text-sm font-semibold text-foreground mt-0.5">
-                              {String(v ?? "—")}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        No family details provided.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {photos && Object.keys(photos).length ? (
-                <div>
-                  <h4 className="font-serif text-base font-bold text-foreground mb-3">
-                    Photos
-                  </h4>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {Object.entries(photos)
-                      .filter(
-                        ([, v]) => typeof v === "string" && String(v).trim(),
-                      )
-                      .map(([k, v]) => (
+                {photoEntriesVisible && photoEntriesVisible.length ? (
+                  <div>
+                    <SubsectionTitle>Photos</SubsectionTitle>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {photoEntriesVisible.map(([k, v]) => (
                         <button
                           key={k}
                           type="button"
                           onClick={() => setPhotoPreviewUrl(String(v))}
-                          className="text-left rounded-xl border border-primary/10 bg-card overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all"
+                          className="overflow-hidden rounded-lg border border-border/60 bg-card text-left transition-colors hover:border-primary/30 hover:shadow-md"
                         >
-                          <div className="px-3 py-2 border-b border-primary/10">
-                            <p className="text-[10px] font-bold text-primary uppercase">
+                          <div className="border-b border-border/50 px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                               {k.replace(/_/g, " ")}
                             </p>
                           </div>
@@ -928,16 +960,17 @@ const ProfileViewDrawer = ({
                             <img
                               src={String(v)}
                               alt=""
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                             />
                           </div>
                         </button>
                       ))}
+                    </div>
                   </div>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <Dialog
@@ -979,19 +1012,59 @@ const ProfileViewDrawer = ({
           onUpgrade={() => onOpenPlanModal?.()}
         />
 
-        <div className="p-4 border-t border-primary/10 flex gap-3">
-          <Button
-            variant="hero"
-            size="lg"
-            className="flex-1 gap-2"
-            type="button"
-            onClick={handleSendInterest}
-          >
-            <Heart className="w-5 h-5" /> Send Interest
-          </Button>
+        <div className="flex shrink-0 flex-wrap gap-3 border-t border-border/60 bg-muted/15 px-6 py-4 md:px-8">
+          {showInterestAccepted ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="min-w-0 flex-1 gap-2 border-primary/25 text-foreground sm:min-w-[10rem]"
+              type="button"
+              aria-disabled="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Heart className="h-5 w-5 fill-secondary text-secondary" /> Interest Accepted
+            </Button>
+          ) : showInterestSent ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="min-w-0 flex-1 gap-2 border-primary/25 text-foreground sm:min-w-[10rem]"
+              type="button"
+              aria-disabled="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Heart className="h-5 w-5 fill-secondary text-secondary" /> Interest Sent
+            </Button>
+          ) : showSendInterestButton ? (
+            <Button
+              variant="hero"
+              size="lg"
+              className="min-w-0 flex-1 gap-2 sm:min-w-[10rem]"
+              type="button"
+              onClick={handleSendInterest}
+            >
+              <Heart className="h-5 w-5" /> Send interest
+            </Button>
+          ) : null}
+          {onChat ? (
+            <Button
+              variant="default"
+              size="lg"
+              className="min-w-0 flex-1 gap-2 sm:min-w-[8rem]"
+              type="button"
+              disabled={!canChat}
+              title={
+                !canChat ? "Not available on your current plan" : undefined
+              }
+              onClick={onChat}
+            >
+              <MessageCircle className="h-5 w-5" /> Chat now
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="lg"
+            className="border-border/80 px-8 sm:shrink-0"
             type="button"
             onClick={() => onOpenChange(false)}
           >

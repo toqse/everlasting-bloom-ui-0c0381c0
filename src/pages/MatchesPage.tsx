@@ -3,14 +3,13 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
-  MessageCircle,
   Send,
   Clock,
   Sparkles,
   Users,
   TrendingUp,
-  Flame,
   ImageIcon,
   Ruler,
   BookOpen,
@@ -35,6 +34,7 @@ import {
   getMatches,
   getMatchFilters,
   getProfilePreview,
+  getChatPermission,
   sendInterest as sendInterestApi,
   startChat as startChatApi,
   wishlistToggle,
@@ -43,18 +43,19 @@ import {
   type ProfilePreviewData,
   type SortBy,
 } from "@/lib/matchesApi";
+import { getSentInterests } from "@/lib/interestsApi";
 import { toast } from "sonner";
 
 const FilterSection = ({ title, icon, children, defaultOpen = false }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) => (
-  <Collapsible defaultOpen={defaultOpen} className="group/collapse border-b border-primary/10 last:border-0">
-    <CollapsibleTrigger className="flex w-full items-center justify-between py-3 text-left font-medium text-foreground hover:text-primary transition-colors">
-      <span className="flex items-center gap-2 text-sm font-semibold">
-        {icon}
+  <Collapsible defaultOpen={defaultOpen} className="group/collapse border-b border-primary/[0.08] last:border-0">
+    <CollapsibleTrigger className="flex w-full items-center justify-between py-3.5 text-left text-foreground transition-colors hover:bg-primary/[0.04] rounded-lg px-1 -mx-1">
+      <span className="flex items-center gap-2.5 text-sm font-semibold tracking-tight">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/15 text-primary">{icon}</span>
         {title}
       </span>
-      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapse:rotate-180" />
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapse:rotate-180" />
     </CollapsibleTrigger>
-    <CollapsibleContent className="pb-3">{children}</CollapsibleContent>
+    <CollapsibleContent className="pb-4 pl-0.5 pt-0">{children}</CollapsibleContent>
   </Collapsible>
 );
 
@@ -165,7 +166,7 @@ function MatchesOpenFromQuery({
   onPreview,
   setBusyMatriId,
 }: {
-  onPreview: (data: ProfilePreviewData) => void;
+  onPreview: (data: ProfilePreviewData) => void | Promise<void>;
   setBusyMatriId: (id: string | null) => void;
 }) {
   const router = useRouter();
@@ -181,7 +182,7 @@ function MatchesOpenFromQuery({
         setBusyMatriId(id);
         const res = await getProfilePreview(id);
         if (!cancelled) {
-          onPreview(res.data);
+          await Promise.resolve(onPreview(res.data));
           router.replace("/dashboard/matches", { scroll: false });
         }
       } catch (e) {
@@ -202,6 +203,7 @@ function MatchesOpenFromQuery({
 }
 
 const DEFAULT_LIMIT = 10;
+const LIMIT_OPTIONS = [10, 20, 30, 50] as const;
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "most_relevant", label: "Most relative" },
   { value: "newest", label: "Newest First" },
@@ -213,6 +215,7 @@ const MatchesPage = () => {
   const [profiles, setProfiles] = useState<ApiMatchProfile[]>([]);
   const [totalProfiles, setTotalProfiles] = useState(0);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<number>(DEFAULT_LIMIT);
   const [loading, setLoading] = useState(true);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -234,6 +237,8 @@ const MatchesPage = () => {
   const [occupationSearch, setOccupationSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("most_relevant");
   const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(null);
+  /** Resolved for the open drawer (matches list row or GET v1/chat/permission/ when deep-linking). */
+  const [matchPreviewCanChat, setMatchPreviewCanChat] = useState(false);
   const [wishlistedMatriIds, setWishlistedMatriIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -242,6 +247,7 @@ const MatchesPage = () => {
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
+  const newProfilesCount = useMemo(() => profiles.filter((p) => p.is_new).length, [profiles]);
   const currentBride = brideProfiles[currentBrideIndex] ?? null;
   const meGender = (me?.gender ?? "").trim().toLowerCase();
   const leftLabel = meGender === "male" ? "Groom" : meGender === "female" ? "Bride" : "Profile";
@@ -263,7 +269,7 @@ const MatchesPage = () => {
     fetchFilters();
   }, [fetchFilters]);
 
-  const fetchMatches = useCallback(async (pageNum: number, append: boolean) => {
+  const fetchMatches = useCallback(async (pageNum: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -272,7 +278,7 @@ const MatchesPage = () => {
       const defaultHeight: [number, number] = [120, 200];
       const params: Parameters<typeof getMatches>[0] = {
         page: pageNum,
-        limit: DEFAULT_LIMIT,
+        limit,
         sort_by: sortBy,
       };
       if (ageRange[0] !== defaultAge[0] || ageRange[1] !== defaultAge[1]) {
@@ -292,27 +298,39 @@ const MatchesPage = () => {
 
       const res = await getMatches(params);
       setTotalProfiles(res.data.total_profiles);
-      setProfiles((prev) => (append ? [...prev, ...res.data.profiles] : res.data.profiles));
+      setProfiles(res.data.profiles);
+      setWishlistedMatriIds(() => {
+        const next = new Set<string>();
+        res.data.profiles.forEach((p) => {
+          if (p.is_wishlisted) next.add(p.matri_id);
+          else next.delete(p.matri_id);
+        });
+        return next;
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load matches");
-      if (!append) setProfiles([]);
+      setProfiles([]);
     } finally {
       setLoading(false);
     }
-  }, [ageRange, heightRange, religionId, casteId, educationId, occupationId, maritalStatusId, onlyWithPhoto, sortBy]);
+  }, [ageRange, heightRange, religionId, casteId, educationId, occupationId, maritalStatusId, onlyWithPhoto, sortBy, limit]);
 
   useEffect(() => {
     setPage(1);
-    fetchMatches(1, false);
+    fetchMatches(1);
   }, [fetchMatches]);
 
-  const loadMore = () => {
-    const next = page + 1;
-    setPage(next);
-    fetchMatches(next, true);
-  };
+  useEffect(() => {
+    if (page === 1) return;
+    fetchMatches(page);
+  }, [page, fetchMatches]);
 
-  const hasMore = profiles.length < totalProfiles;
+  const totalPages = Math.max(1, Math.ceil(totalProfiles / limit));
+  const canGoPrev = page > 1;
+  const canGoNext = page < totalPages;
+  const pageButtons = Array.from(
+    new Set([1, page - 1, page, page + 1, totalPages].filter((p) => p >= 1 && p <= totalPages)),
+  );
 
   const openMatchModal = useCallback(
     (initialMatriId?: string) => {
@@ -328,29 +346,112 @@ const MatchesPage = () => {
     [brideProfiles],
   );
 
-  const handleViewDetails = useCallback(async (matriId: string) => {
-    setActionLoading(matriId);
-    try {
-      const res = await getProfilePreview(matriId);
-      setViewPreview(res.data);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load profile");
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
+  const resolveCanChat = useCallback(
+    async (matriId: string) => {
+      const fromList = profiles.find((p) => p.matri_id === matriId);
+      if (fromList != null) return fromList.can_chat ?? false;
+      try {
+        const perm = await getChatPermission(matriId);
+        return perm.data.can_chat;
+      } catch {
+        return false;
+      }
+    },
+    [profiles],
+  );
+
+  const completeMatchPreviewOpen = useCallback(
+    async (data: ProfilePreviewData) => {
+      const canChat = await resolveCanChat(data.matri_id);
+      setMatchPreviewCanChat(canChat);
+      setViewPreview(data);
+    },
+    [resolveCanChat],
+  );
+
+  const handleViewDetails = useCallback(
+    async (matriId: string) => {
+      setActionLoading(matriId);
+      try {
+        const res = await getProfilePreview(matriId);
+        const fromList = profiles.find((p) => p.matri_id === matriId);
+        const mergedPreview: ProfilePreviewData = {
+          ...res.data,
+          interest_status:
+            res.data.interest_status ??
+            (fromList?.interest_status ? String(fromList.interest_status) : undefined),
+          is_interest_sent: res.data.is_interest_sent ?? fromList?.is_interest_sent,
+        };
+        await completeMatchPreviewOpen(mergedPreview);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load profile");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [completeMatchPreviewOpen, profiles],
+  );
 
   const handleSendInterest = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
     try {
       const res = await sendInterestApi(matriId);
       toast.success(res.message || "Interest sent successfully.");
-      setViewPreview(null);
+      try {
+        const sentRes = await getSentInterests(1, 50);
+        const sentItem = sentRes.data.results.find((item) => item.matri_id === matriId);
+        const nextStatus = sentItem?.status ?? "sent";
+
+        setProfiles((prev) =>
+          prev.map((p) =>
+            p.matri_id === matriId
+              ? {
+                  ...p,
+                  interest_status: nextStatus,
+                  is_interest_sent: true,
+                }
+              : p,
+          ),
+        );
+
+        setViewPreview((prev) =>
+          prev?.matri_id === matriId
+            ? {
+                ...prev,
+                interest_status: nextStatus,
+                is_interest_sent: true,
+              }
+            : prev,
+        );
+      } catch {
+        // Fallback if sent list refresh fails: still reflect "sent" locally.
+        setProfiles((prev) =>
+          prev.map((p) =>
+            p.matri_id === matriId
+              ? {
+                  ...p,
+                  interest_status: "sent",
+                  is_interest_sent: true,
+                }
+              : p,
+          ),
+        );
+        setViewPreview((prev) =>
+          prev?.matri_id === matriId
+            ? {
+                ...prev,
+                interest_status: "sent",
+                is_interest_sent: true,
+              }
+            : prev,
+        );
+      }
     } catch (e) {
       const err = e as Error & { status?: number };
       const msg = err.message || "Failed to send interest";
       // If user has no active plan (403), send them to Plans & Pricing page.
       if (err.status === 403 || msg.toLowerCase().includes("plan")) {
+        toast.error(msg);
         router.push("/dashboard/plan");
         return;
       }
@@ -397,10 +498,6 @@ const MatchesPage = () => {
     setCurrentBrideIndex((prev) => (prev + 1) % brideProfiles.length);
   };
 
-  const applyDeepLinkPreview = useCallback((data: ProfilePreviewData) => {
-    setViewPreview(data);
-  }, []);
-
   const handleWishlist = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
     try {
@@ -421,54 +518,93 @@ const MatchesPage = () => {
   return (
     <>
       <DashboardLayout>
-        <Suspense fallback={null}>
-          <MatchesOpenFromQuery onPreview={applyDeepLinkPreview} setBusyMatriId={setActionLoading} />
-        </Suspense>
-        <div className="space-y-6">
-          {/* Header */}
+        {/* Single root so layout flex height reaches the list scroller (lg). */}
+        <div className="flex flex-col gap-6 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-6 lg:overflow-hidden">
+          <Suspense fallback={null}>
+            <MatchesOpenFromQuery onPreview={completeMatchPreviewOpen} setBusyMatriId={setActionLoading} />
+          </Suspense>
+          {/* Header — maroon + gold, stats from existing API data only */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between flex-wrap gap-4"
+            className="shrink-0 rounded-2xl border border-primary/10 bg-card/90 px-5 py-5 shadow-card backdrop-blur-sm md:px-7 md:py-6"
           >
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-soft">
-                  <Sparkles className="w-6 h-6 text-primary-foreground" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="font-serif text-2xl font-bold tracking-tight text-secondary md:text-3xl">New Matches Found</h1>
+                  <span
+                    className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground shadow-soft"
+                    aria-label={`${totalProfiles} matches`}
+                  >
+                    {totalProfiles > 99 ? "99+" : totalProfiles}
+                  </span>
                 </div>
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">
-                  {totalProfiles}
-                </span>
-              </div>
-              <div>
-                <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">New Matches Found</h1>
-                <p className="text-muted-foreground text-sm flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5 text-secondary" />
-                  {totalProfiles} compatible profiles waiting for you
+                <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  {totalProfiles === 1
+                    ? "1 compatible profile waiting for you."
+                    : `${totalProfiles} compatible profiles waiting for you.`}
                 </p>
               </div>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.12 }}
+                className="flex shrink-0 items-center gap-2 self-start rounded-full border border-secondary/35 bg-gradient-to-r from-accent-gold/80 to-secondary/10 px-4 py-2 shadow-sm"
+              >
+                <TrendingUp className="h-4 w-4 text-secondary" aria-hidden />
+                <span className="text-sm font-semibold text-secondary-foreground">
+                  {newProfilesCount > 0 ? `+${newProfilesCount} new today` : `${totalProfiles} total`}
+                </span>
+              </motion.div>
             </div>
 
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent-gold/50 border border-secondary/20"
-            >
-              <TrendingUp className="w-4 h-4 text-secondary" />
-              <span className="text-sm font-medium text-secondary-foreground">+{Math.min(5, totalProfiles)} new today</span>
-            </motion.div>
+            <div className="mt-5 flex flex-col gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Refine &amp; sort</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-primary/25 bg-background/80 font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground"
+                  onClick={() => openMatchModal()}
+                >
+                  <Sparkles className="h-4 w-4 shrink-0" />
+                  Check Match
+                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Sort by</span>
+                  <div className="relative">
+                    <select
+                      className="h-9 min-w-[10.5rem] cursor-pointer appearance-none rounded-lg border border-primary/15 bg-background py-2 pl-3 pr-9 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortBy)}
+                      aria-label="Sort matches"
+                    >
+                      {SORT_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Sidebar - Filters from API */}
+          {/* lg:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
+          <div className="flex min-h-0 flex-col gap-6 lg:h-0 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 lg:overflow-hidden">
+            {/* Filters — fixed column on lg (scroll inside column only if filters exceed viewport) */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="lg:w-72 xl:w-80 flex-shrink-0"
+              className="w-full shrink-0 lg:w-72 xl:w-80 lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1"
             >
-              <div className="bg-card rounded-2xl shadow-card p-4 border border-primary/5 space-y-0 sticky top-28">
+              <div className="space-y-0 rounded-2xl border border-primary/10 bg-card/95 p-4 shadow-card backdrop-blur-sm">
+                <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filters</p>
                 <FilterSection title="Profile Type" icon={<ImageIcon className="w-4 h-4 text-primary" />}>
                   <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
                     <Checkbox checked={onlyWithPhoto} onCheckedChange={(c) => setOnlyWithPhoto(!!c)} />
@@ -572,81 +708,120 @@ const MatchesPage = () => {
               </div>
             </motion.div>
 
-            {/* Right - Profiles */}
-            <div className="flex-1 min-w-0">
+            {/* Matches — only this area scrolls on desktop */}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="flex items-center justify-between mb-5 flex-wrap gap-3"
+                className="mb-4 flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b border-primary/10 pb-4 lg:mb-5"
               >
                 <h2 className="font-serif text-lg font-bold text-foreground">
-                  Showing <span className="text-secondary">{profiles.length}</span> profiles
+                  Showing <span className="text-secondary tabular-nums">{profiles.length}</span>
+                  {profiles.length === 1 ? " profile" : " profiles"}
                 </h2>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                    onClick={() => openMatchModal()}
-                  >
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    Check Match
-                  </Button>
-                  <span className="text-sm text-muted-foreground">Sort by:</span>
-                  <select
-                    className="px-3 py-2 rounded-lg border border-primary/10 text-sm bg-card"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  >
-                    {SORT_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
+                {totalProfiles > 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    Page <span className="tabular-nums font-medium text-foreground">{page}</span> of{" "}
+                    <span className="tabular-nums font-medium text-foreground">{totalPages}</span> ·{" "}
+                    <span className="tabular-nums font-medium text-foreground">{totalProfiles}</span> total
+                  </span>
+                )}
               </motion.div>
 
-              {error && (
-                <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm mb-4">
-                  {error}
-                </div>
-              )}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] lg:h-0 lg:max-h-[calc(100dvh-22rem)] lg:flex-1 lg:pr-1">
+                {error && (
+                  <div className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
 
-              {loading && profiles.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">Loading matches…</div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
-                  {profiles.map((profile, index) => (
-                    <MatchListCard
-                      key={profile.matri_id}
-                      profile={profile}
-                      index={index}
-                      liked={wishlistedMatriIds.has(profile.matri_id)}
-                      onLike={() => handleWishlist(profile.matri_id)}
-                      onSendInterest={() => handleSendInterest(profile.matri_id)}
-                      onViewDetails={() => handleViewDetails(profile.matri_id)}
-                      onChat={() => handleChat(profile.matri_id)}
-                      onCheckMatch={() => openMatchModal(profile.matri_id)}
-                      onOpenPlanModal={() => setPlanModalOpen(true)}
-                      actionLoading={actionLoading}
-                    />
-                  ))}
-                </motion.div>
-              )}
+                {loading && profiles.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">Loading matches…</div>
+                ) : (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                    {profiles.map((profile, index) => (
+                      <MatchListCard
+                        key={profile.matri_id}
+                        profile={profile}
+                        index={index}
+                        liked={wishlistedMatriIds.has(profile.matri_id)}
+                        onLike={() => handleWishlist(profile.matri_id)}
+                        onSendInterest={() => handleSendInterest(profile.matri_id)}
+                        onViewDetails={() => handleViewDetails(profile.matri_id)}
+                        onCheckMatch={() => openMatchModal(profile.matri_id)}
+                        actionLoading={actionLoading}
+                      />
+                    ))}
+                  </motion.div>
+                )}
 
-              {hasMore && !loading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-center mt-10"
-                >
-                  <Button variant="outline" size="lg" className="group gap-2" onClick={loadMore} disabled={loading}>
-                    Load More Profiles
-                    <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
-                  </Button>
-                </motion.div>
-              )}
+                {!loading && totalProfiles > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 pt-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Rows per page</span>
+                      <select
+                        value={limit}
+                        onChange={(e) => setLimit(Number(e.target.value))}
+                        className="h-8 rounded-md border border-primary/20 bg-background px-2 text-sm"
+                        aria-label="Rows per page"
+                      >
+                        {LIMIT_OPTIONS.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canGoPrev || loading}
+                        onClick={() => canGoPrev && setPage((p) => p - 1)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+
+                      {pageButtons.map((p, idx) => {
+                        const prev = pageButtons[idx - 1];
+                        const showGap = prev != null && p - prev > 1;
+                        return (
+                          <div key={`page-slot-${p}-${idx}`} className="flex items-center gap-1.5">
+                            {showGap ? (
+                              <span className="px-1 text-xs text-muted-foreground">…</span>
+                            ) : null}
+                            <Button
+                              variant={p === page ? "default" : "outline"}
+                              size="sm"
+                              className="min-w-9 px-2"
+                              onClick={() => setPage(p)}
+                              disabled={loading}
+                            >
+                              {p}
+                            </Button>
+                          </div>
+                        );
+                      })}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canGoNext || loading}
+                        onClick={() => canGoNext && setPage((p) => p + 1)}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -654,10 +829,17 @@ const MatchesPage = () => {
 
       <ProfileViewDrawer
         open={!!viewPreview}
-        onOpenChange={(open) => !open && setViewPreview(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewPreview(null);
+            setMatchPreviewCanChat(false);
+          }
+        }}
         profile={null}
         preview={viewPreview}
         onSendInterest={viewPreview ? () => handleSendInterest(viewPreview.matri_id) : undefined}
+        canChat={matchPreviewCanChat}
+        onChat={viewPreview ? () => handleChat(viewPreview.matri_id) : undefined}
         onOpenPlanModal={() => setPlanModalOpen(true)}
       />
 
@@ -787,9 +969,7 @@ const MatchListCard = ({
   onLike,
   onSendInterest,
   onViewDetails,
-  onChat,
   onCheckMatch,
-  onOpenPlanModal,
   actionLoading,
 }: {
   profile: ApiMatchProfile;
@@ -798,100 +978,186 @@ const MatchListCard = ({
   onLike: () => void;
   onSendInterest: () => void;
   onViewDetails: () => void;
-  onChat: () => void;
   onCheckMatch: () => void;
-  onOpenPlanModal: () => void;
   actionLoading: string | null;
 }) => {
+  const normalizedProfile = profile as ApiMatchProfile & {
+    can_interest_sent?: boolean;
+    is_interest_sent?: boolean;
+  };
   const isOnline = profile.is_online;
   const imgSrc = profile.profile_photo || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop";
   const busy = actionLoading === profile.matri_id;
+  const lastLoginLabel = isOnline
+    ? "Online now"
+    : profile.last_seen
+      ? `Last login ${profile.last_seen}`
+      : "Recently active";
+
+  const canSendInterest =
+    normalizedProfile.can_interest_sent ?? profile.can_send_interest ?? false;
+  const interestStatus = String(normalizedProfile.interest_status ?? "")
+    .trim()
+    .toLowerCase();
+  const isInterestSent = normalizedProfile.is_interest_sent ?? false;
+  const showInterestAccepted = interestStatus === "accepted";
+  const showInterestSent = interestStatus === "sent" || isInterestSent;
+  const showSendInterestButton = interestStatus === "pending" && canSendInterest;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, type: "spring", stiffness: 100 }}
-      whileHover={{ y: -4, boxShadow: "0 20px 60px -15px hsl(330 60% 34% / 0.15)" }}
-      className="flex flex-col md:flex-row md:items-stretch bg-card rounded-2xl overflow-hidden shadow-card border border-primary/5 cursor-pointer group relative"
-      onClick={() => onViewDetails()}
+      transition={{ delay: index * 0.05, type: "spring", stiffness: 120, damping: 18 }}
+      whileHover={{ y: -2 }}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-shadow duration-300 hover:border-primary/20 hover:shadow-elevated md:flex-row md:items-stretch",
+        "cursor-pointer",
+      )}
+      onClick={onViewDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onViewDetails();
+        }
+      }}
     >
-      <div className="w-full md:w-56 lg:w-64 h-52 md:h-64 flex-shrink-0 relative overflow-hidden">
-        <div className={`absolute top-3 left-3 z-10 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? "bg-green-500 animate-pulse-soft" : "bg-muted-foreground/40"}`} />
-        <img src={imgSrc} alt={profile.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
-        <div className={`absolute bottom-0 left-0 right-0 py-1.5 text-center text-xs font-medium text-primary-foreground ${isOnline ? "bg-green-600/90" : "bg-muted-foreground/70"}`}>
-          {isOnline ? "Available Online" : (profile.last_seen ? `Last login ${profile.last_seen}` : "Recently active")}
+      {/* Photo — circular match score + status bar (API: profile_photo, match_percentage, last_seen, is_online) */}
+      <div className="relative h-56 w-full shrink-0 overflow-hidden bg-muted md:h-auto md:w-[min(100%,280px)] md:min-h-[260px] lg:w-[300px]">
+        <img
+          src={imgSrc}
+          alt=""
+          className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
+        />
+        <div
+          className={cn(
+            "absolute left-3 top-3 z-10 h-3 w-3 rounded-full border-2 border-white/90 shadow-sm",
+            isOnline ? "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]" : "bg-white/50",
+          )}
+          title={isOnline ? "Online" : "Offline"}
+        />
+        <div
+          className="absolute right-3 top-3 z-10 flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center rounded-full border-2 border-secondary/90 bg-background/95 shadow-md backdrop-blur-[2px]"
+          aria-label={`${profile.match_percentage}% match`}
+        >
+          <span className="text-[10px] font-semibold uppercase leading-none text-muted-foreground">Match</span>
+          <span className="text-base font-bold leading-tight text-primary tabular-nums">{profile.match_percentage}%</span>
         </div>
-        <div className="absolute top-3 right-3 px-2 py-1 bg-card/95 backdrop-blur-sm rounded-full shadow-soft">
-          <span className="text-xs font-bold text-gradient-primary">{profile.match_percentage}%</span>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10">
+          <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">{lastLoginLabel}</p>
         </div>
+        {profile.is_already_viewed === true ? (
+          <div className="absolute bottom-14 left-3 z-10 rounded-md border border-white/30 bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+            Viewed
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex-1 p-3 sm:p-5 min-w-0 flex flex-col">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-primary-dark transition-colors truncate min-w-0">{profile.name}</h3>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onLike(); }} disabled={busy} className="text-muted-foreground hover:text-primary transition-all hover:scale-125 flex-shrink-0" aria-label="Favorite">
-            <Heart className={`w-5 h-5 ${liked ? "fill-primary text-primary" : ""}`} />
-          </button>
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
+        <div>
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <h3 className="min-w-0 flex-1 font-serif text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary md:text-2xl">
+              {profile.name}
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike();
+              }}
+              disabled={busy}
+              className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+              aria-label={liked ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={liked}
+            >
+              <Heart className={cn("h-6 w-6", liked && "fill-secondary text-secondary")} />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex max-w-full items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span className="truncate">{profile.education ?? "—"}</span>
+            </span>
+            <span className="inline-flex max-w-full items-center rounded-full bg-secondary/20 px-3 py-1 text-xs font-semibold text-secondary-foreground">
+              <span className="truncate">{profile.occupation ?? "—"}</span>
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[hsl(280_45%_94%)] px-3 py-1 text-xs font-semibold text-[hsl(280_35%_32%)]">
+              {profile.age} years old
+            </span>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.education}</span>
-          <span className="px-2.5 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-md">{profile.occupation}</span>
-          <span className="px-2.5 py-0.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md">{profile.age} Years old</span>
-          <span className="px-2.5 py-0.5 bg-accent text-accent-foreground text-xs font-medium rounded-md">Height: {profile.height}cm</span>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2 border-t border-primary/10 pt-4">
+          {showInterestAccepted ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
+              type="button"
+              aria-disabled="true"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <Heart className="h-3.5 w-3.5 shrink-0 fill-secondary text-secondary" />
+              Interest Accepted
+            </Button>
+          ) : showInterestSent ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
+              type="button"
+              aria-disabled="true"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <Heart className="h-3.5 w-3.5 shrink-0 fill-secondary text-secondary" />
+              Interest Sent
+            </Button>
+          ) : showSendInterestButton ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSendInterest();
+              }}
+            >
+              <Send className="h-3.5 w-3.5 shrink-0" />
+              Send interest
+            </Button>
+          ) : null}
           <Button
             size="sm"
-            variant="hero"
-            className="gap-1 text-xs shrink-0"
-            disabled={!profile.can_chat || busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (profile.can_chat) onChat();
-              else onOpenPlanModal();
-            }}
-          >
-            <MessageCircle className="w-3.5 h-3.5 shrink-0" /> Chat now
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1 text-xs shrink-0"
-            disabled={!profile.can_send_interest || busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (profile.can_send_interest) onSendInterest();
-              else onOpenPlanModal();
-            }}
-          >
-            <Send className="w-3.5 h-3.5 shrink-0" /> Send interest
-          </Button>
-          <Button
-            size="sm"
-            variant="hero"
-            className="gap-1 text-xs shrink-0"
-            disabled={!profile.can_view_details || busy}
+            variant="secondary"
+            className="gap-1.5 rounded-lg text-xs font-semibold shadow-sm"
+            disabled={busy}
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails();
             }}
           >
-            <Eye className="w-3.5 h-3.5 shrink-0" /> View details
+            <Eye className="h-3.5 w-3.5 shrink-0" />
+            View details
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="gap-1 text-xs shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            className="gap-1.5 rounded-lg border-secondary/50 text-xs font-semibold text-secondary-foreground hover:bg-secondary/15"
             disabled={busy}
             onClick={(e) => {
               e.stopPropagation();
               onCheckMatch();
             }}
           >
-            <Sparkles className="w-3.5 h-3.5 shrink-0" /> Check Match
+            <Sparkles className="h-3.5 w-3.5 shrink-0" />
+            Check Match
           </Button>
         </div>
       </div>

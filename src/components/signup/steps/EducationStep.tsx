@@ -2,16 +2,15 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } fr
 import { createPortal } from "react-dom";
 import { ChevronDown, Search } from "lucide-react";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
-import { HIGHEST_EDUCATION_OPTIONS } from "@/constants/highestEducationOptions";
-import { EDUCATION_SUBJECT_OPTIONS } from "@/constants/educationSubjectOptions";
-
-const OCCUPATIONS = [
-  "Software Engineer", "Doctor", "Teacher", "CA", "Lawyer", "Business", "Government Job",
-  "Banking", "Nurse", "Architect", "Designer", "Marketing", "HR", "Accountant",
-  "Engineer (Civil)", "Engineer (Mech)", "Engineer (ECE)", "Professor", "Freelancer", "Other",
-];
-
-const INCOME_RANGES = ["Not specified", "Below 1 Lakh", "1-2 Lakh", "2-5 Lakh", "5-10 Lakh", "10-25 Lakh", "25 Lakh+"];
+import { toast } from "sonner";
+import {
+  getEducations,
+  getEducationSubjects,
+  getOccupations,
+  getEmploymentStatuses,
+  getIncomeRanges,
+  type EducationMaster,
+} from "@/lib/masterApi";
 
 interface Props {
   formData: Record<string, string>;
@@ -21,9 +20,13 @@ interface Props {
 function SearchableEducationSelect({
   value,
   onChange,
+  options,
+  disabled,
 }: {
   value: string;
   onChange: Props["onChange"];
+  options: string[];
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -33,10 +36,10 @@ function SearchableEducationSelect({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const list = [...HIGHEST_EDUCATION_OPTIONS];
+    const list = [...options];
     if (!q) return list;
     return list.filter((opt) => opt.toLowerCase().includes(q));
-  }, [search]);
+  }, [options, search]);
 
   const updatePosition = useCallback(() => {
     const btn = containerRef.current?.querySelector("button");
@@ -77,7 +80,7 @@ function SearchableEducationSelect({
 
   const display =
     value && value.trim() !== "" ? value : "Select Highest Education";
-  const inList = (HIGHEST_EDUCATION_OPTIONS as readonly string[]).includes(value);
+  const inList = (options as readonly string[]).includes(value);
 
   const dropdown =
     open &&
@@ -146,7 +149,8 @@ function SearchableEducationSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground"
+        className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={disabled}
       >
         <span className={value ? "" : "text-muted-foreground"}>{display}</span>
         <ChevronDown className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
@@ -159,9 +163,13 @@ function SearchableEducationSelect({
 function SearchableSubjectSelect({
   value,
   onChange,
+  options,
+  disabled,
 }: {
   value: string;
   onChange: Props["onChange"];
+  options: string[];
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -171,10 +179,10 @@ function SearchableSubjectSelect({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const list = [...EDUCATION_SUBJECT_OPTIONS];
+    const list = [...options];
     if (!q) return list;
     return list.filter((opt) => opt.toLowerCase().includes(q));
-  }, [search]);
+  }, [options, search]);
 
   const updatePosition = useCallback(() => {
     const btn = containerRef.current?.querySelector("button");
@@ -214,7 +222,7 @@ function SearchableSubjectSelect({
   };
 
   const display = value && value.trim() !== "" ? value : "Select Subject";
-  const inList = (EDUCATION_SUBJECT_OPTIONS as readonly string[]).includes(value);
+  const inList = (options as readonly string[]).includes(value);
 
   const dropdown =
     open &&
@@ -283,7 +291,8 @@ function SearchableSubjectSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground"
+        className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={disabled}
       >
         <span className={value ? "" : "text-muted-foreground"}>{display}</span>
         <ChevronDown className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
@@ -294,12 +303,82 @@ function SearchableSubjectSelect({
 }
 
 const EducationStep = ({ formData, onChange }: Props) => {
-  const [occupationSearch, setOccupationSearch] = useState("");
-  const filteredOccupations = useMemo(() => {
-    const q = occupationSearch.trim().toLowerCase();
-    if (!q) return OCCUPATIONS;
-    return OCCUPATIONS.filter((o) => o.toLowerCase().includes(q));
-  }, [occupationSearch]);
+  const [educations, setEducations] = useState<EducationMaster[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [occupations, setOccupations] = useState<string[]>([]);
+  const [employmentStatuses, setEmploymentStatuses] = useState<string[]>([]);
+  const [incomeRanges, setIncomeRanges] = useState<string[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [eduRes, occRes, empRes, incRes] = await Promise.all([
+          getEducations(),
+          getOccupations(),
+          getEmploymentStatuses(),
+          getIncomeRanges(),
+        ]);
+        if (!mounted) return;
+        setEducations(eduRes);
+        setOccupations(occRes.map((o) => o.name));
+        setEmploymentStatuses(empRes.map((e) => e.name));
+        setIncomeRanges(incRes.map((i) => i.name));
+      } catch (e) {
+        toast.error(
+          e instanceof Error
+            ? e.message
+            : "Failed to load education master data",
+        );
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const selectedEducationId = educations.find(
+      (e) => e.name === formData.education,
+    )?.id;
+
+    if (!selectedEducationId) {
+      setSubjects([]);
+      return;
+    }
+
+    setLoadingSubjects(true);
+    (async () => {
+      try {
+        const subjectRes = await getEducationSubjects(selectedEducationId);
+        if (!mounted) return;
+        const names = subjectRes.map((s) => s.name);
+        setSubjects(names);
+        if (formData.educationSubject && !names.includes(formData.educationSubject)) {
+          onChange({
+            target: { name: "educationSubject", value: "" },
+          } as React.ChangeEvent<HTMLSelectElement>);
+        }
+      } catch (e) {
+        if (mounted) {
+          toast.error(
+            e instanceof Error
+              ? e.message
+              : "Failed to load education subjects",
+          );
+          setSubjects([]);
+        }
+      } finally {
+        if (mounted) setLoadingSubjects(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [educations, formData.education, formData.educationSubject, onChange]);
 
   return (
     <>
@@ -308,48 +387,38 @@ const EducationStep = ({ formData, onChange }: Props) => {
         <p className="text-muted-foreground text-sm">Education, Subject, Employment, Occupation with search, Annual Income</p>
       </div>
       <div className="space-y-4">
-        <SearchableEducationSelect value={formData.education} onChange={onChange} />
-        <SearchableSubjectSelect value={formData.educationSubject} onChange={onChange} />
-        <SelectField label="Employment" name="employmentStatus" options={["Employed", "Self-Employed", "Business", "Unemployed", "Student", "Freelancer"]} value={formData.employmentStatus} onChange={onChange} />
-        <div>
-          <label className={labelClass}>Occupation (search)</label>
-          <input
-            type="text"
-            value={occupationSearch !== "" ? occupationSearch : formData.occupation}
-            onChange={(e) => {
-              const v = e.target.value;
-              setOccupationSearch(v);
-              onChange({ ...e, target: { ...e.target, name: "occupation", value: v } });
-            }}
-            onFocus={() => setOccupationSearch(occupationSearch || formData.occupation)}
-            placeholder="Search or type occupation"
-            className={inputClass}
-            list="occupation-list"
-          />
-          <datalist id="occupation-list">
-            {filteredOccupations.map((o) => (
-              <option key={o} value={o} />
-            ))}
-          </datalist>
-          {occupationSearch && (
-            <div className="mt-1 max-h-32 overflow-y-auto rounded-xl border border-primary/10 bg-white">
-              {filteredOccupations.slice(0, 8).map((o) => (
-                <button
-                  key={o}
-                  type="button"
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-primary/10"
-                  onClick={() => {
-                    setOccupationSearch("");
-                    onChange({ target: { name: "occupation", value: o } } as React.ChangeEvent<HTMLInputElement>);
-                  }}
-                >
-                  {o}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <SelectField label="Annual Income" name="annualIncome" options={INCOME_RANGES} value={formData.annualIncome || ""} onChange={onChange} />
+        <SearchableEducationSelect
+          value={formData.education}
+          onChange={onChange}
+          options={educations.map((e) => e.name)}
+        />
+        <SearchableSubjectSelect
+          value={formData.educationSubject}
+          onChange={onChange}
+          options={subjects}
+          disabled={!formData.education || loadingSubjects}
+        />
+        <SelectField
+          label="Employment"
+          name="employmentStatus"
+          options={employmentStatuses}
+          value={formData.employmentStatus}
+          onChange={onChange}
+        />
+        <SelectField
+          label="Occupation"
+          name="occupation"
+          options={occupations}
+          value={formData.occupation}
+          onChange={onChange}
+        />
+        <SelectField
+          label="Annual Income"
+          name="annualIncome"
+          options={incomeRanges}
+          value={formData.annualIncome || ""}
+          onChange={onChange}
+        />
       </div>
     </>
   );

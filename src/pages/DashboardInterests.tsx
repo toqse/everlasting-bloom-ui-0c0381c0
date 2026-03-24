@@ -226,16 +226,6 @@ const DashboardInterests = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-3xl shadow-card p-6"
         >
-          <div className="flex justify-end mb-4">
-            <button
-              type="button"
-              className="w-8 h-8 rounded-full border border-primary/10 flex items-center justify-center text-muted-foreground hover:bg-accent-rose"
-              aria-label="More options"
-            >
-              •••
-            </button>
-          </div>
-
           <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-6 p-1 rounded-2xl bg-rose-50/80 border border-primary/5">
             {tabs.map((tab) => (
               <button

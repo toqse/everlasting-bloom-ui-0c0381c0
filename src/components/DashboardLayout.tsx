@@ -7,7 +7,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { fetchAndSyncMeProfile } from "@/lib/profileApi";
 import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle
+  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle, Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stableUnit } from "@/lib/stableRandom";
@@ -25,6 +25,7 @@ import {
 const baseSidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Matches", href: "/dashboard/matches", icon: Users },
+  { name: "Favorites", href: "/dashboard/favorites", icon: Star },
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
@@ -80,6 +81,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const match = sidebarLinks.find((l) => l.href !== "/dashboard" && path.startsWith(l.href));
     return match?.name ?? "Dashboard";
   })();
+
+  /** My Matches: main is a flex column with fixed height; list scrolls inside the page. */
+  const isMatchesPage = pathname === "/dashboard/matches";
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -292,8 +296,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </motion.aside>
 
-          {/* Main Content - scrolls on desktop; sidebar stays fixed */}
-          <main className="flex-1 min-w-0 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+          {/* Main Content — matches page locks height on lg so only the list column scrolls */}
+          <main
+            className={cn(
+              "flex-1 min-w-0 min-h-0 overflow-y-auto [scrollbar-gutter:stable]",
+              isMatchesPage && "lg:flex lg:flex-col lg:overflow-hidden",
+            )}
+          >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname ?? "dashboard"}
@@ -304,7 +313,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   duration: reduceMotion ? 0 : 0.18,
                   ease: "easeOut",
                 }}
-                className="min-h-full"
+                className={cn(
+                  !isMatchesPage && "min-h-full",
+                  isMatchesPage &&
+                    "min-h-full lg:flex lg:h-full lg:min-h-0 lg:w-full lg:flex-1 lg:flex-col lg:overflow-hidden",
+                )}
               >
                 {children}
               </motion.div>

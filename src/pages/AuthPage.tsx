@@ -98,6 +98,12 @@ const INCOME_RANGES = [
   "10-25 Lakh",
   "25 Lakh+",
 ] as const;
+const REQUIRED_SIGNUP_PHOTO_KEYS = [
+  "full",
+  "passport",
+  "aadhaar_front",
+  "aadhaar_back",
+] as const;
 
 const normalizeToken = (v: string) => v.toLowerCase().replace(/[_\-\s]+/g, "");
 
@@ -927,6 +933,16 @@ const AuthPage = () => {
       setIsCreatingAccount(true);
       let shouldReset = true;
       try {
+        const missingRequiredPhotos = REQUIRED_SIGNUP_PHOTO_KEYS.filter(
+          (key) => !photos[key]?.file,
+        );
+        if (missingRequiredPhotos.length > 0) {
+          toast.error(
+            "Full Photo, Passport Photo, Aadhaar Front and Aadhaar Back are mandatory",
+          );
+          return;
+        }
+
         const hasAnyPhoto = Object.keys(photos).length > 0;
         if (hasAnyPhoto) {
           await postPhotos({
@@ -1018,6 +1034,9 @@ const AuthPage = () => {
     !!formData.dob?.trim() &&
     !!formData.gender?.trim() &&
     agreeTerms;
+  const hasRequiredSignupPhotos = REQUIRED_SIGNUP_PHOTO_KEYS.every(
+    (key) => !!photos[key]?.file,
+  );
 
   const renderStep = () => {
     const props = { formData, onChange: handleChange };
@@ -1082,7 +1101,6 @@ const AuthPage = () => {
           <PhotosStep
             photos={photos}
             setPhotos={setPhotos}
-            onSkipOrCompleteLater={handleSignupNext}
           />
         );
       default:
@@ -1368,7 +1386,10 @@ const AuthPage = () => {
                   className="w-full gap-2"
                   onClick={handleSignupNext}
                   disabled={
-                    signupStep === SIGNUP_STEPS.length - 1 && isCreatingAccount
+                    (signupStep === SIGNUP_STEPS.length - 1 &&
+                      isCreatingAccount) ||
+                    (signupStep === SIGNUP_STEPS.length - 1 &&
+                      !hasRequiredSignupPhotos)
                   }
                 >
                   {signupStep === SIGNUP_STEPS.length - 1 ? (

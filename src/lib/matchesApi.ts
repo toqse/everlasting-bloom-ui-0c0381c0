@@ -67,21 +67,32 @@ async function authedFetch<T>(
 
 export type SortBy = "newest" | "most_relevant" | "best_match";
 
+/** GET v1/matches/ list item — see apidoc: PlanLimitService flags per profile. */
 export interface MatchProfile {
   matri_id: string;
   name: string;
   age: number;
-  height: number;
-  education: string;
-  occupation: string;
+  height: number | null;
+  education: string | null;
+  occupation: string | null;
   profile_photo: string | null;
+  /** Larger photo URL when provided */
+  full_photo?: string | null;
   is_online: boolean;
   last_seen: string | null;
   is_new: boolean;
   match_percentage: number;
-  can_view_details: boolean;
-  can_send_interest: boolean;
-  can_chat: boolean;
+  /** Wishlist / heart — server state */
+  is_wishlisted?: boolean;
+  /** True if full profile can be opened (quota or already viewed). Same as can_view_details per API. */
+  is_able_to_view?: boolean;
+  /** True if this member was opened as full profile before */
+  is_already_viewed?: boolean;
+  can_view_details?: boolean;
+  can_send_interest?: boolean;
+  can_chat?: boolean;
+  interest_status?: string;
+  is_interest_sent?: boolean;
 }
 
 export interface MatchesParams {
@@ -140,6 +151,8 @@ export interface ProfilePreviewData {
   about_me: string;
   family_background: string;
   contact_locked: boolean;
+  is_interest_sent?: boolean;
+  interest_status?: string;
   /**
    * If true, API indicates the user has access to full details already.
    * Some deployments include a nested `profile` object (sectioned shape) with phone/email.

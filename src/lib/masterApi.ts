@@ -44,6 +44,38 @@ export interface MotherTongue {
   is_active: boolean;
 }
 
+export interface EducationMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
+export interface EducationSubjectMaster {
+  id: number;
+  name: string;
+  education?: number;
+  education_id?: number;
+  is_active?: boolean;
+}
+
+export interface OccupationMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
+export interface EmploymentStatusMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
+export interface IncomeRangeMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -117,5 +149,58 @@ export async function getMotherTongues(search?: string): Promise<MotherTongue[]>
   const path = "v1/master/mother-tongues/";
   const results = await getPaginated<MotherTongue>(path, search);
   console.log("[masterApi] getMotherTongues response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/educations/ */
+export async function getEducations(search?: string): Promise<EducationMaster[]> {
+  const path = "v1/master/educations/";
+  const results = await getPaginated<EducationMaster>(path, search);
+  console.log("[masterApi] getEducations response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/education-subjects/?education_id=<id> */
+export async function getEducationSubjects(
+  educationId: number,
+  search?: string,
+): Promise<EducationSubjectMaster[]> {
+  const path = `v1/master/education-subjects/?education_id=${educationId}`;
+  const results = await getPaginated<EducationSubjectMaster>(path, search);
+  console.log("[masterApi] getEducationSubjects response:", {
+    educationId,
+    search,
+    results,
+  });
+  return results;
+}
+
+/** GET v1/master/occupations/ */
+export async function getOccupations(
+  search?: string,
+): Promise<OccupationMaster[]> {
+  const path = "v1/master/occupations/";
+  const results = await getPaginated<OccupationMaster>(path, search);
+  console.log("[masterApi] getOccupations response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/employment-statuses/ */
+export async function getEmploymentStatuses(
+  search?: string,
+): Promise<EmploymentStatusMaster[]> {
+  const path = "v1/master/employment-statuses/";
+  const results = await getPaginated<EmploymentStatusMaster>(path, search);
+  console.log("[masterApi] getEmploymentStatuses response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/income-ranges/ */
+export async function getIncomeRanges(
+  search?: string,
+): Promise<IncomeRangeMaster[]> {
+  const path = "v1/master/income-ranges/";
+  const results = await getPaginated<IncomeRangeMaster>(path, search);
+  console.log("[masterApi] getIncomeRanges response:", { search, results });
   return results;
 }

@@ -13,6 +13,7 @@ const SLOTS = [
   {
     key: "full",
     label: "Full Photo",
+    required: true,
     ratioLabel: "1 : 1",
     aspect: 1,
     aspectClass: "aspect-square",
@@ -21,6 +22,7 @@ const SLOTS = [
   {
     key: "passport",
     label: "Passport Photo",
+    required: true,
     ratioLabel: "4 : 5",
     aspect: 4 / 5,
     aspectClass: "aspect-[4/5]",
@@ -29,6 +31,7 @@ const SLOTS = [
   {
     key: "selfie",
     label: "Selfie",
+    required: false,
     ratioLabel: "1 : 1",
     aspect: 1,
     aspectClass: "aspect-square",
@@ -37,6 +40,7 @@ const SLOTS = [
   {
     key: "family",
     label: "Family Photo",
+    required: false,
     ratioLabel: "20 : 9",
     aspect: 20 / 9,
     aspectClass: "aspect-[20/9]",
@@ -47,8 +51,8 @@ const SLOTS = [
 const ASPECT_TOLERANCE = 0.02;
 
 const AADHAAR_SLOTS = [
-  { key: "aadhaar_front", label: "Aadhaar Front", icon: FileImage },
-  { key: "aadhaar_back", label: "Aadhaar Back", icon: FileImage },
+  { key: "aadhaar_front", label: "Aadhaar Front", required: true, icon: FileImage },
+  { key: "aadhaar_back", label: "Aadhaar Back", required: true, icon: FileImage },
 ] as const;
 
 export interface PhotoSlotValue {
@@ -182,7 +186,7 @@ const PhotosStep = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {SLOTS.map(({ key, label, ratioLabel, aspectClass, icon: Icon }) => (
+        {SLOTS.map(({ key, label, required, ratioLabel, aspectClass, icon: Icon }) => (
           <label
             key={key}
             className={cn(
@@ -225,7 +229,10 @@ const PhotosStep = ({
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="text-center text-sm font-semibold text-foreground">{label}</span>
+                  <span className="text-center text-sm font-semibold text-foreground">
+                    {label}
+                    {required ? " *" : ""}
+                  </span>
                   <span className="mt-0.5 text-center text-xs text-muted-foreground">{ratioLabel}</span>
                   <span className="mt-2 flex items-center gap-1 text-xs font-medium text-primary">
                     <PlusCircle className="h-4 w-4" /> Add photo
@@ -241,14 +248,14 @@ const PhotosStep = ({
         <div className="flex items-center justify-between gap-2 mb-4">
           <h2 className="font-serif text-lg font-bold text-foreground">ID Verification (Aadhaar)</h2>
           <span className="shrink-0 rounded-full bg-primary/20 px-2.5 py-1 text-xs font-semibold text-primary">
-            OPTIONAL
+            REQUIRED
           </span>
         </div>
         <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-foreground">
           Aadhaar front &amp; back photo
         </label>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {AADHAAR_SLOTS.map(({ key, label, icon: Icon }) => (
+          {AADHAAR_SLOTS.map(({ key, label, required, icon: Icon }) => (
             <label
               key={key}
               className={`relative flex min-h-[120px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all cursor-pointer ${
@@ -292,7 +299,10 @@ const PhotosStep = ({
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="text-center text-sm font-semibold text-foreground">{label}</span>
+                  <span className="text-center text-sm font-semibold text-foreground">
+                    {label}
+                    {required ? " *" : ""}
+                  </span>
                   <span className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
                     <PlusCircle className="h-4 w-4" /> Upload photo
                   </span>
