@@ -142,3 +142,45 @@ export async function purchasePlan(planId: number, paymentMethod: PaymentMethod)
   });
 }
 
+export interface WebsitePlan {
+  id: number;
+  name: string;
+  price: number;
+  duration_days: number;
+  profile_view_limit: number;
+  interest_limit: number;
+  chat_limit: number;
+  horoscope_match_limit: number;
+  contact_view_limit: number;
+  description: string;
+  service_charge?: {
+    male?: number;
+    female?: number;
+    other?: number;
+  };
+  total_price?: {
+    male?: number;
+    female?: number;
+    other?: number;
+  };
+}
+
+export interface WebsitePlansResponse {
+  success: boolean;
+  data: {
+    plans: WebsitePlan[];
+  };
+}
+
+/** Public endpoint (no token): GET /api/v1/website/plans/ */
+export async function getWebsitePlans(): Promise<WebsitePlansResponse> {
+  const path = "v1/website/plans/";
+  const url = `${BASE_URL}${path}`;
+  logPlansRequest(path, "GET", null);
+  const res = await fetch(url, { method: "GET" });
+  const data = (await res.json().catch(() => ({}))) as WebsitePlansResponse & ApiErrorPayload;
+  logPlansResponse(path, "GET", res.status, data);
+  if (!res.ok) throw new Error(getErrorMessage(data, "Failed to load website plans"));
+  return data;
+}
+

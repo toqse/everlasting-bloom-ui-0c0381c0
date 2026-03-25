@@ -221,19 +221,30 @@ const DashboardFavoritesPage = () => {
                           {p.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {p.education ?? "—"} · {p.occupation ?? "—"} · {p.age} yrs
+                          {p.education ?? "—"} · {p.occupation ?? "—"} · {p.age}{" "}
+                          yrs
                         </p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {isAccepted ? (
-                        <Button variant="outline" size="sm" type="button" aria-disabled="true">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          aria-disabled="true"
+                        >
                           <Heart className="mr-1 h-4 w-4 fill-secondary text-secondary" />
                           Interest Accepted
                         </Button>
                       ) : isSent ? (
-                        <Button variant="outline" size="sm" type="button" aria-disabled="true">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          aria-disabled="true"
+                        >
                           <Heart className="mr-1 h-4 w-4 fill-secondary text-secondary" />
                           Interest Sent
                         </Button>

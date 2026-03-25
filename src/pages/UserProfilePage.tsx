@@ -10,7 +10,6 @@ import { useAuthStore } from "@/stores/authStore";
 import {
   Edit,
   Eye,
-  Sun,
   UsersRound,
   User,
   BookOpen,
@@ -203,11 +202,6 @@ const allProfileSections: {
     icon: UsersRound,
   },
   { title: "About Me", description: "Bio", icon: FileText },
-  {
-    title: "Horoscope",
-    description: "Jathagam details (Hindu only)",
-    icon: Sun,
-  },
 ];
 
 // Profile form data (display + ids for PATCH bodies)
@@ -534,14 +528,13 @@ const PHOTO_LABELS: Record<string, string> = {
 
 /** Same tolerances and ratios as signup `PhotosStep` (see `PhotoCropDialog`). */
 const PHOTO_ASPECT_TOLERANCE = 0.02;
-const PHOTO_SLOT_ASPECTS: Partial<
-  Record<(typeof PHOTO_KEYS)[number], number>
-> = {
-  profile_photo: 4 / 5,
-  full_photo: 1,
-  selfie_photo: 1,
-  family_photo: 20 / 9,
-};
+const PHOTO_SLOT_ASPECTS: Partial<Record<(typeof PHOTO_KEYS)[number], number>> =
+  {
+    profile_photo: 4 / 5,
+    full_photo: 1,
+    selfie_photo: 1,
+    family_photo: 20 / 9,
+  };
 
 function PhotoSlotPreview({
   file,
@@ -1723,10 +1716,8 @@ function ViewSectionContent({
 }
 
 const UserProfilePage = () => {
-  const { user, isHindu } = useAuthStore();
-  const profileSections = allProfileSections.filter(
-    (s) => s.title !== "Horoscope" || isHindu(),
-  );
+  const { user } = useAuthStore();
+  const profileSections = allProfileSections;
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [profileData, setProfileData] = useState<ProfileFormData>(() =>
     defaultProfileData(user),

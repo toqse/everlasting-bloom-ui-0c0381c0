@@ -6,8 +6,21 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { fetchAndSyncMeProfile } from "@/lib/profileApi";
-import { 
-  LayoutDashboard, User, Heart, MessageCircle, Crown, Settings, LogOut, Menu, X, Sparkles, Users, Receipt, HelpCircle, Star
+import {
+  LayoutDashboard,
+  User,
+  Heart,
+  MessageCircle,
+  Crown,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  Users,
+  Receipt,
+  HelpCircle,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stableUnit } from "@/lib/stableRandom";
@@ -36,34 +49,46 @@ const baseSidebarLinks = [
   //{ name: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ];
 
-const FloatingHeart = ({ delay, left, size }: { delay: number; left: string; size: number }) => {
+const FloatingHeart = ({
+  delay,
+  left,
+  size,
+}: {
+  delay: number;
+  left: string;
+  size: number;
+}) => {
   const seed = `${delay}-${left}-${size}`;
   const driftX = stableUnit(`${seed}-x`) * 40 - 20;
   const duration = 12 + stableUnit(`${seed}-dur`) * 8;
   return (
-  <motion.div
-    className="absolute pointer-events-none text-primary/10"
-    style={{ left, top: "100%" }}
-    animate={{
-      y: [0, -800],
-      x: [0, driftX],
-      opacity: [0, 0.6, 0],
-      rotate: [0, 360],
-    }}
-    transition={{
-      duration,
-      delay,
-      repeat: Infinity,
-      ease: "easeOut",
-    }}
-  >
-    <Heart className={`w-${size} h-${size}`} style={{ width: size * 4, height: size * 4 }} />
-  </motion.div>
+    <motion.div
+      className="absolute pointer-events-none text-primary/10"
+      style={{ left, top: "100%" }}
+      animate={{
+        y: [0, -800],
+        x: [0, driftX],
+        opacity: [0, 0.6, 0],
+        rotate: [0, 360],
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: "easeOut",
+      }}
+    >
+      <Heart
+        className={`w-${size} h-${size}`}
+        style={{ width: size * 4, height: size * 4 }}
+      />
+    </motion.div>
   );
 };
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout, isHindu, accessToken, isProfileComplete, hasHydrated } = useAuthStore();
+  const { user, logout, isHindu, accessToken, isProfileComplete, hasHydrated } =
+    useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,7 +103,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pageTitle = (() => {
     const path = pathname ?? "/dashboard";
     if (path === "/dashboard") return "Dashboard";
-    const match = sidebarLinks.find((l) => l.href !== "/dashboard" && path.startsWith(l.href));
+    const match = sidebarLinks.find(
+      (l) => l.href !== "/dashboard" && path.startsWith(l.href),
+    );
     return match?.name ?? "Dashboard";
   })();
 
@@ -132,27 +159,50 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden lg:overflow-hidden" style={{
-      background: "linear-gradient(135deg, hsl(340 60% 97%) 0%, hsl(0 0% 100%) 30%, hsl(45 100% 98%) 60%, hsl(340 60% 96%) 100%)"
-    }}>
+    <div
+      className="min-h-screen relative overflow-x-hidden lg:overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(340 60% 97%) 0%, hsl(0 0% 100%) 30%, hsl(45 100% 98%) 60%, hsl(340 60% 96%) 100%)",
+      }}
+    >
       {/* Animated background orbs */}
       <motion.div
         className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(330 60% 80%) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, hsl(330 60% 80%) 0%, transparent 70%)",
+        }}
         animate={{ scale: [1, 1.2, 1], x: [0, 30, 0], y: [0, -20, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute top-1/2 right-10 w-96 h-96 rounded-full opacity-15 pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(40 100% 80%) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, hsl(40 100% 80%) 0%, transparent 70%)",
+        }}
         animate={{ scale: [1, 1.3, 1], x: [0, -20, 0], y: [0, 30, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2,
+        }}
       />
       <motion.div
         className="absolute bottom-20 left-1/3 w-64 h-64 rounded-full opacity-10 pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(330 55% 75%) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, hsl(330 55% 75%) 0%, transparent 70%)",
+        }}
         animate={{ scale: [1, 1.15, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 4,
+        }}
       />
 
       {/* Floating hearts */}
@@ -163,10 +213,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <FloatingHeart delay={12} left="20%" size={3} />
 
       {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
-        backgroundImage: "radial-gradient(circle at 1px 1px, hsl(330 60% 34%) 1px, transparent 0)",
-        backgroundSize: "40px 40px"
-      }} />
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, hsl(330 60% 34%) 1px, transparent 0)",
+          backgroundSize: "40px 40px",
+        }}
+      />
 
       {/* Desktop: fixed-height container so only main content scrolls; sidebar stays fixed. Mobile: normal flow. */}
       <div className="w-full px-4 lg:px-10 pt-4 pb-8 relative z-10 flex flex-col min-h-screen lg:min-h-0 lg:h-screen lg:overflow-hidden">
@@ -174,7 +228,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div
           className={cn(
             "lg:hidden sticky top-0 z-40 -mx-4 px-4 py-3 mb-3 bg-background/95 backdrop-blur-md border-b border-primary/10",
-            sidebarOpen && "hidden"
+            sidebarOpen && "hidden",
           )}
         >
           <div className="flex items-center gap-3">
@@ -187,7 +241,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <Menu className="w-5 h-5" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="font-serif font-bold text-foreground truncate">{pageTitle}</p>
+              <p className="font-serif font-bold text-foreground truncate">
+                {pageTitle}
+              </p>
               {(user?.matriId || user?.location) && (
                 <p className="text-xs text-muted-foreground truncate">
                   {[user.matriId, user.location].filter(Boolean).join(" · ")}
@@ -208,7 +264,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         )}
 
         <div className="flex flex-1 gap-6 relative min-h-0 lg:overflow-hidden">
-
           {/* Sidebar — desktop: in flow; mobile: full-height drawer above backdrop */}
           <motion.aside
             initial={false}
@@ -216,18 +271,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               "w-72 flex-shrink-0 lg:block lg:h-full",
               sidebarOpen
                 ? "fixed left-0 top-0 z-[110] h-dvh min-h-dvh w-[min(85vw,18rem)] flex flex-col lg:static lg:z-auto lg:h-full lg:w-72 lg:min-h-0 lg:max-w-none"
-                : "hidden lg:block"
+                : "hidden lg:block",
             )}
           >
             <div
               className={cn(
                 "bg-card shadow-card flex flex-col flex-1 min-h-0 overflow-hidden",
                 "lg:rounded-3xl lg:p-6 lg:shadow-card",
-                "max-lg:h-full max-lg:min-h-dvh max-lg:rounded-none max-lg:border-r max-lg:border-primary/10 max-lg:p-4 max-lg:pt-[max(0.75rem,env(safe-area-inset-top))]"
+                "max-lg:h-full max-lg:min-h-dvh max-lg:rounded-none max-lg:border-r max-lg:border-primary/10 max-lg:p-4 max-lg:pt-[max(0.75rem,env(safe-area-inset-top))]",
               )}
             >
               <div className="lg:hidden flex items-center justify-between gap-2 pb-3 mb-2 border-b border-primary/10 shrink-0">
-                <p className="font-serif font-semibold text-foreground text-sm truncate">Menu</p>
+                <p className="font-serif font-semibold text-foreground text-sm truncate">
+                  Menu
+                </p>
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
@@ -265,7 +322,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {/* Nav Links - flex-1 so sidebar fills height, overflow for long lists */}
               <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:w-0">
                 {sidebarLinks.map((link) => {
-                  const isActive = link.href === "/dashboard" ? pathname === "/dashboard" : (pathname ?? "").startsWith(link.href);
+                  const isActive =
+                    link.href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : (pathname ?? "").startsWith(link.href);
                   return (
                     <Link
                       key={link.name}
@@ -275,7 +335,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                         isActive
                           ? "text-secondary border-l-4 border-secondary bg-secondary/5"
-                          : "text-foreground hover:bg-accent-rose/50"
+                          : "text-foreground hover:bg-accent-rose/50",
                       )}
                     >
                       <link.icon className="w-5 h-5" />
@@ -306,9 +366,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname ?? "dashboard"}
-                initial={reduceMotion ? false : { opacity: 0, y: 8, filter: "blur(2px)" }}
-                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, filter: "blur(2px)" }}
+                initial={
+                  reduceMotion
+                    ? false
+                    : { opacity: 0, y: 8, filter: "blur(2px)" }
+                }
+                animate={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, y: 0, filter: "blur(0px)" }
+                }
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: -6, filter: "blur(2px)" }
+                }
                 transition={{
                   duration: reduceMotion ? 0 : 0.18,
                   ease: "easeOut",

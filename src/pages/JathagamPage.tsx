@@ -28,7 +28,11 @@ import {
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { getBirthDetails, getProfile, updateBirthDetails } from "@/lib/profileApi";
+import {
+  getBirthDetails,
+  getProfile,
+  updateBirthDetails,
+} from "@/lib/profileApi";
 import { getMyPlan, type MyPlanDetails } from "@/lib/plansApi";
 import {
   getMyHoroscope,
@@ -127,7 +131,8 @@ function extendedPoruthamChecklist(match: MatchBlock): PoruthamDetailedItem[] {
       matched: !f.dasa_sandhi,
       severity: "low",
       is_critical: false,
-      description: "Favorable when neither side is at a major mahadasha boundary",
+      description:
+        "Favorable when neither side is at a major mahadasha boundary",
     },
     {
       key: "papam_samyam",
@@ -150,7 +155,9 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
     <div className="flex flex-col items-stretch gap-3 rounded-xl border border-primary/15 bg-card p-4 shadow-sm">
       <div className="text-center space-y-1 border-b border-primary/10 pb-3">
         {panel.matri_id ? (
-          <p className="text-xs font-mono text-muted-foreground tracking-tight">{panel.matri_id}</p>
+          <p className="text-xs font-mono text-muted-foreground tracking-tight">
+            {panel.matri_id}
+          </p>
         ) : null}
         <p className="font-bold text-foreground text-sm sm:text-base uppercase tracking-wide">
           {panel.name ?? "—"}
@@ -174,10 +181,15 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
       </div>
       <div className="rounded-lg border border-primary/10 bg-muted/20 p-3 text-center text-xs space-y-1.5">
         {panel.chart_meta?.display_title ? (
-          <p className="font-medium text-foreground leading-snug">{panel.chart_meta.display_title}</p>
+          <p className="font-medium text-foreground leading-snug">
+            {panel.chart_meta.display_title}
+          </p>
         ) : null}
         <p className="text-muted-foreground">
-          {[panel.chart_meta?.rasi_label ?? panel.rasi, panel.chart_meta?.lagna_label ?? panel.lagna]
+          {[
+            panel.chart_meta?.rasi_label ?? panel.rasi,
+            panel.chart_meta?.lagna_label ?? panel.lagna,
+          ]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -185,13 +197,15 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
           <div className="pt-2 border-t border-primary/10 space-y-0.5">
             {cp.nakshatra ? (
               <p>
-                <span className="text-muted-foreground">Nakshatra</span> · {cp.nakshatra}
+                <span className="text-muted-foreground">Nakshatra</span> ·{" "}
+                {cp.nakshatra}
                 {cp.nakshatra_english ? ` (${cp.nakshatra_english})` : ""}
               </p>
             ) : null}
             {cp.padam != null ? (
               <p>
-                <span className="text-muted-foreground">Padam</span> · {cp.padam}
+                <span className="text-muted-foreground">Padam</span> ·{" "}
+                {cp.padam}
               </p>
             ) : null}
           </div>
@@ -199,10 +213,13 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
         {dasa && (dasa.remaining_label || dasa.lord) ? (
           <div className="pt-2 border-t border-primary/10 space-y-1">
             <p className="font-semibold text-foreground">Dasa</p>
-            {dasa.remaining_label ? <p className="text-foreground">{dasa.remaining_label}</p> : null}
+            {dasa.remaining_label ? (
+              <p className="text-foreground">{dasa.remaining_label}</p>
+            ) : null}
             {dasa.lord ? (
               <p>
-                <span className="text-muted-foreground">Lord</span> · {dasa.lord}
+                <span className="text-muted-foreground">Lord</span> ·{" "}
+                {dasa.lord}
               </p>
             ) : null}
           </div>
@@ -210,7 +227,9 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
         {panel.kuja_dosham != null || panel.kendra_malefic_count != null ? (
           <p className="text-[11px] text-muted-foreground pt-1">
             {[
-              panel.kuja_dosham != null ? `Kuja dosham: ${panel.kuja_dosham ? "Yes" : "No"}` : null,
+              panel.kuja_dosham != null
+                ? `Kuja dosham: ${panel.kuja_dosham ? "Yes" : "No"}`
+                : null,
               panel.kendra_malefic_count != null
                 ? `Kendra malefics: ${panel.kendra_malefic_count}`
                 : null,
@@ -236,7 +255,9 @@ function PoruthamChecklistColumn({ rows }: { rows: PoruthamDetailedItem[] }) {
             key={row.key}
             className="flex items-center justify-between gap-2 text-xs sm:text-sm py-1 border-b border-primary/5 last:border-0"
           >
-            <span className="text-foreground font-medium leading-tight">{row.label}</span>
+            <span className="text-foreground font-medium leading-tight">
+              {row.label}
+            </span>
             {typeof row.points === "number" ? (
               <span className="text-[11px] text-muted-foreground ml-auto mr-1">
                 {row.points.toFixed(1)}
@@ -281,14 +302,17 @@ export default function JathagamPage() {
   const [selectedMatriId, setSelectedMatriId] = useState<string>("");
 
   /** Shown only in Birth Details after "Generate Horoscope (chart)" or "Refresh" (self-only). */
-  const [selfHoroscopeData, setSelfHoroscopeData] = useState<HoroscopeMeData | null>(null);
+  const [selfHoroscopeData, setSelfHoroscopeData] =
+    useState<HoroscopeMeData | null>(null);
   /** Set only by "Check Match" — drives the comparison report; does not update the self Grahanila card. */
-  const [matchResponseData, setMatchResponseData] = useState<HoroscopeMeData | null>(null);
+  const [matchResponseData, setMatchResponseData] =
+    useState<HoroscopeMeData | null>(null);
   const [matchBlock, setMatchBlock] = useState<MatchBlock | null>(null);
   const [generatingChart, setGeneratingChart] = useState(false);
   const [refreshingChart, setRefreshingChart] = useState(false);
   const [checkingMatch, setCheckingMatch] = useState(false);
-  const [processingPdfProduct, setProcessingPdfProduct] = useState<AstrologyPdfProduct | null>(null);
+  const [processingPdfProduct, setProcessingPdfProduct] =
+    useState<AstrologyPdfProduct | null>(null);
 
   const loadPageData = useCallback(async () => {
     setLoadingInitial(true);
@@ -304,7 +328,7 @@ export default function JathagamPage() {
       setDisplayName(name);
 
       const t = bdRes.data?.time_of_birth?.trim();
-      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : t ?? "");
+      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : (t ?? ""));
       setPlaceOfBirth(bdRes.data?.place_of_birth?.trim() ?? "");
 
       if (planRes?.success && planRes.data) {
@@ -315,13 +339,16 @@ export default function JathagamPage() {
             setCandidates(cRes.data.results);
             const first = cRes.data.results[0];
             setSelectedMatriId((prev) => {
-              if (prev && cRes.data.results.some((r) => r.matri_id === prev)) return prev;
+              if (prev && cRes.data.results.some((r) => r.matri_id === prev))
+                return prev;
               return first?.matri_id ?? "";
             });
           } catch (e) {
             setCandidates([]);
             setSelectedMatriId("");
-            setCandidatesError(e instanceof Error ? e.message : "Could not load candidates.");
+            setCandidatesError(
+              e instanceof Error ? e.message : "Could not load candidates.",
+            );
           }
         } else {
           setCandidates([]);
@@ -362,10 +389,12 @@ export default function JathagamPage() {
       });
       toast.success(res.message ?? "Birth details updated successfully.");
       const t = res.data?.time_of_birth?.trim();
-      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : t ?? "");
+      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : (t ?? ""));
       setPlaceOfBirth(res.data?.place_of_birth?.trim() ?? place);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save birth details.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not save birth details.",
+      );
     } finally {
       setSavingBirthDetails(false);
     }
@@ -399,7 +428,9 @@ export default function JathagamPage() {
       setMatchResponseData(null);
       setMatchBlock(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not refresh horoscope.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not refresh horoscope.",
+      );
     } finally {
       setRefreshingChart(false);
     }
@@ -429,7 +460,9 @@ export default function JathagamPage() {
           "Compatibility report not available. The other member may need complete birth details or horoscope generation.",
         );
       } else {
-        toast.success(res.data.match.summary?.result ?? "Compatibility calculated.");
+        toast.success(
+          res.data.match.summary?.result ?? "Compatibility calculated.",
+        );
       }
       try {
         const planRes = await getMyPlan();
@@ -477,7 +510,9 @@ export default function JathagamPage() {
               });
               const downloadUrl = verifyRes.data?.download_url?.trim();
               if (!downloadUrl) {
-                throw new Error("Download URL missing in verification response.");
+                throw new Error(
+                  "Download URL missing in verification response.",
+                );
               }
               window.open(downloadUrl, "_blank", "noopener,noreferrer");
               toast.success(
@@ -500,7 +535,10 @@ export default function JathagamPage() {
         rz.open();
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not process astrology PDF payment.";
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Could not process astrology PDF payment.";
       if (msg !== "Payment cancelled.") toast.error(msg);
     } finally {
       setProcessingPdfProduct(null);
@@ -510,16 +548,22 @@ export default function JathagamPage() {
   const selfPrimary = selfHoroscopeData?.primary;
   const chartUrlSelf = selfPrimary?.chart_url ?? selfHoroscopeData?.chart_url;
   const poruthamRows = matchBlock ? poruthamRowsFromMatch(matchBlock) : [];
-  const comparisonRows = matchBlock ? extendedPoruthamChecklist(matchBlock) : [];
+  const comparisonRows = matchBlock
+    ? extendedPoruthamChecklist(matchBlock)
+    : [];
   const showPairComparison = Boolean(
     matchBlock && matchResponseData?.primary && matchResponseData?.partner,
   );
   const scorePct =
     matchBlock?.summary?.percentage ??
-    (matchBlock?.max_score && matchBlock.max_score > 0 && matchBlock.score != null
+    (matchBlock?.max_score &&
+    matchBlock.max_score > 0 &&
+    matchBlock.score != null
       ? (matchBlock.score / matchBlock.max_score) * 100
       : null);
-  const selectedCandidate = candidates.find((c) => c.matri_id === selectedMatriId);
+  const selectedCandidate = candidates.find(
+    (c) => c.matri_id === selectedMatriId,
+  );
 
   const planBanner = (() => {
     if (!myPlan) {
@@ -527,8 +571,8 @@ export default function JathagamPage() {
         <div className="px-4 py-2 rounded-xl border border-primary/20 bg-muted/40 text-foreground shrink-0 max-w-xs">
           <p className="font-semibold text-sm">Plan status</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Birth details and your own chart are available. Subscribe for compatibility matching with other
-            members.
+            Birth details and your own chart are available. Subscribe for
+            compatibility matching with other members.
           </p>
         </div>
       );
@@ -538,9 +582,12 @@ export default function JathagamPage() {
         <div className="px-4 py-2 rounded-xl bg-primary text-primary-foreground flex items-center gap-2 shrink-0">
           <Check className="w-5 h-5" />
           <div className="text-left">
-            <p className="font-semibold text-sm">{myPlan.plan_name ?? "Active plan"}</p>
+            <p className="font-semibold text-sm">
+              {myPlan.plan_name ?? "Active plan"}
+            </p>
             <p className="text-xs opacity-90">
-              Horoscope matches remaining: <strong>{myPlan.horoscope_remaining}</strong>
+              Horoscope matches remaining:{" "}
+              <strong>{myPlan.horoscope_remaining}</strong>
             </p>
           </div>
         </div>
@@ -550,7 +597,8 @@ export default function JathagamPage() {
       <div className="px-4 py-2 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 shrink-0 max-w-xs">
         <p className="font-semibold text-sm text-foreground">No active plan</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          You can still update birth details and view your own horoscope. Renew to unlock partner matching.
+          You can still update birth details and view your own horoscope. Renew
+          to unlock partner matching.
         </p>
       </div>
     );
@@ -561,7 +609,10 @@ export default function JathagamPage() {
       <div className="space-y-6 relative">
         {loadingInitial && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 rounded-xl">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" aria-hidden />
+            <Loader2
+              className="w-10 h-10 animate-spin text-primary"
+              aria-hidden
+            />
           </div>
         )}
 
@@ -572,7 +623,8 @@ export default function JathagamPage() {
               Jathagam & Horoscope
             </h1>
             <p className="text-muted-foreground mt-1">
-              Enter your birth details to generate Horoscope PDF and calculate Porutham compatibility score
+              Enter your birth details to generate Horoscope PDF and calculate
+              Porutham compatibility score
             </p>
           </div>
           {planBanner}
@@ -601,13 +653,17 @@ export default function JathagamPage() {
             <h2 className="font-serif text-lg font-bold text-foreground flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-primary" />
               Birth Details
-              <span className="text-xs font-normal text-muted-foreground">Required for Jathagam generation</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                Required for Jathagam generation
+              </span>
             </h2>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Name</Label>
+                  <Label className="text-xs uppercase text-muted-foreground">
+                    Name
+                  </Label>
                   <Input
                     value={displayName}
                     readOnly
@@ -617,7 +673,9 @@ export default function JathagamPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Time of Birth</Label>
+                  <Label className="text-xs uppercase text-muted-foreground">
+                    Time of Birth
+                  </Label>
                   <div className="flex gap-2 mt-1.5 items-center">
                     <Input
                       type="time"
@@ -631,7 +689,9 @@ export default function JathagamPage() {
               </div>
 
               <div>
-                <Label className="text-xs uppercase text-muted-foreground">Place of Birth</Label>
+                <Label className="text-xs uppercase text-muted-foreground">
+                  Place of Birth
+                </Label>
                 <Input
                   placeholder="e.g. Thrissur, Kerala"
                   value={placeOfBirth}
@@ -719,37 +779,38 @@ export default function JathagamPage() {
 
               {selfHoroscopeData &&
                 (chartUrlSelf || selfPrimary?.chart_meta?.display_title) && (
-                <div className="pt-4 border-t border-primary/10 space-y-3">
-                  {(selfPrimary?.chart_meta?.display_title || selfHoroscopeData?.nakshatra) && (
-                    <p className="text-sm font-medium text-foreground">
-                      {selfPrimary?.chart_meta?.display_title ??
-                        [
-                          selfHoroscopeData?.nakshatra,
-                          selfHoroscopeData?.nakshatra_pada != null
-                            ? `Pada ${selfHoroscopeData.nakshatra_pada}`
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                    </p>
-                  )}
-                  {(selfPrimary?.rasi || selfHoroscopeData?.rasi) && (
-                    <p className="text-xs text-muted-foreground">
-                      Rasi: {selfPrimary?.rasi ?? selfHoroscopeData?.rasi}
-                      {selfPrimary?.lagna || selfHoroscopeData?.lagna
-                        ? ` · Lagna: ${selfPrimary?.lagna ?? selfHoroscopeData?.lagna}`
-                        : ""}
-                    </p>
-                  )}
-                  {chartUrlSelf ? (
-                    <img
-                      src={chartUrlSelf}
-                      alt="South Indian horoscope chart"
-                      className="w-full max-w-md rounded-lg border border-primary/10 bg-white"
-                    />
-                  ) : null}
-                </div>
-              )}
+                  <div className="pt-4 border-t border-primary/10 space-y-3">
+                    {(selfPrimary?.chart_meta?.display_title ||
+                      selfHoroscopeData?.nakshatra) && (
+                      <p className="text-sm font-medium text-foreground">
+                        {selfPrimary?.chart_meta?.display_title ??
+                          [
+                            selfHoroscopeData?.nakshatra,
+                            selfHoroscopeData?.nakshatra_pada != null
+                              ? `Pada ${selfHoroscopeData.nakshatra_pada}`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                      </p>
+                    )}
+                    {(selfPrimary?.rasi || selfHoroscopeData?.rasi) && (
+                      <p className="text-xs text-muted-foreground">
+                        Rasi: {selfPrimary?.rasi ?? selfHoroscopeData?.rasi}
+                        {selfPrimary?.lagna || selfHoroscopeData?.lagna
+                          ? ` · Lagna: ${selfPrimary?.lagna ?? selfHoroscopeData?.lagna}`
+                          : ""}
+                      </p>
+                    )}
+                    {chartUrlSelf ? (
+                      <img
+                        src={chartUrlSelf}
+                        alt="South Indian horoscope chart"
+                        className="w-full max-w-md rounded-lg border border-primary/10 bg-white"
+                      />
+                    ) : null}
+                  </div>
+                )}
             </div>
           </div>
 
@@ -758,7 +819,9 @@ export default function JathagamPage() {
               <Sparkles className="w-5 h-5 text-primary" />
               Porutham (Compatibility)
             </h2>
-            <p className="text-xs text-muted-foreground mb-4">10 compatibility checks · 0–10 scale</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              10 compatibility checks · 0–10 scale
+            </p>
 
             {candidatesError && (
               <p className="text-sm text-destructive mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
@@ -766,15 +829,20 @@ export default function JathagamPage() {
               </p>
             )}
 
-            {myPlan?.is_plan_active && candidates.length === 0 && !candidatesError && (
-              <p className="text-sm text-muted-foreground mb-3">
-                No members with complete birth details found yet. Try again later.
-              </p>
-            )}
+            {myPlan?.is_plan_active &&
+              candidates.length === 0 &&
+              !candidatesError && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  No members with complete birth details found yet. Try again
+                  later.
+                </p>
+              )}
 
             {candidates.length > 0 && (
               <div className="space-y-3 mb-5">
-                <Label className="text-xs uppercase text-muted-foreground">Candidate</Label>
+                <Label className="text-xs uppercase text-muted-foreground">
+                  Candidate
+                </Label>
                 <Select
                   value={selectedMatriId || undefined}
                   onValueChange={setSelectedMatriId}
@@ -785,7 +853,8 @@ export default function JathagamPage() {
                   <SelectContent>
                     {candidates.map((c) => (
                       <SelectItem key={c.matri_id} value={c.matri_id}>
-                        {c.name} ({c.matri_id}){c.has_horoscope ? " · chart ready" : ""}
+                        {c.name} ({c.matri_id})
+                        {c.has_horoscope ? " · chart ready" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -804,10 +873,14 @@ export default function JathagamPage() {
                       .slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-foreground">{selectedCandidate.name}</p>
+                    <p className="font-semibold text-foreground">
+                      {selectedCandidate.name}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {selectedCandidate.matri_id} · {selectedCandidate.gender}
-                      {selectedCandidate.has_horoscope ? " · Horoscope ready" : " · Generate on match"}
+                      {selectedCandidate.has_horoscope
+                        ? " · Horoscope ready"
+                        : " · Generate on match"}
                     </p>
                   </div>
                   <Button
@@ -816,7 +889,10 @@ export default function JathagamPage() {
                     className="bg-primary hover:bg-primary-dark shrink-0"
                     onClick={handleCheckMatch}
                     disabled={
-                      checkingMatch || !myPlan?.is_plan_active || !selectedMatriId || loadingInitial
+                      checkingMatch ||
+                      !myPlan?.is_plan_active ||
+                      !selectedMatriId ||
+                      loadingInitial
                     }
                   >
                     {checkingMatch ? (
@@ -834,8 +910,8 @@ export default function JathagamPage() {
 
             {!myPlan?.is_plan_active && (
               <p className="text-sm text-muted-foreground mb-4">
-                An active subscription is required to list candidates and run compatibility checks with other
-                members.
+                An active subscription is required to list candidates and run
+                compatibility checks with other members.
               </p>
             )}
 
@@ -843,7 +919,8 @@ export default function JathagamPage() {
               <div className="space-y-4">
                 {showPairComparison ? (
                   <p className="text-sm text-muted-foreground">
-                    Side-by-side Grahanila charts and the full checklist are shown in the report below.
+                    Side-by-side Grahanila charts and the full checklist are
+                    shown in the report below.
                   </p>
                 ) : (
                   <>
@@ -861,7 +938,8 @@ export default function JathagamPage() {
                                     : "text-red-600",
                               )}
                             >
-                              {matchBlock.score ?? "—"}/{matchBlock.max_score ?? 10}
+                              {matchBlock.score ?? "—"}/
+                              {matchBlock.max_score ?? 10}
                             </span>
                             <span className="text-lg font-semibold text-muted-foreground">
                               ({Math.round(scorePct)}%)
@@ -869,16 +947,22 @@ export default function JathagamPage() {
                           </>
                         ) : (
                           <span className="text-3xl font-bold text-foreground">
-                            {matchBlock.score ?? "—"}/{matchBlock.max_score ?? 10}
+                            {matchBlock.score ?? "—"}/
+                            {matchBlock.max_score ?? 10}
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-sm font-medium text-foreground">
                           <Sparkles className="w-4 h-4 text-secondary" />
-                          {matchBlock.summary?.result ?? matchBlock.result ?? "Result"}
+                          {matchBlock.summary?.result ??
+                            matchBlock.result ??
+                            "Result"}
                         </span>
                       </div>
                       {scorePct != null && (
-                        <Progress value={scorePct} className="h-2 mt-2 [&>div]:bg-primary" />
+                        <Progress
+                          value={scorePct}
+                          className="h-2 mt-2 [&>div]:bg-primary"
+                        />
                       )}
                     </div>
 
@@ -923,14 +1007,17 @@ export default function JathagamPage() {
                             )}
                           >
                             {item.label}
-                            {typeof item.points === "number" ? ` (${item.points.toFixed(1)})` : ""}
+                            {typeof item.points === "number"
+                              ? ` (${item.points.toFixed(1)})`
+                              : ""}
                           </span>
                         </div>
                       ))}
                     </div>
 
                     <p className="text-xs text-muted-foreground pt-2">
-                      Consult a jyotishi for final decision. Quota usage follows your plan rules on the server.
+                      Consult a jyotishi for final decision. Quota usage follows
+                      your plan rules on the server.
                     </p>
                   </>
                 )}
@@ -938,8 +1025,8 @@ export default function JathagamPage() {
             ) : (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
                 <Sparkles className="w-4 h-4" />
-                Click &quot;Check Match&quot; to see Porutham score. Fill your birth details first for accurate
-                results.
+                Click &quot;Check Match&quot; to see Porutham score. Fill your
+                birth details first for accurate results.
               </p>
             )}
 
@@ -956,14 +1043,19 @@ export default function JathagamPage() {
             </a>
           </div>
 
-          {showPairComparison && matchBlock && matchResponseData?.primary && matchResponseData.partner ? (
+          {showPairComparison &&
+          matchBlock &&
+          matchResponseData?.primary &&
+          matchResponseData.partner ? (
             <div className="lg:col-span-2 bg-card rounded-2xl shadow-card p-4 sm:p-6 border-2 border-primary/20 space-y-6">
               <div className="text-center space-y-1">
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
                   {matchResponseData.title ?? "Marriage Compatibility Report"}
                 </h3>
                 {matchResponseData.subtitle ? (
-                  <p className="text-sm text-muted-foreground">{matchResponseData.subtitle}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {matchResponseData.subtitle}
+                  </p>
                 ) : null}
               </div>
 
@@ -995,20 +1087,28 @@ export default function JathagamPage() {
                     )}
                     <span className="flex items-center gap-1 text-sm font-medium text-foreground">
                       <Sparkles className="w-4 h-4 text-secondary" />
-                      {matchBlock.summary?.result ?? matchBlock.result ?? "Result"}
+                      {matchBlock.summary?.result ??
+                        matchBlock.result ??
+                        "Result"}
                     </span>
                   </div>
                   {scorePct != null && (
-                    <Progress value={scorePct} className="h-2 mt-2 max-w-md [&>div]:bg-primary" />
+                    <Progress
+                      value={scorePct}
+                      className="h-2 mt-2 max-w-md [&>div]:bg-primary"
+                    />
                   )}
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-2">
                   <p
                     className={cn(
                       "text-base sm:text-lg font-bold",
-                      matchBlock.summary?.color_code === "green" && "text-green-600",
-                      matchBlock.summary?.color_code === "orange" && "text-amber-600",
-                      matchBlock.summary?.color_code === "red" && "text-red-600",
+                      matchBlock.summary?.color_code === "green" &&
+                        "text-green-600",
+                      matchBlock.summary?.color_code === "orange" &&
+                        "text-amber-600",
+                      matchBlock.summary?.color_code === "red" &&
+                        "text-red-600",
                       matchBlock.summary?.color_code == null &&
                         scorePct != null &&
                         (scorePct >= 70
@@ -1016,11 +1116,14 @@ export default function JathagamPage() {
                           : scorePct >= 40
                             ? "text-amber-600"
                             : "text-red-600"),
-                      matchBlock.summary?.color_code == null && scorePct == null && "text-foreground",
+                      matchBlock.summary?.color_code == null &&
+                        scorePct == null &&
+                        "text-foreground",
                     )}
                   >
                     Compatibility grade: {matchBlock.summary?.grade ?? "—"}
-                    {matchBlock.compatibility_grade != null || matchBlock.summary?.percentage != null
+                    {matchBlock.compatibility_grade != null ||
+                    matchBlock.summary?.percentage != null
                       ? ` (${(matchBlock.summary?.percentage ?? matchBlock.compatibility_grade ?? 0).toFixed(2)}%)`
                       : ""}
                   </p>
@@ -1059,7 +1162,8 @@ export default function JathagamPage() {
               ) : null}
 
               <p className="text-xs text-muted-foreground">
-                Consult a jyotishi for final decision. Quota usage follows your plan rules on the server.
+                Consult a jyotishi for final decision. Quota usage follows your
+                plan rules on the server.
               </p>
             </div>
           ) : null}

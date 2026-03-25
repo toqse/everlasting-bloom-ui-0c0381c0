@@ -20,7 +20,13 @@ import {
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
     <button
       type="button"
@@ -38,7 +44,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
   );
 }
 
-function StatusBadge({ status }: { status: "saving" | "saved" | "error" | null }) {
+function StatusBadge({
+  status,
+}: {
+  status: "saving" | "saved" | "error" | null;
+}) {
   if (!status) return null;
   return (
     <AnimatePresence>
@@ -51,14 +61,18 @@ function StatusBadge({ status }: { status: "saving" | "saved" | "error" | null }
           status === "saving"
             ? "text-muted-foreground"
             : status === "saved"
-            ? "text-green-600"
-            : "text-red-500"
+              ? "text-green-600"
+              : "text-red-500"
         }`}
       >
         {status === "saving" && <Loader2 className="w-3 h-3 animate-spin" />}
         {status === "saved" && <Check className="w-3 h-3" />}
         {status === "error" && <AlertCircle className="w-3 h-3" />}
-        {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "Error"}
+        {status === "saving"
+          ? "Saving…"
+          : status === "saved"
+            ? "Saved"
+            : "Error"}
       </motion.span>
     </AnimatePresence>
   );
@@ -77,7 +91,8 @@ const SettingsPage = () => {
 
   // ── Local UI state (kept in sync after fetch) ──
   const [visibility, setVisibility] = useState<ProfileVisibility>("all_users");
-  const [interestPerm, setInterestPerm] = useState<InterestPermission>("all_users");
+  const [interestPerm, setInterestPerm] =
+    useState<InterestPermission>("all_users");
   const [notifications, setNotifications] = useState<SettingsNotifications>({
     interest_request: true,
     chat: true,
@@ -86,9 +101,15 @@ const SettingsPage = () => {
   });
 
   // ── Save-status indicators ──
-  const [visibilityStatus, setVisibilityStatus] = useState<"saving" | "saved" | "error" | null>(null);
-  const [interestStatus, setInterestStatus] = useState<"saving" | "saved" | "error" | null>(null);
-  const [notifStatus, setNotifStatus] = useState<"saving" | "saved" | "error" | null>(null);
+  const [visibilityStatus, setVisibilityStatus] = useState<
+    "saving" | "saved" | "error" | null
+  >(null);
+  const [interestStatus, setInterestStatus] = useState<
+    "saving" | "saved" | "error" | null
+  >(null);
+  const [notifStatus, setNotifStatus] = useState<
+    "saving" | "saved" | "error" | null
+  >(null);
 
   // ── Debounce timers ──
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -216,7 +237,9 @@ const SettingsPage = () => {
                   </div>
                 ) : (
                   <>
-                    <h4 className="font-serif font-bold text-foreground">{displayName}</h4>
+                    <h4 className="font-serif font-bold text-foreground">
+                      {displayName}
+                    </h4>
                     <p className="text-xs text-secondary">
                       {displayPlan} user | {displayLocation}
                     </p>
@@ -243,7 +266,9 @@ const SettingsPage = () => {
         >
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h3 className="font-serif font-bold text-secondary">Profile visible</h3>
+              <h3 className="font-serif font-bold text-secondary">
+                Profile visible
+              </h3>
               <p className="text-xs text-muted-foreground">
                 You can set-up who can able to view your profile.
               </p>
@@ -252,7 +277,9 @@ const SettingsPage = () => {
               <StatusBadge status={visibilityStatus} />
               <select
                 value={visibility}
-                onChange={(e) => handleVisibilityChange(e.target.value as ProfileVisibility)}
+                onChange={(e) =>
+                  handleVisibilityChange(e.target.value as ProfileVisibility)
+                }
                 disabled={loading}
                 className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white disabled:opacity-50 cursor-pointer"
               >
@@ -280,7 +307,9 @@ const SettingsPage = () => {
               <StatusBadge status={interestStatus} />
               <select
                 value={interestPerm}
-                onChange={(e) => handleInterestPermChange(e.target.value as InterestPermission)}
+                onChange={(e) =>
+                  handleInterestPermChange(e.target.value as InterestPermission)
+                }
                 disabled={loading}
                 className="border border-primary/10 rounded-xl px-4 py-2 text-sm bg-white disabled:opacity-50 cursor-pointer"
               >
@@ -302,7 +331,9 @@ const SettingsPage = () => {
           className="bg-white rounded-3xl shadow-card p-6"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold text-secondary">Notifications</h3>
+            <h3 className="font-serif font-bold text-secondary">
+              Notifications
+            </h3>
             <StatusBadge status={notifStatus} />
           </div>
           <div className="space-y-6">
@@ -328,11 +359,17 @@ const SettingsPage = () => {
                   title: "New profile match",
                   desc: "You get the profile match emails",
                 },
-              ] satisfies { key: keyof SettingsNotifications; title: string; desc: string }[]
+              ] satisfies {
+                key: keyof SettingsNotifications;
+                title: string;
+                desc: string;
+              }[]
             ).map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-serif font-bold text-foreground text-sm">{item.title}</h4>
+                  <h4 className="font-serif font-bold text-foreground text-sm">
+                    {item.title}
+                  </h4>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
                 <Toggle
@@ -344,7 +381,6 @@ const SettingsPage = () => {
           </div>
         </motion.div>
       </div>
-
     </DashboardLayout>
   );
 };

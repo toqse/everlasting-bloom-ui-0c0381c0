@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, HelpCircle, ChevronDown, Award } from "lucide-react";
-import { plansData } from "@/components/Membership";
 import { useRouter } from "next/navigation";
+import { getWebsitePlans, type WebsitePlan } from "@/lib/plansApi";
 
 const faqs: { question: string; answer: string | string[] }[] = [
   {
@@ -43,6 +43,64 @@ const faqs: { question: string; answer: string | string[] }[] = [
 const MembershipPage = () => {
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [plans, setPlans] = useState<WebsitePlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [plansError, setPlansError] = useState<string | null>(null);
+
+  const ICONS = [Zap, Star, Crown, Sparkles, Award];
+  const CARD_ACCENTS = [
+    "border-pink-300",
+    "border-blue-300",
+    "border-amber-300",
+    "border-orange-200",
+    "border-purple-300",
+  ];
+  const CARD_BGS = [
+    "bg-gradient-to-b from-pink-100 via-pink-50 to-rose-50",
+    "bg-gradient-to-b from-sky-100 via-blue-50 to-indigo-50/90",
+    "bg-gradient-to-b from-amber-50 via-[#FFFEE8] to-amber-50/95",
+    "bg-[#FFF6EE]",
+    "bg-gradient-to-b from-purple-100 via-purple-50 to-violet-50",
+  ];
+  const ICON_BGS = [
+    "bg-gradient-to-br from-pink-400 to-pink-600",
+    "bg-gradient-to-b from-sky-200 to-blue-500",
+    "bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500",
+    "bg-gradient-to-b from-[#FFC75E] to-[#FFA500]",
+    "bg-gradient-to-br from-purple-500 to-purple-400",
+  ];
+
+  const formatCurrency = (value: number) =>
+    `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value || 0)}`;
+
+  const formatDuration = (days: number) => {
+    if (!days || days <= 0) return "";
+    if (days % 365 === 0) return `/${days / 365} year${days / 365 > 1 ? "s" : ""}`;
+    if (days % 30 === 0) return `/${days / 30} month${days / 30 > 1 ? "s" : ""}`;
+    return `/${days} days`;
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingPlans(true);
+        setPlansError(null);
+        const res = await getWebsitePlans();
+        if (!cancelled) setPlans(res.data?.plans ?? []);
+      } catch (e) {
+        if (!cancelled) {
+          setPlans([]);
+          setPlansError(e instanceof Error ? e.message : "Failed to load plans");
+        }
+      } finally {
+        if (!cancelled) setLoadingPlans(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,80 +119,60 @@ const MembershipPage = () => {
       {/* Pricing Cards Section */}
       <section className="py-16 relative overflow-hidden" style={{ backgroundColor: "var(--membership-section-bg)" }}>
         <div className="container mx-auto px-4 relative z-10">
+          {loadingPlans ? (
+            <div className="text-center py-10 text-muted-foreground">Loading membership plans...</div>
+          ) : plansError ? (
+            <div className="text-center py-10 text-destructive">{plansError}</div>
+          ) : plans.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">No membership plans available right now.</div>
+          ) : null}
+
           {/* Pricing Cards - 5 columns */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-[90rem] mx-auto">
-            {plansData.map((plan, index) => (
+            {plans.map((plan, index) => {
+              const Icon = ICONS[index % ICONS.length];
+              const features = [
+                `${plan.horoscope_match_limit} Horoscope Matching`,
+                `${plan.contact_view_limit} Up to Contact View`,
+                `${plan.interest_limit} Send interests`,
+                `${plan.chat_limit} Chat with matches`,
+                `${plan.profile_view_limit} Profile visibility`,
+              ];
+              return (
               <div
-                key={plan.name}
+                key={plan.id}
                 className="relative animate-fade-in-up flex"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
-                {plan.badge && (
-                  <div className={`absolute -top-1 z-10 ${plan.badge === "SPECIAL OFFER" ? "left-0 -translate-x-0.5" : "right-0 translate-x-0.5"}`}>
-                    {plan.badge === "SPECIAL OFFER" ? (
-                      <div className="relative" style={{ transform: "rotate(-8deg)" }}>
-                        <div className="relative bg-red-600 text-white font-bold uppercase text-center shadow-[0_3px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.15)]" style={{ padding: "6px 14px 8px 12px", textShadow: "0 1px 2px rgba(0,0,0,0.4)", clipPath: "polygon(0 0, 100% 0, 98% 100%, 2% 100%)" }}>
-                          <div className="text-[10px] leading-tight tracking-wider">SPECIAL</div>
-                          <div className="text-xs leading-tight tracking-wider">OFFER</div>
-                        </div>
-                        <div className="absolute bottom-0 right-0 w-8 h-3 bg-amber-400 opacity-95" style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 60%)", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} aria-hidden />
-                      </div>
-                    ) : plan.badge === "TOP RECOMMENDED" ? (
-                      <div className="inline-flex flex-col items-end">
-                        <div className="bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider px-3 py-1 text-center border-b border-blue-500/50" style={{ clipPath: "polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)", textShadow: "0 1px 1px rgba(0,0,0,0.3)", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>
-                          RECOMMENDED
-                        </div>
-                        <div className="flex gap-1 justify-center py-0.5">
-                          {[1,2,3,4,5].map((i) => <span key={i} className="w-1 h-1 rounded-full bg-white/80" />)}
-                        </div>
-                        <div className="relative bg-red-600 text-white text-lg font-black uppercase tracking-widest py-1.5 px-5 text-center border-l-2 border-r-2 border-red-700/60" style={{ clipPath: "polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)", textShadow: "0 1px 2px rgba(0,0,0,0.4)", boxShadow: "0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2)" }}>
-                          TOP
-                          <div className="absolute left-1 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                            {[1,2,3].map((i) => <span key={i} className="w-0.5 h-0.5 rounded-full bg-white/70" />)}
-                          </div>
-                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                            {[1,2,3].map((i) => <span key={i} className="w-0.5 h-0.5 rounded-full bg-white/70" />)}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`px-3 py-1.5 ${plan.badgeColor} text-xs font-bold rounded-full shadow-md flex items-center gap-1 whitespace-nowrap`}>
-                        <Star className="w-3 h-3 fill-current" />
-                        {plan.badge}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div
-                  className={`h-full w-full rounded-3xl p-6 transition-all duration-500 hover-lift group flex flex-col shadow-card border-2 ${plan.cardBg || "bg-white"} ${plan.cardAccent || "border-primary/10"}`}
+                  className={`h-full w-full rounded-3xl p-6 transition-all duration-500 hover-lift group flex flex-col shadow-card border-2 ${CARD_BGS[index % CARD_BGS.length]} ${CARD_ACCENTS[index % CARD_ACCENTS.length]}`}
                 >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_4px_12px_-2px_rgba(0,0,0,0.15)] ${plan.iconBg || "bg-accent-rose"}`}>
-                    <plan.icon className="w-7 h-7 text-white" />
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_4px_12px_-2px_rgba(0,0,0,0.15)] ${ICON_BGS[index % ICON_BGS.length]}`}>
+                    <Icon className="w-7 h-7 text-white" />
                   </div>
 
                   <h3 className="font-serif text-xl font-bold mb-1" style={{ color: "var(--membership-title)" }}>{plan.name}</h3>
-                  <p className="text-xs mb-3" style={{ color: "var(--membership-desc)" }}>{plan.description}</p>
+                  <p className="text-xs mb-3" style={{ color: "var(--membership-desc)" }}>{plan.description || "Membership plan"}</p>
                   
                   <div className="flex items-baseline gap-1 mb-3">
-                    <span className="font-serif text-3xl font-bold" style={{ color: "var(--membership-price)" }}>{plan.price}</span>
-                    {plan.period && <span className="text-sm" style={{ color: "var(--membership-period)" }}>{plan.period}</span>}
+                    <span className="font-serif text-3xl font-bold" style={{ color: "var(--membership-price)" }}>{formatCurrency(plan.price)}</span>
+                    <span className="text-sm" style={{ color: "var(--membership-period)" }}>{formatDuration(plan.duration_days)}</span>
                   </div>
 
-                  {plan.highlightFeature && (
+                  {typeof plan.total_price?.female === "number" && (
                     <p className="text-sm font-medium mb-1 underline underline-offset-2" style={{ color: "var(--membership-feature)" }}>
-                      {plan.highlightFeature}
+                      Total starts at {formatCurrency(plan.total_price.female)}
                     </p>
                   )}
 
-                  {plan.contactView && (
+                  {typeof plan.service_charge?.female === "number" && (
                     <p className="text-sm font-bold mb-4" style={{ color: "var(--membership-title)" }}>
-                      {plan.contactView}
+                      Service charge {formatCurrency(plan.service_charge.female)} onwards
                     </p>
                   )}
 
                   <ul className="mb-6 flex-1">
-                    {plan.features.map((feature, i) => (
+                    {features.map((feature, i) => (
                       <li key={i} className="flex flex-col">
                         <div className="flex items-start gap-2.5 py-3">
                           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-[#6A3266]/15">
@@ -142,7 +180,7 @@ const MembershipPage = () => {
                           </div>
                           <span className="text-sm flex-1" style={{ color: "var(--membership-feature)" }}>{feature}</span>
                         </div>
-                        {i < plan.features.length - 1 && <div className="mx-2 border-b" style={{ borderColor: "var(--membership-divider)" }} />}
+                        {i < features.length - 1 && <div className="mx-2 border-b" style={{ borderColor: "var(--membership-divider)" }} />}
                       </li>
                     ))}
                   </ul>
@@ -159,7 +197,8 @@ const MembershipPage = () => {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

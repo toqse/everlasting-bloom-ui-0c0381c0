@@ -5,9 +5,18 @@ import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import {
-  Heart, Eye, Send, Star, IndianRupee, Lock, Sparkles,
-  MapPin, ArrowRight,
-  Users, Loader2, AlertCircle,
+  Heart,
+  Eye,
+  Send,
+  Star,
+  IndianRupee,
+  Lock,
+  Sparkles,
+  MapPin,
+  ArrowRight,
+  Users,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -23,14 +32,20 @@ import {
   type DashboardSummary,
   type DashboardProfile,
 } from "@/lib/dashboardApi";
-import { getProfilePreview, sendInterest, type ProfilePreviewData } from "@/lib/matchesApi";
+import {
+  getProfilePreview,
+  sendInterest,
+  type ProfilePreviewData,
+} from "@/lib/matchesApi";
 import { BASE_URL } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 function getMediaUrl(path: string | null | undefined): string {
   if (!path) return "";
   const base = BASE_URL.replace(/\/api\/?$/, "");
-  return path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path.startsWith("http")
+    ? path
+    : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 function NewMatchesStoriesStrip({
@@ -65,9 +80,15 @@ function NewMatchesStoriesStrip({
               <div className="rounded-full bg-white p-[3px]">
                 <div className="w-[68px] h-[68px] rounded-full overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
                   {photoUrl ? (
-                    <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={photoUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <span className="text-xl font-bold text-primary/50">{initials}</span>
+                    <span className="text-xl font-bold text-primary/50">
+                      {initials}
+                    </span>
                   )}
                 </div>
               </div>
@@ -76,7 +97,9 @@ function NewMatchesStoriesStrip({
               {firstName}
             </span>
             {profile.is_new && (
-              <span className="text-[9px] font-bold uppercase tracking-wide text-rose-600 -mt-1">New</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-rose-600 -mt-1">
+                New
+              </span>
             )}
           </button>
         );
@@ -95,9 +118,20 @@ interface SuggestionCardProps {
   showHoroscopeBadge?: boolean;
 }
 
-const SuggestionCard = ({ profile, index, onView, onInterest, sendingInterest, showHoroscopeBadge }: SuggestionCardProps) => {
+const SuggestionCard = ({
+  profile,
+  index,
+  onView,
+  onInterest,
+  sendingInterest,
+  showHoroscopeBadge,
+}: SuggestionCardProps) => {
   const photoUrl = getMediaUrl(profile.profile_photo);
-  const initials = profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
+  const initials = profile.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2);
 
   return (
     <motion.div
@@ -115,13 +149,17 @@ const SuggestionCard = ({ profile, index, onView, onInterest, sendingInterest, s
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-3xl font-bold text-primary/40">{initials}</span>
+            <span className="text-3xl font-bold text-primary/40">
+              {initials}
+            </span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         {(profile.match_percentage ?? 0) > 0 && (
           <div className="absolute top-3 right-3 px-2 py-1 bg-white/90 rounded-full">
-            <span className="text-xs font-bold text-primary">{profile.match_percentage}% Match</span>
+            <span className="text-xs font-bold text-primary">
+              {profile.match_percentage}% Match
+            </span>
           </div>
         )}
         {showHoroscopeBadge && (
@@ -130,8 +168,13 @@ const SuggestionCard = ({ profile, index, onView, onInterest, sendingInterest, s
           </span>
         )}
         <div className="absolute bottom-3 left-3 right-3 text-white">
-          <h3 className="font-serif text-base font-bold leading-tight truncate">{profile.name}</h3>
-          <p className="text-xs opacity-90">{profile.age} yrs{profile.location ? ` · ${profile.location.split(",")[0]}` : ""}</p>
+          <h3 className="font-serif text-base font-bold leading-tight truncate">
+            {profile.name}
+          </h3>
+          <p className="text-xs opacity-90">
+            {profile.age} yrs
+            {profile.location ? ` · ${profile.location.split(",")[0]}` : ""}
+          </p>
         </div>
       </div>
       <div className="p-3 flex-1 flex flex-col justify-between gap-2">
@@ -150,11 +193,26 @@ const SuggestionCard = ({ profile, index, onView, onInterest, sendingInterest, s
           )}
         </div>
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" size="sm" className="flex-1 gap-1 text-xs" onClick={onView}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1 text-xs"
+            onClick={onView}
+          >
             <Eye className="w-3.5 h-3.5" /> View
           </Button>
-          <Button variant="hero" size="sm" className="flex-1 gap-1 text-xs" onClick={onInterest} disabled={sendingInterest}>
-            {sendingInterest ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Heart className="w-3.5 h-3.5" />}
+          <Button
+            variant="hero"
+            size="sm"
+            className="flex-1 gap-1 text-xs"
+            onClick={onInterest}
+            disabled={sendingInterest}
+          >
+            {sendingInterest ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Heart className="w-3.5 h-3.5" />
+            )}
             Interest
           </Button>
         </div>
@@ -166,7 +224,13 @@ const SuggestionCard = ({ profile, index, onView, onInterest, sendingInterest, s
 // ---- Main page ----
 
 const DashboardPage = () => {
-  const { user, isHindu, hasPaidPlan, getHoroscopeRemaining, getHoroscopeQuota } = useAuthStore();
+  const {
+    user,
+    isHindu,
+    hasPaidPlan,
+    getHoroscopeRemaining,
+    getHoroscopeQuota,
+  } = useAuthStore();
   const showHoroscope = () => isHindu() && hasPaidPlan();
   const horoscopeRemaining = getHoroscopeRemaining();
   const horoscopeQuota = getHoroscopeQuota();
@@ -186,7 +250,9 @@ const DashboardPage = () => {
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   // Profile preview drawer
-  const [previewData, setPreviewData] = useState<ProfilePreviewData | null>(null);
+  const [previewData, setPreviewData] = useState<ProfilePreviewData | null>(
+    null,
+  );
   const [previewLoading, setPreviewLoading] = useState(false);
 
   // Per-card interest sending state (matri_id)
@@ -196,20 +262,25 @@ const DashboardPage = () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const [summaryRes, matchesRes, suggestionsRes, todayRes] = await Promise.all([
-        getDashboardSummary(),
-        getDashboardNewMatches(4),
-        getDashboardSuggestions(8),
-        getDashboardTodayPicks(),
-      ]);
+      const [summaryRes, matchesRes, suggestionsRes, todayRes] =
+        await Promise.all([
+          getDashboardSummary(),
+          getDashboardNewMatches(4),
+          getDashboardSuggestions(8),
+          getDashboardTodayPicks(),
+        ]);
       setSummary(summaryRes.data);
       setNewMatches(Array.isArray(matchesRes.data) ? matchesRes.data : []);
-      setSuggestions(Array.isArray(suggestionsRes.data) ? suggestionsRes.data : []);
+      setSuggestions(
+        Array.isArray(suggestionsRes.data) ? suggestionsRes.data : [],
+      );
       setTodayPicks(Array.isArray(todayRes.data) ? todayRes.data : []);
       setProfileCompletion(summaryRes.data?.profile_completion ?? 0);
     } catch (err) {
       console.error("Dashboard load error:", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to load dashboard");
+      setLoadError(
+        err instanceof Error ? err.message : "Failed to load dashboard",
+      );
     } finally {
       setLoading(false);
     }
@@ -225,7 +296,9 @@ const DashboardPage = () => {
       const res = await getProfilePreview(matriId);
       setPreviewData(res.data);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load profile");
+      toast.error(
+        err instanceof Error ? err.message : "Could not load profile",
+      );
     } finally {
       setPreviewLoading(false);
     }
@@ -237,7 +310,8 @@ const DashboardPage = () => {
       const res = await sendInterest(matriId);
       toast.success(res.message || "Interest sent!");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to send interest";
+      const msg =
+        err instanceof Error ? err.message : "Failed to send interest";
       if ((err as { status?: number }).status === 403) {
         toast.info("Please upgrade your plan to continue.");
         router.push("/dashboard/plan");
@@ -269,9 +343,22 @@ const DashboardPage = () => {
       color: "text-primary",
     },
     ...(showHoroscope()
-      ? [{ icon: Star, label: "Horoscope Active", value: "—", color: "text-secondary", hinduOnly: true as const }]
+      ? [
+          {
+            icon: Star,
+            label: "Horoscope Active",
+            value: "—",
+            color: "text-secondary",
+            hinduOnly: true as const,
+          },
+        ]
       : []),
-    { icon: IndianRupee, label: "Upgrade Plan", isAction: true as const, color: "text-secondary" },
+    {
+      icon: IndianRupee,
+      label: "Upgrade Plan",
+      isAction: true as const,
+      color: "text-secondary",
+    },
   ];
 
   const displayLocation = summary?.location || user?.location || "";
@@ -296,9 +383,13 @@ const DashboardPage = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
             <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
-            <p className="text-foreground font-semibold">Failed to load dashboard</p>
+            <p className="text-foreground font-semibold">
+              Failed to load dashboard
+            </p>
             <p className="text-sm text-muted-foreground">{loadError}</p>
-            <Button variant="outline" onClick={loadDashboard}>Try again</Button>
+            <Button variant="outline" onClick={loadDashboard}>
+              Try again
+            </Button>
           </div>
         </div>
       </DashboardLayout>
@@ -325,7 +416,9 @@ const DashboardPage = () => {
                   <>
                     <span className="opacity-70">|</span>
                     <span>
-                      {[displayMatriId, displayLocation].filter(Boolean).join(" – ")}
+                      {[displayMatriId, displayLocation]
+                        .filter(Boolean)
+                        .join(" – ")}
                     </span>
                   </>
                 )}
@@ -333,11 +426,15 @@ const DashboardPage = () => {
             </div>
             <div className="flex gap-3">
               <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
-                <p className="text-2xl font-bold">{summary?.interests_sent ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {summary?.interests_sent ?? 0}
+                </p>
                 <p className="text-xs opacity-90">Interests Sent</p>
               </div>
               <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
-                <p className="text-2xl font-bold">{summary?.new_matches ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {summary?.new_matches ?? 0}
+                </p>
                 <p className="text-xs opacity-90">New Matches</p>
               </div>
             </div>
@@ -357,14 +454,23 @@ const DashboardPage = () => {
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-foreground">Horoscope & contact views</p>
+                <p className="font-semibold text-foreground">
+                  Horoscope & contact views
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-bold text-primary">{horoscopeRemaining}</span> of {horoscopeQuota} remaining this period
+                  <span className="font-bold text-primary">
+                    {horoscopeRemaining}
+                  </span>{" "}
+                  of {horoscopeQuota} remaining this period
                 </p>
               </div>
             </div>
             {horoscopeRemaining <= 2 && (
-              <Button size="sm" variant="outline" onClick={() => setPlanModalOpen(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPlanModalOpen(true)}
+              >
                 Get more
               </Button>
             )}
@@ -391,7 +497,9 @@ const DashboardPage = () => {
               </div>
               <div className="min-w-0 flex-1">
                 {"value" in stat && stat.value !== undefined && (
-                  <p className="font-serif text-xl font-bold text-foreground truncate">{stat.value}</p>
+                  <p className="font-serif text-xl font-bold text-foreground truncate">
+                    {stat.value}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
@@ -445,7 +553,9 @@ const DashboardPage = () => {
                   <NewMatchesStoriesStrip
                     profiles={newMatches}
                     onStoryClick={(matriId) => {
-                      router.push(`/dashboard/matches?open=${encodeURIComponent(matriId)}`);
+                      router.push(
+                        `/dashboard/matches?open=${encodeURIComponent(matriId)}`,
+                      );
                     }}
                   />
                 </div>
@@ -453,9 +563,12 @@ const DashboardPage = () => {
                 <div className="px-5 sm:px-6 pb-10 text-center">
                   <div className="rounded-2xl bg-white/60 border border-dashed border-primary/15 py-12 px-4">
                     <Sparkles className="w-12 h-12 mx-auto mb-3 text-primary/30" />
-                    <p className="text-foreground font-medium">No new matches yet</p>
+                    <p className="text-foreground font-medium">
+                      No new matches yet
+                    </p>
                     <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                      Complete your profile and set preferences — we&apos;ll surface fresh connections here.
+                      Complete your profile and set preferences — we&apos;ll
+                      surface fresh connections here.
                     </p>
                   </div>
                 </div>
@@ -464,17 +577,30 @@ const DashboardPage = () => {
 
             {/* Nearby / Location Based */}
             {displayLocation && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                <h2 className="font-serif text-xl font-bold text-secondary mb-3">Nearby Matches</h2>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <h2 className="font-serif text-xl font-bold text-secondary mb-3">
+                  Nearby Matches
+                </h2>
                 <p className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                   <MapPin className="w-4 h-4 text-primary" />
                   Based on your location – {displayLocation}
                 </p>
                 <div className="bg-primary/10 rounded-2xl p-4 border border-primary/10">
                   <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-3 sm:overflow-x-auto pb-2">
-                    {(suggestions.length > 0 ? suggestions.slice(0, 4) : newMatches.slice(0, 4)).map((profile) => {
+                    {(suggestions.length > 0
+                      ? suggestions.slice(0, 4)
+                      : newMatches.slice(0, 4)
+                    ).map((profile) => {
                       const photoUrl = getMediaUrl(profile.profile_photo);
-                      const initials = profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
+                      const initials = profile.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2);
                       return (
                         <div
                           key={profile.matri_id}
@@ -491,9 +617,13 @@ const DashboardPage = () => {
                               {initials}
                             </div>
                           )}
-                          <p className="font-medium text-sm truncate">{profile.name.split(" ")[0]}</p>
+                          <p className="font-medium text-sm truncate">
+                            {profile.name.split(" ")[0]}
+                          </p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {profile.location ? profile.location.split(",")[0] : "—"}
+                            {profile.location
+                              ? profile.location.split(",")[0]
+                              : "—"}
                           </p>
                           <Button
                             size="sm"
@@ -511,7 +641,6 @@ const DashboardPage = () => {
                 </div>
               </motion.div>
             )}
-
           </div>
 
           {/* Right sidebar */}
@@ -528,9 +657,14 @@ const DashboardPage = () => {
                   <Star className="w-5 h-5 text-secondary" /> Horoscope Matching
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  As a Hindu user, you get Jathagam-based Porutham scoring for all your matches.
+                  As a Hindu user, you get Jathagam-based Porutham scoring for
+                  all your matches.
                 </p>
-                <Button variant="hero" className="w-full gap-2" onClick={() => router.push("/dashboard/jathagam")}>
+                <Button
+                  variant="hero"
+                  className="w-full gap-2"
+                  onClick={() => router.push("/dashboard/jathagam")}
+                >
                   Set Up Horoscope <ArrowRight className="w-4 h-4" />
                 </Button>
               </motion.div>
@@ -543,12 +677,18 @@ const DashboardPage = () => {
               transition={{ delay: 0.2 }}
               className="bg-card rounded-3xl shadow-card p-6"
             >
-              <h3 className="font-serif text-lg font-bold text-secondary mb-4">Today&apos;s Picks</h3>
+              <h3 className="font-serif text-lg font-bold text-secondary mb-4">
+                Today&apos;s Picks
+              </h3>
               {todayPicks.length > 0 ? (
                 <div className="space-y-3">
                   {todayPicks.map((profile) => {
                     const photoUrl = getMediaUrl(profile.profile_photo);
-                    const initials = profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
+                    const initials = profile.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2);
                     return (
                       <div
                         key={profile.matri_id}
@@ -566,10 +706,14 @@ const DashboardPage = () => {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{profile.name}</p>
+                          <p className="font-medium text-sm truncate">
+                            {profile.name}
+                          </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {profile.age ? `${profile.age} yrs` : ""}
-                            {profile.occupation ? ` · ${profile.occupation}` : ""}
+                            {profile.occupation
+                              ? ` · ${profile.occupation}`
+                              : ""}
                           </p>
                         </div>
                         <button
@@ -577,14 +721,20 @@ const DashboardPage = () => {
                           disabled={previewLoading}
                           className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors flex-shrink-0 disabled:opacity-50"
                         >
-                          {previewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                          {previewLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No picks available today.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No picks available today.
+                </p>
               )}
             </motion.div>
           </aside>
@@ -598,10 +748,15 @@ const DashboardPage = () => {
         onOpenChange={(o) => !o && setPreviewData(null)}
         profile={null}
         preview={previewData}
-        onSendInterest={() => previewData && handleSendInterest(previewData.matri_id)}
+        onSendInterest={() =>
+          previewData && handleSendInterest(previewData.matri_id)
+        }
         onOpenPlanModal={() => setPlanModalOpen(true)}
       />
-      <PartnerPreferencesModal open={preferencesOpen} onOpenChange={setPreferencesOpen} />
+      <PartnerPreferencesModal
+        open={preferencesOpen}
+        onOpenChange={setPreferencesOpen}
+      />
     </DashboardLayout>
   );
 };

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Heart, MapPin, Briefcase, GraduationCap, Star, MessageCircle, ArrowRight, Sparkles, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
-import ProfileViewDrawer from "./ProfileViewDrawer";
+import { useAuthStore } from "@/stores/authStore";
+import { getMatches, type MatchProfile } from "@/lib/matchesApi";
 
 export interface Profile {
   id: number;
@@ -120,7 +121,10 @@ const FeaturedProfiles = () => {
   const router = useRouter();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
-  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const [featuredMatches, setFeaturedMatches] = useState<MatchProfile[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
 
   const toggleLike = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -129,10 +133,30 @@ const FeaturedProfiles = () => {
     );
   };
 
-  const handleViewProfile = (id: number) => {
-    window.scrollTo(0, 0);
-    router.push(`/profile/${id}`);
-  };
+  useEffect(() => {
+    if (!hasHydrated || !isLoggedIn) {
+      setFeaturedMatches([]);
+      setLoadingMatches(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadingMatches(true);
+        const res = await getMatches({ page: 1, limit: 4 });
+        if (!cancelled) setFeaturedMatches(res.data.profiles.slice(0, 4));
+      } catch {
+        if (!cancelled) setFeaturedMatches([]);
+      } finally {
+        if (!cancelled) setLoadingMatches(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHydrated, isLoggedIn]);
 
   return (
     <section id="profiles" className="py-12 sm:py-16 md:py-24 bg-gradient-romantic relative overflow-hidden">
@@ -172,25 +196,37 @@ const FeaturedProfiles = () => {
           </p>
         </div>
 
-        {/* Profiles Grid */}
+        {!hasHydrated ? (
+          <div className="text-center mb-8 sm:mb-12 text-muted-foreground">Loading...</div>
+        ) : !isLoggedIn ? (
+          <div className="mb-8 sm:mb-12 rounded-2xl border border-primary/15 bg-white/80 p-8 text-center shadow-soft">
+            <p className="text-base sm:text-lg font-medium text-foreground">
+              Please login to view profiles.
+            </p>
+            <Button className="mt-4" variant="hero" onClick={() => router.push("/auth")}>
+              Login
+            </Button>
+          </div>
+        ) : loadingMatches ? (
+          <div className="text-center mb-8 sm:mb-12 text-muted-foreground">Loading profiles...</div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
-          {profilesData.map((profile, index) => (
+          {featuredMatches.map((profile, index) => (
             <div
-              key={profile.id}
+              key={profile.matri_id}
               className="group relative animate-fade-in-up cursor-pointer"
               style={{ animationDelay: `${0.1 * index}s` }}
-              onMouseEnter={() => setHoveredId(profile.id)}
+              onMouseEnter={() => setHoveredId(index)}
               onMouseLeave={() => setHoveredId(null)}
-              onClick={() => handleViewProfile(profile.id)}
+              onClick={() => router.push(`/dashboard/matches?open=${encodeURIComponent(profile.matri_id)}`)}
             >
               <div className={`bg-white rounded-3xl overflow-hidden shadow-card transition-all duration-500 ${
-                profile.isPremium ? "gold-border" : "border border-primary/10"
-              } ${hoveredId === profile.id ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
+                "border border-primary/10"
+              } ${hoveredId === index ? "shadow-elevated scale-[1.02] -translate-y-2" : ""}`}>
                 
-                {/* Image Container - click on image redirects to login */}
-                <div className="relative h-72 overflow-hidden cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push("/auth"); }}>
+                <div className="relative h-72 overflow-hidden cursor-pointer">
                   <img
-                    src={profile.image}
+                    src={profile.profile_photo || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop"}
                     alt={profile.name}
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
                   />
@@ -200,30 +236,25 @@ const FeaturedProfiles = () => {
                   
                   {/* Badges */}
                   <div className="absolute top-4 left-4 flex gap-2">
-                    {profile.isPremium && (
-                      <span className="px-3 py-1.5 bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground text-xs font-bold rounded-full flex items-center gap-1 shadow-gold animate-glow">
-                        <Star className="w-3 h-3 fill-current" /> Premium
-                      </span>
-                    )}
-                    {profile.isVerified && (
+                    {profile.is_online && (
                       <span className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-soft">
-                        Verified ✓
+                        Online
                       </span>
                     )}
                   </div>
 
                   {/* Like Button */}
                   <button
-                    onClick={(e) => toggleLike(e, profile.id)}
+                    onClick={(e) => toggleLike(e, index)}
                     className={`absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-125 ${
-                      likedProfiles.includes(profile.id)
+                      likedProfiles.includes(index)
                         ? "bg-primary shadow-soft"
                         : "bg-white/90 backdrop-blur-sm hover:bg-white"
                     }`}
                   >
                     <Heart
                       className={`w-5 h-5 transition-all ${
-                        likedProfiles.includes(profile.id)
+                        likedProfiles.includes(index)
                           ? "text-white fill-white animate-heart-beat"
                           : "text-primary"
                       }`}
@@ -232,12 +263,12 @@ const FeaturedProfiles = () => {
 
                   {/* Compatibility Score */}
                   <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full shadow-soft">
-                    <span className="text-sm font-bold text-gradient-primary">{profile.compatibility}% Match</span>
+                    <span className="text-sm font-bold text-gradient-primary">{profile.match_percentage}% Match</span>
                   </div>
 
                   {/* Hover Actions */}
                   <div className={`absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary via-primary/95 to-primary/80 transform transition-all duration-500 ${
-                    hoveredId === profile.id ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+                    hoveredId === index ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
                   }`}>
                     <div className="flex gap-2">
                       <Button 
@@ -246,7 +277,7 @@ const FeaturedProfiles = () => {
                         className="flex-1 gap-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push("/auth");
+                          router.push(`/dashboard/matches?open=${encodeURIComponent(profile.matri_id)}`);
                         }}
                       >
                         <Heart className="w-4 h-4" />
@@ -258,7 +289,7 @@ const FeaturedProfiles = () => {
                         className="flex-1 gap-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setViewProfile(profile);
+                          router.push(`/dashboard/matches?open=${encodeURIComponent(profile.matri_id)}`);
                         }}
                       >
                         <Eye className="w-4 h-4" />
@@ -268,12 +299,12 @@ const FeaturedProfiles = () => {
                   </div>
                 </div>
 
-                {/* Profile Info - click redirects to login */}
+                {/* Profile Info */}
                 <div
                   className="p-5 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push("/auth");
+                    router.push(`/dashboard/matches?open=${encodeURIComponent(profile.matri_id)}`);
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -287,15 +318,15 @@ const FeaturedProfiles = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <Briefcase className="w-4 h-4 text-primary" />
-                      {profile.profession}
+                      {profile.occupation || "Not specified"}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <GraduationCap className="w-4 h-4 text-primary" />
-                      {profile.education}
+                      {profile.education || "Not specified"}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       <MapPin className="w-4 h-4 text-primary" />
-                      {profile.location}
+                      {profile.matri_id}
                     </div>
                   </div>
                 </div>
@@ -303,6 +334,7 @@ const FeaturedProfiles = () => {
             </div>
           ))}
         </div>
+        )}
 
         {/* View More Button */}
         <div className="text-center">
@@ -310,20 +342,13 @@ const FeaturedProfiles = () => {
             variant="hero" 
             size="lg" 
             className="group"
-            onClick={() => router.push("/search")}
+            onClick={() => router.push(isLoggedIn ? "/dashboard/matches" : "/auth")}
           >
-            View All Profiles
+            {isLoggedIn ? "View All Profiles" : "Login to View Profiles"}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
           </Button>
         </div>
       </div>
-
-      <ProfileViewDrawer
-        open={!!viewProfile}
-        onOpenChange={(open) => !open && setViewProfile(null)}
-        profile={viewProfile}
-        onSendInterest={() => {}}
-      />
     </section>
   );
 };

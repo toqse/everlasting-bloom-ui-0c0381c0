@@ -3,7 +3,15 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { UsersRound, Pencil, Minus, Plus, Heart, Users, Sparkles } from "lucide-react";
+import {
+  UsersRound,
+  Pencil,
+  Minus,
+  Plus,
+  Heart,
+  Users,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FamilyDetailsStep from "@/components/signup/steps/FamilyDetailsStep";
 
@@ -35,10 +43,36 @@ const FIELD_LABELS: Record<string, string> = {
   aboutMyFamily: "About My Family",
 };
 
-const VIEW_GROUPS: { title: string; icon: typeof Heart; keys: (keyof typeof FIELD_LABELS)[] }[] = [
-  { title: "Family overview", icon: Sparkles, keys: ["familyType", "familyStatus"] },
-  { title: "Parents", icon: Heart, keys: ["fathersName", "fathersOccupation", "mothersName", "mothersOccupation"] },
-  { title: "Siblings", icon: Users, keys: ["numberOfBrothers", "numberOfMarriedBrothers", "numberOfSisters", "numberOfMarriedSisters"] },
+const VIEW_GROUPS: {
+  title: string;
+  icon: typeof Heart;
+  keys: (keyof typeof FIELD_LABELS)[];
+}[] = [
+  {
+    title: "Family overview",
+    icon: Sparkles,
+    keys: ["familyType", "familyStatus"],
+  },
+  {
+    title: "Parents",
+    icon: Heart,
+    keys: [
+      "fathersName",
+      "fathersOccupation",
+      "mothersName",
+      "mothersOccupation",
+    ],
+  },
+  {
+    title: "Siblings",
+    icon: Users,
+    keys: [
+      "numberOfBrothers",
+      "numberOfMarriedBrothers",
+      "numberOfSisters",
+      "numberOfMarriedSisters",
+    ],
+  },
   { title: "About my family", icon: UsersRound, keys: ["aboutMyFamily"] },
 ];
 
@@ -47,7 +81,11 @@ const FamilyDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -77,7 +115,9 @@ const FamilyDetailsPage = () => {
               <h1 className="font-serif text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-primary-light to-secondary bg-clip-text text-transparent">
                 Family Details
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Manage your family information for your profile</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Manage your family information for your profile
+              </p>
             </div>
           </div>
         </motion.div>
@@ -93,7 +133,9 @@ const FamilyDetailsPage = () => {
             className="flex items-center justify-between px-6 py-4 text-white"
             style={{ background: "var(--gradient-gold)" }}
           >
-            <span className="font-semibold text-lg tracking-tight">Family Details</span>
+            <span className="font-semibold text-lg tracking-tight">
+              Family Details
+            </span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -127,13 +169,18 @@ const FamilyDetailsPage = () => {
                 transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="border-t border-primary/10"
                 style={{
-                  background: "linear-gradient(180deg, hsl(340 60% 99%) 0%, hsl(0 0% 100%) 100%)",
+                  background:
+                    "linear-gradient(180deg, hsl(340 60% 99%) 0%, hsl(0 0% 100%) 100%)",
                 }}
               >
                 <div className="p-6 md:p-8">
                   {isEditing ? (
                     <div className="space-y-6 max-w-xl">
-                      <FamilyDetailsStep formData={formData} onChange={handleChange} hideTitle />
+                      <FamilyDetailsStep
+                        formData={formData}
+                        onChange={handleChange}
+                        hideTitle
+                      />
                       <div className="flex gap-3 pt-2">
                         <Button
                           type="button"
@@ -171,7 +218,8 @@ const FamilyDetailsPage = () => {
                           </div>
                           <div
                             className={
-                              group.keys.length === 1 && group.keys[0] === "aboutMyFamily"
+                              group.keys.length === 1 &&
+                              group.keys[0] === "aboutMyFamily"
                                 ? "grid grid-cols-1 gap-4"
                                 : "grid grid-cols-1 sm:grid-cols-2 gap-4"
                             }

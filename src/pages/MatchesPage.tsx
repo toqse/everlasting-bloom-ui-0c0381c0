@@ -25,7 +25,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -46,16 +50,33 @@ import {
 import { getSentInterests } from "@/lib/interestsApi";
 import { toast } from "sonner";
 
-const FilterSection = ({ title, icon, children, defaultOpen = false }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) => (
-  <Collapsible defaultOpen={defaultOpen} className="group/collapse border-b border-primary/[0.08] last:border-0">
+const FilterSection = ({
+  title,
+  icon,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) => (
+  <Collapsible
+    defaultOpen={defaultOpen}
+    className="group/collapse border-b border-primary/[0.08] last:border-0"
+  >
     <CollapsibleTrigger className="flex w-full items-center justify-between py-3.5 text-left text-foreground transition-colors hover:bg-primary/[0.04] rounded-lg px-1 -mx-1">
       <span className="flex items-center gap-2.5 text-sm font-semibold tracking-tight">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/15 text-primary">{icon}</span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/15 text-primary">
+          {icon}
+        </span>
         {title}
       </span>
       <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapse:rotate-180" />
     </CollapsibleTrigger>
-    <CollapsibleContent className="pb-4 pl-0.5 pt-0">{children}</CollapsibleContent>
+    <CollapsibleContent className="pb-4 pl-0.5 pt-0">
+      {children}
+    </CollapsibleContent>
   </Collapsible>
 );
 
@@ -78,7 +99,9 @@ const SearchableIdSelect = ({
   initialVisible?: number;
 }) => {
   const [showAll, setShowAll] = useState(false);
-  const filtered = options.filter((o) => o.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filtered = options.filter((o) =>
+    o.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
   const displayList = showAll ? filtered : filtered.slice(0, initialVisible);
   const hasMore = !showAll && filtered.length > initialVisible;
   return (
@@ -91,7 +114,10 @@ const SearchableIdSelect = ({
       />
       <div className="max-h-40 overflow-y-auto space-y-1">
         <label className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm">
-          <Checkbox checked={valueId === null} onCheckedChange={(c) => c && onSelect(null)} />
+          <Checkbox
+            checked={valueId === null}
+            onCheckedChange={(c) => c && onSelect(null)}
+          />
           <span className="text-muted-foreground">Any</span>
         </label>
         {displayList.map((item) => (
@@ -99,13 +125,22 @@ const SearchableIdSelect = ({
             key={item.id}
             className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm"
           >
-            <Checkbox checked={valueId === item.id} onCheckedChange={() => onSelect(valueId === item.id ? null : item.id)} />
+            <Checkbox
+              checked={valueId === item.id}
+              onCheckedChange={() =>
+                onSelect(valueId === item.id ? null : item.id)
+              }
+            />
             <span className="text-muted-foreground">{item.name}</span>
           </label>
         ))}
       </div>
       {hasMore && (
-        <button type="button" onClick={() => setShowAll(true)} className="text-xs text-primary font-medium hover:underline">
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="text-xs text-primary font-medium hover:underline"
+        >
           More
         </button>
       )}
@@ -130,8 +165,14 @@ const CasteSelect = ({
   onSearchChange: (q: string) => void;
 }) => {
   const filtered = useMemo(() => {
-    let list = religionId != null ? castes.filter((c) => c.religion_id === religionId) : castes;
-    if (searchQuery.trim()) list = list.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    let list =
+      religionId != null
+        ? castes.filter((c) => c.religion_id === religionId)
+        : castes;
+    if (searchQuery.trim())
+      list = list.filter((c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
     return list;
   }, [castes, religionId, searchQuery]);
   return (
@@ -144,7 +185,10 @@ const CasteSelect = ({
       />
       <div className="max-h-40 overflow-y-auto space-y-1">
         <label className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm">
-          <Checkbox checked={valueId === null} onCheckedChange={(c) => c && onSelect(null)} />
+          <Checkbox
+            checked={valueId === null}
+            onCheckedChange={(c) => c && onSelect(null)}
+          />
           <span className="text-muted-foreground">Any</span>
         </label>
         {filtered.map((item) => (
@@ -152,7 +196,12 @@ const CasteSelect = ({
             key={item.id}
             className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm"
           >
-            <Checkbox checked={valueId === item.id} onCheckedChange={() => onSelect(valueId === item.id ? null : item.id)} />
+            <Checkbox
+              checked={valueId === item.id}
+              onCheckedChange={() =>
+                onSelect(valueId === item.id ? null : item.id)
+              }
+            />
             <span className="text-muted-foreground">{item.name}</span>
           </label>
         ))}
@@ -187,7 +236,9 @@ function MatchesOpenFromQuery({
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : "Failed to load profile");
+          toast.error(
+            e instanceof Error ? e.message : "Failed to load profile",
+          );
           router.replace("/dashboard/matches", { scroll: false });
         }
       } finally {
@@ -219,7 +270,9 @@ const MatchesPage = () => {
   const [loading, setLoading] = useState(true);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<MatchFiltersResponse["data"] | null>(null);
+  const [filters, setFilters] = useState<MatchFiltersResponse["data"] | null>(
+    null,
+  );
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const me = useAuthStore((s) => s.user);
   const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
@@ -236,10 +289,14 @@ const MatchesPage = () => {
   const [educationSearch, setEducationSearch] = useState("");
   const [occupationSearch, setOccupationSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("most_relevant");
-  const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(null);
+  const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(
+    null,
+  );
   /** Resolved for the open drawer (matches list row or GET v1/chat/permission/ when deep-linking). */
   const [matchPreviewCanChat, setMatchPreviewCanChat] = useState(false);
-  const [wishlistedMatriIds, setWishlistedMatriIds] = useState<Set<string>>(new Set());
+  const [wishlistedMatriIds, setWishlistedMatriIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
@@ -247,11 +304,16 @@ const MatchesPage = () => {
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
-  const newProfilesCount = useMemo(() => profiles.filter((p) => p.is_new).length, [profiles]);
+  const newProfilesCount = useMemo(
+    () => profiles.filter((p) => p.is_new).length,
+    [profiles],
+  );
   const currentBride = brideProfiles[currentBrideIndex] ?? null;
   const meGender = (me?.gender ?? "").trim().toLowerCase();
-  const leftLabel = meGender === "male" ? "Groom" : meGender === "female" ? "Bride" : "Profile";
-  const rightLabel = meGender === "male" ? "Bride" : meGender === "female" ? "Groom" : "Match";
+  const leftLabel =
+    meGender === "male" ? "Groom" : meGender === "female" ? "Bride" : "Profile";
+  const rightLabel =
+    meGender === "male" ? "Bride" : meGender === "female" ? "Groom" : "Match";
 
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
@@ -269,51 +331,68 @@ const MatchesPage = () => {
     fetchFilters();
   }, [fetchFilters]);
 
-  const fetchMatches = useCallback(async (pageNum: number) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // By default do not apply filters: only send page & limit (and sort). Add age/height only when user changed them.
-      const defaultAge: [number, number] = [18, 70];
-      const defaultHeight: [number, number] = [120, 200];
-      const params: Parameters<typeof getMatches>[0] = {
-        page: pageNum,
-        limit,
-        sort_by: sortBy,
-      };
-      if (ageRange[0] !== defaultAge[0] || ageRange[1] !== defaultAge[1]) {
-        params.age_min = ageRange[0];
-        params.age_max = ageRange[1];
-      }
-      if (heightRange[0] !== defaultHeight[0] || heightRange[1] !== defaultHeight[1]) {
-        params.height_min = heightRange[0];
-        params.height_max = heightRange[1];
-      }
-      if (religionId != null) params.religion_id = religionId;
-      if (casteId != null) params.caste_id = casteId;
-      if (educationId != null) params.education_id = educationId;
-      if (occupationId != null) params.occupation_id = occupationId;
-      if (maritalStatusId != null) params.marital_status = maritalStatusId;
-      if (onlyWithPhoto) params.profile_with_photo = true;
+  const fetchMatches = useCallback(
+    async (pageNum: number) => {
+      setLoading(true);
+      setError(null);
+      try {
+        // By default do not apply filters: only send page & limit (and sort). Add age/height only when user changed them.
+        const defaultAge: [number, number] = [18, 70];
+        const defaultHeight: [number, number] = [120, 200];
+        const params: Parameters<typeof getMatches>[0] = {
+          page: pageNum,
+          limit,
+          sort_by: sortBy,
+        };
+        if (ageRange[0] !== defaultAge[0] || ageRange[1] !== defaultAge[1]) {
+          params.age_min = ageRange[0];
+          params.age_max = ageRange[1];
+        }
+        if (
+          heightRange[0] !== defaultHeight[0] ||
+          heightRange[1] !== defaultHeight[1]
+        ) {
+          params.height_min = heightRange[0];
+          params.height_max = heightRange[1];
+        }
+        if (religionId != null) params.religion_id = religionId;
+        if (casteId != null) params.caste_id = casteId;
+        if (educationId != null) params.education_id = educationId;
+        if (occupationId != null) params.occupation_id = occupationId;
+        if (maritalStatusId != null) params.marital_status = maritalStatusId;
+        if (onlyWithPhoto) params.profile_with_photo = true;
 
-      const res = await getMatches(params);
-      setTotalProfiles(res.data.total_profiles);
-      setProfiles(res.data.profiles);
-      setWishlistedMatriIds(() => {
-        const next = new Set<string>();
-        res.data.profiles.forEach((p) => {
-          if (p.is_wishlisted) next.add(p.matri_id);
-          else next.delete(p.matri_id);
+        const res = await getMatches(params);
+        setTotalProfiles(res.data.total_profiles);
+        setProfiles(res.data.profiles);
+        setWishlistedMatriIds(() => {
+          const next = new Set<string>();
+          res.data.profiles.forEach((p) => {
+            if (p.is_wishlisted) next.add(p.matri_id);
+            else next.delete(p.matri_id);
+          });
+          return next;
         });
-        return next;
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load matches");
-      setProfiles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [ageRange, heightRange, religionId, casteId, educationId, occupationId, maritalStatusId, onlyWithPhoto, sortBy, limit]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load matches");
+        setProfiles([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      ageRange,
+      heightRange,
+      religionId,
+      casteId,
+      educationId,
+      occupationId,
+      maritalStatusId,
+      onlyWithPhoto,
+      sortBy,
+      limit,
+    ],
+  );
 
   useEffect(() => {
     setPage(1);
@@ -329,14 +408,20 @@ const MatchesPage = () => {
   const canGoPrev = page > 1;
   const canGoNext = page < totalPages;
   const pageButtons = Array.from(
-    new Set([1, page - 1, page, page + 1, totalPages].filter((p) => p >= 1 && p <= totalPages)),
+    new Set(
+      [1, page - 1, page, page + 1, totalPages].filter(
+        (p) => p >= 1 && p <= totalPages,
+      ),
+    ),
   );
 
   const openMatchModal = useCallback(
     (initialMatriId?: string) => {
       if (brideProfiles.length === 0) return;
       if (initialMatriId) {
-        const idx = brideProfiles.findIndex((p) => p.matri_id === initialMatriId);
+        const idx = brideProfiles.findIndex(
+          (p) => p.matri_id === initialMatriId,
+        );
         setCurrentBrideIndex(idx >= 0 ? idx : 0);
       } else {
         setCurrentBrideIndex(0);
@@ -379,8 +464,11 @@ const MatchesPage = () => {
           ...res.data,
           interest_status:
             res.data.interest_status ??
-            (fromList?.interest_status ? String(fromList.interest_status) : undefined),
-          is_interest_sent: res.data.is_interest_sent ?? fromList?.is_interest_sent,
+            (fromList?.interest_status
+              ? String(fromList.interest_status)
+              : undefined),
+          is_interest_sent:
+            res.data.is_interest_sent ?? fromList?.is_interest_sent,
         };
         await completeMatchPreviewOpen(mergedPreview);
       } catch (e) {
@@ -392,105 +480,122 @@ const MatchesPage = () => {
     [completeMatchPreviewOpen, profiles],
   );
 
-  const handleSendInterest = useCallback(async (matriId: string) => {
-    setActionLoading(matriId);
-    try {
-      const res = await sendInterestApi(matriId);
-      toast.success(res.message || "Interest sent successfully.");
+  const handleSendInterest = useCallback(
+    async (matriId: string) => {
+      setActionLoading(matriId);
       try {
-        const sentRes = await getSentInterests(1, 50);
-        const sentItem = sentRes.data.results.find((item) => item.matri_id === matriId);
-        const nextStatus = sentItem?.status ?? "sent";
+        const res = await sendInterestApi(matriId);
+        toast.success(res.message || "Interest sent successfully.");
+        try {
+          const sentRes = await getSentInterests(1, 50);
+          const sentItem = sentRes.data.results.find(
+            (item) => item.matri_id === matriId,
+          );
+          const nextStatus = sentItem?.status ?? "sent";
 
-        setProfiles((prev) =>
-          prev.map((p) =>
-            p.matri_id === matriId
+          setProfiles((prev) =>
+            prev.map((p) =>
+              p.matri_id === matriId
+                ? {
+                    ...p,
+                    interest_status: nextStatus,
+                    is_interest_sent: true,
+                  }
+                : p,
+            ),
+          );
+
+          setViewPreview((prev) =>
+            prev?.matri_id === matriId
               ? {
-                  ...p,
+                  ...prev,
                   interest_status: nextStatus,
                   is_interest_sent: true,
                 }
-              : p,
-          ),
-        );
-
-        setViewPreview((prev) =>
-          prev?.matri_id === matriId
-            ? {
-                ...prev,
-                interest_status: nextStatus,
-                is_interest_sent: true,
-              }
-            : prev,
-        );
-      } catch {
-        // Fallback if sent list refresh fails: still reflect "sent" locally.
-        setProfiles((prev) =>
-          prev.map((p) =>
-            p.matri_id === matriId
+              : prev,
+          );
+        } catch {
+          // Fallback if sent list refresh fails: still reflect "sent" locally.
+          setProfiles((prev) =>
+            prev.map((p) =>
+              p.matri_id === matriId
+                ? {
+                    ...p,
+                    interest_status: "sent",
+                    is_interest_sent: true,
+                  }
+                : p,
+            ),
+          );
+          setViewPreview((prev) =>
+            prev?.matri_id === matriId
               ? {
-                  ...p,
+                  ...prev,
                   interest_status: "sent",
                   is_interest_sent: true,
                 }
-              : p,
-          ),
-        );
-        setViewPreview((prev) =>
-          prev?.matri_id === matriId
-            ? {
-                ...prev,
-                interest_status: "sent",
-                is_interest_sent: true,
-              }
-            : prev,
-        );
-      }
-    } catch (e) {
-      const err = e as Error & { status?: number };
-      const msg = err.message || "Failed to send interest";
-      // If user has no active plan (403), send them to Plans & Pricing page.
-      if (err.status === 403 || msg.toLowerCase().includes("plan")) {
+              : prev,
+          );
+        }
+      } catch (e) {
+        const err = e as Error & { status?: number };
+        const msg = err.message || "Failed to send interest";
+        // If user has no active plan (403), send them to Plans & Pricing page.
+        if (err.status === 403 || msg.toLowerCase().includes("plan")) {
+          toast.error(msg);
+          router.push("/dashboard/plan");
+          return;
+        }
         toast.error(msg);
-        router.push("/dashboard/plan");
-        return;
+      } finally {
+        setActionLoading(null);
       }
-      toast.error(msg);
-    } finally {
-      setActionLoading(null);
-    }
-  }, [router]);
+    },
+    [router],
+  );
 
-  const handleCheckMatch = useCallback((matriId: string) => {
-    router.push(`/dashboard/jathagam?profile=${encodeURIComponent(matriId)}`);
-  }, [router]);
+  const handleCheckMatch = useCallback(
+    (matriId: string) => {
+      router.push(`/dashboard/jathagam?profile=${encodeURIComponent(matriId)}`);
+    },
+    [router],
+  );
 
-  const handleChat = useCallback(async (matriId: string) => {
-    setActionLoading(matriId);
-    try {
-      const res = await startChatApi(matriId);
-      toast.success("Chat started.");
-      const convoId = res.data.conversation_id;
-      if (convoId) {
-        router.push(`/chat/${convoId}`);
-      } else {
-        router.push("/dashboard/chat-list");
+  const handleChat = useCallback(
+    async (matriId: string) => {
+      setActionLoading(matriId);
+      try {
+        const res = await startChatApi(matriId);
+        toast.success("Chat started.");
+        const convoId = res.data.conversation_id;
+        if (convoId) {
+          router.push(`/chat/${convoId}`);
+        } else {
+          router.push("/dashboard/chat-list");
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to start chat";
+        if (
+          msg.toLowerCase().includes("plan") ||
+          msg.toLowerCase().includes("upgrade") ||
+          msg.toLowerCase().includes("expired")
+        ) {
+          setPlanModalOpen(true);
+        } else {
+          toast.error(msg);
+        }
+      } finally {
+        setActionLoading(null);
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to start chat";
-      if (msg.toLowerCase().includes("plan") || msg.toLowerCase().includes("upgrade") || msg.toLowerCase().includes("expired")) {
-        setPlanModalOpen(true);
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setActionLoading(null);
-    }
-  }, [router]);
+    },
+    [router],
+  );
 
   const goToPrevBride = () => {
     if (brideProfiles.length === 0) return;
-    setCurrentBrideIndex((prev) => (prev - 1 + brideProfiles.length) % brideProfiles.length);
+    setCurrentBrideIndex(
+      (prev) => (prev - 1 + brideProfiles.length) % brideProfiles.length,
+    );
   };
 
   const goToNextBride = () => {
@@ -521,7 +626,10 @@ const MatchesPage = () => {
         {/* Single root so layout flex height reaches the list scroller (lg). */}
         <div className="flex flex-col gap-6 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-6 lg:overflow-hidden">
           <Suspense fallback={null}>
-            <MatchesOpenFromQuery onPreview={completeMatchPreviewOpen} setBusyMatriId={setActionLoading} />
+            <MatchesOpenFromQuery
+              onPreview={completeMatchPreviewOpen}
+              setBusyMatriId={setActionLoading}
+            />
           </Suspense>
           {/* Header — maroon + gold, stats from existing API data only */}
           <motion.div
@@ -532,7 +640,9 @@ const MatchesPage = () => {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="font-serif text-2xl font-bold tracking-tight text-secondary md:text-3xl">New Matches Found</h1>
+                  <h1 className="font-serif text-2xl font-bold tracking-tight text-secondary md:text-3xl">
+                    New Matches Found
+                  </h1>
                   <span
                     className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground shadow-soft"
                     aria-label={`${totalProfiles} matches`}
@@ -554,13 +664,17 @@ const MatchesPage = () => {
               >
                 <TrendingUp className="h-4 w-4 text-secondary" aria-hidden />
                 <span className="text-sm font-semibold text-secondary-foreground">
-                  {newProfilesCount > 0 ? `+${newProfilesCount} new today` : `${totalProfiles} total`}
+                  {newProfilesCount > 0
+                    ? `+${newProfilesCount} new today`
+                    : `${totalProfiles} total`}
                 </span>
               </motion.div>
             </div>
 
             <div className="mt-5 flex flex-col gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Refine &amp; sort</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Refine &amp; sort
+              </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   type="button"
@@ -587,7 +701,10 @@ const MatchesPage = () => {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                    <ChevronDown
+                      className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden
+                    />
                   </div>
                 </div>
               </div>
@@ -604,15 +721,26 @@ const MatchesPage = () => {
               className="w-full shrink-0 lg:w-72 xl:w-80 lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1"
             >
               <div className="space-y-0 rounded-2xl border border-primary/10 bg-card/95 p-4 shadow-card backdrop-blur-sm">
-                <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filters</p>
-                <FilterSection title="Profile Type" icon={<ImageIcon className="w-4 h-4 text-primary" />}>
+                <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Filters
+                </p>
+                <FilterSection
+                  title="Profile Type"
+                  icon={<ImageIcon className="w-4 h-4 text-primary" />}
+                >
                   <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
-                    <Checkbox checked={onlyWithPhoto} onCheckedChange={(c) => setOnlyWithPhoto(!!c)} />
+                    <Checkbox
+                      checked={onlyWithPhoto}
+                      onCheckedChange={(c) => setOnlyWithPhoto(!!c)}
+                    />
                     Only with Photo
                   </label>
                 </FilterSection>
 
-                <FilterSection title="Age" icon={<Clock className="w-4 h-4 text-primary" />}>
+                <FilterSection
+                  title="Age"
+                  icon={<Clock className="w-4 h-4 text-primary" />}
+                >
                   <div className="space-y-3 pt-1">
                     <Slider
                       min={18}
@@ -628,14 +756,19 @@ const MatchesPage = () => {
                   </div>
                 </FilterSection>
 
-                <FilterSection title="Height" icon={<Ruler className="w-4 h-4 text-primary" />}>
+                <FilterSection
+                  title="Height"
+                  icon={<Ruler className="w-4 h-4 text-primary" />}
+                >
                   <div className="space-y-3 pt-1">
                     <Slider
                       min={120}
                       max={200}
                       step={5}
                       value={heightRange}
-                      onValueChange={(v) => setHeightRange(v as [number, number])}
+                      onValueChange={(v) =>
+                        setHeightRange(v as [number, number])
+                      }
                       className="py-2"
                     />
                     <p className="text-xs text-muted-foreground text-center">
@@ -646,7 +779,10 @@ const MatchesPage = () => {
 
                 {filters && (
                   <>
-                    <FilterSection title="Marital Status" icon={<Heart className="w-4 h-4 text-primary" />}>
+                    <FilterSection
+                      title="Marital Status"
+                      icon={<Heart className="w-4 h-4 text-primary" />}
+                    >
                       <SearchableIdSelect
                         placeholder="Search marital status..."
                         options={filters.marital_status}
@@ -657,18 +793,27 @@ const MatchesPage = () => {
                       />
                     </FilterSection>
 
-                    <FilterSection title="Religion" icon={<Sparkles className="w-4 h-4 text-primary" />}>
+                    <FilterSection
+                      title="Religion"
+                      icon={<Sparkles className="w-4 h-4 text-primary" />}
+                    >
                       <SearchableIdSelect
                         placeholder="Search religion..."
                         options={filters.religions}
                         valueId={religionId}
-                        onSelect={(id) => { setReligionId(id); setCasteId(null); }}
+                        onSelect={(id) => {
+                          setReligionId(id);
+                          setCasteId(null);
+                        }}
                         searchQuery={religionSearch}
                         onSearchChange={setReligionSearch}
                       />
                     </FilterSection>
 
-                    <FilterSection title="Caste" icon={<Users className="w-4 h-4 text-primary" />}>
+                    <FilterSection
+                      title="Caste"
+                      icon={<Users className="w-4 h-4 text-primary" />}
+                    >
                       <CasteSelect
                         castes={filters.castes}
                         religionId={religionId}
@@ -679,7 +824,10 @@ const MatchesPage = () => {
                       />
                     </FilterSection>
 
-                    <FilterSection title="Education" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+                    <FilterSection
+                      title="Education"
+                      icon={<BookOpen className="w-4 h-4 text-primary" />}
+                    >
                       <SearchableIdSelect
                         placeholder="Search education..."
                         options={filters.educations}
@@ -690,7 +838,10 @@ const MatchesPage = () => {
                       />
                     </FilterSection>
 
-                    <FilterSection title="Occupation" icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}>
+                    <FilterSection
+                      title="Occupation"
+                      icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}
+                    >
                       <SearchableIdSelect
                         placeholder="Search occupation..."
                         options={filters.occupations}
@@ -703,7 +854,9 @@ const MatchesPage = () => {
                   </>
                 )}
                 {filtersLoading && (
-                  <p className="text-sm text-muted-foreground py-2">Loading filters…</p>
+                  <p className="text-sm text-muted-foreground py-2">
+                    Loading filters…
+                  </p>
                 )}
               </div>
             </motion.div>
@@ -717,14 +870,27 @@ const MatchesPage = () => {
                 className="mb-4 flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b border-primary/10 pb-4 lg:mb-5"
               >
                 <h2 className="font-serif text-lg font-bold text-foreground">
-                  Showing <span className="text-secondary tabular-nums">{profiles.length}</span>
+                  Showing{" "}
+                  <span className="text-secondary tabular-nums">
+                    {profiles.length}
+                  </span>
                   {profiles.length === 1 ? " profile" : " profiles"}
                 </h2>
                 {totalProfiles > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    Page <span className="tabular-nums font-medium text-foreground">{page}</span> of{" "}
-                    <span className="tabular-nums font-medium text-foreground">{totalPages}</span> ·{" "}
-                    <span className="tabular-nums font-medium text-foreground">{totalProfiles}</span> total
+                    Page{" "}
+                    <span className="tabular-nums font-medium text-foreground">
+                      {page}
+                    </span>{" "}
+                    of{" "}
+                    <span className="tabular-nums font-medium text-foreground">
+                      {totalPages}
+                    </span>{" "}
+                    ·{" "}
+                    <span className="tabular-nums font-medium text-foreground">
+                      {totalProfiles}
+                    </span>{" "}
+                    total
                   </span>
                 )}
               </motion.div>
@@ -737,9 +903,15 @@ const MatchesPage = () => {
                 )}
 
                 {loading && profiles.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">Loading matches…</div>
+                  <div className="py-12 text-center text-muted-foreground">
+                    Loading matches…
+                  </div>
                 ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-5"
+                  >
                     {profiles.map((profile, index) => (
                       <MatchListCard
                         key={profile.matri_id}
@@ -747,8 +919,12 @@ const MatchesPage = () => {
                         index={index}
                         liked={wishlistedMatriIds.has(profile.matri_id)}
                         onLike={() => handleWishlist(profile.matri_id)}
-                        onSendInterest={() => handleSendInterest(profile.matri_id)}
-                        onViewDetails={() => handleViewDetails(profile.matri_id)}
+                        onSendInterest={() =>
+                          handleSendInterest(profile.matri_id)
+                        }
+                        onViewDetails={() =>
+                          handleViewDetails(profile.matri_id)
+                        }
                         onCheckMatch={() => openMatchModal(profile.matri_id)}
                         actionLoading={actionLoading}
                       />
@@ -764,7 +940,9 @@ const MatchesPage = () => {
                     className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 pt-4"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Rows per page</span>
+                      <span className="text-xs text-muted-foreground">
+                        Rows per page
+                      </span>
                       <select
                         value={limit}
                         onChange={(e) => setLimit(Number(e.target.value))}
@@ -793,9 +971,14 @@ const MatchesPage = () => {
                         const prev = pageButtons[idx - 1];
                         const showGap = prev != null && p - prev > 1;
                         return (
-                          <div key={`page-slot-${p}-${idx}`} className="flex items-center gap-1.5">
+                          <div
+                            key={`page-slot-${p}-${idx}`}
+                            className="flex items-center gap-1.5"
+                          >
                             {showGap ? (
-                              <span className="px-1 text-xs text-muted-foreground">…</span>
+                              <span className="px-1 text-xs text-muted-foreground">
+                                …
+                              </span>
                             ) : null}
                             <Button
                               variant={p === page ? "default" : "outline"}
@@ -837,9 +1020,15 @@ const MatchesPage = () => {
         }}
         profile={null}
         preview={viewPreview}
-        onSendInterest={viewPreview ? () => handleSendInterest(viewPreview.matri_id) : undefined}
+        onSendInterest={
+          viewPreview
+            ? () => handleSendInterest(viewPreview.matri_id)
+            : undefined
+        }
         canChat={matchPreviewCanChat}
-        onChat={viewPreview ? () => handleChat(viewPreview.matri_id) : undefined}
+        onChat={
+          viewPreview ? () => handleChat(viewPreview.matri_id) : undefined
+        }
         onOpenPlanModal={() => setPlanModalOpen(true)}
       />
 
@@ -872,11 +1061,17 @@ const MatchesPage = () => {
                     />
                   </motion.div>
                   <div className="text-center space-y-1">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">{leftLabel}</p>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                      {leftLabel}
+                    </p>
                     <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
                       {me.name}
                     </p>
-                    {me.matriId && <p className="text-xs text-muted-foreground">ID: {me.matriId}</p>}
+                    {me.matriId && (
+                      <p className="text-xs text-muted-foreground">
+                        ID: {me.matriId}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -921,11 +1116,15 @@ const MatchesPage = () => {
                           />
                         </div>
                         <div className="text-center space-y-1">
-                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">{rightLabel}</p>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                            {rightLabel}
+                          </p>
                           <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
                             {currentBride.name}
                           </p>
-                          <p className="text-xs text-muted-foreground">ID: {currentBride.matri_id}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {currentBride.matri_id}
+                          </p>
                         </div>
                       </motion.div>
                     </AnimatePresence>
@@ -952,7 +1151,8 @@ const MatchesPage = () => {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Not enough profiles to run quick match comparison yet. Please try again after loading more matches.
+              Not enough profiles to run quick match comparison yet. Please try
+              again after loading more matches.
             </p>
           )}
         </DialogContent>
@@ -986,7 +1186,9 @@ const MatchListCard = ({
     is_interest_sent?: boolean;
   };
   const isOnline = profile.is_online;
-  const imgSrc = profile.profile_photo || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop";
+  const imgSrc =
+    profile.profile_photo ||
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop";
   const busy = actionLoading === profile.matri_id;
   const lastLoginLabel = isOnline
     ? "Online now"
@@ -1002,13 +1204,19 @@ const MatchListCard = ({
   const isInterestSent = normalizedProfile.is_interest_sent ?? false;
   const showInterestAccepted = interestStatus === "accepted";
   const showInterestSent = interestStatus === "sent" || isInterestSent;
-  const showSendInterestButton = interestStatus === "pending" && canSendInterest;
+  const showSendInterestButton =
+    interestStatus === "pending" && canSendInterest;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, type: "spring", stiffness: 120, damping: 18 }}
+      transition={{
+        delay: index * 0.05,
+        type: "spring",
+        stiffness: 120,
+        damping: 18,
+      }}
       whileHover={{ y: -2 }}
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-shadow duration-300 hover:border-primary/20 hover:shadow-elevated md:flex-row md:items-stretch",
@@ -1034,7 +1242,9 @@ const MatchListCard = ({
         <div
           className={cn(
             "absolute left-3 top-3 z-10 h-3 w-3 rounded-full border-2 border-white/90 shadow-sm",
-            isOnline ? "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]" : "bg-white/50",
+            isOnline
+              ? "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]"
+              : "bg-white/50",
           )}
           title={isOnline ? "Online" : "Offline"}
         />
@@ -1042,11 +1252,17 @@ const MatchListCard = ({
           className="absolute right-3 top-3 z-10 flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center rounded-full border-2 border-secondary/90 bg-background/95 shadow-md backdrop-blur-[2px]"
           aria-label={`${profile.match_percentage}% match`}
         >
-          <span className="text-[10px] font-semibold uppercase leading-none text-muted-foreground">Match</span>
-          <span className="text-base font-bold leading-tight text-primary tabular-nums">{profile.match_percentage}%</span>
+          <span className="text-[10px] font-semibold uppercase leading-none text-muted-foreground">
+            Match
+          </span>
+          <span className="text-base font-bold leading-tight text-primary tabular-nums">
+            {profile.match_percentage}%
+          </span>
         </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10">
-          <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">{lastLoginLabel}</p>
+          <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">
+            {lastLoginLabel}
+          </p>
         </div>
         {profile.is_already_viewed === true ? (
           <div className="absolute bottom-14 left-3 z-10 rounded-md border border-white/30 bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
@@ -1072,7 +1288,12 @@ const MatchListCard = ({
               aria-label={liked ? "Remove from favorites" : "Add to favorites"}
               aria-pressed={liked}
             >
-              <Heart className={cn("h-6 w-6", liked && "fill-secondary text-secondary")} />
+              <Heart
+                className={cn(
+                  "h-6 w-6",
+                  liked && "fill-secondary text-secondary",
+                )}
+              />
             </button>
           </div>
 

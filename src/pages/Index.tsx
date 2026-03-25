@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import SearchFilters from "@/components/SearchFilters";
 import StatsSection from "@/components/StatsSection";
-import FeaturedProfiles from "@/components/FeaturedProfiles";
 import SuccessStories from "@/components/SuccessStories";
 import WhyChooseUs from "@/components/WhyChooseUs";
 
@@ -36,9 +34,7 @@ const Index = () => {
     <main className="min-h-screen overflow-x-hidden">
       <Navbar />
       <Hero />
-      <SearchFilters />
       <StatsSection />
-      <FeaturedProfiles />
       <WhyChooseUs />
       <SuccessStories />
       <PhotoGallery />
