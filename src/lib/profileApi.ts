@@ -82,6 +82,28 @@ export interface ProfileResponse {
   data: ProfileData;
 }
 
+/** GET/POST v1/profile/birth-details/ */
+export interface BirthDetailsData {
+  time_of_birth?: string;
+  place_of_birth?: string;
+}
+
+export interface BirthDetailsGetResponse {
+  success: boolean;
+  data: BirthDetailsData;
+}
+
+export interface BirthDetailsPostResponse {
+  success: boolean;
+  message?: string;
+  data: BirthDetailsData;
+}
+
+export interface BirthDetailsBody {
+  time_of_birth: string;
+  place_of_birth: string;
+}
+
 export interface LocationBody {
   country_id: number;
   state_id: number;
@@ -261,15 +283,30 @@ const getProfileErrorMessage = (
   return fallback;
 };
 
-function logApi(
-  endpoint: string,
-  method: string,
-  body?: unknown,
-  response?: { status: number; data: unknown },
-) {
-  console.log("[API] Endpoint:", method, endpoint);
-  if (body !== undefined) console.log("[API] Request body:", body);
-  if (response) console.log("[API] Response:", response);
+function logProfileApiRequest(path: string, method: string, body: unknown | null) {
+  const endpoint = `${BASE_URL}${path}`;
+  console.log("[profileApi] request", redactSensitive({ endpoint, path, method, body }));
+}
+
+function logProfileApiResponse(path: string, method: string, status: number, response: unknown) {
+  const endpoint = `${BASE_URL}${path}`;
+  console.log("[profileApi] response", redactSensitive({ endpoint, path, method, status, response }));
+}
+
+function redactSigInUrl(url: string): string {
+  return url.replace(/([?&]sig=)([^&]+)/gi, "$1<redacted>");
+}
+
+function redactSensitive<T>(value: T): T {
+  if (typeof value === "string") return redactSigInUrl(value) as T;
+  if (Array.isArray(value)) return value.map((v) => redactSensitive(v)) as T;
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = redactSensitive(v);
+    return out as T;
+  }
+  return value;
 }
 
 async function authedFetch<TRes = unknown>(
@@ -278,6 +315,11 @@ async function authedFetch<TRes = unknown>(
 ): Promise<TRes> {
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
+
+  const bodyParsed: unknown | null =
+    opts.body !== undefined ? (JSON.parse(opts.body) as unknown) : null;
+  logProfileApiRequest(path, opts.method, bodyParsed);
+
   const res = await fetch(url, {
     method: opts.method,
     headers: {
@@ -288,21 +330,19 @@ async function authedFetch<TRes = unknown>(
   });
   const data = (await res.json().catch(() => ({}))) as TRes &
     ProfileErrorPayload;
-  logApi(
-    path,
-    opts.method,
-    opts.body != null ? JSON.parse(opts.body) : undefined,
-    { status: res.status, data },
-  );
+  logProfileApiResponse(path, opts.method, res.status, data);
   if (!res.ok) throw new Error(getProfileErrorMessage(data, "Request failed"));
   return data;
+}
+
+async function authedGet<TRes = unknown>(path: string): Promise<TRes> {
+  return authedFetch<TRes>(path, { method: "GET" });
 }
 
 async function authedPost<TReq extends object, TRes = unknown>(
   path: string,
   body: TReq,
 ): Promise<TRes> {
-  logApi(path, "POST", body);
   return authedFetch<TRes>(path, {
     method: "POST",
     body: JSON.stringify(body),
@@ -313,7 +353,6 @@ async function authedPatch<TReq extends object, TRes = unknown>(
   path: string,
   body: TReq,
 ): Promise<TRes> {
-  logApi(path, "PATCH", body);
   return authedFetch<TRes>(path, {
     method: "PATCH",
     body: JSON.stringify(body),
@@ -324,14 +363,14 @@ export async function getProfile(): Promise<ProfileResponse> {
   const path = "v1/profile/";
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
-  logApi(path, "GET");
+  logProfileApiRequest(path, "GET", null);
   const res = await fetch(url, {
     method: "GET",
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   });
   const data = (await res.json().catch(() => ({}))) as ProfileResponse &
     ProfileErrorPayload;
-  logApi(path, "GET", undefined, { status: res.status, data });
+  logProfileApiResponse(path, "GET", res.status, data);
   if (!res.ok)
     throw new Error(getProfileErrorMessage(data, "Failed to load profile"));
   return data as ProfileResponse;
@@ -459,7 +498,7 @@ export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
   const path = "v1/profile/generate-about/";
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
-  logApi(path, "GET");
+  logProfileApiRequest(path, "GET", null);
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -468,7 +507,7 @@ export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
   });
   const data = (await res.json().catch(() => ({}))) as GenerateAboutResponse &
     ProfileErrorPayload;
-  logApi(path, "GET", undefined, { status: res.status, data });
+  logProfileApiResponse(path, "GET", res.status, data);
   if (!res.ok)
     throw new Error(
       getProfileErrorMessage(data, "Failed to generate about me"),
@@ -504,7 +543,7 @@ export async function getProfileBasic(): Promise<{
   const path = "v1/profile/basic/";
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
-  logApi(path, "GET");
+  logProfileApiRequest(path, "GET", null);
   const res = await fetch(url, {
     method: "GET",
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -519,7 +558,7 @@ export async function getProfileBasic(): Promise<{
       phone?: string;
     };
   } & ProfileErrorPayload;
-  logApi(path, "GET", undefined, { status: res.status, data });
+  logProfileApiResponse(path, "GET", res.status, data);
   if (!res.ok)
     throw new Error(
       getProfileErrorMessage(data, "Failed to load basic profile"),
@@ -548,6 +587,49 @@ export interface PartnerPreferenceBody {
     | "specific_religions";
   partner_religion_ids?: number[];
   partner_caste_preference?: "any" | "own_caste_only";
+}
+
+/** GET v1/profile/birth-details/ */
+export async function getBirthDetails(): Promise<BirthDetailsGetResponse> {
+  return authedGet<BirthDetailsGetResponse>("v1/profile/birth-details/");
+}
+
+function birthDetailsPostErrorMessage(data: ProfileErrorPayload & Record<string, unknown>): string {
+  const fromStandard = getProfileErrorMessage(data, "");
+  if (fromStandard.trim()) return fromStandard;
+  for (const key of Object.keys(data)) {
+    if (key === "success" || key === "error") continue;
+    const val = data[key];
+    if (Array.isArray(val) && val.length > 0 && val[0] != null) {
+      return String(val[0]);
+    }
+  }
+  return "Request failed";
+}
+
+/** POST v1/profile/birth-details/ */
+export async function updateBirthDetails(
+  body: BirthDetailsBody,
+): Promise<BirthDetailsPostResponse> {
+  const path = "v1/profile/birth-details/";
+  const url = `${BASE_URL}${path}`;
+  const token = useAuthStore.getState().accessToken;
+  logProfileApiRequest(path, "POST", body);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as ProfileErrorPayload &
+    Record<string, unknown>;
+  logProfileApiResponse(path, "POST", res.status, data);
+  if (!res.ok) {
+    throw new Error(birthDetailsPostErrorMessage(data));
+  }
+  return data as unknown as BirthDetailsPostResponse;
 }
 
 export async function postPartnerPreference(
@@ -583,7 +665,7 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
     has_aadhaar_front: !!body.aadhaar_front,
     has_aadhaar_back: !!body.aadhaar_back,
   };
-  logApi(path, "POST", bodyLog);
+  logProfileApiRequest(path, "POST", bodyLog);
 
   const res = await fetch(url, {
     method: "POST",
@@ -594,7 +676,7 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
   });
 
   const data = (await res.json().catch(() => ({}))) as ProfileErrorPayload;
-  logApi(path, "POST", bodyLog, { status: res.status, data });
+  logProfileApiResponse(path, "POST", res.status, data);
 
   if (!res.ok) {
     throw new Error(getProfileErrorMessage(data, "Failed to upload photos"));

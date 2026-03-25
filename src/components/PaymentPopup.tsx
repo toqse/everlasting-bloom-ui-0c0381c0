@@ -18,6 +18,8 @@ interface PaymentPopupProps {
   apiPlan?: AvailablePlan;
   /** Legacy: 0-based index into static plansData (ignored when apiPlan is set). */
   defaultPlanId?: number;
+  /** Called after a successful purchase (e.g. refetch my plan + plans list). */
+  onPurchaseSuccess?: () => void | Promise<void>;
 }
 
 const paymentMethods = [
@@ -39,7 +41,7 @@ const buildApiFeatures = (plan: AvailablePlan): string[] => {
   return list;
 };
 
-const PaymentPopup = ({ open, onOpenChange, apiPlan }: PaymentPopupProps) => {
+const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: PaymentPopupProps) => {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,6 +65,7 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan }: PaymentPopupProps) => {
     try {
       const res = await purchasePlan(apiPlan.id, selectedPayment);
       toast.success(res.message ?? "Plan purchased successfully.");
+      await onPurchaseSuccess?.();
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to purchase plan");

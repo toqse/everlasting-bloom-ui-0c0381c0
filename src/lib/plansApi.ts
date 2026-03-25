@@ -18,24 +18,39 @@ const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): str
   return fallback;
 };
 
-const logApi = (endpoint: string, method: string, body?: unknown, response?: { status: number; data: unknown }) => {
-  try {
-    // eslint-disable-next-line no-console
-    console.log("[plansApi]", method, endpoint, body ?? "");
-    if (response) {
-      // eslint-disable-next-line no-console
-      console.log("[plansApi] response", response);
-    }
-  } catch {
-    // ignore
+function redactSigInUrl(url: string): string {
+  return url.replace(/([?&]sig=)([^&]+)/gi, "$1<redacted>");
+}
+
+function redactSensitive<T>(value: T): T {
+  if (typeof value === "string") return redactSigInUrl(value) as T;
+  if (Array.isArray(value)) return value.map((v) => redactSensitive(v)) as T;
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = redactSensitive(v);
+    return out as T;
   }
-};
+  return value;
+}
+
+function logPlansRequest(path: string, method: string, body: unknown | null) {
+  const endpoint = `${BASE_URL}${path}`;
+  console.log("[plansApi] request", redactSensitive({ endpoint, path, method, body }));
+}
+
+function logPlansResponse(path: string, method: string, status: number, response: unknown) {
+  const endpoint = `${BASE_URL}${path}`;
+  console.log("[plansApi] response", redactSensitive({ endpoint, path, method, status, response }));
+}
 
 async function authedFetch<T>(path: string, opts: { method: string; body?: string }): Promise<T> {
   const url = `${BASE_URL}${path}`;
   const token = useAuthStore.getState().accessToken;
 
-  logApi(path, opts.method, opts.body ? JSON.parse(opts.body) : undefined);
+  const bodyParsed: unknown | null =
+    opts.body !== undefined ? (JSON.parse(opts.body) as unknown) : null;
+  logPlansRequest(path, opts.method, bodyParsed);
 
   const res = await fetch(url, {
     method: opts.method,
@@ -47,7 +62,7 @@ async function authedFetch<T>(path: string, opts: { method: string; body?: strin
   });
 
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
-  logApi(path, opts.method, undefined, { status: res.status, data });
+  logPlansResponse(path, opts.method, res.status, data);
 
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
   return data as T;

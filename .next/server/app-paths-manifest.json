@@ -1,1 +1,10 @@
-{}
+{
+  "/dashboard/chat-list/page": "app/dashboard/chat-list/page.js",
+  "/dashboard/jathagam/page": "app/dashboard/jathagam/page.js",
+  "/dashboard/plan/page": "app/dashboard/plan/page.js",
+  "/dashboard/profile/page": "app/dashboard/profile/page.js",
+  "/page": "app/page.js",
+  "/auth/page": "app/auth/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
+}

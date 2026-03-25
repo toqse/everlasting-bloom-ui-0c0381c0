@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -407,6 +407,26 @@ const PlanPage = () => {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<AvailablePlan | null>(null);
 
+  const refreshPlanData = useCallback(async () => {
+    const [plansRes, myRes] = await Promise.allSettled([
+      getAvailablePlans(),
+      getMyPlan(),
+    ]);
+    if (plansRes.status === "fulfilled") {
+      setApiPlans(plansRes.value.data.plans);
+    }
+    if (myRes.status === "fulfilled") {
+      setMyPlan(myRes.value.data);
+      setMyPlanError(null);
+    } else {
+      setMyPlanError(
+        myRes.reason instanceof Error
+          ? myRes.reason.message
+          : "Could not load your plan",
+      );
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -513,6 +533,7 @@ const PlanPage = () => {
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
           apiPlan={selectedPlan}
+          onPurchaseSuccess={refreshPlanData}
         />
       )}
     </DashboardLayout>
