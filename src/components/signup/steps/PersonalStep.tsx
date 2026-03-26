@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
+import { getMaritalStatuses } from "@/lib/masterApi";
 
 interface Props {
   formData: Record<string, string>;
@@ -7,11 +9,44 @@ interface Props {
   setHasChildren: (v: "yes" | "no") => void;
 }
 
-const MARITAL_OPTIONS = ["Never Married", "Divorced", "Widowed", "Separated"];
-const COLOR_OPTIONS = ["Fair", "Wheatish", "Dark", "Very Fair"];
+const MARITAL_OPTIONS = [
+  "Awaiting Divorce",
+  "Divorced",
+  "Married",
+  "Never Married",
+  "Separated",
+  "Widowed",
+];
+const COLOR_OPTIONS = ['Very Fair', 'Fair', 'Wheatish', 'Wheatish Brown', 'Dark', 'Other',];
 
 const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props) => {
+  const [maritalOptions, setMaritalOptions] = useState<string[]>(MARITAL_OPTIONS);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadMaritalStatuses = async () => {
+      try {
+        const statuses = await getMaritalStatuses();
+        console.log("[PersonalStep] marital status API response:", statuses);
+        if (cancelled) return;
+        const names = statuses
+          .map((status) => status?.name?.trim())
+          .filter((name): name is string => !!name);
+        if (names.length > 0) {
+          setMaritalOptions(Array.from(new Set(names)));
+        }
+      } catch {
+        // Keep fallback options if API fails.
+      }
+    };
+    void loadMaritalStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const showChildren =
+    formData.maritalStatus === "Awaiting Divorce" ||
     formData.maritalStatus === "Divorced" ||
     formData.maritalStatus === "Widowed" ||
     formData.maritalStatus === "Separated";
@@ -23,7 +58,7 @@ const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props
         <p className="text-muted-foreground text-sm">Marital status, Height, Weight (optional), Color</p>
       </div>
       <div className="space-y-4">
-        <SelectField label="Marital Status" name="maritalStatus" options={MARITAL_OPTIONS} value={formData.maritalStatus} onChange={onChange} />
+        <SelectField label="Marital Status" name="maritalStatus" options={maritalOptions} value={formData.maritalStatus} onChange={onChange} />
         {showChildren && (
           <>
             <div>

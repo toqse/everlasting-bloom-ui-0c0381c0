@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type Dispatch, type SetStateAction } from "react";
+import { useState, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { Image as ImageIcon, IdCard, Smartphone, Users, PlusCircle, Check, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import PhotoCropDialog, {
@@ -48,11 +48,9 @@ const SLOTS = [
   },
 ] as const;
 
-const ASPECT_TOLERANCE = 0.02;
-
 const AADHAAR_SLOTS = [
-  { key: "aadhaar_front", label: "Aadhaar Front", required: true, icon: FileImage },
-  { key: "aadhaar_back", label: "Aadhaar Back", required: true, icon: FileImage },
+  { key: "aadhaar_front", label: "Aadhaar Front", required: false, icon: FileImage },
+  { key: "aadhaar_back", label: "Aadhaar Back", required: false, icon: FileImage },
 ] as const;
 
 export interface PhotoSlotValue {
@@ -72,6 +70,7 @@ const PhotosStep = ({
   onSkipOrCompleteLater,
 }: Props) => {
   const [cropState, setCropState] = useState<PhotoCropDialogState | null>(null);
+  const cropLoadRequestId = useRef(0);
 
   const updateSlot = useCallback(
     (key: string, file: File) => {
@@ -131,26 +130,32 @@ const PhotosStep = ({
         toast.error("Please choose an image file.");
         return;
       }
+      const requestId = ++cropLoadRequestId.current;
       const url = URL.createObjectURL(file);
       const img = new window.Image();
       img.onload = () => {
-        const imageAspect = img.naturalWidth / img.naturalHeight;
-        const needsCrop =
-          Math.abs(imageAspect - slot.aspect) > ASPECT_TOLERANCE;
-        if (needsCrop) {
-          setCropState({
+        if (requestId !== cropLoadRequestId.current) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        // Always open cropper for main slots so behavior is consistent
+        // across repeated uploads and devices.
+        setCropState((prev) => {
+          if (prev?.src) URL.revokeObjectURL(prev.src);
+          return {
             src: url,
             aspect: slot.aspect,
             slotKey: slot.key,
             fileName: file.name,
             label: slot.label,
-          });
-        } else {
-          URL.revokeObjectURL(url);
-          updateSlot(slot.key, file);
-        }
+          };
+        });
       };
       img.onerror = () => {
+        if (requestId !== cropLoadRequestId.current) {
+          URL.revokeObjectURL(url);
+          return;
+        }
         URL.revokeObjectURL(url);
         toast.error("Could not read this image.");
       };
@@ -248,7 +253,7 @@ const PhotosStep = ({
         <div className="flex items-center justify-between gap-2 mb-4">
           <h2 className="font-serif text-lg font-bold text-foreground">ID Verification (Aadhaar)</h2>
           <span className="shrink-0 rounded-full bg-primary/20 px-2.5 py-1 text-xs font-semibold text-primary">
-            REQUIRED
+            OPTIONAL
           </span>
         </div>
         <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-foreground">

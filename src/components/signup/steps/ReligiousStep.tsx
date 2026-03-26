@@ -3,6 +3,7 @@ import { labelClass } from "../SignupFormFields";
 import { Home, Globe, CheckSquare, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { withMinDuration } from "@/lib/withMinDuration";
 import { getReligions, getCastes, getMotherTongues, type Religion, type Caste, type MotherTongue } from "@/lib/masterApi";
 
 interface Props {
@@ -40,7 +41,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
   const loadReligions = useCallback(async (search: string) => {
     setLoadingReligions(true);
     try {
-      const list = await getReligions(search || undefined);
+      const list = await withMinDuration(180, getReligions(search || undefined));
       setReligions(list);
     } catch {
       setReligions([]);
@@ -54,7 +55,10 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
       if (!religionId) return;
       setLoadingCastes(true);
       try {
-        const list = await getCastes(religionId, search || undefined);
+        const list = await withMinDuration(
+          180,
+          getCastes(religionId, search || undefined),
+        );
         setCastes(list);
       } catch {
         setCastes([]);
@@ -68,7 +72,10 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
   const loadMotherTongues = useCallback(async (search: string) => {
     setLoadingMotherTongues(true);
     try {
-      const list = await getMotherTongues(search || undefined);
+      const list = await withMinDuration(
+        180,
+        getMotherTongues(search || undefined),
+      );
       setMotherTongues(list);
     } catch {
       setMotherTongues([]);

@@ -590,54 +590,57 @@ const DashboardPage = () => {
                   Based on your location – {displayLocation}
                 </p>
                 <div className="bg-primary/10 rounded-2xl p-4 border border-primary/10">
-                  <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-3 sm:overflow-x-auto pb-2">
-                    {(suggestions.length > 0
-                      ? suggestions.slice(0, 4)
-                      : newMatches.slice(0, 4)
-                    ).map((profile) => {
-                      const photoUrl = getMediaUrl(profile.profile_photo);
-                      const initials = profile.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2);
-                      return (
-                        <div
-                          key={profile.matri_id}
-                          className="text-center min-w-0 sm:flex-shrink-0 sm:w-40"
-                        >
-                          {photoUrl ? (
-                            <img
-                              src={photoUrl}
-                              alt={profile.name}
-                              className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-accent-rose/30 flex items-center justify-center mx-auto mb-2 font-bold text-primary">
-                              {initials}
-                            </div>
-                          )}
-                          <p className="font-medium text-sm truncate">
-                            {profile.name.split(" ")[0]}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {profile.location
-                              ? profile.location.split(",")[0]
-                              : "—"}
-                          </p>
-                          <Button
-                            size="sm"
-                            variant="hero"
-                            className="mt-2 w-full text-xs"
-                            onClick={() => handleViewProfile(profile.matri_id)}
-                            disabled={previewLoading}
+                  {suggestions.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-3 sm:overflow-x-auto pb-2">
+                      {suggestions.slice(0, 4).map((profile) => {
+                        const photoUrl = getMediaUrl(profile.profile_photo);
+                        const initials = profile.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2);
+                        return (
+                          <div
+                            key={profile.matri_id}
+                            className="text-center min-w-0 sm:flex-shrink-0 sm:w-40"
                           >
-                            View Profile
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            {photoUrl ? (
+                              <img
+                                src={photoUrl}
+                                alt={profile.name}
+                                className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-accent-rose/30 flex items-center justify-center mx-auto mb-2 font-bold text-primary">
+                                {initials}
+                              </div>
+                            )}
+                            <p className="font-medium text-sm truncate">
+                              {profile.name.split(" ")[0]}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {profile.location
+                                ? profile.location.split(",")[0]
+                                : "—"}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="hero"
+                              className="mt-2 w-full text-xs"
+                              onClick={() => handleViewProfile(profile.matri_id)}
+                              disabled={previewLoading}
+                            >
+                              View Profile
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No nearby matches available right now.
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}

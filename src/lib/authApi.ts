@@ -5,6 +5,12 @@ type ApiErrorPayload = {
   message?: string;
   error?: string | { message?: string } | { [key: string]: unknown };
   errors?: string | string[];
+  /** Envelope: { status, data: { error: { message }, success } } */
+  data?: {
+    error?: string | { message?: string } | { [key: string]: unknown };
+    message?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 };
 
@@ -13,6 +19,23 @@ const getErrorMessage = (
   fallback: string,
 ): string => {
   const payload = (data ?? {}) as ApiErrorPayload;
+
+  const inner = payload.data;
+  if (inner && typeof inner === "object") {
+    if (typeof inner.message === "string" && inner.message.trim())
+      return inner.message;
+    const err = inner.error;
+    if (typeof err === "string" && err.trim()) return err;
+    if (
+      err &&
+      typeof err === "object" &&
+      "message" in err &&
+      typeof (err as { message?: string }).message === "string"
+    ) {
+      const m = (err as { message: string }).message.trim();
+      if (m) return m;
+    }
+  }
 
   if (typeof payload.detail === "string" && payload.detail.trim())
     return payload.detail;
@@ -142,6 +165,37 @@ export async function verifyOtp(
   return data;
 }
 
+export interface ResendOtpBody {
+  phone_number: string;
+}
+
+export interface ResendOtpResponse {
+  success?: boolean;
+  message?: string;
+  data?: {
+    phone_number?: string;
+    otp_sent?: boolean;
+    otp?: string;
+  };
+}
+
+/** POST v1/auth/resend-otp/ — send OTP again to the same number */
+export async function resendOtp(
+  body: ResendOtpBody,
+): Promise<ResendOtpResponse> {
+  const url = `${BASE_URL}v1/auth/resend-otp/`;
+  const payload = { phone_number: body.phone_number.trim() };
+  console.log("[authApi] resend-otp request body:", payload);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json().catch(() => ({}))) as ResendOtpResponse;
+  if (!res.ok) throw new Error(getErrorMessage(data, "Failed to resend OTP"));
+  return data;
+}
+
 export interface RegisterMobileBody {
   mobile: string;
 }
@@ -250,4 +304,23 @@ export async function verifyMobile(
   console.log("[authApi] verifyMobile response:", { status: res.status, data });
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to verify OTP"));
   return data;
+}
+
+/** POST v1/auth/logout/ — blacklist refresh token (member JWT). See apidoc: admin uses v1/admin/auth/logout/. */
+export async function authLogout(
+  accessToken: string,
+  refreshToken: string | null,
+): Promise<void> {
+  const url = `${BASE_URL}v1/auth/logout/`;
+  const body: Record<string, string> = {};
+  if (refreshToken) body.refresh_token = refreshToken;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+  await res.json().catch(() => ({}));
 }

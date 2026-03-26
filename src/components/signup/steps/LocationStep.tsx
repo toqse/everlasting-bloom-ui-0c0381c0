@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { withMinDuration } from "@/lib/withMinDuration";
 import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
 import type { Country, State, District, City } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -62,7 +63,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const loadCountries = useCallback(async (search: string) => {
     setLoadingCountries(true);
     try {
-      const list = await getCountries(search || undefined);
+      const list = await withMinDuration(180, getCountries(search || undefined));
       setCountries(list);
     } catch {
       setCountries([]);
@@ -76,7 +77,10 @@ const LocationStep = ({ formData, onChange }: Props) => {
       if (!countryId) return;
       setLoadingStates(true);
       try {
-        const list = await getStates(countryId, search || undefined);
+        const list = await withMinDuration(
+          180,
+          getStates(countryId, search || undefined),
+        );
         setStates(list);
       } catch {
         setStates([]);
@@ -92,7 +96,10 @@ const LocationStep = ({ formData, onChange }: Props) => {
       if (!stateId) return;
       setLoadingDistricts(true);
       try {
-        const list = await getDistricts(stateId, search || undefined);
+        const list = await withMinDuration(
+          180,
+          getDistricts(stateId, search || undefined),
+        );
         setDistricts(list);
       } catch {
         setDistricts([]);
@@ -108,7 +115,10 @@ const LocationStep = ({ formData, onChange }: Props) => {
       if (!districtId) return;
       setLoadingCities(true);
       try {
-        const list = await getCities(districtId, search || undefined);
+        const list = await withMinDuration(
+          180,
+          getCities(districtId, search || undefined),
+        );
         setCities(list);
       } catch {
         setCities([]);

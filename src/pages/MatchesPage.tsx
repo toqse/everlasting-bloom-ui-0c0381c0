@@ -10,7 +10,6 @@ import {
   Sparkles,
   Users,
   TrendingUp,
-  ImageIcon,
   Ruler,
   BookOpen,
   Briefcase as BriefcaseIcon,
@@ -36,18 +35,22 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import {
   getMatches,
-  getMatchFilters,
   getProfilePreview,
   getChatPermission,
   sendInterest as sendInterestApi,
   startChat as startChatApi,
   wishlistToggle,
   type MatchProfile as ApiMatchProfile,
-  type MatchFiltersResponse,
   type ProfilePreviewData,
   type SortBy,
 } from "@/lib/matchesApi";
-import { getSentInterests } from "@/lib/interestsApi";
+import {
+  getCastes,
+  getEducations,
+  getMaritalStatuses,
+  getOccupations,
+  getReligions,
+} from "@/lib/masterApi";
 import { toast } from "sonner";
 
 const FilterSection = ({
@@ -261,6 +264,14 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "best_match", label: "Best Match" },
 ];
 
+type MatchFilterOptions = {
+  religions: { id: number; name: string }[];
+  castes: { id: number; name: string; religion_id: number }[];
+  educations: { id: number; name: string }[];
+  occupations: { id: number; name: string }[];
+  marital_status: { id: number; name: string }[];
+};
+
 const MatchesPage = () => {
   const router = useRouter();
   const [profiles, setProfiles] = useState<ApiMatchProfile[]>([]);
@@ -270,12 +281,9 @@ const MatchesPage = () => {
   const [loading, setLoading] = useState(true);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<MatchFiltersResponse["data"] | null>(
-    null,
-  );
+  const [filters, setFilters] = useState<MatchFilterOptions | null>(null);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const me = useAuthStore((s) => s.user);
-  const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 70]);
   const [heightRange, setHeightRange] = useState<[number, number]>([120, 200]);
   const [maritalStatusId, setMaritalStatusId] = useState<number | null>(null);
@@ -318,8 +326,20 @@ const MatchesPage = () => {
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
     try {
-      const res = await getMatchFilters();
-      setFilters(res.data);
+      const [religions, educations, occupations, maritalStatuses] =
+        await Promise.all([
+          getReligions(),
+          getEducations(),
+          getOccupations(),
+          getMaritalStatuses(),
+        ]);
+      setFilters({
+        religions: religions.map((r) => ({ id: r.id, name: r.name })),
+        castes: [],
+        educations: educations.map((e) => ({ id: e.id, name: e.name })),
+        occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
+        marital_status: maritalStatuses.map((m) => ({ id: m.id, name: m.name })),
+      });
     } catch (e) {
       console.error("Failed to load match filters", e);
     } finally {
@@ -330,6 +350,43 @@ const MatchesPage = () => {
   useEffect(() => {
     fetchFilters();
   }, [fetchFilters]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCastes = async () => {
+      if (religionId == null) {
+        setFilters((prev) => (prev ? { ...prev, castes: [] } : prev));
+        setCasteId(null);
+        return;
+      }
+      try {
+        const castes = await getCastes(religionId);
+        if (cancelled) return;
+        setFilters((prev) =>
+          prev
+            ? {
+                ...prev,
+                castes: castes.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  religion_id: c.religion,
+                })),
+              }
+            : prev,
+        );
+      } catch (e) {
+        if (cancelled) return;
+        console.error("Failed to load castes", e);
+        setFilters((prev) => (prev ? { ...prev, castes: [] } : prev));
+      }
+    };
+
+    void fetchCastes();
+    return () => {
+      cancelled = true;
+    };
+  }, [religionId]);
 
   const fetchMatches = useCallback(
     async (pageNum: number) => {
@@ -360,8 +417,6 @@ const MatchesPage = () => {
         if (educationId != null) params.education_id = educationId;
         if (occupationId != null) params.occupation_id = occupationId;
         if (maritalStatusId != null) params.marital_status = maritalStatusId;
-        if (onlyWithPhoto) params.profile_with_photo = true;
-
         const res = await getMatches(params);
         setTotalProfiles(res.data.total_profiles);
         setProfiles(res.data.profiles);
@@ -388,7 +443,6 @@ const MatchesPage = () => {
       educationId,
       occupationId,
       maritalStatusId,
-      onlyWithPhoto,
       sortBy,
       limit,
     ],
@@ -486,47 +540,14 @@ const MatchesPage = () => {
       try {
         const res = await sendInterestApi(matriId);
         toast.success(res.message || "Interest sent successfully.");
+        await fetchMatches(page);
         try {
-          const sentRes = await getSentInterests(1, 50);
-          const sentItem = sentRes.data.results.find(
-            (item) => item.matri_id === matriId,
-          );
-          const nextStatus = sentItem?.status ?? "sent";
-
-          setProfiles((prev) =>
-            prev.map((p) =>
-              p.matri_id === matriId
-                ? {
-                    ...p,
-                    interest_status: nextStatus,
-                    is_interest_sent: true,
-                  }
-                : p,
-            ),
-          );
-
+          const latestPreview = await getProfilePreview(matriId);
           setViewPreview((prev) =>
-            prev?.matri_id === matriId
-              ? {
-                  ...prev,
-                  interest_status: nextStatus,
-                  is_interest_sent: true,
-                }
-              : prev,
+            prev?.matri_id === matriId ? latestPreview.data : prev,
           );
         } catch {
-          // Fallback if sent list refresh fails: still reflect "sent" locally.
-          setProfiles((prev) =>
-            prev.map((p) =>
-              p.matri_id === matriId
-                ? {
-                    ...p,
-                    interest_status: "sent",
-                    is_interest_sent: true,
-                  }
-                : p,
-            ),
-          );
+          // Fallback: keep open preview state in sync even if preview refresh fails.
           setViewPreview((prev) =>
             prev?.matri_id === matriId
               ? {
@@ -551,7 +572,7 @@ const MatchesPage = () => {
         setActionLoading(null);
       }
     },
-    [router],
+    [fetchMatches, page, router],
   );
 
   const handleCheckMatch = useCallback(
@@ -725,19 +746,6 @@ const MatchesPage = () => {
                   Filters
                 </p>
                 <FilterSection
-                  title="Profile Type"
-                  icon={<ImageIcon className="w-4 h-4 text-primary" />}
-                >
-                  <label className="flex items-center gap-2 cursor-pointer py-2 text-sm text-muted-foreground hover:text-foreground">
-                    <Checkbox
-                      checked={onlyWithPhoto}
-                      onCheckedChange={(c) => setOnlyWithPhoto(!!c)}
-                    />
-                    Only with Photo
-                  </label>
-                </FilterSection>
-
-                <FilterSection
                   title="Age"
                   icon={<Clock className="w-4 h-4 text-primary" />}
                 >
@@ -814,6 +822,11 @@ const MatchesPage = () => {
                       title="Caste"
                       icon={<Users className="w-4 h-4 text-primary" />}
                     >
+                      {religionId == null ? (
+                        <p className="px-2 py-1 text-xs text-muted-foreground">
+                          Select a religion to load castes.
+                        </p>
+                      ) : null}
                       <CasteSelect
                         castes={filters.castes}
                         religionId={religionId}
@@ -1203,9 +1216,16 @@ const MatchListCard = ({
     .toLowerCase();
   const isInterestSent = normalizedProfile.is_interest_sent ?? false;
   const showInterestAccepted = interestStatus === "accepted";
-  const showInterestSent = interestStatus === "sent" || isInterestSent;
+  const showInterestRejected = interestStatus === "rejected";
+  const showInterestSent =
+    interestStatus === "sent" || isInterestSent;
   const showSendInterestButton =
-    interestStatus === "pending" && canSendInterest;
+    !showInterestAccepted && !showInterestRejected && !showInterestSent && canSendInterest;
+  const interestBadgeLabel = showInterestAccepted
+    ? "Interest Accepted"
+    : showInterestRejected
+      ? "Interest Rejected"
+      : "Interest Sent";
 
   return (
     <motion.div
@@ -1311,33 +1331,19 @@ const MatchListCard = ({
         </div>
 
         <div className="flex flex-wrap gap-2 border-t border-primary/10 pt-4">
-          {showInterestAccepted ? (
+          {showInterestAccepted || showInterestSent || showInterestRejected ? (
             <Button
               size="sm"
-              variant="outline"
-              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
+              variant="secondary"
+              className="gap-1.5 rounded-lg border-0 bg-primary text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary"
               type="button"
               aria-disabled="true"
               onClick={(e) => {
                 e.stopPropagation();
               }}
             >
-              <Heart className="h-3.5 w-3.5 shrink-0 fill-secondary text-secondary" />
-              Interest Accepted
-            </Button>
-          ) : showInterestSent ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
-              type="button"
-              aria-disabled="true"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <Heart className="h-3.5 w-3.5 shrink-0 fill-secondary text-secondary" />
-              Interest Sent
+              <Heart className="h-3.5 w-3.5 shrink-0 fill-white text-white" />
+              {interestBadgeLabel}
             </Button>
           ) : showSendInterestButton ? (
             <Button

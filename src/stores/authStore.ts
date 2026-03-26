@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { VerifyMobileData, VerifyMobileProfile } from "@/lib/authApi";
+import {
+  authLogout,
+  type VerifyMobileData,
+  type VerifyMobileProfile,
+} from "@/lib/authApi";
 
 const MATRIMONY_STORAGE_KEY = "matrimony";
 const PROFILE_STEPS_STORAGE_KEY = "matrimony_profile_steps";
@@ -197,6 +201,11 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       logout: () => {
+        const accessToken = get().accessToken;
+        const refreshToken = get().refreshToken;
+        if (accessToken) {
+          void authLogout(accessToken, refreshToken).catch(() => {});
+        }
         setMatrimonyTokens(null, null);
         setProfileStepsToStorage(null);
         set({

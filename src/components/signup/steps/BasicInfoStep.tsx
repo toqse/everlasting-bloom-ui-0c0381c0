@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { User, Phone, Mail, Calendar, ArrowRight } from "lucide-react";
-import { SelectField, inputClass, labelClass } from "../SignupFormFields";
+import { SelectField } from "../SignupFormFields";
 import { Button } from "@/components/ui/button";
+import { getGenderFromProfileFor } from "@/lib/profileForGender";
 
 interface Props {
+  profileFor: string;
   formData: Record<string, string>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   agreeTerms: boolean;
@@ -15,12 +17,24 @@ interface Props {
   onOtpChange: (index: number, value: string) => void;
   onOtpKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onBackFromOtp: () => void;
+  onResendOtp?: () => void;
+  resendOtpLoading?: boolean;
   phoneVerified: boolean;
   canSendOtp?: boolean;
   fieldErrors?: { email?: string; dob?: string; phone?: string; general?: string };
 }
 
+const apiErrorBanner = (message: string) => (
+  <div
+    role="alert"
+    className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800 text-left font-medium"
+  >
+    {message}
+  </div>
+);
+
 const BasicInfoStep = ({
+  profileFor,
   formData,
   onChange,
   agreeTerms,
@@ -32,10 +46,26 @@ const BasicInfoStep = ({
   onOtpChange,
   onOtpKeyDown,
   onBackFromOtp,
+  onResendOtp,
+  resendOtpLoading = false,
   phoneVerified,
   canSendOtp = false,
   fieldErrors,
-}: Props) => (
+}: Props) => {
+  const { locked: genderLocked, gender: profileLockedGender } =
+    getGenderFromProfileFor(profileFor);
+  const genderSelectValue =
+    genderLocked && profileLockedGender
+      ? profileLockedGender
+      : formData.gender || "";
+
+  const registerApiMessage =
+    fieldErrors?.general ||
+    fieldErrors?.dob ||
+    fieldErrors?.phone ||
+    fieldErrors?.email;
+
+  return (
   <>
     {/* OTP-only screen when OTP has been sent (no registration form) */}
     {otpSent && (
@@ -58,6 +88,17 @@ const BasicInfoStep = ({
             />
           ))}
         </div>
+        <p className="text-center text-base text-foreground">
+          <span className="text-muted-foreground">Didn&apos;t receive the code? </span>
+          <button
+            type="button"
+            onClick={() => onResendOtp?.()}
+            disabled={resendOtpLoading || !onResendOtp}
+            className="font-semibold text-primary underline underline-offset-2 hover:text-primary/90 disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+          >
+            {resendOtpLoading ? "Sending…" : "Resend OTP"}
+          </button>
+        </p>
         <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={(e) => { e.preventDefault(); onVerifyOtp(e); }}>
           Verify OTP & Continue
           <ArrowRight className="w-5 h-5" />
@@ -88,24 +129,22 @@ const BasicInfoStep = ({
             <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
             <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
           </div>
-          {fieldErrors?.phone && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.phone}</p>
-          )}
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          {fieldErrors?.email && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.email}</p>
-          )}
           <div className="relative">
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          {fieldErrors?.dob && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
-          )}
-          <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={onChange} />
+          <SelectField
+            label="Gender"
+            name="gender"
+            options={["Male", "Female", "Other"]}
+            value={genderSelectValue}
+            onChange={onChange}
+            disabled={genderLocked}
+          />
           <div className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -122,13 +161,11 @@ const BasicInfoStep = ({
               and Privacy Policy
             </label>
           </div>
+          {registerApiMessage && apiErrorBanner(registerApiMessage)}
           <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp} disabled={!canSendOtp}>
             Send OTP
             <ArrowRight className="w-5 h-5" />
           </Button>
-          {fieldErrors?.general && (
-            <p className="mt-2 text-xs text-red-500 text-left">{fieldErrors.general}</p>
-          )}
         </div>
       </>
     )}
@@ -154,24 +191,22 @@ const BasicInfoStep = ({
             <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
             <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
           </div>
-          {fieldErrors?.phone && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.phone}</p>
-          )}
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          {fieldErrors?.email && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.email}</p>
-          )}
           <div className="relative">
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          {fieldErrors?.dob && (
-            <p className="text-xs text-red-500 text-left">{fieldErrors.dob}</p>
-          )}
-          <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={onChange} />
+          <SelectField
+            label="Gender"
+            name="gender"
+            options={["Male", "Female", "Other"]}
+            value={genderSelectValue}
+            onChange={onChange}
+            disabled={genderLocked}
+          />
           <div className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -188,10 +223,12 @@ const BasicInfoStep = ({
               and Privacy Policy
             </label>
           </div>
+          {registerApiMessage && apiErrorBanner(registerApiMessage)}
         </div>
       </>
     )}
   </>
-);
+  );
+};
 
 export default BasicInfoStep;

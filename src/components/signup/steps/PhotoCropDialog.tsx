@@ -78,6 +78,7 @@ const PhotoCropDialog = ({ state, onClose, onApplyCropped }: PhotoCropDialogProp
           <>
             <div className="relative h-[min(50vh,360px)] w-full overflow-hidden rounded-xl bg-black">
               <Cropper
+                key={state.src}
                 image={state.src}
                 crop={crop}
                 zoom={zoom}

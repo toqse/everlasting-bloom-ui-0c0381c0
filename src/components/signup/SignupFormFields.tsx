@@ -13,6 +13,7 @@ interface SelectFieldProps {
   optional?: boolean;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  disabled?: boolean;
 }
 
 export const SelectField = ({
@@ -22,6 +23,7 @@ export const SelectField = ({
   optional,
   value,
   onChange,
+  disabled = false,
 }: SelectFieldProps) => (
   <div>
     {label && (
@@ -37,7 +39,9 @@ export const SelectField = ({
         name={name}
         value={value}
         onChange={onChange}
-        className={selectClass}
+        disabled={disabled}
+        aria-disabled={disabled}
+        className={`${selectClass} ${disabled ? "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-90" : ""}`}
       >
         <option value="">Select {label || name}</option>
         {options.map((o) => (

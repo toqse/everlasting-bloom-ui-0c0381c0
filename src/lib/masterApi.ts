@@ -76,6 +76,12 @@ export interface IncomeRangeMaster {
   is_active?: boolean;
 }
 
+export interface MaritalStatusMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -85,15 +91,30 @@ interface PaginatedResponse<T> {
 
 async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
   const base = path.startsWith("http") ? path : `${BASE_URL}${path.replace(/^\//, "")}`;
-  const sep = base.includes("?") ? "&" : "?";
-  const fullUrl =
-    search != null && search.trim() !== ""
-      ? `${base}${sep}search=${encodeURIComponent(search.trim())}`
-      : base;
-  const res = await fetch(fullUrl);
-  const data = (await res.json().catch(() => ({}))) as PaginatedResponse<T>;
-  if (!res.ok) throw new Error((data as { detail?: string })?.detail ?? "Request failed");
-  return data.results ?? [];
+  const perPageLimit = 50;
+  let page = 1;
+  const allResults: T[] = [];
+
+  // Uses explicit page+limit params as requested:
+  // /api/v1/master/.../?page=1&limit=50
+  // and continues page-by-page until server indicates no next page.
+  while (true) {
+    const url = new URL(base);
+    url.searchParams.set("page", String(page));
+    url.searchParams.set("limit", String(perPageLimit));
+    if (search != null && search.trim() !== "") {
+      url.searchParams.set("search", search.trim());
+    }
+    const res = await fetch(url.toString());
+    const data = (await res.json().catch(() => ({}))) as PaginatedResponse<T>;
+    if (!res.ok)
+      throw new Error((data as { detail?: string })?.detail ?? "Request failed");
+    if (Array.isArray(data.results)) allResults.push(...data.results);
+    if (!data.next) break;
+    page += 1;
+  }
+
+  return allResults;
 }
 
 /** GET v1/master/countries?search= */
@@ -202,5 +223,15 @@ export async function getIncomeRanges(
   const path = "v1/master/income-ranges/";
   const results = await getPaginated<IncomeRangeMaster>(path, search);
   console.log("[masterApi] getIncomeRanges response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/marital-status/ */
+export async function getMaritalStatuses(
+  search?: string,
+): Promise<MaritalStatusMaster[]> {
+  const path = "v1/master/marital-status/";
+  const results = await getPaginated<MaritalStatusMaster>(path, search);
+  console.log("[masterApi] getMaritalStatuses response:", { search, results });
   return results;
 }

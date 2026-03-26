@@ -22,10 +22,12 @@ import {
   verifyMobile,
   register as registerApi,
   verifyOtp,
+  resendOtp,
   normalizeRegisterProfileFor,
   type VerifyMobileData,
   type VerifyMobileProfile,
 } from "@/lib/authApi";
+import { getGenderFromProfileFor } from "@/lib/profileForGender";
 import {
   postLocation,
   postReligion,
@@ -75,7 +77,9 @@ const PROFILE_STEP_ORDER: string[] = [
   "photos",
 ];
 const MARITAL_OPTIONS = [
+  "Awaiting Divorce",
   "Never Married",
+  "Married",
   "Divorced",
   "Widowed",
   "Separated",
@@ -101,8 +105,6 @@ const INCOME_RANGES = [
 const REQUIRED_SIGNUP_PHOTO_KEYS = [
   "full",
   "passport",
-  "aadhaar_front",
-  "aadhaar_back",
 ] as const;
 
 const normalizeToken = (v: string) => v.toLowerCase().replace(/[_\-\s]+/g, "");
@@ -330,6 +332,7 @@ const AuthPage = () => {
   >({});
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [resendOtpLoading, setResendOtpLoading] = useState(false);
   const [aboutSuggestions, setAboutSuggestions] = useState<string[]>([]);
   const [aboutSuggestionIndex, setAboutSuggestionIndex] = useState(0);
   const [signupErrors, setSignupErrors] = useState<{
@@ -425,6 +428,13 @@ const AuthPage = () => {
   }, [formData, hasChildren]);
 
   useEffect(() => {
+    if (signupStep !== 1) return;
+    const { locked, gender } = getGenderFromProfileFor(formData.profileFor);
+    if (!locked || !gender || formData.gender === gender) return;
+    setFormData((prev) => ({ ...prev, gender }));
+  }, [signupStep, formData.profileFor, formData.gender]);
+
+  useEffect(() => {
     const clearSignupDraft = () => {
       try {
         sessionStorage.removeItem(SIGNUP_DRAFT_STORAGE_KEY);
@@ -447,7 +457,11 @@ const AuthPage = () => {
     if (name === "phone") {
       const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
       setFormData((prev) => ({ ...prev, phone: digitsOnly }));
-      setSignupErrors((prev) => ({ ...prev, phone: undefined }));
+      setSignupErrors((prev) => ({
+        ...prev,
+        phone: undefined,
+        general: undefined,
+      }));
       return;
     }
     if (name === "dob") {
@@ -456,7 +470,11 @@ const AuthPage = () => {
       const safeYear = y.slice(0, 4);
       const nextDob = safeYear && m && d ? `${safeYear}-${m}-${d}` : cleaned;
       setFormData((prev) => ({ ...prev, dob: nextDob }));
-      setSignupErrors((prev) => ({ ...prev, dob: undefined }));
+      setSignupErrors((prev) => ({
+        ...prev,
+        dob: undefined,
+        general: undefined,
+      }));
       return;
     }
     if (name === "religion") {
@@ -484,6 +502,9 @@ const AuthPage = () => {
     }
     if (name === "district_id") {
       setFormData((prev) => ({ ...prev, district_id: value, city_id: "" }));
+      return;
+    }
+    if (name === "gender" && getGenderFromProfileFor(formData.profileFor).locked) {
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -590,6 +611,56 @@ const AuthPage = () => {
     setOtp(["", "", "", "", "", ""]);
   };
 
+  const getPhoneNumberE164 = (): string | null => {
+    const digits = formData.phone.replace(/\D/g, "");
+    if (digits.length !== 10) return null;
+    return "+91" + digits;
+  };
+
+  const handleLoginResendOtp = async () => {
+    const phone_number = getPhoneNumberE164();
+    if (!phone_number) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setResendOtpLoading(true);
+    try {
+      const res = await resendOtp({ phone_number });
+      setOtp(["", "", "", "", "", ""]);
+      toast.success(
+        typeof res.message === "string" && res.message.trim()
+          ? res.message
+          : "OTP has been sent to your phone number.",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
+    } finally {
+      setResendOtpLoading(false);
+    }
+  };
+
+  const handleSignupResendOtp = async () => {
+    const phone_number = getPhoneNumberE164();
+    if (!phone_number) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setResendOtpLoading(true);
+    try {
+      const res = await resendOtp({ phone_number });
+      setSignupOtp(["", "", "", "", "", ""]);
+      toast.success(
+        typeof res.message === "string" && res.message.trim()
+          ? res.message
+          : "OTP has been sent to your phone number.",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
+    } finally {
+      setResendOtpLoading(false);
+    }
+  };
+
   const handleSignupSendOtp = async () => {
     if (!formData.name?.trim()) {
       toast.error("Please enter full name");
@@ -645,7 +716,11 @@ const AuthPage = () => {
         general?: string;
       } = {};
       if (lower.includes("email")) nextErrors.email = msg;
-      else if (lower.includes("dob") || lower.includes("birth"))
+      else if (
+        lower.includes("dob") ||
+        lower.includes("birth") ||
+        lower.includes("age")
+      )
         nextErrors.dob = msg;
       else if (lower.includes("phone") || lower.includes("already registered"))
         nextErrors.phone = msg;
@@ -819,6 +894,7 @@ const AuthPage = () => {
 
       const maritalStatus = formData.maritalStatus;
       const isStatusWithChildren =
+        maritalStatus === "Awaiting Divorce" ||
         maritalStatus === "Divorced" ||
         maritalStatus === "Widowed" ||
         maritalStatus === "Separated";
@@ -926,6 +1002,14 @@ const AuthPage = () => {
       return;
     }
     if (signupStep < SIGNUP_STEPS.length - 1) {
+      if (signupStep === 0) {
+        const { locked, gender } = getGenderFromProfileFor(
+          formData.profileFor,
+        );
+        if (locked && gender) {
+          setFormData((prev) => ({ ...prev, gender }));
+        }
+      }
       setDirection(1);
       setSignupStep(signupStep + 1);
     } else {
@@ -938,7 +1022,7 @@ const AuthPage = () => {
         );
         if (missingRequiredPhotos.length > 0) {
           toast.error(
-            "Full Photo, Passport Photo, Aadhaar Front and Aadhaar Back are mandatory",
+            "Full Photo and Passport Photo are mandatory",
           );
           return;
         }
@@ -1054,6 +1138,7 @@ const AuthPage = () => {
         return (
           <BasicInfoStep
             {...props}
+            profileFor={formData.profileFor}
             agreeTerms={agreeTerms}
             setAgreeTerms={setAgreeTerms}
             otpSent={signupOtpSent}
@@ -1063,6 +1148,8 @@ const AuthPage = () => {
             onOtpChange={handleSignupOtpChange}
             onOtpKeyDown={handleSignupOtpKeyDown}
             onBackFromOtp={handleSignupBackFromOtp}
+            onResendOtp={handleSignupResendOtp}
+            resendOtpLoading={resendOtpLoading}
             phoneVerified={phoneVerified}
             canSendOtp={canSendSignupOtp}
             fieldErrors={signupErrors}
@@ -1244,6 +1331,19 @@ const AuthPage = () => {
                           />
                         ))}
                       </div>
+                      <p className="text-center text-base text-foreground -mt-2">
+                        <span className="text-muted-foreground">
+                          Didn&apos;t receive the code?{" "}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleLoginResendOtp}
+                          disabled={resendOtpLoading}
+                          className="font-semibold text-primary underline underline-offset-2 hover:text-primary/90 disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+                        >
+                          {resendOtpLoading ? "Sending…" : "Resend OTP"}
+                        </button>
+                      </p>
                       <Button
                         type="submit"
                         variant="hero"

@@ -69,11 +69,31 @@ declare global {
   }
 }
 
-function normalizeTimeForApi(value: string): string {
+type Meridian = "AM" | "PM";
+
+function parseApiTimeTo12Hour(value: string): { time12: string; meridian: Meridian } {
   const t = value.trim();
-  if (!t) return "";
-  if (/^\d{2}:\d{2}$/.test(t)) return `${t}:00`;
-  return t;
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(t);
+  if (!m) return { time12: "", meridian: "AM" };
+  const hour24 = Number(m[1]);
+  const minute = m[2];
+  const meridian: Meridian = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return { time12: `${String(hour12).padStart(2, "0")}:${minute}`, meridian };
+}
+
+function to24HourApiTime(
+  time12: string,
+  meridian: Meridian,
+): string {
+  const t = time12.trim();
+  const m = /^(0?[1-9]|1[0-2]):([0-5]\d)$/.exec(t);
+  if (!m) return "";
+  const hour12 = Number(m[1]);
+  const minute = m[2];
+  let hour24 = hour12 % 12;
+  if (meridian === "PM") hour24 += 12;
+  return `${String(hour24).padStart(2, "0")}:${minute}:00`;
 }
 
 let razorpayScriptPromise: Promise<boolean> | null = null;
@@ -94,16 +114,18 @@ async function ensureRazorpayScript(): Promise<boolean> {
 }
 
 function poruthamRowsFromMatch(match: MatchBlock): PoruthamDetailedItem[] {
-  if (match.poruthams_detailed?.length) return match.poruthams_detailed;
+  if (match.poruthams_detailed?.length)
+    return sortPoruthamRows(match.poruthams_detailed);
   const p = match.poruthams;
   if (!p || typeof p !== "object") return [];
-  return Object.entries(p).map(([key, matched]) => ({
+  const generated = Object.entries(p).map(([key, matched]) => ({
     key,
     label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     matched: Boolean(matched),
     severity: "low",
     is_critical: key === "rajju",
   }));
+  return sortPoruthamRows(generated);
 }
 
 /** 10 poruthams + Kuja / Dasa Sandhi / Papam Samyom from `match.flags` (PairMaker-style checklist). */
@@ -143,7 +165,72 @@ function extendedPoruthamChecklist(match: MatchBlock): PoruthamDetailedItem[] {
       description: "Kendra malefic alignment between charts",
     },
   ];
-  return [...withPoints, ...extra];
+  return sortPoruthamRows([...withPoints, ...extra]);
+}
+
+const PORUTHAM_DISPLAY_ORDER = [
+  "rasi",
+  "rasyadhip",
+  "vasyam",
+  "deergaham",
+  "dinam",
+  "mahendra",
+  "ganam",
+  "yoni",
+  "rajju_dosham",
+  "vedham",
+  "kuja_dosham",
+  "dasa_sandhi",
+  "papam_samyom",
+] as const;
+
+function normalizePoruthamKey(raw: string): string {
+  const key = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const aliases: Record<string, string> = {
+    rasiyadhip: "rasyadhip",
+    rasyadhip: "rasyadhip",
+    rajju: "rajju_dosham",
+    reju_dosham: "rajju_dosham",
+    rejju_dosham: "rajju_dosham",
+    papam_samyam: "papam_samyom",
+    kuja_alignment: "kuja_dosham",
+  };
+  return aliases[key] ?? key;
+}
+
+function sortPoruthamRows(rows: PoruthamDetailedItem[]): PoruthamDetailedItem[] {
+  const order = new Map(PORUTHAM_DISPLAY_ORDER.map((key, idx) => [key, idx]));
+  const resolveOrderKey = (item: PoruthamDetailedItem): string => {
+    const candidates = [
+      normalizePoruthamKey(item.key ?? ""),
+      normalizePoruthamKey(item.label ?? ""),
+    ];
+    for (const c of candidates) {
+      if (order.has(c)) return c;
+      if (c.includes("rasyadhip") || c.includes("rasyadip") || c.includes("rasiyadhip"))
+        return "rasyadhip";
+      if (c.includes("deerg") || c.includes("deergh")) return "deergaham";
+      if (c.includes("dinam") || c === "dina") return "dinam";
+      if (c.includes("mahendra")) return "mahendra";
+      if (c.includes("ganam") || c.includes("gan")) return "ganam";
+      if (c.includes("yoni")) return "yoni";
+      if (c.includes("rajju") || c.includes("rejju") || c.includes("reju"))
+        return "rajju_dosham";
+      if (c.includes("vedham") || c.includes("veda")) return "vedham";
+      if (c.includes("kuja")) return "kuja_dosham";
+      if (c.includes("dasa") && c.includes("sandhi")) return "dasa_sandhi";
+      if (c.includes("papam") && (c.includes("samy") || c.includes("samo")))
+        return "papam_samyom";
+      if (c === "rasi") return "rasi";
+      if (c.includes("vasyam") || c.includes("vashyam")) return "vasyam";
+    }
+    return "";
+  };
+  return [...rows].sort((a, b) => {
+    const aPos = order.get(resolveOrderKey(a)) ?? 999;
+    const bPos = order.get(resolveOrderKey(b)) ?? 999;
+    return aPos - bPos;
+  });
 }
 
 function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
@@ -292,6 +379,7 @@ export default function JathagamPage() {
 
   const [displayName, setDisplayName] = useState("");
   const [timeOfBirth, setTimeOfBirth] = useState("");
+  const [timeMeridian, setTimeMeridian] = useState<Meridian>("AM");
   const [placeOfBirth, setPlaceOfBirth] = useState("");
   const [savingBirthDetails, setSavingBirthDetails] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
@@ -327,8 +415,10 @@ export default function JathagamPage() {
       const name = profRes.data?.basic_details?.name?.trim() ?? "";
       setDisplayName(name);
 
-      const t = bdRes.data?.time_of_birth?.trim();
-      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : (t ?? ""));
+      const t = bdRes.data?.time_of_birth?.trim() ?? "";
+      const parsed = parseApiTimeTo12Hour(t);
+      setTimeOfBirth(parsed.time12);
+      setTimeMeridian(parsed.meridian);
       setPlaceOfBirth(bdRes.data?.place_of_birth?.trim() ?? "");
 
       if (planRes?.success && planRes.data) {
@@ -372,7 +462,7 @@ export default function JathagamPage() {
 
   const handleUpdateBirthDetails = async () => {
     const place = placeOfBirth.trim();
-    const timeApi = normalizeTimeForApi(timeOfBirth);
+    const timeApi = to24HourApiTime(timeOfBirth, timeMeridian);
     if (!place) {
       toast.error("Place of birth is required.");
       return;
@@ -388,8 +478,10 @@ export default function JathagamPage() {
         place_of_birth: place,
       });
       toast.success(res.message ?? "Birth details updated successfully.");
-      const t = res.data?.time_of_birth?.trim();
-      setTimeOfBirth(t && t.length >= 5 ? t.slice(0, 5) : (t ?? ""));
+      const t = res.data?.time_of_birth?.trim() ?? "";
+      const parsed = parseApiTimeTo12Hour(t);
+      setTimeOfBirth(parsed.time12);
+      setTimeMeridian(parsed.meridian);
       setPlaceOfBirth(res.data?.place_of_birth?.trim() ?? place);
     } catch (e) {
       toast.error(
@@ -678,11 +770,26 @@ export default function JathagamPage() {
                   </Label>
                   <div className="flex gap-2 mt-1.5 items-center">
                     <Input
-                      type="time"
+                      type="text"
                       value={timeOfBirth}
                       onChange={(e) => setTimeOfBirth(e.target.value)}
+                      placeholder="hh:mm"
                       className="max-w-[140px]"
                     />
+                    <Select
+                      value={timeMeridian}
+                      onValueChange={(value) =>
+                        setTimeMeridian(value as Meridian)
+                      }
+                    >
+                      <SelectTrigger className="w-[90px]">
+                        <SelectValue placeholder="AM/PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Clock className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>

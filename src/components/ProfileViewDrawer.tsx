@@ -51,6 +51,51 @@ function isHiddenProfilePhotoKey(key: string): boolean {
 
 type FieldItem = { label: string; value: string; wide?: boolean };
 
+function chunkLongToken(token: string, maxLen: number): string[] {
+  if (token.length <= maxLen) return [token];
+  const chunks: string[] = [];
+  for (let i = 0; i < token.length; i += maxLen) {
+    chunks.push(token.slice(i, i + maxLen));
+  }
+  return chunks;
+}
+
+function formatAddressForDisplay(raw: string, maxLen = 42): string {
+  const text = String(raw ?? "").trim();
+  if (!text || text === "—") return "—";
+
+  const parts = text
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const tokens = parts.length ? parts : text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const token of tokens) {
+    const normalizedToken = token.replace(/\s+/g, " ").trim();
+    if (!normalizedToken) continue;
+    const tokenVariants = chunkLongToken(normalizedToken, maxLen);
+
+    for (const piece of tokenVariants) {
+      if (!current) {
+        current = piece;
+        continue;
+      }
+      if (`${current}, ${piece}`.length <= maxLen) {
+        current = `${current}, ${piece}`;
+      } else {
+        lines.push(current);
+        current = piece;
+      }
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines.join("\n");
+}
+
 function ProfileFieldGrid({ items }: { items: FieldItem[] }) {
   return (
     <div className="grid gap-px overflow-hidden rounded-lg border border-border/60 bg-border/70 sm:grid-cols-2">
@@ -65,7 +110,7 @@ function ProfileFieldGrid({ items }: { items: FieldItem[] }) {
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {item.label}
           </p>
-          <p className="mt-1.5 text-sm font-medium leading-snug text-foreground">
+          <p className="mt-1.5 whitespace-pre-line break-words text-sm font-medium leading-snug text-foreground">
             {item.value}
           </p>
         </div>
@@ -165,7 +210,9 @@ const ProfileViewDrawer = ({
   const isInterestSent = !!activePreview?.is_interest_sent;
   const showInterestAccepted = interestStatus === "accepted";
   const showInterestSent = interestStatus === "sent" || isInterestSent;
-  const showSendInterestButton = interestStatus === "pending";
+  const showSendInterestButton = ["pending", "rejected", "cancelled"].includes(
+    interestStatus,
+  );
 
   useEffect(() => {
     if (!open) {
@@ -222,6 +269,7 @@ const ProfileViewDrawer = ({
       : "") ||
     (typeof profile?.location === "string" ? profile.location : "") ||
     "";
+  const displayLocationFormatted = formatAddressForDisplay(displayLocationFull);
   const displayEducation =
     (fd?.education && fd.education.trim()) ||
     (activePreview?.education ?? profile?.education)?.split(",")[0] ||
@@ -452,7 +500,7 @@ const ProfileViewDrawer = ({
 
   /** Header shows age + religion/caste chips; omit fields repeated in Basic Details & badges. */
   const basicDetailItems: FieldItem[] = [
-    { label: "Location", value: displayLocationFull || "—", wide: true },
+    { label: "Location", value: displayLocationFormatted, wide: true },
     { label: "Education", value: displayEducation },
     { label: "Marital status", value: displayMaritalStatus },
     { label: "Height", value: displayHeight },
@@ -576,7 +624,7 @@ const ProfileViewDrawer = ({
                   <div>
                     <SectionTitle icon={User}>About</SectionTitle>
                     <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
-                      <p className="text-sm leading-relaxed text-foreground/90">
+                      <p className="text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]">
                         {displayAbout || "No description provided."}
                       </p>
                     </div>
@@ -710,7 +758,7 @@ const ProfileViewDrawer = ({
                 <div>
                   <SectionTitle icon={User}>About</SectionTitle>
                   <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
-                    <p className="text-sm leading-relaxed text-foreground/90">
+                    <p className="text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]">
                       {displayAbout || "No description provided."}
                     </p>
                   </div>
@@ -865,7 +913,7 @@ const ProfileViewDrawer = ({
                         })),
                         {
                           label: "Address",
-                          value: String(loc?.address ?? "—"),
+                          value: formatAddressForDisplay(String(loc?.address ?? "—")),
                           wide: true,
                         },
                       ]}
