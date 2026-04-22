@@ -1030,9 +1030,9 @@ const AuthPage = () => {
         const hasAnyPhoto = Object.keys(photos).length > 0;
         if (hasAnyPhoto) {
           await postPhotos({
-            // Treat passport as the main profile photo if provided; otherwise fall back to full photo
-            profile_photo: photos.passport?.file ?? photos.full?.file,
-            full_photo: photos.full?.file,
+            // Full photo is the primary profile photo; passport is stored as full_photo.
+            profile_photo: photos.full?.file,
+            full_photo: photos.passport?.file,
             selfie_photo: photos.selfie?.file,
             family_photo: photos.family?.file,
             aadhaar_front: photos.aadhaar_front?.file,
