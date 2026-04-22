@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Heart, ChevronLeft, ChevronRight, Calendar, MapPin, Star, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
@@ -264,6 +265,7 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
 const SuccessStories = () => {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { ref: revealRef, inView } = useScrollReveal();
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -276,7 +278,7 @@ const SuccessStories = () => {
   };
 
   return (
-    <section id="stories" className="py-24 bg-background relative overflow-hidden">
+    <section id="stories" ref={revealRef} className="py-24 bg-background relative overflow-hidden">
       {/* Decorative Background */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-pink/40 rounded-full blur-3xl animate-float" />
@@ -305,8 +307,7 @@ const SuccessStories = () => {
           <motion.div 
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent-rose border border-primary/10 mb-4 shadow-soft"
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           >
             <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat" />
             <span className="text-sm font-medium text-primary">Recent Couples</span>
@@ -315,8 +316,7 @@ const SuccessStories = () => {
           <motion.h2 
             className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ delay: 0.1 }}
           >
             Real Love, <span className="text-gradient-primary">Real Stories</span>
@@ -324,8 +324,7 @@ const SuccessStories = () => {
           <motion.p 
             className="text-muted-foreground max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ delay: 0.2 }}
           >
             Hover over our beautiful couples to discover their love stories
@@ -376,8 +375,7 @@ const SuccessStories = () => {
               key={index}
               className="text-center p-5 md:p-6 bg-gradient-card rounded-2xl shadow-card border border-primary/5 hover-lift group cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -5 }}
             >
@@ -394,8 +392,7 @@ const SuccessStories = () => {
         <motion.div 
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         >
           <Button 
             variant="hero" 

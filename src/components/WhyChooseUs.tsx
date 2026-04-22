@@ -1,4 +1,7 @@
+"use client";
+
 import { motion } from "framer-motion";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Phone, Mail, Sparkles, UserCheck, ShieldCheck, Infinity } from "lucide-react";
 
 // Simple circle icons matching About page style
@@ -31,8 +34,10 @@ const stats = [
 ];
 
 const WhyChooseUs = () => {
+  const { ref: revealRef, inView } = useScrollReveal();
+
   return (
-    <section className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-card">
+    <section ref={revealRef} className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-card">
       {/* Clean background - no image boxes */}
       <div className="absolute top-20 right-10 w-72 h-72 bg-secondary/5 rounded-full blur-[100px]" />
       <div className="absolute bottom-20 left-10 w-48 h-48 bg-primary/5 rounded-full blur-[100px]" />
@@ -60,8 +65,7 @@ const WhyChooseUs = () => {
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ delay: index * 0.15 }}
                 className="bg-background rounded-3xl p-8 border border-primary/5 shadow-card hover-lift group text-center"
               >
@@ -81,8 +85,7 @@ const WhyChooseUs = () => {
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center mb-12 sm:mb-20">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -40 }}
             className="relative flex flex-col lg:block min-h-0 lg:min-h-[520px]"
           >
             {/* Main large image - full width on mobile, 65% on lg */}
@@ -102,8 +105,7 @@ const WhyChooseUs = () => {
             <motion.div
               className="relative mt-4 lg:absolute lg:bottom-0 lg:left-[25%] lg:mt-0 w-full lg:w-[65%] z-[3] rounded-2xl overflow-hidden shadow-elevated border-4 lg:border-[6px] border-card"
               initial={{ opacity: 0, y: 40, x: 20 }}
-              whileInView={{ opacity: 1, y: 0, x: 0 }}
-              viewport={{ once: true }}
+              animate={inView ? { opacity: 1, y: 0, x: 0 } : { opacity: 0, y: 40, x: 20 }}
               transition={{ delay: 0.4 }}
               whileHover={{ scale: 1.03 }}
             >
@@ -119,7 +121,10 @@ const WhyChooseUs = () => {
           </motion.div>
 
           {/* Right - Content matching reference exactly */}
-          <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 40 }}
+          >
             <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-1 uppercase tracking-wider" style={{ textDecoration: "underline", textDecorationColor: "hsl(var(--secondary))", textUnderlineOffset: "8px" }}>
               Welcome to
             </h2>
@@ -169,8 +174,7 @@ const WhyChooseUs = () => {
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
               transition={{ delay: index * 0.1 }}
               className="bg-background rounded-2xl p-6 text-center border border-primary/10 shadow-card hover-lift"
             >
