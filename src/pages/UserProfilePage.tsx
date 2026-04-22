@@ -140,13 +140,21 @@ const GENDER_VALUES = ["male", "female", "other"] as const;
 
 function normalizeGenderValue(value: string): string {
   const v = value.trim().toLowerCase();
-  return (GENDER_VALUES as readonly string[]).includes(v) ? v : "";
+  const normalized =
+    v === "m" || v === "male"
+      ? "male"
+      : v === "f" || v === "female" || v === "g"
+        ? "female"
+        : v;
+  return (GENDER_VALUES as readonly string[]).includes(normalized)
+    ? normalized
+    : "";
 }
 
 function formatGenderLabel(value: string): string {
   const v = value.trim().toLowerCase();
-  if (v === "male") return "Male";
-  if (v === "female") return "Female";
+  if (v === "m" || v === "male") return "Male";
+  if (v === "f" || v === "female" || v === "g") return "Female";
   if (v === "other") return "Other";
   return value.trim();
 }

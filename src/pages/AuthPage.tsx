@@ -191,13 +191,14 @@ function mapProfileToFormData(
     .replace(/\D/g, "")
     .replace(/^91/, "")
     .slice(0, 10);
-  const gender = b?.gender?.toLowerCase();
+  const genderRaw = String(b?.gender ?? "").trim();
+  const genderToken = genderRaw.toLowerCase();
   const genderDisplay =
-    gender === "female"
+    genderToken === "f" || genderToken === "female" || genderToken === "g"
       ? "Female"
-      : gender === "male"
+      : genderToken === "m" || genderToken === "male"
         ? "Male"
-        : (b?.gender ?? "");
+        : genderRaw;
   const childrenCount = Number(
     pers.number_of_children ?? pers.children_count ?? 0,
   );

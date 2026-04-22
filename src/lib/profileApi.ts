@@ -412,8 +412,14 @@ export function syncMeProfileToStore(profile: ProfileData): void {
   const matriId = profile.matri_id?.trim();
   const displayName =
     (b?.name && String(b.name).trim()) || matriId || undefined;
+  const genderRaw = b?.gender != null ? String(b.gender).trim() : "";
+  const genderToken = genderRaw.toLowerCase();
   const gender =
-    b?.gender != null ? String(b.gender).trim().toLowerCase() : undefined;
+    genderToken === "m" || genderToken === "male"
+      ? "male"
+      : genderToken === "f" || genderToken === "female" || genderToken === "g"
+        ? "female"
+        : genderToken || undefined;
 
   useAuthStore.setState((s) => {
     const u = s.user;
