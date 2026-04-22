@@ -1,11 +1,6 @@
 {
   "/dashboard/plan/page": "app/dashboard/plan/page.js",
-  "/chat/[profileId]/page": "app/chat/[profileId]/page.js",
-  "/dashboard/favorites/page": "app/dashboard/favorites/page.js",
-  "/dashboard/profile/page": "app/dashboard/profile/page.js",
   "/dashboard/jathagam/page": "app/dashboard/jathagam/page.js",
-  "/dashboard/transactions/page": "app/dashboard/transactions/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js",
-  "/page": "app/page.js",
-  "/auth/page": "app/auth/page.js"
+  "/auth/page": "app/auth/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

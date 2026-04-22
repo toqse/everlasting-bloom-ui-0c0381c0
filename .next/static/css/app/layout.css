@@ -1622,6 +1622,9 @@ h1, h2, h3, h4, h5, h6 {
 .w-\[78px\] {
   width: 78px;
 }
+.w-\[90px\] {
+  width: 90px;
+}
 .w-\[92px\] {
   width: 92px;
 }
@@ -1649,9 +1652,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 .w-px {
   width: 1px;
-}
-.w-\[90px\] {
-  width: 90px;
 }
 .min-w-0 {
   min-width: 0px;
