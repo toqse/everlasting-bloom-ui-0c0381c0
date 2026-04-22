@@ -85,9 +85,11 @@ const Navbar = () => {
               </Button>
             </>
           ) : (
-            <Button variant="hero" className="gap-2 min-w-[160px] px-8" onClick={() => router.push("/auth")}>
-              <User className="w-4 h-4" />
-              Login
+            <Button variant="hero" className="gap-2 min-w-[160px] px-8" asChild>
+              <Link href="/auth" prefetch={true}>
+                <User className="w-4 h-4" />
+                Login
+              </Link>
             </Button>
           )}
         </div>
@@ -103,10 +105,14 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-elevated transition-all duration-300 overflow-hidden max-h-[85vh] overflow-y-auto ${
-        isMobileMenuOpen ? "max-h-[85vh] opacity-100" : "max-h-0 opacity-0"
-      }`}>
+      {/* Mobile Menu — pointer-events-none when closed so a zero-height panel never steals taps (e.g. Login / hero CTAs). */}
+      <div
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-elevated transition-all duration-300 overflow-hidden max-h-[85vh] overflow-y-auto ${
+          isMobileMenuOpen
+            ? "max-h-[85vh] opacity-100 pointer-events-auto"
+            : "max-h-0 opacity-0 pointer-events-none"
+        }`}
+      >
         <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-6">
           {navLinks.map((link, index) => (
             <Link
@@ -138,7 +144,16 @@ const Navbar = () => {
                 </Button>
               </>
             ) : (
-              <Button variant="hero" className="flex-1 min-w-[160px]" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>Login</Button>
+              <Button variant="hero" className="flex-1 min-w-[160px]" asChild>
+                <Link
+                  href="/auth"
+                  prefetch={true}
+                  className="inline-flex w-full"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              </Button>
             )}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Camera } from "lucide-react";
 
@@ -15,9 +16,10 @@ const galleryImages = [
 
 const PhotoGallery = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { ref: revealRef, inView } = useScrollReveal();
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 relative overflow-hidden">
+    <section ref={revealRef} className="py-12 sm:py-16 md:py-24 relative overflow-hidden">
       <div className="absolute top-20 left-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 right-10 w-64 h-64 bg-secondary/10 rounded-full blur-3xl animate-float-delayed" />
 
@@ -42,8 +44,7 @@ const PhotoGallery = () => {
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
               transition={{ delay: index * 0.08 }}
               className="mb-4 break-inside-avoid group cursor-pointer"
               onClick={() => setSelectedImage(image.src)}

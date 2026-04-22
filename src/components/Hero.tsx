@@ -78,7 +78,7 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           {/* Left: Text Content */}
           <div className="text-center lg:text-left min-w-0">
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-primary mb-8 sm:mb-10 -mt-6 sm:-mt-8 animate-fade-in-up tracking-tight">
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-8 sm:mb-10 -mt-6 sm:-mt-8 animate-fade-in-up tracking-tight">
               Aiswarya Vivaha Bureau
             </h2>
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group" style={{ animationDelay: "0.05s" }}>
