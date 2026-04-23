@@ -4,7 +4,8 @@ import { useAuthStore } from "@/stores/authStore";
 let refreshInFlight: Promise<boolean> | null = null;
 
 /**
- * Calls POST v1/auth/token/refresh/ with the stored refresh token.
+ * Calls POST v1/auth/token/refresh/ using stored refresh token
+ * (or HTTP-only cookie fallback when token is absent).
  * On 401 from that endpoint, clears the session (both tokens invalid).
  * Single-flights concurrent refresh attempts.
  */
@@ -12,11 +13,7 @@ export async function refreshMemberSessionOrLogout(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const refresh = useAuthStore.getState().refreshToken?.trim();
-        if (!refresh) {
-          useAuthStore.getState().logout();
-          return false;
-        }
+        const refresh = useAuthStore.getState().refreshToken?.trim() ?? null;
         const result = await postMemberTokenRefresh(refresh);
         if (!result.ok) {
           if (result.status === 401) {

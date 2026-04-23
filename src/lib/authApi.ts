@@ -342,13 +342,18 @@ export type MemberTokenRefreshResult =
 
 /** POST v1/auth/token/refresh/ — body `{ refresh }` per apidoc. No auth header. */
 export async function postMemberTokenRefresh(
-  refreshToken: string,
+  refreshToken?: string | null,
 ): Promise<MemberTokenRefreshResult> {
   const url = `${BASE_URL}v1/auth/token/refresh/`;
+  const body =
+    typeof refreshToken === "string" && refreshToken.trim()
+      ? { refresh: refreshToken.trim() }
+      : {};
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh: refreshToken }),
+    credentials: "include",
+    body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) return { ok: false, status: 401 };

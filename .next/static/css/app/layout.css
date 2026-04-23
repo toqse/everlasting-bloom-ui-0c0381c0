@@ -6068,10 +6068,6 @@ html::-webkit-scrollbar-thumb:hover {
     margin-bottom: 2rem;
   }
 
-  .sm\:ml-1 {
-    margin-left: 0.25rem;
-  }
-
   .sm\:ml-auto {
     margin-left: auto;
   }
