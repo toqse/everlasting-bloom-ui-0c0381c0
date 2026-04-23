@@ -200,6 +200,17 @@ export interface RegisterMobileBody {
   mobile: string;
 }
 
+export interface RegisterMobileResponse {
+  success?: boolean;
+  message?: string;
+  data?: {
+    mobile?: string;
+    phone_number?: string;
+    otp_sent?: boolean;
+    otp?: string;
+  };
+}
+
 export interface VerifyMobileBody {
   mobile: string;
   otp: string;
@@ -272,7 +283,7 @@ export interface VerifyMobileResponse {
 /** POST v1/auth/register/mobile/ — send OTP to mobile */
 export async function registerMobile(
   body: RegisterMobileBody,
-): Promise<unknown> {
+): Promise<RegisterMobileResponse> {
   const url = `${BASE_URL}v1/auth/register/mobile/`;
   console.log("[authApi] registerMobile request body:", body);
   const res = await fetch(url, {
@@ -280,7 +291,7 @@ export async function registerMobile(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
+  const data = (await res.json().catch(() => ({}))) as RegisterMobileResponse;
   console.log("[authApi] registerMobile response:", {
     status: res.status,
     data,

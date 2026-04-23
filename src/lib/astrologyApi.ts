@@ -311,15 +311,13 @@ export interface MatchChartJsonResponse {
   groom: MatchChartPersonJson;
 }
 
-/** GET /api/v1/astrology/match-chart/<bride_id>/<groom_id>/<chart_type>/ — plain JSON, JWT only */
-export async function getMatchChartJson(
-  brideProfileId: number,
-  groomProfileId: number,
-  chartType: ChartJsonType,
-): Promise<MatchChartJsonResponse> {
-  const path = `v1/astrology/match-chart/${brideProfileId}/${groomProfileId}/${chartType}/`;
-  const url = `${BASE_URL}${path}`;
+export interface SingleChartJsonResponse {
+  chart_type: ChartJsonType;
+  profile: MatchChartPersonJson;
+}
 
+async function authedGet<T>(path: string): Promise<T> {
+  const url = `${BASE_URL}${path}`;
   logAstrologyRequest(path, "GET", null);
 
   const res = await memberFetchWithAuthRetry(url, {
@@ -327,11 +325,85 @@ export async function getMatchChartJson(
     headers: { "Content-Type": "application/json" },
   });
 
-  const data = (await res.json().catch(() => ({}))) as MatchChartJsonResponse & ApiErrorPayload;
+  const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   logAstrologyResponse(path, "GET", res.status, data);
 
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
-  return data as MatchChartJsonResponse;
+  return data as T;
+}
+
+/** GET /api/v1/astrology/chart/<profile_id>/<chart_type>/ or /api/v1/astrology/chart/<profile_id>/ */
+export async function getChartJson(
+  profileId: number,
+  chartType: ChartJsonType = "rasi",
+): Promise<SingleChartJsonResponse> {
+  const path =
+    chartType === "rasi"
+      ? `v1/astrology/chart/${profileId}/`
+      : `v1/astrology/chart/${profileId}/${chartType}/`;
+  return authedGet<SingleChartJsonResponse>(path);
+}
+
+type MatchChartByProfilePairArgs = {
+  brideProfileId: number;
+  groomProfileId: number;
+  chartType?: ChartJsonType;
+};
+
+type MatchChartByPartnerMatriArgs = {
+  partnerMatriId: string;
+  chartType?: ChartJsonType;
+};
+
+/** Backward-compatible overload. */
+export async function getMatchChartJson(
+  brideProfileId: number,
+  groomProfileId: number,
+  chartType?: ChartJsonType,
+): Promise<MatchChartJsonResponse>;
+
+/** Object-style overload to support pair-id and partner-matri-id route variants. */
+export async function getMatchChartJson(
+  args: MatchChartByProfilePairArgs | MatchChartByPartnerMatriArgs,
+): Promise<MatchChartJsonResponse>;
+
+export async function getMatchChartJson(
+  arg1: number | (MatchChartByProfilePairArgs | MatchChartByPartnerMatriArgs),
+  arg2?: number,
+  arg3?: ChartJsonType,
+): Promise<MatchChartJsonResponse> {
+  if (typeof arg1 === "number") {
+    const brideProfileId = arg1;
+    const groomProfileId = arg2;
+    if (groomProfileId == null) {
+      throw new Error("groomProfileId is required when calling getMatchChartJson with numbers.");
+    }
+    const resolvedType = arg3 ?? "rasi";
+    const path =
+      resolvedType === "rasi"
+        ? `v1/astrology/match-chart/${brideProfileId}/${groomProfileId}/`
+        : `v1/astrology/match-chart/${brideProfileId}/${groomProfileId}/${resolvedType}/`;
+    return authedGet<MatchChartJsonResponse>(path);
+  }
+
+  if ("partnerMatriId" in arg1) {
+    const args = arg1;
+    const partnerMatriId = args.partnerMatriId.trim();
+    const resolvedType = args.chartType ?? "rasi";
+    const path =
+      resolvedType === "rasi"
+        ? `v1/astrology/match-chart/${partnerMatriId}/`
+        : `v1/astrology/match-chart/${partnerMatriId}/${resolvedType}/`;
+    return authedGet<MatchChartJsonResponse>(path);
+  }
+
+  const args = arg1;
+  const resolvedType = args.chartType ?? "rasi";
+  const path =
+    resolvedType === "rasi"
+      ? `v1/astrology/match-chart/${args.brideProfileId}/${args.groomProfileId}/`
+      : `v1/astrology/match-chart/${args.brideProfileId}/${args.groomProfileId}/${resolvedType}/`;
+  return authedGet<MatchChartJsonResponse>(path);
 }
 
 /** GET /api/v1/astrology/horoscope/me/ */

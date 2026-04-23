@@ -147,6 +147,23 @@ const normalizeNumberForInput = (value: unknown): string => {
   return Number.isFinite(n) ? String(n) : "";
 };
 
+const otpDigitsFromResponse = (
+  payload: unknown,
+): [string, string, string, string, string, string] | null => {
+  const root =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : null;
+  const nested =
+    root?.data && typeof root.data === "object"
+      ? (root.data as Record<string, unknown>)
+      : null;
+  const rawOtp = nested?.otp ?? root?.otp;
+  const otp = typeof rawOtp === "string" ? rawOtp.replace(/\D/g, "") : "";
+  if (otp.length !== 6) return null;
+  return otp.split("") as [string, string, string, string, string, string];
+};
+
 const isProfileFullyCompleted = (data?: VerifyMobileData): boolean => {
   if (!data) return false;
   if (data.is_registration_profile_completed) return true;
@@ -532,9 +549,9 @@ const AuthPage = () => {
     }
     const mobile = "+91" + digits;
     try {
-      await registerMobile({ mobile });
+      const res = await registerMobile({ mobile });
       setOtpSent(true);
-      setOtp(["", "", "", "", "", ""]);
+      setOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success("OTP sent to your phone");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send OTP");
@@ -627,7 +644,7 @@ const AuthPage = () => {
     setResendOtpLoading(true);
     try {
       const res = await resendOtp({ phone_number });
-      setOtp(["", "", "", "", "", ""]);
+      setOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success(
         typeof res.message === "string" && res.message.trim()
           ? res.message
@@ -649,7 +666,7 @@ const AuthPage = () => {
     setResendOtpLoading(true);
     try {
       const res = await resendOtp({ phone_number });
-      setSignupOtp(["", "", "", "", "", ""]);
+      setSignupOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success(
         typeof res.message === "string" && res.message.trim()
           ? res.message
@@ -696,7 +713,7 @@ const AuthPage = () => {
         : "M";
     const profile_for = normalizeRegisterProfileFor(formData.profileFor);
     try {
-      await registerApi({
+      const res = await registerApi({
         name: formData.name.trim(),
         phone_number,
         ...(formData.email?.trim() ? { email: formData.email.trim() } : {}),
@@ -705,7 +722,7 @@ const AuthPage = () => {
         ...(profile_for ? { profile_for } : {}),
       });
       setSignupOtpSent(true);
-      setSignupOtp(["", "", "", "", "", ""]);
+      setSignupOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success("OTP sent to +91 " + formData.phone);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send OTP";

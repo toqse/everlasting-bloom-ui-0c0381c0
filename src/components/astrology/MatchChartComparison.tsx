@@ -113,7 +113,12 @@ export function MatchChartComparison({
     setLoadError(null);
     setActiveData(null);
 
-    getMatchChartJson(brideProfileId, groomProfileId, chartType)
+    const partnerMatriId = partner.matri_id?.trim();
+    const loadPromise = partnerMatriId
+      ? getMatchChartJson({ partnerMatriId, chartType })
+      : getMatchChartJson(brideProfileId, groomProfileId, chartType);
+
+    loadPromise
       .then((data) => {
         if (cancelled) return;
         cacheRef.current = { ...cacheRef.current, [chartType]: data };
@@ -133,7 +138,7 @@ export function MatchChartComparison({
     return () => {
       cancelled = true;
     };
-  }, [chartType, brideProfileId, groomProfileId]);
+  }, [chartType, brideProfileId, groomProfileId, partner.matri_id]);
 
   const leftRight =
     activeData &&
