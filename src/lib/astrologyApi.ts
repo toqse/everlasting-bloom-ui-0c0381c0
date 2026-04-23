@@ -160,6 +160,9 @@ export interface HoroscopePrimaryPanel {
   role?: string;
   profile_id?: number;
   gender?: string;
+  date_of_birth?: string;
+  time_of_birth?: string;
+  place_of_birth?: string;
   nakshatra?: string;
   nakshatra_label?: string;
   nakshatra_malayalam?: string;

@@ -1,13 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
+  "/auth/page": "app/auth/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/jathagam/page": "app/dashboard/jathagam/page.js",
   "/dashboard/matches/page": "app/dashboard/matches/page.js",
   "/dashboard/plan/page": "app/dashboard/plan/page.js",
-  "/dashboard/jathagam/page": "app/dashboard/jathagam/page.js",
-  "/dashboard/profile/page": "app/dashboard/profile/page.js",
-  "/dashboard/favorites/page": "app/dashboard/favorites/page.js",
-  "/dashboard/interests/page": "app/dashboard/interests/page.js",
-  "/dashboard/chat-list/page": "app/dashboard/chat-list/page.js",
-  "/dashboard/transactions/page": "app/dashboard/transactions/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js"
+  "/dashboard/transactions/page": "app/dashboard/transactions/page.js"
 }

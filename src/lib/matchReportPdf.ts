@@ -49,22 +49,36 @@ function formatTimeOfBirthDisplay(raw: string | undefined): string {
   return `${String(hour12).padStart(2, "0")}:${minute} ${meridian}`;
 }
 
-function orderBrideGroomPanels(
-  data: HoroscopeMeData,
+function mapChartPersonsToUiOrder(
+  payload: { bride: MatchChartPersonJson; groom: MatchChartPersonJson },
+  brideProfileId: number,
+  groomProfileId: number,
+  primaryProfileId: number | undefined,
+  partnerProfileId: number | undefined,
+): { left: MatchChartPersonJson; right: MatchChartPersonJson } {
+  const pick = (id?: number): MatchChartPersonJson | null => {
+    if (id === brideProfileId) return payload.bride;
+    if (id === groomProfileId) return payload.groom;
+    return null;
+  };
+  const left = pick(primaryProfileId) ?? payload.bride;
+  const right =
+    pick(partnerProfileId) ?? (left === payload.bride ? payload.groom : payload.bride);
+  return { left, right };
+}
+
+function roleLabelForPanel(
+  panel: HoroscopePrimaryPanel,
   match: MatchBlock,
-): { bride: HoroscopePrimaryPanel; groom: HoroscopePrimaryPanel } {
-  const p = data.primary;
-  const q = data.partner;
-  if (!p || !q) throw new Error("Missing primary or partner panel.");
-  const bm = match.bride_matri_id?.trim();
-  const gm = match.groom_matri_id?.trim();
-  if (bm && p.matri_id === bm) return { bride: p, groom: q };
-  if (gm && p.matri_id === gm) return { bride: q, groom: p };
-  const pr = (p.role ?? "").toLowerCase();
-  const qr = (q.role ?? "").toLowerCase();
-  if (pr.includes("bride")) return { bride: p, groom: q };
-  if (qr.includes("bride")) return { bride: q, groom: p };
-  return { bride: p, groom: q };
+  fallback: "Bride" | "Groom",
+): "Bride" | "Groom" {
+  const matri = panel.matri_id?.trim();
+  if (matri && match.bride_matri_id?.trim() === matri) return "Bride";
+  if (matri && match.groom_matri_id?.trim() === matri) return "Groom";
+  const role = (panel.role ?? "").toLowerCase();
+  if (role.includes("bride")) return "Bride";
+  if (role.includes("groom")) return "Groom";
+  return fallback;
 }
 
 function birthForPanel(
@@ -72,6 +86,17 @@ function birthForPanel(
   root: HoroscopeMeData,
   userMatriId: string,
 ): { dob: string; tob: string; pob: string } {
+  const panelDob = formatDateDdMmYyyy(panel.date_of_birth ?? "");
+  const panelTob = formatTimeOfBirthDisplay(panel.time_of_birth);
+  const panelPob = panel.place_of_birth?.trim() || "—";
+  const hasPanelBirth =
+    (panel.date_of_birth != null && String(panel.date_of_birth).trim() !== "") ||
+    (panel.time_of_birth != null && String(panel.time_of_birth).trim() !== "") ||
+    (panel.place_of_birth != null && String(panel.place_of_birth).trim() !== "");
+  if (hasPanelBirth) {
+    return { dob: panelDob, tob: panelTob, pob: panelPob };
+  }
+
   const uid = userMatriId.trim();
   if (panel.matri_id && uid && panel.matri_id === uid) {
     return {
@@ -171,82 +196,83 @@ function drawMaroonBanner(doc: jsPDF, y: number, title: string, subtitle: string
   return y + bannerH + 4;
 }
 
-function drawSouthIndianChart(
-  doc: jsPDF,
-  originX: number,
-  originY: number,
-  sideMm: number,
-  person: MatchChartPersonJson,
-) {
-  const cell = sideMm / 4;
+function southIndianChartDataUrl(person: MatchChartPersonJson, sizePx = 920): string | null {
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const cardPad = Math.round(sizePx * 0.04);
+  const gridSize = sizePx - cardPad * 2;
+  const cell = gridSize / 4;
   const planets = person.planets ?? {};
-  doc.setDrawColor(TAN_BORDER[0], TAN_BORDER[1], TAN_BORDER[2]);
-  doc.setLineWidth(0.15);
-
-  const cornerCells = new Set(["1-1", "1-4", "4-1", "4-4"]);
-
+  ctx.fillStyle = "#fff7fb";
+  ctx.fillRect(0, 0, sizePx, sizePx);
+  ctx.strokeStyle = "#d9bfd0";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(cardPad / 2, cardPad / 2, sizePx - cardPad, sizePx - cardPad);
   for (let i = 0; i < SOUTH_INDIAN_GRID_SIGNS.length; i++) {
     const sign = SOUTH_INDIAN_GRID_SIGNS[i];
     const { row, col } = SOUTH_INDIAN_CELL_RC[i];
-    const x = originX + (col - 1) * cell;
-    const y = originY + (row - 1) * cell;
-    doc.setFillColor(255, 255, 255);
-    doc.rect(x, y, cell, cell, "FD");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.5);
-    doc.setTextColor(MAROON[0], MAROON[1], MAROON[2]);
-    doc.text(sign.slice(0, 3), x + 0.6, y + 2.2);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    doc.setTextColor(40, 40, 40);
+    const x = cardPad + (col - 1) * cell;
+    const y = cardPad + (row - 1) * cell;
+    ctx.fillStyle = "#f7dce8";
+    ctx.fillRect(x, y, cell, cell);
+    ctx.strokeStyle = "#d9bfd0";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(x, y, cell, cell);
+
+    ctx.fillStyle = "#8b2357";
+    ctx.font = "bold 14px Arial";
+    ctx.fillText(sign.slice(0, 3).toUpperCase(), x + 8, y + 22);
+
+    ctx.fillStyle = "#333";
+    ctx.font = "500 15px 'Noto Sans Malayalam', Arial, sans-serif";
     const bodies = planets[sign] ?? [];
-    let ty = y + 4;
-    for (const b of bodies.slice(0, 3)) {
-      const short = b.length > 10 ? `${b.slice(0, 9)}…` : b;
-      doc.text(short, x + 0.5, ty, { maxWidth: cell - 1 });
-      ty += 2.8;
-    }
-    const key = `${row}-${col}`;
-    if (cornerCells.has(key)) {
-      doc.setDrawColor(80, 80, 80);
-      doc.line(x, y, x + cell, y + cell);
-      doc.line(x + cell, y, x, y + cell);
+    let ty = y + 42;
+    for (const b of bodies.slice(0, 5)) {
+      ctx.fillText(String(b), x + 8, ty);
+      ty += 18;
     }
   }
 
-  const cx = originX + cell;
-  const cy = originY + cell;
+  const cx = cardPad + cell;
+  const cy = cardPad + cell;
   const cSize = cell * 2;
-  doc.setFillColor(245, 235, 210);
-  doc.rect(cx, cy, cSize, cSize, "FD");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(MAROON[0], MAROON[1], MAROON[2]);
+  ctx.fillStyle = "#fdf8fc";
+  ctx.fillRect(cx, cy, cSize, cSize);
+  ctx.strokeStyle = "#d9bfd0";
+  ctx.strokeRect(cx, cy, cSize, cSize);
+
+  ctx.fillStyle = "#8b2357";
+  ctx.textAlign = "center";
+  ctx.font = "bold 22px 'Noto Sans Malayalam', Arial, sans-serif";
   const nm = (person.name ?? "").trim() || "—";
-  doc.text(nm, cx + cSize / 2, cy + 5, { align: "center", maxWidth: cSize - 1 });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(60, 60, 60);
-  let ly = cy + 9;
+  ctx.fillText(nm, cx + cSize / 2, cy + 42);
+
+  ctx.fillStyle = "#3a3a3a";
+  ctx.font = "500 16px 'Noto Sans Malayalam', Arial, sans-serif";
   if (person.nakshatra) {
-    doc.text(
-      `${person.nakshatra}${person.nakshatra_pada != null ? ` · P${person.nakshatra_pada}` : ""}`,
-      cx + cSize / 2,
-      ly,
-      { align: "center", maxWidth: cSize - 1 },
-    );
-    ly += 4;
+    const nk = `${person.nakshatra}${person.nakshatra_pada != null ? ` · P${person.nakshatra_pada}` : ""}`;
+    ctx.fillText(nk, cx + cSize / 2, cy + 78);
   }
-  if (person.lagna || person.rasi) {
-    doc.text(
-      [person.lagna ? `Lagna ${person.lagna}` : "", person.rasi ? `Rasi ${person.rasi}` : ""]
-        .filter(Boolean)
-        .join(" · "),
-      cx + cSize / 2,
-      ly,
-      { align: "center", maxWidth: cSize - 1 },
-    );
+  if (person.dasa_lord) {
+    ctx.fillText(`Lord: ${person.dasa_lord}`, cx + cSize / 2, cy + 102);
   }
+  if (person.dasa_balance) {
+    ctx.fillText(`Dasa: ${person.dasa_balance}`, cx + cSize / 2, cy + 122);
+  }
+  const lr = [
+    person.lagna ? `Lagna ${person.lagna}` : "",
+    person.rasi ? `Rasi ${person.rasi}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (lr) ctx.fillText(lr, cx + cSize / 2, cy + 144);
+  ctx.textAlign = "start";
+  return canvas.toDataURL("image/png");
 }
 
 function poruthamDescriptionForKeys(
@@ -304,9 +330,16 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
   userMatriId: string;
 }): Promise<void> {
   const { data, match, userMatriId } = opts;
-  const { bride, groom } = orderBrideGroomPanels(data, match);
+  const primary = data.primary;
+  const partner = data.partner;
+  if (!primary || !partner) throw new Error("Missing primary or partner panel.");
+  // Keep the same left/right order as the on-page report.
+  const bride = primary;
+  const groom = partner;
   const brideBirth = birthForPanel(bride, data, userMatriId);
   const groomBirth = birthForPanel(groom, data, userMatriId);
+  const leftRole = roleLabelForPanel(bride, match, "Bride");
+  const rightRole = roleLabelForPanel(groom, match, "Groom");
 
   let chartPersons: { bride: MatchChartPersonJson; groom: MatchChartPersonJson } | null =
     null;
@@ -317,7 +350,14 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
         match.groom_profile_id,
         "rasi",
       );
-      chartPersons = { bride: json.bride, groom: json.groom };
+      const mapped = mapChartPersonsToUiOrder(
+        json,
+        match.bride_profile_id,
+        match.groom_profile_id,
+        primary.profile_id,
+        partner.profile_id,
+      );
+      chartPersons = { bride: mapped.left, groom: mapped.right };
     } catch {
       chartPersons = null;
     }
@@ -372,15 +412,17 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(MAROON[0], MAROON[1], MAROON[2]);
-  doc.text((bride.name ?? "Bride").trim(), m + boxW / 2, y + 8, { align: "center" });
-  doc.text((groom.name ?? "Groom").trim(), m + boxW + 14 + boxW / 2, y + 8, {
+  doc.text((bride.name ?? "Profile A").trim(), m + boxW / 2, y + 8, { align: "center" });
+  doc.text((groom.name ?? "Profile B").trim(), m + boxW + 14 + boxW / 2, y + 8, {
     align: "center",
   });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text("Bride", m + boxW / 2, y + 14, { align: "center" });
-  doc.text("Groom", m + boxW + 14 + boxW / 2, y + 14, { align: "center" });
+  doc.text(leftRole, m + boxW / 2, y + 14, { align: "center" });
+  doc.text(rightRole, m + boxW + 14 + boxW / 2, y + 14, {
+    align: "center",
+  });
   doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -457,21 +499,10 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
       b: bride.chart_meta?.lagna_label ?? bride.lagna ?? "—",
       g: groom.chart_meta?.lagna_label ?? groom.lagna ?? "—",
     },
-    { label: "Rasi Lord", b: "—", g: "—" },
     {
       label: "Gana",
       b: ganaPair?.bride ?? "—",
       g: ganaPair?.groom ?? "—",
-    },
-    {
-      label: "Yoni",
-      b: yoniPair?.bride ?? "—",
-      g: yoniPair?.groom ?? "—",
-    },
-    {
-      label: "Rajju",
-      b: rajjuPair?.bride ?? "—",
-      g: rajjuPair?.groom ?? "—",
     },
   ];
 
@@ -528,12 +559,20 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(MAROON[0], MAROON[1], MAROON[2]);
-  doc.text(`${(bride.name ?? "").trim() || "Bride"} — Bride`, m + chartSize / 2, y, {
-    align: "center",
-  });
-  doc.text(`${(groom.name ?? "").trim() || "Groom"} — Groom`, pageW - m - chartSize / 2, y, {
-    align: "center",
-  });
+  doc.text(
+    `${(bride.name ?? "").trim() || "Profile A"} — ${leftRole}`,
+    m + chartSize / 2,
+    y,
+    {
+      align: "center",
+    },
+  );
+  doc.text(
+    `${(groom.name ?? "").trim() || "Profile B"} — ${rightRole}`,
+    pageW - m - chartSize / 2,
+    y,
+    { align: "center" },
+  );
   y += 5;
 
   const leftCx = m;
@@ -541,12 +580,15 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
   const chartY = y;
 
   if (chartPersons) {
-    drawSouthIndianChart(doc, leftCx, chartY, chartSize, chartPersons.bride);
+    const leftChartImg = southIndianChartDataUrl(chartPersons.bride);
+    const rightChartImg = southIndianChartDataUrl(chartPersons.groom);
+    if (leftChartImg) doc.addImage(leftChartImg, "PNG", leftCx, chartY, chartSize, chartSize);
     doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text("VS", pageW / 2, chartY + chartSize / 2, { align: "center" });
-    drawSouthIndianChart(doc, rightCx, chartY, chartSize, chartPersons.groom);
+    if (rightChartImg)
+      doc.addImage(rightChartImg, "PNG", rightCx, chartY, chartSize, chartSize);
   } else {
     const tryImg = (dataUrl: string | null, x: number) => {
       if (!dataUrl) return;
@@ -590,7 +632,7 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(MAROON[0], MAROON[1], MAROON[2]);
-  doc.text("Porutham Score (Dashakoot — Kerala System)", m, y);
+  doc.text("Porutham Score", m, y);
   y += 2;
   doc.line(m, y, pageW - m, y);
   y += 5;

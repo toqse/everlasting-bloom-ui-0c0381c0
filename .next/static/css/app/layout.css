@@ -1621,8 +1621,8 @@ h1, h2, h3, h4, h5, h6 {
 .w-\[78px\] {
   width: 78px;
 }
-.w-\[90px\] {
-  width: 90px;
+.w-\[84px\] {
+  width: 84px;
 }
 .w-\[92px\] {
   width: 92px;
@@ -5937,22 +5937,6 @@ html::-webkit-scrollbar-thumb:hover {
   .max-xl\:hidden {
     display: none;
   }
-
-  .max-xl\:min-h-0 {
-    min-height: 0px;
-  }
-
-  .max-xl\:flex-none {
-    flex: none;
-  }
-
-  .max-xl\:overflow-visible {
-    overflow: visible;
-  }
-
-  .max-xl\:overflow-y-visible {
-    overflow-y: visible;
-  }
 }
 @media not all and (min-width: 1024px) {
 
@@ -6091,10 +6075,6 @@ html::-webkit-scrollbar-thumb:hover {
 
   .sm\:mb-8 {
     margin-bottom: 2rem;
-  }
-
-  .sm\:ml-auto {
-    margin-left: auto;
   }
 
   .sm\:mt-0 {
@@ -6989,14 +6969,6 @@ html::-webkit-scrollbar-thumb:hover {
     grid-column: span 2 / span 2;
   }
 
-  .lg\:col-span-4 {
-    grid-column: span 4 / span 4;
-  }
-
-  .lg\:col-span-8 {
-    grid-column: span 8 / span 8;
-  }
-
   .lg\:mb-5 {
     margin-bottom: 1.25rem;
   }
@@ -7053,10 +7025,6 @@ html::-webkit-scrollbar-thumb:hover {
     max-height: calc(100dvh - 22rem);
   }
 
-  .lg\:max-h-full {
-    max-height: 100%;
-  }
-
   .lg\:min-h-0 {
     min-height: 0px;
   }
@@ -7106,10 +7074,6 @@ html::-webkit-scrollbar-thumb:hover {
          columns: 4;
   }
 
-  .lg\:grid-cols-12 {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-
   .lg\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7146,10 +7110,6 @@ html::-webkit-scrollbar-thumb:hover {
     align-items: center;
   }
 
-  .lg\:items-stretch {
-    align-items: stretch;
-  }
-
   .lg\:justify-start {
     justify-content: flex-start;
   }
@@ -7168,12 +7128,6 @@ html::-webkit-scrollbar-thumb:hover {
 
   .lg\:gap-8 {
     gap: 2rem;
-  }
-
-  .lg\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
 
   .lg\:overflow-hidden {
@@ -7246,10 +7200,6 @@ html::-webkit-scrollbar-thumb:hover {
     grid-column: span 8 / span 8;
   }
 
-  .xl\:mb-5 {
-    margin-bottom: 1.25rem;
-  }
-
   .xl\:flex {
     display: flex;
   }
@@ -7260,14 +7210,6 @@ html::-webkit-scrollbar-thumb:hover {
 
   .xl\:h-0 {
     height: 0px;
-  }
-
-  .xl\:h-full {
-    height: 100%;
-  }
-
-  .xl\:max-h-\[calc\(100dvh-22rem\)\] {
-    max-height: calc(100dvh - 22rem);
   }
 
   .xl\:max-h-full {
@@ -7282,10 +7224,6 @@ html::-webkit-scrollbar-thumb:hover {
     width: 40%;
   }
 
-  .xl\:w-80 {
-    width: 20rem;
-  }
-
   .xl\:w-72 {
     width: 18rem;
   }
@@ -7294,16 +7232,8 @@ html::-webkit-scrollbar-thumb:hover {
     flex: 1 1 0%;
   }
 
-  .xl\:grid-cols-\[1fr_minmax\(148px\2c 200px\)_1fr\] {
-    grid-template-columns: 1fr minmax(148px,200px) 1fr;
-  }
-
   .xl\:grid-cols-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-
-  .xl\:grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .xl\:grid-cols-2 {
@@ -7316,6 +7246,14 @@ html::-webkit-scrollbar-thumb:hover {
 
   .xl\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-\[1fr_minmax\(148px\2c 200px\)_1fr\] {
+    grid-template-columns: 1fr minmax(148px,200px) 1fr;
   }
 
   .xl\:flex-row {
@@ -7334,12 +7272,12 @@ html::-webkit-scrollbar-thumb:hover {
     justify-content: space-between;
   }
 
-  .xl\:gap-6 {
-    gap: 1.5rem;
-  }
-
   .xl\:gap-4 {
     gap: 1rem;
+  }
+
+  .xl\:gap-6 {
+    gap: 1.5rem;
   }
 
   .xl\:gap-8 {
@@ -7366,10 +7304,6 @@ html::-webkit-scrollbar-thumb:hover {
 
   .xl\:pr-1 {
     padding-right: 0.25rem;
-  }
-
-  .xl\:\[scrollbar-gutter\:stable\] {
-    scrollbar-gutter: stable;
   }
 }
 @media (min-width: 1536px) {

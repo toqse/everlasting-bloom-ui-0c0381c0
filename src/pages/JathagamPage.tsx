@@ -107,7 +107,10 @@ function writeJathagamPageCache(patch: Omit<JathagamPageSessionCache, "authKey">
   jathagamPageSessionCache = { authKey: key, ...patch };
 }
 
-function parseApiTimeTo12Hour(value: string): { time12: string; meridian: Meridian } {
+function parseApiTimeTo12Hour(value: string): {
+  time12: string;
+  meridian: Meridian;
+} {
   const t = value.trim();
   const m = /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(t);
   if (!m) return { time12: "", meridian: "AM" };
@@ -118,10 +121,7 @@ function parseApiTimeTo12Hour(value: string): { time12: string; meridian: Meridi
   return { time12: `${String(hour12).padStart(2, "0")}:${minute}`, meridian };
 }
 
-function to24HourApiTime(
-  time12: string,
-  meridian: Meridian,
-): string {
+function toApiTime12(time12: string, meridian: Meridian): string {
   const t = time12.trim();
   const m = /^(0?[1-9]|1[0-2]):([0-5]\d)$/.exec(t);
   if (!m) return "";
@@ -130,6 +130,23 @@ function to24HourApiTime(
   let hour24 = hour12 % 12;
   if (meridian === "PM") hour24 += 12;
   return `${String(hour24).padStart(2, "0")}:${minute}:00`;
+}
+
+function get12HourParts(time12: string): {
+  hour: string;
+  minute: string;
+} {
+  const m = /^(0?[1-9]|1[0-2]):([0-5]\d)$/.exec(time12.trim());
+  if (!m) return { hour: "12", minute: "00" };
+  return { hour: String(Number(m[1])), minute: m[2] };
+}
+
+function build12HourTime(hour: string, minute: string): string {
+  const h = Number(hour);
+  if (!Number.isInteger(h) || h < 1 || h > 12) return "";
+  const m = /^([0-5]\d)$/.exec(minute);
+  if (!m) return "";
+  return `${String(h).padStart(2, "0")}:${m[1]}`;
 }
 
 let razorpayScriptPromise: Promise<boolean> | null = null;
@@ -436,7 +453,7 @@ export default function JathagamPage() {
 
   const handleUpdateBirthDetails = async () => {
     const place = placeOfBirth.trim();
-    const timeApi = to24HourApiTime(timeOfBirth, timeMeridian);
+    const timeApi = toApiTime12(timeOfBirth, timeMeridian);
     if (!place) {
       toast.error("Place of birth is required.");
       return;
@@ -637,6 +654,7 @@ export default function JathagamPage() {
       matchBlock?.groom_profile_id != null,
   );
   const showPairColumnPng = !jsonMatchChartsEnabled || matchJsonChartFailed;
+  const timeParts = get12HourParts(timeOfBirth);
   const displayScore =
     matchBlock?.summary?.score ?? matchBlock?.score ?? null;
   const displayMaxScore =
@@ -750,20 +768,52 @@ export default function JathagamPage() {
                     Time of Birth
                   </Label>
                   <div className="flex gap-2 mt-1.5 items-center">
-                    <Input
-                      type="text"
-                      value={timeOfBirth}
-                      onChange={(e) => setTimeOfBirth(e.target.value)}
-                      placeholder="hh:mm"
-                      className="max-w-[140px]"
-                    />
+                    <Select
+                      value={timeParts.hour}
+                      onValueChange={(hour) =>
+                        setTimeOfBirth(build12HourTime(hour, timeParts.minute))
+                      }
+                    >
+                      <SelectTrigger className="w-[84px]">
+                        <SelectValue placeholder="HH" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(
+                          (hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-muted-foreground text-sm">:</span>
+                    <Select
+                      value={timeParts.minute}
+                      onValueChange={(minute) =>
+                        setTimeOfBirth(build12HourTime(timeParts.hour, minute))
+                      }
+                    >
+                      <SelectTrigger className="w-[84px]">
+                        <SelectValue placeholder="MM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 60 }, (_, i) =>
+                          String(i).padStart(2, "0"),
+                        ).map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Select
                       value={timeMeridian}
                       onValueChange={(value) =>
                         setTimeMeridian(value as Meridian)
                       }
                     >
-                      <SelectTrigger className="w-[90px]">
+                      <SelectTrigger className="w-[92px]">
                         <SelectValue placeholder="AM/PM" />
                       </SelectTrigger>
                       <SelectContent>
