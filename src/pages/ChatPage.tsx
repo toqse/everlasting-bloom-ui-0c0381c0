@@ -73,11 +73,18 @@ function formatLastSeen(value: string): string {
   });
 }
 
+/** Client-only temp ids (negative). Dropped when the server echoes the same outgoing text. */
+const nextOptimisticMessageId = (seq: { current: number }) => {
+  seq.current += 1;
+  return -seq.current;
+};
+
 const ChatPage = () => {
   const params = useParams();
   const profileId = (params?.profileId as string | undefined) ?? undefined;
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const optimisticIdSeqRef = useRef(0);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
@@ -155,7 +162,28 @@ const ChatPage = () => {
             created_at: payload.created_at,
             read_at: null,
           };
-          setMessages((prev) => [...prev, msg]);
+
+          const ourMatri = useAuthStore.getState().user?.matriId;
+          const echoText = (payload.text ?? "").trim();
+          setMessages((prev) => {
+            let base = prev;
+            if (
+              ourMatri &&
+              payload.sender_matri_id === ourMatri &&
+              echoText.length > 0
+            ) {
+              const dropIdx = base.findIndex(
+                (m) =>
+                  m.id < 0 &&
+                  m.sender_matri_id === ourMatri &&
+                  (m.text ?? "").trim() === echoText,
+              );
+              if (dropIdx !== -1) {
+                base = [...base.slice(0, dropIdx), ...base.slice(dropIdx + 1)];
+              }
+            }
+            return [...base, msg];
+          });
         } catch {
           // ignore malformed frames
         }
@@ -211,10 +239,23 @@ const ChatPage = () => {
   }
 
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+    const trimmed = newMessage.trim();
+    if (!trimmed) return;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ message: newMessage }));
+      const user = useAuthStore.getState().user;
+      const matriId = user?.matriId ?? "";
+      const optimistic: ChatMessage = {
+        id: nextOptimisticMessageId(optimisticIdSeqRef),
+        sender_id: (user?.phone || user?.email || "").trim(),
+        sender_matri_id: matriId,
+        sender_name: user?.name?.trim() || "You",
+        text: trimmed,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      ws.send(JSON.stringify({ message: trimmed }));
       setNewMessage("");
       setEmojiOpen(false);
     } else {
@@ -333,9 +374,9 @@ const ChatPage = () => {
                 return (
                   <motion.div
                     key={messageKey}
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ duration: 0.2 }}
                     className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                   >
                     <div className={`max-w-[75%] ${isOwn ? "order-2" : ""}`}>

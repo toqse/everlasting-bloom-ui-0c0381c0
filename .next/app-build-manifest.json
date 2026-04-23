@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/dashboard/page": [
+    "/dashboard/matches/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/page.js"
+      "static/chunks/app/dashboard/matches/page.js"
     ],
     "/dashboard/layout": [
       "static/chunks/webpack.js",
@@ -21,35 +21,45 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
-    "/dashboard/interests/page": [
+    "/dashboard/chat-list/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/interests/page.js"
+      "static/chunks/app/dashboard/chat-list/page.js"
     ],
-    "/dashboard/profile/page": [
+    "/chat/[profileId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/profile/page.js"
+      "static/chunks/app/chat/[profileId]/page.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/page.js"
     ],
     "/dashboard/favorites/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/favorites/page.js"
     ],
-    "/dashboard/matches/page": [
+    "/dashboard/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/matches/page.js"
+      "static/chunks/app/dashboard/profile/page.js"
+    ],
+    "/dashboard/interests/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/interests/page.js"
     ],
     "/dashboard/jathagam/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/jathagam/page.js"
     ],
-    "/_not-found/page": [
+    "/dashboard/plan/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/dashboard/plan/page.js"
     ]
   }
 }

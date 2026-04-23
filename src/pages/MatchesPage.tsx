@@ -1357,15 +1357,6 @@ const MatchListCard = ({
             />
           </div>
         )}
-        <div
-          className={cn(
-            "absolute left-3 top-3 z-10 h-3 w-3 rounded-full border-2 border-white/90 shadow-sm",
-            isOnline
-              ? "bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.35)]"
-              : "bg-white/50",
-          )}
-          title={isOnline ? "Online" : "Offline"}
-        />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10">
           <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">
             {lastLoginLabel}
