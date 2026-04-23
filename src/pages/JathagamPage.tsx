@@ -1149,16 +1149,6 @@ export default function JathagamPage() {
                       )}
                       Download match report (PDF)
                     </button>
-                    {matchResponseData?.match_report_pdf_url ? (
-                      <a
-                        href={matchResponseData.match_report_pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline sm:ml-1"
-                      >
-                        Server-hosted PDF (optional)
-                      </a>
-                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -1240,16 +1230,6 @@ export default function JathagamPage() {
                     )}
                     Download match report (PDF)
                   </button>
-                  {matchResponseData.match_report_pdf_url ? (
-                    <a
-                      href={matchResponseData.match_report_pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      Server-hosted PDF (optional)
-                    </a>
-                  ) : null}
                 </div>
               </div>
 
