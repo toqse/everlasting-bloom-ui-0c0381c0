@@ -129,7 +129,7 @@ const defaultUser: User = {
   name: "Rahul",
   email: "rahul@gmail.com",
   phone: "+91 98765 43210",
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+  avatar: "",
   plan: "Premium",
   location: "Mumbai, India",
   memberSince: "January 2024",

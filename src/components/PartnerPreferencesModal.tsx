@@ -26,7 +26,7 @@ interface Props {
 }
 
 const PartnerPreferencesModal = ({ open, onOpenChange }: Props) => {
-  const { user, isHindu } = useAuthStore();
+  const { user } = useAuthStore();
   const userReligion = user?.religion || "Hindu";
 
   const [ageRange, setAgeRange] = useState([22, 32]);
@@ -214,9 +214,8 @@ const PartnerPreferencesModal = ({ open, onOpenChange }: Props) => {
             )}
           </div>
 
-          {/* Horoscope - Hindu only */}
-          {isHindu() && (
-            <div>
+          {/* Horoscope preferences */}
+          <div>
               <h3 className="font-serif text-lg font-bold text-foreground mb-4 flex items-center gap-2">🔮 Horoscope Preferences</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -255,7 +254,6 @@ const PartnerPreferencesModal = ({ open, onOpenChange }: Props) => {
                 </div>
               </div>
             </div>
-          )}
 
           {/* Summary */}
           <div className="p-4 rounded-xl bg-accent-rose/10 border border-primary/10">
@@ -268,7 +266,7 @@ const PartnerPreferencesModal = ({ open, onOpenChange }: Props) => {
               <p><span className="text-muted-foreground">💍 Marital:</span> <strong>{maritalStatus}</strong></p>
               <p><span className="text-muted-foreground">📍 Location:</span> <strong>{location}</strong></p>
               <p><span className="text-muted-foreground">🤝 Caste:</span> <strong>{castePref === "own" ? "Own caste" : castePref === "open" ? "Open to all" : `${selectedCastes.length} selected`}</strong></p>
-              {isHindu() && <p><span className="text-muted-foreground">🔮 Horoscope:</span> <strong>{horoscopeRequired.toLowerCase()}</strong></p>}
+              <p><span className="text-muted-foreground">🔮 Horoscope:</span> <strong>{horoscopeRequired.toLowerCase()}</strong></p>
             </div>
           </div>
         </div>

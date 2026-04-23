@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -159,8 +158,7 @@ const DashboardInterests = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Interest request
         </h1>
@@ -386,8 +384,7 @@ const DashboardInterests = () => {
             )}
           </div>
         </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

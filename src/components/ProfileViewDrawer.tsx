@@ -169,7 +169,6 @@ const ProfileViewDrawer = ({
   onChat,
   onOpenPlanModal,
 }: Props) => {
-  const isHindu = useAuthStore((s) => s.isHindu);
   const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
   const sendInterest = useInterestStore((s) => s.sendInterest);
   const getHoroscopeRemaining = useAuthStore((s) => s.getHoroscopeRemaining);
@@ -522,7 +521,7 @@ const ProfileViewDrawer = ({
   ];
 
   const horoscopeBlock =
-    isHindu() && hasPaidPlan() ? (
+    hasPaidPlan() ? (
       <div className={cn(hideSummaryGrids ? "mt-8" : "mt-6")}>
         <SectionTitle icon={Moon}>Horoscope</SectionTitle>
         {horoscopeRevealed ? (
@@ -599,7 +598,7 @@ const ProfileViewDrawer = ({
                 <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
                   {displayCaste}
                 </span>
-                {isHindu() && (
+                {hasPaidPlan() && (
                   <span className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
                     <Sparkles className="h-3 w-3 opacity-90" />
                     Jathagam available
@@ -616,7 +615,7 @@ const ProfileViewDrawer = ({
         </div>
 
         {/* Body — scrolls; footer stays visible */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
           <div className="space-y-8 px-6 py-6 md:px-8 md:py-8">
             {!hideSummaryGrids ? (
               <>
@@ -1060,61 +1059,65 @@ const ProfileViewDrawer = ({
           onUpgrade={() => onOpenPlanModal?.()}
         />
 
-        <div className="flex shrink-0 flex-wrap gap-3 border-t border-border/60 bg-muted/15 px-6 py-4 md:px-8">
+        <div className="flex shrink-0 flex-nowrap items-stretch gap-1.5 border-t border-border/60 bg-muted/15 px-3 py-3 sm:gap-2 sm:px-6 sm:py-4 md:px-8">
           {showInterestAccepted ? (
             <Button
               variant="outline"
-              size="lg"
-              className="min-w-0 flex-1 gap-2 border-primary/25 text-foreground sm:min-w-[10rem]"
               type="button"
               aria-disabled="true"
+              title="Interest accepted"
               onClick={(e) => e.stopPropagation()}
+              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
             >
-              <Heart className="h-5 w-5 fill-secondary text-secondary" /> Interest Accepted
+              <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
+              <span className="line-clamp-2 text-center">Interest Accepted</span>
             </Button>
           ) : showInterestSent ? (
             <Button
               variant="outline"
-              size="lg"
-              className="min-w-0 flex-1 gap-2 border-primary/25 text-foreground sm:min-w-[10rem]"
               type="button"
               aria-disabled="true"
+              title="Interest sent"
               onClick={(e) => e.stopPropagation()}
+              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
             >
-              <Heart className="h-5 w-5 fill-secondary text-secondary" /> Interest Sent
+              <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
+              <span className="line-clamp-2 text-center">Interest Sent</span>
             </Button>
           ) : showSendInterestButton ? (
             <Button
               variant="hero"
-              size="lg"
-              className="min-w-0 flex-1 gap-2 sm:min-w-[10rem]"
               type="button"
               onClick={handleSendInterest}
+              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
             >
-              <Heart className="h-5 w-5" /> Send interest
+              <Heart className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+              <span className="line-clamp-2 text-center">Send interest</span>
             </Button>
           ) : null}
           {onChat ? (
             <Button
               variant="default"
-              size="lg"
-              className="min-w-0 flex-1 gap-2 sm:min-w-[8rem]"
               type="button"
               disabled={!canChat}
               title={
                 !canChat ? "Not available on your current plan" : undefined
               }
               onClick={onChat}
+              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
             >
-              <MessageCircle className="h-5 w-5" /> Chat now
+              <MessageCircle className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+              <span className="text-center">
+                <span className="sm:hidden">Chat</span>
+                <span className="hidden sm:inline">Chat now</span>
+              </span>
             </Button>
           ) : null}
           <Button
             variant="outline"
-            size="lg"
-            className="border-border/80 px-8 sm:shrink-0"
             type="button"
             onClick={() => onOpenChange(false)}
+            className="h-auto min-h-[2.75rem] shrink-0 px-2.5 py-1.5 text-xs font-semibold sm:min-w-[4.5rem] sm:px-4 sm:text-sm md:min-h-[3rem]"
           >
             Close
           </Button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +8,7 @@ import {
   Clock,
   Sparkles,
   Users,
+  User,
   TrendingUp,
   Ruler,
   BookOpen,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Heart,
   Eye,
+  RotateCcw,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +53,10 @@ import {
   getReligions,
 } from "@/lib/masterApi";
 import { toast } from "sonner";
+
+function hasPhotoUrl(url: string | null | undefined): boolean {
+  return typeof url === "string" && url.trim() !== "";
+}
 
 const FilterSection = ({
   title,
@@ -257,6 +262,9 @@ function MatchesOpenFromQuery({
 }
 
 const DEFAULT_LIMIT = 10;
+/** Must stay in sync with `getMatches` param logic (only non-default ranges are sent). */
+const DEFAULT_AGE_RANGE: [number, number] = [18, 70];
+const DEFAULT_HEIGHT_RANGE: [number, number] = [120, 200];
 const LIMIT_OPTIONS = [10, 20, 30, 50] as const;
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "most_relevant", label: "Most relative" },
@@ -284,8 +292,10 @@ const MatchesPage = () => {
   const [filters, setFilters] = useState<MatchFilterOptions | null>(null);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const me = useAuthStore((s) => s.user);
-  const [ageRange, setAgeRange] = useState<[number, number]>([18, 70]);
-  const [heightRange, setHeightRange] = useState<[number, number]>([120, 200]);
+  const [ageRange, setAgeRange] = useState<[number, number]>(DEFAULT_AGE_RANGE);
+  const [heightRange, setHeightRange] = useState<[number, number]>(
+    DEFAULT_HEIGHT_RANGE,
+  );
   const [maritalStatusId, setMaritalStatusId] = useState<number | null>(null);
   const [religionId, setReligionId] = useState<number | null>(null);
   const [casteId, setCasteId] = useState<number | null>(null);
@@ -310,6 +320,59 @@ const MatchesPage = () => {
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
+
+  const hasActiveFilters = useMemo(() => {
+    const ageChanged =
+      ageRange[0] !== DEFAULT_AGE_RANGE[0] ||
+      ageRange[1] !== DEFAULT_AGE_RANGE[1];
+    const heightChanged =
+      heightRange[0] !== DEFAULT_HEIGHT_RANGE[0] ||
+      heightRange[1] !== DEFAULT_HEIGHT_RANGE[1];
+    const searchDirty =
+      maritalSearch.trim() !== "" ||
+      religionSearch.trim() !== "" ||
+      casteSearch.trim() !== "" ||
+      educationSearch.trim() !== "" ||
+      occupationSearch.trim() !== "";
+    return (
+      ageChanged ||
+      heightChanged ||
+      maritalStatusId != null ||
+      religionId != null ||
+      casteId != null ||
+      educationId != null ||
+      occupationId != null ||
+      searchDirty
+    );
+  }, [
+    ageRange,
+    heightRange,
+    maritalStatusId,
+    religionId,
+    casteId,
+    educationId,
+    occupationId,
+    maritalSearch,
+    religionSearch,
+    casteSearch,
+    educationSearch,
+    occupationSearch,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    setAgeRange(DEFAULT_AGE_RANGE);
+    setHeightRange(DEFAULT_HEIGHT_RANGE);
+    setMaritalStatusId(null);
+    setReligionId(null);
+    setCasteId(null);
+    setEducationId(null);
+    setOccupationId(null);
+    setMaritalSearch("");
+    setReligionSearch("");
+    setCasteSearch("");
+    setEducationSearch("");
+    setOccupationSearch("");
+  }, []);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
   const newProfilesCount = useMemo(
@@ -394,20 +457,21 @@ const MatchesPage = () => {
       setError(null);
       try {
         // By default do not apply filters: only send page & limit (and sort). Add age/height only when user changed them.
-        const defaultAge: [number, number] = [18, 70];
-        const defaultHeight: [number, number] = [120, 200];
         const params: Parameters<typeof getMatches>[0] = {
           page: pageNum,
           limit,
           sort_by: sortBy,
         };
-        if (ageRange[0] !== defaultAge[0] || ageRange[1] !== defaultAge[1]) {
+        if (
+          ageRange[0] !== DEFAULT_AGE_RANGE[0] ||
+          ageRange[1] !== DEFAULT_AGE_RANGE[1]
+        ) {
           params.age_min = ageRange[0];
           params.age_max = ageRange[1];
         }
         if (
-          heightRange[0] !== defaultHeight[0] ||
-          heightRange[1] !== defaultHeight[1]
+          heightRange[0] !== DEFAULT_HEIGHT_RANGE[0] ||
+          heightRange[1] !== DEFAULT_HEIGHT_RANGE[1]
         ) {
           params.height_min = heightRange[0];
           params.height_max = heightRange[1];
@@ -643,9 +707,8 @@ const MatchesPage = () => {
 
   return (
     <>
-      <DashboardLayout>
-        {/* Single root so layout flex height reaches the list scroller (lg). */}
-        <div className="flex flex-col gap-6 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-6 lg:overflow-hidden">
+      {/* Single root so layout flex height reaches the list scroller (lg). */}
+      <div className="flex flex-col gap-6 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-6 lg:overflow-hidden">
           <Suspense fallback={null}>
             <MatchesOpenFromQuery
               onPreview={completeMatchPreviewOpen}
@@ -692,26 +755,29 @@ const MatchesPage = () => {
               </motion.div>
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 lg:flex lg:items-center lg:justify-between lg:gap-4 lg:space-y-0">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Refine &amp; sort
               </p>
-              <div className="flex flex-wrap items-center gap-3">
+              {/* Mobile: one row (nowrap); sm+: can wrap */}
+              <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:flex-wrap sm:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="gap-2 border-primary/25 bg-background/80 font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground"
+                  className="shrink-0 gap-1.5 border-primary/25 bg-background/80 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:gap-2 sm:px-3 sm:text-sm"
                   onClick={() => openMatchModal()}
                 >
-                  <Sparkles className="h-4 w-4 shrink-0" />
+                  <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   Check Match
                 </Button>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Sort by</span>
-                  <div className="relative">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:flex-initial sm:justify-start sm:gap-2">
+                  <span className="shrink-0 text-xs text-muted-foreground sm:text-sm">
+                    Sort by
+                  </span>
+                  <div className="relative min-w-0 max-w-[min(52vw,12rem)] sm:max-w-none">
                     <select
-                      className="h-9 min-w-[10.5rem] cursor-pointer appearance-none rounded-lg border border-primary/15 bg-background py-2 pl-3 pr-9 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-9 w-full min-w-[6.5rem] cursor-pointer appearance-none rounded-lg border border-primary/15 bg-background py-2 pl-2 pr-8 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[10.5rem] sm:pl-3 sm:pr-9 sm:text-sm"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as SortBy)}
                       aria-label="Sort matches"
@@ -723,7 +789,7 @@ const MatchesPage = () => {
                       ))}
                     </select>
                     <ChevronDown
-                      className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                      className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground sm:right-2.5 sm:h-4 sm:w-4"
                       aria-hidden
                     />
                   </div>
@@ -742,9 +808,23 @@ const MatchesPage = () => {
               className="w-full shrink-0 lg:w-72 xl:w-80 lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1"
             >
               <div className="space-y-0 rounded-2xl border border-primary/10 bg-card/95 p-4 shadow-card backdrop-blur-sm">
-                <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Filters
-                </p>
+                <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Filters
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 gap-1 px-2 text-xs font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                    onClick={clearAllFilters}
+                    disabled={filtersLoading || !hasActiveFilters}
+                    aria-label="Clear all filters"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Clear all
+                  </Button>
+                </div>
                 <FilterSection
                   title="Age"
                   icon={<Clock className="w-4 h-4 text-primary" />}
@@ -875,7 +955,7 @@ const MatchesPage = () => {
             </motion.div>
 
             {/* Matches — only this area scrolls on desktop */}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col max-lg:overflow-visible lg:min-h-0 lg:overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -908,7 +988,7 @@ const MatchesPage = () => {
                 )}
               </motion.div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] lg:h-0 lg:max-h-[calc(100dvh-22rem)] lg:flex-1 lg:pr-1">
+              <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-22rem)] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
                 {error && (
                   <div className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {error}
@@ -1021,7 +1101,6 @@ const MatchesPage = () => {
             </div>
           </div>
         </div>
-      </DashboardLayout>
 
       <ProfileViewDrawer
         open={!!viewPreview}
@@ -1047,41 +1126,46 @@ const MatchesPage = () => {
 
       {/* Horoscope Match modal – groom fixed on left, browse up to 10 bride profiles on right */}
       <Dialog open={matchModalOpen} onOpenChange={setMatchModalOpen}>
-        <DialogContent className="max-w-5xl p-6 sm:p-8">
-          <DialogTitle className="mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
+        <DialogContent className="max-h-[min(92vh,900px)] w-[min(calc(100vw-1rem),64rem)] max-w-5xl overflow-y-auto p-4 sm:p-8">
+          <DialogTitle className="mb-3 flex items-center gap-2 sm:mb-4">
+            <Sparkles className="h-5 w-5 shrink-0 text-primary" />
             Visual Pair Maker
           </DialogTitle>
 
           {me && currentBride ? (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 md:gap-6 items-stretch">
                 {/* Profile owner (fixed) */}
-                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 flex flex-col items-center justify-center gap-3 min-h-[280px]">
+                <div className="flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-primary/10 bg-card p-2 shadow-card sm:gap-3 sm:p-4 md:min-h-[280px]">
                   <motion.div
-                    className="w-32 h-32 rounded-2xl overflow-hidden bg-muted flex items-center justify-center"
+                    className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   >
-                    <img
-                      src={
-                        me.avatar ||
-                        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop"
-                      }
-                      alt={me.name}
-                      className="w-full h-full object-cover"
-                    />
+                    {hasPhotoUrl(me.avatar) ? (
+                      <img
+                        src={me.avatar!.trim()}
+                        alt={me.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User
+                        className="h-9 w-9 text-primary/30 sm:h-12 sm:w-12 md:h-14 md:w-14"
+                        strokeWidth={1.25}
+                        aria-hidden
+                      />
+                    )}
                   </motion.div>
-                  <div className="text-center space-y-1">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                  <div className="space-y-0.5 text-center sm:space-y-1">
+                    <p className="text-[10px] font-semibold uppercase leading-tight text-muted-foreground tracking-wide sm:text-xs">
                       {leftLabel}
                     </p>
-                    <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
+                    <p className="truncate px-0.5 text-xs font-semibold text-foreground sm:text-sm md:max-w-[160px] md:text-sm">
                       {me.name}
                     </p>
                     {me.matriId && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                         ID: {me.matriId}
                       </p>
                     )}
@@ -1089,26 +1173,26 @@ const MatchesPage = () => {
                 </div>
 
                 {/* Match carousel */}
-                <div className="bg-card rounded-2xl border border-primary/10 shadow-card p-4 relative min-h-[280px] flex flex-col justify-center">
-                  {/* Arrows */}
+                <div className="relative flex min-h-0 min-w-0 flex-col justify-center rounded-2xl border border-primary/10 bg-card p-2 shadow-card sm:p-4 md:min-h-[280px]">
+                  {/* Prev / next — visible on mobile (was md-only) */}
                   <button
                     type="button"
                     onClick={goToPrevBride}
-                    className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-background/80 border border-border shadow-soft hover:bg-background"
+                    className="absolute left-0.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 shadow-soft hover:bg-background sm:left-1 sm:h-8 sm:w-8 md:left-2"
                     aria-label="Previous"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={goToNextBride}
-                    className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 items-center justify-center rounded-full bg-background/80 border border-border shadow-soft hover:bg-background"
+                    className="absolute right-0.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 shadow-soft hover:bg-background sm:right-1 sm:h-8 sm:w-8 md:right-2"
                     aria-label="Next"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
 
-                  <div className="flex flex-col items-center gap-3 pt-2 pb-3 flex-1 justify-center">
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-5 pb-2 pt-1 sm:gap-3 sm:px-7 sm:pb-3 sm:pt-2">
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.div
                         key={currentBride.matri_id}
@@ -1118,24 +1202,29 @@ const MatchesPage = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
-                        <div className="w-32 h-32 rounded-2xl overflow-hidden bg-muted flex items-center justify-center">
-                          <img
-                            src={
-                              currentBride.profile_photo ||
-                              "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop"
-                            }
-                            alt={currentBride.name}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl">
+                          {hasPhotoUrl(currentBride.profile_photo) ? (
+                            <img
+                              src={currentBride.profile_photo!.trim()}
+                              alt={currentBride.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <User
+                              className="h-9 w-9 text-primary/30 sm:h-12 sm:w-12 md:h-14 md:w-14"
+                              strokeWidth={1.25}
+                              aria-hidden
+                            />
+                          )}
                         </div>
-                        <div className="text-center space-y-1">
-                          <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                        <div className="space-y-0.5 text-center sm:space-y-1">
+                          <p className="text-[10px] font-semibold uppercase leading-tight text-muted-foreground tracking-wide sm:text-xs">
                             {rightLabel}
                           </p>
-                          <p className="text-sm font-semibold text-foreground truncate max-w-[160px]">
+                          <p className="truncate px-0.5 text-xs font-semibold text-foreground sm:text-sm md:max-w-[160px] md:text-sm">
                             {currentBride.name}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                             ID: {currentBride.matri_id}
                           </p>
                         </div>
@@ -1199,9 +1288,8 @@ const MatchListCard = ({
     is_interest_sent?: boolean;
   };
   const isOnline = profile.is_online;
-  const imgSrc =
-    profile.profile_photo ||
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop";
+  const photoUrl = profile.profile_photo?.trim() ?? "";
+  const hasPhoto = hasPhotoUrl(photoUrl);
   const busy = actionLoading === profile.matri_id;
   const lastLoginLabel = isOnline
     ? "Online now"
@@ -1252,13 +1340,23 @@ const MatchListCard = ({
         }
       }}
     >
-      {/* Photo — circular match score + status bar (API: profile_photo, match_percentage, last_seen, is_online) */}
+      {/* Photo + online dot + last login (match_percentage from API is not shown) */}
       <div className="relative h-56 w-full shrink-0 overflow-hidden bg-muted md:h-auto md:w-[min(100%,280px)] md:min-h-[260px] lg:w-[300px]">
-        <img
-          src={imgSrc}
-          alt=""
-          className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
-        />
+        {hasPhoto ? (
+          <img
+            src={photoUrl}
+            alt=""
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-muted to-secondary/10">
+            <User
+              className="h-[4.5rem] w-[4.5rem] text-primary/35 md:h-[5.25rem] md:w-[5.25rem]"
+              strokeWidth={1.15}
+              aria-hidden
+            />
+          </div>
+        )}
         <div
           className={cn(
             "absolute left-3 top-3 z-10 h-3 w-3 rounded-full border-2 border-white/90 shadow-sm",
@@ -1268,17 +1366,6 @@ const MatchListCard = ({
           )}
           title={isOnline ? "Online" : "Offline"}
         />
-        <div
-          className="absolute right-3 top-3 z-10 flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center rounded-full border-2 border-secondary/90 bg-background/95 shadow-md backdrop-blur-[2px]"
-          aria-label={`${profile.match_percentage}% match`}
-        >
-          <span className="text-[10px] font-semibold uppercase leading-none text-muted-foreground">
-            Match
-          </span>
-          <span className="text-base font-bold leading-tight text-primary tabular-nums">
-            {profile.match_percentage}%
-          </span>
-        </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10">
           <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">
             {lastLoginLabel}
@@ -1330,12 +1417,12 @@ const MatchListCard = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-primary/10 pt-4">
+        <div className="flex flex-nowrap gap-1.5 overflow-x-auto border-t border-primary/10 pt-4 [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:gap-2 sm:overflow-visible">
           {showInterestAccepted || showInterestSent || showInterestRejected ? (
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5 rounded-lg border-0 bg-primary text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary"
+              className="shrink-0 gap-1.5 rounded-lg border-0 bg-primary text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary sm:text-xs"
               type="button"
               aria-disabled="true"
               onClick={(e) => {
@@ -1349,7 +1436,7 @@ const MatchListCard = ({
             <Button
               size="sm"
               variant="outline"
-              className="gap-1.5 rounded-lg border-primary/25 text-xs font-semibold"
+              className="shrink-0 gap-1.5 rounded-lg border-primary/25 text-[11px] font-semibold sm:text-xs"
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1363,7 +1450,7 @@ const MatchListCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="gap-1.5 rounded-lg text-xs font-semibold shadow-sm"
+            className="shrink-0 gap-1.5 rounded-lg text-[11px] font-semibold shadow-sm sm:text-xs"
             disabled={busy}
             onClick={(e) => {
               e.stopPropagation();
@@ -1376,7 +1463,7 @@ const MatchListCard = ({
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5 rounded-lg border-secondary/50 text-xs font-semibold text-secondary-foreground hover:bg-secondary/15"
+            className="shrink-0 gap-1.5 rounded-lg border-secondary/50 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary/15 sm:text-xs"
             disabled={busy}
             onClick={(e) => {
               e.stopPropagation();

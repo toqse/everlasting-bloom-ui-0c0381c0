@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import PhotoCropDialog, {
   type PhotoCropDialogState,
 } from "@/components/signup/steps/PhotoCropDialog";
-import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import {
   Edit,
@@ -2451,8 +2450,7 @@ const UserProfilePage = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
           My Profile
         </h1>
@@ -2663,8 +2661,7 @@ const UserProfilePage = () => {
             )}
           </>
         )}
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

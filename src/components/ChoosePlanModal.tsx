@@ -72,7 +72,6 @@ export default function ChoosePlanModal({
   onPaySuccess,
 }: ChoosePlanModalProps) {
   const router = useRouter();
-  const isHindu = useAuthStore((s) => s.isHindu());
   const [step, setStep] = useState<Step>("choose");
   const [progress, setProgress] = useState(0);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("gold");
@@ -150,7 +149,7 @@ export default function ChoosePlanModal({
             transactionId={`TXN${Math.floor(10000000 + Math.random() * 90000000)}`}
             paymentVia={paymentLabel}
             features={[...selectedPlan.features]}
-            showHoroscopeBanner={isHindu}
+            showHoroscopeBanner
             onSetupHoroscope={handleSetupHoroscope}
             onClose={handleClose}
           />
@@ -205,9 +204,7 @@ export default function ChoosePlanModal({
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-3">
-                    {plan.features
-                      .filter((f) => isHindu || (!f.includes("Horoscope") && !f.includes("Porutham")))
-                      .map((f, i) => (
+                    {plan.features.map((f, i) => (
                         <span
                           key={i}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs text-foreground"
@@ -222,14 +219,13 @@ export default function ChoosePlanModal({
                 </button>
               ))}
             </div>
-            {isHindu && (
-              <div className="mt-4 p-3 rounded-lg bg-amber-100/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30 flex gap-2">
-                <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-foreground">
-                  Hindu user: Gold & Diamond plans include Horoscope access — view Jathagam and Porutham scores of all matches.
-                </p>
-              </div>
-            )}
+            <div className="mt-4 p-3 rounded-lg bg-amber-100/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30 flex gap-2">
+              <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-foreground">
+                Gold &amp; Diamond plans include Horoscope access — Jathagam
+                charts and Porutham scores for your matches.
+              </p>
+            </div>
           </div>
 
           {/* Right: PAYMETHOD */}

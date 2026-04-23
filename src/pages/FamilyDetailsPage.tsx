@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UsersRound,
@@ -96,8 +95,7 @@ const FamilyDetailsPage = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
+    <div className="space-y-8">
         {/* Page title with gradient accent */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -255,8 +253,7 @@ const FamilyDetailsPage = () => {
             )}
           </AnimatePresence>
         </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

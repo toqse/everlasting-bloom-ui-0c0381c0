@@ -2,47 +2,21 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
-import { LogOut, Loader2, Check, AlertCircle } from "lucide-react";
+import { LogOut, Loader2, Check, AlertCircle, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   getSettingsProfile,
   updateProfileVisibility,
   updateInterestPermission,
-  updateNotifications,
   type SettingsProfile,
   type ProfileVisibility,
   type InterestPermission,
-  type SettingsNotifications,
 } from "@/lib/settingsApi";
+import { isUsableProfilePhotoUrl } from "@/lib/utils";
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
-
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${
-        checked ? "bg-green-500" : "bg-gray-300"
-      }`}
-    >
-      <div
-        className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-          checked ? "right-0.5" : "left-0.5"
-        }`}
-      />
-    </button>
-  );
-}
 
 function StatusBadge({
   status,
@@ -93,21 +67,12 @@ const SettingsPage = () => {
   const [visibility, setVisibility] = useState<ProfileVisibility>("all_users");
   const [interestPerm, setInterestPerm] =
     useState<InterestPermission>("all_users");
-  const [notifications, setNotifications] = useState<SettingsNotifications>({
-    interest_request: true,
-    chat: true,
-    profile_views: true,
-    new_matches: true,
-  });
 
   // ── Save-status indicators ──
   const [visibilityStatus, setVisibilityStatus] = useState<
     "saving" | "saved" | "error" | null
   >(null);
   const [interestStatus, setInterestStatus] = useState<
-    "saving" | "saved" | "error" | null
-  >(null);
-  const [notifStatus, setNotifStatus] = useState<
     "saving" | "saved" | "error" | null
   >(null);
 
@@ -127,7 +92,6 @@ const SettingsPage = () => {
         setSettings(data);
         setVisibility(data.profile_visibility);
         setInterestPerm(data.interest_permission);
-        setNotifications(data.notifications);
         setFetchError(null);
       })
       .catch((err: Error) => {
@@ -162,19 +126,6 @@ const SettingsPage = () => {
     }
   };
 
-  const handleNotifToggle = async (key: keyof SettingsNotifications) => {
-    const updated = { ...notifications, [key]: !notifications[key] };
-    setNotifications(updated);
-    setNotifStatus("saving");
-    try {
-      await updateNotifications(updated);
-      setNotifStatus("saved");
-      clearSavedAfterDelay(setNotifStatus);
-    } catch {
-      setNotifStatus("error");
-    }
-  };
-
   const handleLogout = () => {
     logout();
     router.push("/");
@@ -182,7 +133,10 @@ const SettingsPage = () => {
 
   // ── Derived display values ──
   const displayName = settings?.name || user?.name || "—";
-  const displayPhoto = settings?.profile_photo || user?.avatar;
+  const displayPhotoRaw = (settings?.profile_photo || user?.avatar || "").trim();
+  const displayPhoto = isUsableProfilePhotoUrl(displayPhotoRaw)
+    ? displayPhotoRaw
+    : null;
   const displayPlan = settings?.plan || user?.plan || "—";
   const displayLocation = settings?.location || user?.location || "—";
 
@@ -198,8 +152,7 @@ const SettingsPage = () => {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Profile settings
         </h1>
@@ -222,12 +175,19 @@ const SettingsPage = () => {
             <div className="flex items-center gap-4">
               {loading ? (
                 <div className="w-14 h-14 rounded-full bg-gray-100 animate-pulse" />
-              ) : (
+              ) : displayPhoto ? (
                 <img
                   src={displayPhoto}
                   alt={displayName}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-primary/20"
+                  className="h-14 w-14 rounded-full border-2 border-primary/20 object-cover"
                 />
+              ) : (
+                <div
+                  className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary/20 bg-muted/40"
+                  aria-hidden
+                >
+                  <User className="h-7 w-7 text-primary/40" strokeWidth={1.25} />
+                </div>
               )}
               <div>
                 {loading ? (
@@ -322,66 +282,7 @@ const SettingsPage = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* ── Notifications ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-3xl shadow-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold text-secondary">
-              Notifications
-            </h3>
-            <StatusBadge status={notifStatus} />
-          </div>
-          <div className="space-y-6">
-            {(
-              [
-                {
-                  key: "interest_request" as const,
-                  title: "Interest request",
-                  desc: "Interest request email notifications",
-                },
-                {
-                  key: "chat" as const,
-                  title: "Chat",
-                  desc: "New chat notifications",
-                },
-                {
-                  key: "profile_views" as const,
-                  title: "Profile views",
-                  desc: "If anyone views your profile means you get the notifications at end of the day",
-                },
-                {
-                  key: "new_matches" as const,
-                  title: "New profile match",
-                  desc: "You get the profile match emails",
-                },
-              ] satisfies {
-                key: keyof SettingsNotifications;
-                title: string;
-                desc: string;
-              }[]
-            ).map((item) => (
-              <div key={item.key} className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-serif font-bold text-foreground text-sm">
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-                <Toggle
-                  checked={notifications[item.key]}
-                  onChange={() => handleNotifToggle(item.key)}
-                />
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

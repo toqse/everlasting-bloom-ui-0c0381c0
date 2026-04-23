@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import {
   Heart,
@@ -40,6 +39,37 @@ import {
 import { BASE_URL } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
+/** In-session cache so returning to /dashboard does not blank the whole UI while refetching. */
+type DashboardSessionCache = {
+  key: string;
+  summary: DashboardSummary;
+  newMatches: DashboardProfile[];
+  suggestions: DashboardProfile[];
+  todayPicks: DashboardProfile[];
+  profileCompletion: number;
+};
+
+let dashboardSessionCache: DashboardSessionCache | null = null;
+
+function dashboardCacheAuthKey(): string | null {
+  const u = useAuthStore.getState().user;
+  if (!u) return null;
+  const id = u.matriId?.trim();
+  if (id) return id;
+  const phone = u.phone?.trim();
+  if (phone) return `phone:${phone}`;
+  const email = u.email?.trim();
+  if (email) return `email:${email}`;
+  return null;
+}
+
+function readDashboardSessionCache(): DashboardSessionCache | null {
+  const key = dashboardCacheAuthKey();
+  const c = dashboardSessionCache;
+  if (!key || !c || c.key !== key) return null;
+  return c;
+}
+
 function getMediaUrl(path: string | null | undefined): string {
   if (!path) return "";
   const base = BASE_URL.replace(/\/api\/?$/, "");
@@ -56,7 +86,7 @@ function NewMatchesStoriesStrip({
   onStoryClick: (matriId: string) => void;
 }) {
   return (
-    <div className="flex gap-5 sm:gap-6 overflow-x-auto pb-2 pt-1 -mx-1 px-1 snap-x snap-mandatory [scrollbar-width:thin]">
+    <div className="flex min-w-0 max-w-full gap-3 sm:gap-5 overflow-x-auto overscroll-x-contain pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:thin] touch-pan-x">
       {profiles.map((profile) => {
         const photoUrl = getMediaUrl(profile.profile_photo);
         const initials = profile.name
@@ -226,23 +256,35 @@ const SuggestionCard = ({
 const DashboardPage = () => {
   const {
     user,
-    isHindu,
     hasPaidPlan,
     getHoroscopeRemaining,
     getHoroscopeQuota,
   } = useAuthStore();
-  const showHoroscope = () => isHindu() && hasPaidPlan();
+  const showHoroscope = () => hasPaidPlan();
   const horoscopeRemaining = getHoroscopeRemaining();
   const horoscopeQuota = getHoroscopeQuota();
   const router = useRouter();
 
-  // Data state
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [newMatches, setNewMatches] = useState<DashboardProfile[]>([]);
-  const [suggestions, setSuggestions] = useState<DashboardProfile[]>([]);
-  const [todayPicks, setTodayPicks] = useState<DashboardProfile[]>([]);
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const initialCache = readDashboardSessionCache();
+  const hasDashboardDataRef = useRef(initialCache != null);
+
+  // Data state (hydrate from session cache when revisiting /dashboard for the same account)
+  const [summary, setSummary] = useState<DashboardSummary | null>(
+    () => initialCache?.summary ?? null,
+  );
+  const [newMatches, setNewMatches] = useState<DashboardProfile[]>(
+    () => initialCache?.newMatches ?? [],
+  );
+  const [suggestions, setSuggestions] = useState<DashboardProfile[]>(
+    () => initialCache?.suggestions ?? [],
+  );
+  const [todayPicks, setTodayPicks] = useState<DashboardProfile[]>(
+    () => initialCache?.todayPicks ?? [],
+  );
+  const [profileCompletion, setProfileCompletion] = useState(
+    () => initialCache?.profileCompletion ?? 0,
+  );
+  const [loading, setLoading] = useState(() => initialCache == null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // UI state
@@ -259,7 +301,8 @@ const DashboardPage = () => {
   const [sendingInterest, setSendingInterest] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
-    setLoading(true);
+    const warm = readDashboardSessionCache() != null;
+    if (!warm) setLoading(true);
     setLoadError(null);
     try {
       const [summaryRes, matchesRes, suggestionsRes, todayRes] =
@@ -269,18 +312,41 @@ const DashboardPage = () => {
           getDashboardSuggestions(8),
           getDashboardTodayPicks(),
         ]);
-      setSummary(summaryRes.data);
-      setNewMatches(Array.isArray(matchesRes.data) ? matchesRes.data : []);
-      setSuggestions(
-        Array.isArray(suggestionsRes.data) ? suggestionsRes.data : [],
-      );
-      setTodayPicks(Array.isArray(todayRes.data) ? todayRes.data : []);
-      setProfileCompletion(summaryRes.data?.profile_completion ?? 0);
+      const nextSummary = summaryRes.data;
+      const nextMatches = Array.isArray(matchesRes.data) ? matchesRes.data : [];
+      const nextSuggestions = Array.isArray(suggestionsRes.data)
+        ? suggestionsRes.data
+        : [];
+      const nextToday = Array.isArray(todayRes.data) ? todayRes.data : [];
+      const nextCompletion = nextSummary?.profile_completion ?? 0;
+
+      setSummary(nextSummary);
+      setNewMatches(nextMatches);
+      setSuggestions(nextSuggestions);
+      setTodayPicks(nextToday);
+      setProfileCompletion(nextCompletion);
+
+      const authKey = dashboardCacheAuthKey();
+      if (authKey) {
+        dashboardSessionCache = {
+          key: authKey,
+          summary: nextSummary,
+          newMatches: nextMatches,
+          suggestions: nextSuggestions,
+          todayPicks: nextToday,
+          profileCompletion: nextCompletion,
+        };
+      }
+      hasDashboardDataRef.current = true;
     } catch (err) {
       console.error("Dashboard load error:", err);
-      setLoadError(
-        err instanceof Error ? err.message : "Failed to load dashboard",
-      );
+      const msg =
+        err instanceof Error ? err.message : "Failed to load dashboard";
+      if (hasDashboardDataRef.current) {
+        toast.error(msg);
+      } else {
+        setLoadError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -349,7 +415,6 @@ const DashboardPage = () => {
             label: "Horoscope Active",
             value: "—",
             color: "text-secondary",
-            hinduOnly: true as const,
           },
         ]
       : []),
@@ -366,56 +431,52 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-3">
-            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground">Loading your dashboard…</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading your dashboard…</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-3">
-            <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
-            <p className="text-foreground font-semibold">
-              Failed to load dashboard
-            </p>
-            <p className="text-sm text-muted-foreground">{loadError}</p>
-            <Button variant="outline" onClick={loadDashboard}>
-              Try again
-            </Button>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-3">
+          <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
+          <p className="text-foreground font-semibold">
+            Failed to load dashboard
+          </p>
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <Button variant="outline" onClick={loadDashboard}>
+            Try again
+          </Button>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 w-full">
+    <>
+      <div className="mx-auto w-full min-w-0 max-w-md space-y-5 sm:max-w-none sm:space-y-6">
         {/* Welcome banner */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-primary rounded-2xl shadow-card p-6 text-primary-foreground"
+          className="bg-primary rounded-2xl shadow-card p-4 text-primary-foreground sm:p-6"
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-2xl md:text-3xl font-bold">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+            <div className="min-w-0">
+              <h1 className="font-serif text-xl font-bold sm:text-2xl md:text-3xl">
                 Welcome back, {user?.name || "User"}
               </h1>
-              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm opacity-95">
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-95 sm:text-sm sm:gap-3">
                 <span>Profile: {profileCompletion}% Complete</span>
                 {(displayMatriId || displayLocation) && (
                   <>
                     <span className="opacity-70">|</span>
-                    <span>
+                    <span className="min-w-0 break-words">
                       {[displayMatriId, displayLocation]
                         .filter(Boolean)
                         .join(" – ")}
@@ -424,18 +485,18 @@ const DashboardPage = () => {
                 )}
               </div>
             </div>
-            <div className="flex gap-3">
-              <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
-                <p className="text-2xl font-bold">
+            <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-3">
+              <div className="min-w-0 rounded-xl bg-white/15 px-3 py-2.5 text-center sm:min-w-[120px] sm:px-4 sm:py-3">
+                <p className="text-xl font-bold sm:text-2xl">
                   {summary?.interests_sent ?? 0}
                 </p>
-                <p className="text-xs opacity-90">Interests Sent</p>
+                <p className="text-[11px] opacity-90 sm:text-xs">Interests Sent</p>
               </div>
-              <div className="bg-white/15 rounded-xl px-4 py-3 text-center min-w-[120px]">
-                <p className="text-2xl font-bold">
+              <div className="min-w-0 rounded-xl bg-white/15 px-3 py-2.5 text-center sm:min-w-[120px] sm:px-4 sm:py-3">
+                <p className="text-xl font-bold sm:text-2xl">
                   {summary?.new_matches ?? 0}
                 </p>
-                <p className="text-xs opacity-90">New Matches</p>
+                <p className="text-[11px] opacity-90 sm:text-xs">New Matches</p>
               </div>
             </div>
           </div>
@@ -447,7 +508,7 @@ const DashboardPage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
-            className="bg-card rounded-2xl shadow-card p-4 border border-primary/10 flex flex-wrap items-center justify-between gap-3"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-card p-3 shadow-card sm:p-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -482,12 +543,12 @@ const DashboardPage = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-5"
         >
           {statsCards.map((stat, i) => (
             <div
               key={i}
-              className="bg-card rounded-2xl shadow-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 hover:shadow-elevated transition-shadow"
+              className="flex min-w-0 flex-col gap-2 rounded-2xl bg-card p-3 shadow-card transition-shadow hover:shadow-elevated sm:flex-row sm:items-center sm:gap-3 sm:p-4 md:gap-4"
             >
               <div className="w-12 h-12 rounded-xl bg-accent-rose flex items-center justify-center flex-shrink-0 relative">
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -518,17 +579,17 @@ const DashboardPage = () => {
         </motion.div>
 
         {/* Two-column layout */}
-        <div className="grid lg:grid-cols-12 gap-6">
+        <div className="grid min-w-0 gap-5 sm:gap-6 lg:grid-cols-12">
           {/* Left content */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="min-w-0 space-y-5 sm:space-y-6 lg:col-span-8">
             {/* New Matches — stories strip + Love Stories–style grid */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="rounded-[1.75rem] sm:rounded-[2rem] border border-primary/10 bg-gradient-to-br from-white via-rose-50/40 to-violet-50/50 shadow-card overflow-hidden"
+              className="overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-br from-white via-rose-50/40 to-violet-50/50 shadow-card sm:rounded-[1.75rem] md:rounded-[2rem]"
             >
-              <div className="p-5 sm:p-6 sm:pb-4">
+              <div className="p-4 sm:p-6 sm:pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-1">
                   <div>
                     <h2 className="font-serif text-2xl sm:text-[1.65rem] font-bold text-foreground tracking-tight">
@@ -549,7 +610,7 @@ const DashboardPage = () => {
                 </div>
               </div>
               {newMatches.length > 0 ? (
-                <div className="px-5 sm:px-6 pb-6">
+                <div className="min-w-0 px-4 pb-5 sm:px-6 sm:pb-6">
                   <NewMatchesStoriesStrip
                     profiles={newMatches}
                     onStoryClick={(matriId) => {
@@ -560,7 +621,7 @@ const DashboardPage = () => {
                   />
                 </div>
               ) : (
-                <div className="px-5 sm:px-6 pb-10 text-center">
+                <div className="px-4 pb-8 text-center sm:px-6 sm:pb-10">
                   <div className="rounded-2xl bg-white/60 border border-dashed border-primary/15 py-12 px-4">
                     <Sparkles className="w-12 h-12 mx-auto mb-3 text-primary/30" />
                     <p className="text-foreground font-medium">
@@ -589,9 +650,9 @@ const DashboardPage = () => {
                   <MapPin className="w-4 h-4 text-primary" />
                   Based on your location – {displayLocation}
                 </p>
-                <div className="bg-primary/10 rounded-2xl p-4 border border-primary/10">
+                <div className="rounded-2xl border border-primary/10 bg-primary/10 p-3 sm:p-4">
                   {suggestions.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-3 sm:overflow-x-auto pb-2">
+                    <div className="grid min-w-0 max-w-full grid-cols-2 gap-2 sm:flex sm:gap-4 sm:overflow-x-auto sm:pb-2 md:gap-3">
                       {suggestions.slice(0, 4).map((profile) => {
                         const photoUrl = getMediaUrl(profile.profile_photo);
                         const initials = profile.name
@@ -647,21 +708,21 @@ const DashboardPage = () => {
           </div>
 
           {/* Right sidebar */}
-          <aside className="lg:col-span-4 space-y-6">
+          <aside className="min-w-0 space-y-5 sm:space-y-6 lg:col-span-4">
             {/* Horoscope widget */}
             {showHoroscope() && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="bg-accent-gold/20 rounded-3xl shadow-card p-6 border border-secondary/20"
+                className="rounded-2xl border border-secondary/20 bg-accent-gold/20 p-4 shadow-card sm:rounded-3xl sm:p-6"
               >
                 <h3 className="font-serif text-lg font-bold text-secondary mb-2 flex items-center gap-2">
                   <Star className="w-5 h-5 text-secondary" /> Horoscope Matching
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  As a Hindu user, you get Jathagam-based Porutham scoring for
-                  all your matches.
+                  Add your birth details for Jathagam charts and Porutham-based
+                  compatibility with your matches.
                 </p>
                 <Button
                   variant="hero"
@@ -678,9 +739,9 @@ const DashboardPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-card rounded-3xl shadow-card p-6"
+              className="rounded-2xl bg-card p-4 shadow-card sm:rounded-3xl sm:p-6"
             >
-              <h3 className="font-serif text-lg font-bold text-secondary mb-4">
+              <h3 className="mb-3 font-serif text-base font-bold text-secondary sm:mb-4 sm:text-lg">
                 Today&apos;s Picks
               </h3>
               {todayPicks.length > 0 ? (
@@ -760,7 +821,7 @@ const DashboardPage = () => {
         open={preferencesOpen}
         onOpenChange={setPreferencesOpen}
       />
-    </DashboardLayout>
+    </>
   );
 };
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard,
@@ -75,8 +74,10 @@ const typeConfig: Record<
   refund: { icon: ArrowDownLeft, label: "Refund", isCredit: true },
 };
 
+/** Display-only: no leading minus (API may send negative amounts for debits). */
 function formatAmount(amount: number): string {
-  return `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const n = Math.abs(Number(amount) || 0);
+  return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -290,7 +291,7 @@ const TransactionsPage = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
@@ -412,7 +413,7 @@ const TransactionsPage = () => {
                         <span
                           className={`text-sm font-bold ${tc.isCredit ? "text-green-600" : "text-foreground"}`}
                         >
-                          {tc.isCredit ? "+" : "-"}
+                          {tc.isCredit ? "+" : ""}
                           {formatAmount(txn.amount)}
                         </span>
                         <span
@@ -460,7 +461,7 @@ const TransactionsPage = () => {
 
       {/* Detail modal */}
       <DetailModal transactionId={detailId} onClose={() => setDetailId(null)} />
-    </DashboardLayout>
+    </>
   );
 };
 

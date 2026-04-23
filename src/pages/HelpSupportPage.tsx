@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardLayout from "@/components/DashboardLayout";
 import { motion } from "framer-motion";
 import {
   HelpCircle,
@@ -45,8 +44,7 @@ const HelpSupportPage = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
           Help & Support
         </h1>
@@ -151,8 +149,7 @@ const HelpSupportPage = () => {
             ))}
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

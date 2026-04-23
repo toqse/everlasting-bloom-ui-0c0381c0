@@ -36,7 +36,10 @@ export interface ProfileData {
     number_of_children?: number;
     children_count?: number;
     height_cm?: string;
+    /** Some API responses use `height` / `weight` instead of *_cm / *_kg. */
+    height?: string;
     weight_kg?: string;
+    weight?: string;
     colour?: string;
     complexion?: string;
     blood_group?: string;
@@ -68,13 +71,21 @@ export interface ProfileData {
     highest_education?: string;
     education_subject_id?: number;
     education_subject?: string;
+    employment_status_id?: number;
     employment_status?: string;
     occupation_id?: number;
     occupation?: string;
     annual_income_id?: number;
     annual_income?: string;
+    income_range_id?: number;
   };
   about_me?: string;
+  /** Flattened height/weight keys occasionally returned on the profile root. */
+  height_cm?: string;
+  height?: string;
+  weight_kg?: string;
+  weight?: string;
+  blood_group?: string;
 }
 
 export interface ProfileResponse {

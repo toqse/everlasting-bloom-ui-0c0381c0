@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, Eye, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import {
@@ -159,7 +158,7 @@ const DashboardFavoritesPage = () => {
   );
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-5">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -341,7 +340,7 @@ const DashboardFavoritesPage = () => {
         canChat={previewCanChat}
         onChat={preview ? () => handleChat(preview.matri_id) : undefined}
       />
-    </DashboardLayout>
+    </>
   );
 };
 

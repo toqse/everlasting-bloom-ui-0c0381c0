@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import DashboardLayout from "@/components/DashboardLayout";
 import { useRouter } from "next/navigation";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
 import { BASE_URL } from "@/lib/config";
@@ -79,8 +78,7 @@ const ChatListPage = () => {
   }, []);
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Chat list
         </h1>
@@ -153,8 +151,7 @@ const ChatListPage = () => {
             ))
           )}
         </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

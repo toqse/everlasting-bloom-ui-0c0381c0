@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import DashboardLayout from "@/components/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +45,7 @@ import {
   type MatchBlock,
   type PoruthamDetailedItem,
 } from "@/lib/astrologyApi";
+import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 
 declare global {
   interface Window {
@@ -199,7 +198,9 @@ function normalizePoruthamKey(raw: string): string {
 }
 
 function sortPoruthamRows(rows: PoruthamDetailedItem[]): PoruthamDetailedItem[] {
-  const order = new Map(PORUTHAM_DISPLAY_ORDER.map((key, idx) => [key, idx]));
+  const order = new Map<string, number>(
+    PORUTHAM_DISPLAY_ORDER.map((key, idx) => [key, idx]),
+  );
   const resolveOrderKey = (item: PoruthamDetailedItem): string => {
     const candidates = [
       normalizePoruthamKey(item.key ?? ""),
@@ -233,7 +234,14 @@ function sortPoruthamRows(rows: PoruthamDetailedItem[]): PoruthamDetailedItem[] 
   });
 }
 
-function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
+function ProfileChartColumn({
+  panel,
+  showChartPng = true,
+}: {
+  panel: HoroscopePrimaryPanel;
+  /** When false, skip the PNG (e.g. JSON match charts shown above). */
+  showChartPng?: boolean;
+}) {
   const url = panel.chart_url?.trim() ?? "";
   const cp = panel.center_panel;
   const dasa = cp?.dasa;
@@ -253,19 +261,21 @@ function ProfileChartColumn({ panel }: { panel: HoroscopePrimaryPanel }) {
           <p className="text-xs font-semibold text-primary">{panel.role}</p>
         ) : null}
       </div>
-      <div className="flex justify-center">
-        {url ? (
-          <img
-            src={url}
-            alt={`Horoscope chart for ${panel.name ?? panel.matri_id ?? "profile"}`}
-            className="w-full max-w-[min(100%,420px)] rounded-lg border border-primary/10 bg-white object-contain"
-          />
-        ) : (
-          <div className="flex h-48 w-full max-w-[280px] items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 text-xs text-muted-foreground">
-            Chart not available
-          </div>
-        )}
-      </div>
+      {showChartPng ? (
+        <div className="flex justify-center">
+          {url ? (
+            <img
+              src={url}
+              alt={`Horoscope chart for ${panel.name ?? panel.matri_id ?? "profile"}`}
+              className="w-full max-w-[min(100%,420px)] rounded-lg border border-primary/10 bg-white object-contain"
+            />
+          ) : (
+            <div className="flex h-48 w-full max-w-[280px] items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 text-xs text-muted-foreground">
+              Chart not available
+            </div>
+          )}
+        </div>
+      ) : null}
       <div className="rounded-lg border border-primary/10 bg-muted/20 p-3 text-center text-xs space-y-1.5">
         {panel.chart_meta?.display_title ? (
           <p className="font-medium text-foreground leading-snug">
@@ -368,14 +378,7 @@ function PoruthamChecklistColumn({ rows }: { rows: PoruthamDetailedItem[] }) {
 }
 
 export default function JathagamPage() {
-  const router = useRouter();
-  const isHinduFn = useAuthStore((s) => s.isHindu);
   const user = useAuthStore((s) => s.user);
-
-  useEffect(() => {
-    if (typeof isHinduFn !== "function") return;
-    if (!isHinduFn()) router.replace("/dashboard");
-  }, [isHinduFn, router]);
 
   const [displayName, setDisplayName] = useState("");
   const [timeOfBirth, setTimeOfBirth] = useState("");
@@ -401,6 +404,8 @@ export default function JathagamPage() {
   const [checkingMatch, setCheckingMatch] = useState(false);
   const [processingPdfProduct, setProcessingPdfProduct] =
     useState<AstrologyPdfProduct | null>(null);
+  /** If §4b JSON fails, show PNG charts in the pair columns again. */
+  const [matchJsonChartFailed, setMatchJsonChartFailed] = useState(false);
 
   const loadPageData = useCallback(async () => {
     setLoadingInitial(true);
@@ -459,6 +464,10 @@ export default function JathagamPage() {
   useEffect(() => {
     loadPageData();
   }, [loadPageData]);
+
+  useEffect(() => {
+    setMatchJsonChartFailed(false);
+  }, [matchBlock?.bride_profile_id, matchBlock?.groom_profile_id]);
 
   const handleUpdateBirthDetails = async () => {
     const place = placeOfBirth.trim();
@@ -646,6 +655,13 @@ export default function JathagamPage() {
   const showPairComparison = Boolean(
     matchBlock && matchResponseData?.primary && matchResponseData?.partner,
   );
+  /** §4b match-chart JSON (Rasi / Amsakom / Bhavam) — hide redundant PNGs when profile ids are present. */
+  const jsonMatchChartsEnabled = Boolean(
+    showPairComparison &&
+      matchBlock?.bride_profile_id != null &&
+      matchBlock?.groom_profile_id != null,
+  );
+  const showPairColumnPng = !jsonMatchChartsEnabled || matchJsonChartFailed;
   const scorePct =
     matchBlock?.summary?.percentage ??
     (matchBlock?.max_score &&
@@ -697,8 +713,7 @@ export default function JathagamPage() {
   })();
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 relative">
+    <div className="space-y-6 relative">
         {loadingInitial && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 rounded-xl">
             <Loader2
@@ -1166,92 +1181,72 @@ export default function JathagamPage() {
                 ) : null}
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 border-b border-primary/10 pb-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    {scorePct != null ? (
-                      <>
-                        <span
-                          className={cn(
-                            "text-3xl font-bold",
-                            scorePct >= 70
-                              ? "text-green-600"
-                              : scorePct >= 40
-                                ? "text-amber-600"
-                                : "text-red-600",
-                          )}
-                        >
-                          {matchBlock.score ?? "—"}/{matchBlock.max_score ?? 10}
-                        </span>
-                        <span className="text-lg font-semibold text-muted-foreground">
-                          ({Math.round(scorePct)}%)
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-3xl font-bold text-foreground">
-                        {matchBlock.score ?? "—"}/{matchBlock.max_score ?? 10}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-                      <Sparkles className="w-4 h-4 text-secondary" />
-                      {matchBlock.summary?.result ??
-                        matchBlock.result ??
-                        "Result"}
-                    </span>
-                  </div>
-                  {scorePct != null && (
-                    <Progress
-                      value={scorePct}
-                      className="h-2 mt-2 max-w-md [&>div]:bg-primary"
-                    />
+              <div className="flex flex-col items-start gap-2 border-b border-primary/10 pb-4 sm:items-end">
+                <p
+                  className={cn(
+                    "text-base sm:text-lg font-bold",
+                    matchBlock.summary?.color_code === "green" &&
+                      "text-green-600",
+                    matchBlock.summary?.color_code === "orange" &&
+                      "text-amber-600",
+                    matchBlock.summary?.color_code === "red" &&
+                      "text-red-600",
+                    matchBlock.summary?.color_code == null &&
+                      scorePct != null &&
+                      (scorePct >= 70
+                        ? "text-green-600"
+                        : scorePct >= 40
+                          ? "text-amber-600"
+                          : "text-red-600"),
+                    matchBlock.summary?.color_code == null &&
+                      scorePct == null &&
+                      "text-foreground",
                   )}
-                </div>
-                <div className="flex flex-col items-start sm:items-end gap-2">
-                  <p
-                    className={cn(
-                      "text-base sm:text-lg font-bold",
-                      matchBlock.summary?.color_code === "green" &&
-                        "text-green-600",
-                      matchBlock.summary?.color_code === "orange" &&
-                        "text-amber-600",
-                      matchBlock.summary?.color_code === "red" &&
-                        "text-red-600",
-                      matchBlock.summary?.color_code == null &&
-                        scorePct != null &&
-                        (scorePct >= 70
-                          ? "text-green-600"
-                          : scorePct >= 40
-                            ? "text-amber-600"
-                            : "text-red-600"),
-                      matchBlock.summary?.color_code == null &&
-                        scorePct == null &&
-                        "text-foreground",
-                    )}
+                >
+                  Compatibility grade: {matchBlock.summary?.grade ?? "—"}
+                  {matchBlock.score != null && matchBlock.max_score != null
+                    ? ` (${matchBlock.score}/${matchBlock.max_score})`
+                    : ""}
+                </p>
+                {matchResponseData.match_report_pdf_url ? (
+                  <a
+                    href={matchResponseData.match_report_pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                   >
-                    Compatibility grade: {matchBlock.summary?.grade ?? "—"}
-                    {matchBlock.compatibility_grade != null ||
-                    matchBlock.summary?.percentage != null
-                      ? ` (${(matchBlock.summary?.percentage ?? matchBlock.compatibility_grade ?? 0).toFixed(2)}%)`
-                      : ""}
-                  </p>
-                  {matchResponseData.match_report_pdf_url ? (
-                    <a
-                      href={matchResponseData.match_report_pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Open match report (PDF)
-                    </a>
-                  ) : null}
-                </div>
+                    <FileText className="w-4 h-4" />
+                    Open match report (PDF)
+                  </a>
+                ) : null}
               </div>
 
+              {jsonMatchChartsEnabled &&
+              matchBlock &&
+              matchBlock.bride_profile_id != null &&
+              matchBlock.groom_profile_id != null ? (
+                <MatchChartComparison
+                  key={`${matchBlock.bride_profile_id}-${matchBlock.groom_profile_id}`}
+                  brideProfileId={matchBlock.bride_profile_id}
+                  groomProfileId={matchBlock.groom_profile_id}
+                  primary={matchResponseData.primary}
+                  partner={matchResponseData.partner}
+                  className="rounded-xl border border-primary/10 bg-muted/10 p-3 sm:p-4"
+                  onJsonChartFail={() => setMatchJsonChartFailed(true)}
+                  onJsonChartOk={() => setMatchJsonChartFailed(false)}
+                />
+              ) : null}
+
               <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(148px,200px)_1fr] gap-5 xl:gap-6 items-start">
-                <ProfileChartColumn panel={matchResponseData.primary} />
+                <ProfileChartColumn
+                  panel={matchResponseData.primary}
+                  showChartPng={showPairColumnPng}
+                />
                 <PoruthamChecklistColumn rows={comparisonRows} />
-                <ProfileChartColumn panel={matchResponseData.partner} />
+                <ProfileChartColumn
+                  panel={matchResponseData.partner}
+                  showChartPng={showPairColumnPng}
+                />
               </div>
 
               {matchBlock.explanation?.overall ? (
@@ -1276,6 +1271,5 @@ export default function JathagamPage() {
           ) : null}
         </div>
       </div>
-    </DashboardLayout>
   );
 }

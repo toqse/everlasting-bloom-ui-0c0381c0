@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
   Star,
@@ -477,7 +476,7 @@ const PlanPage = () => {
           : "sm:grid-cols-2 lg:grid-cols-5";
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-8">
         <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground pb-3 border-b border-gray-200">
           Plans &amp; Pricing
@@ -536,7 +535,7 @@ const PlanPage = () => {
           onPurchaseSuccess={refreshPlanData}
         />
       )}
-    </DashboardLayout>
+    </>
   );
 };
 

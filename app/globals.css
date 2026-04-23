@@ -348,21 +348,30 @@
   }
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
+/*
+ * Scrollbar: style the viewport only. Styling every ::-webkit-scrollbar made nested
+ * overflow panes (e.g. matches list inside dashboard) show a second maroon track beside
+ * the page scrollbar — felt “stuck” / jerky on mobile.
+ */
+html {
+  scrollbar-color: hsl(var(--primary) / 0.55) hsl(var(--accent-rose));
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
   width: 8px;
 }
 
-::-webkit-scrollbar-track {
+html::-webkit-scrollbar-track {
   background: hsl(var(--accent-rose));
 }
 
-::-webkit-scrollbar-thumb {
+html::-webkit-scrollbar-thumb {
   background: hsl(var(--primary));
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+html::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary-dark));
 }
 

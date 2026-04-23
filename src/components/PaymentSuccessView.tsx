@@ -9,7 +9,7 @@ export interface PaymentSuccessViewProps {
   transactionId: string;
   paymentVia: string;
   features: string[];
-  /** Show Horoscope Access Unlocked banner and "Set Up My Horoscope Now" (Hindu only). */
+  /** Show Horoscope Access Unlocked banner and "Set Up My Horoscope Now". */
   showHoroscopeBanner: boolean;
   onSetupHoroscope: () => void;
   onClose: () => void;
@@ -93,7 +93,7 @@ export default function PaymentSuccessView({
         </ul>
       </div>
 
-      {/* Horoscope Access Unlocked (Hindu only) */}
+      {/* Horoscope Access Unlocked */}
       {showHoroscopeBanner && (
         <div className="p-6 bg-primary text-primary-foreground">
           <div className="flex gap-4 items-start">
@@ -103,7 +103,8 @@ export default function PaymentSuccessView({
             <div>
               <h3 className="font-serif text-lg font-bold">Horoscope Access Unlocked for You!</h3>
               <p className="text-sm text-white/90 mt-1">
-                Since you are Hindu, you can now add Rasi, Nakshatra and generate your Jathagam PDF. Enter your birth details to get accurate Porutham scores with matches!
+                Add Rasi, Nakshatra, and birth details to generate your Jathagam
+                PDF and get Porutham compatibility scores with your matches.
               </p>
               <Button
                 variant="gold"

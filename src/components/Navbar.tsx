@@ -5,14 +5,12 @@ import { Menu, X, User, LogOut, LayoutDashboard, UserPen } from "lucide-react";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useLoading } from "@/contexts/LoadingContext";
 import { useAuthStore } from "@/stores/authStore";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { setIsLoading } = useLoading();
   const { isLoggedIn, logout, isProfileComplete } = useAuthStore();
   const showCompleteProfile = isLoggedIn && !isProfileComplete();
 
@@ -27,16 +25,15 @@ const Navbar = () => {
 
   const isActive = (href: string) => pathname === href;
 
-  const handleNavLinkClick = (href: string) => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1500);
-  };
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
       <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14 overflow-visible">
         {/* Logo - larger than bar so it overflows; bar height stays fixed */}
-        <Link href="/" onClick={() => handleNavLinkClick("/")} className="flex flex-col items-start justify-center shrink-0 group min-w-0">
+        <Link
+          href="/"
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="flex flex-col items-start justify-center shrink-0 group min-w-0"
+        >
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
@@ -51,7 +48,7 @@ const Navbar = () => {
             <Link
               key={link.name}
               href={link.href}
-              onClick={() => handleNavLinkClick(link.href)}
+              onClick={() => setIsMobileMenuOpen(false)}
               className={`relative font-medium transition-colors duration-300 group ${
                 isActive(link.href) ? "text-primary" : "text-foreground/80 hover:text-primary"
               }`}
@@ -122,7 +119,7 @@ const Navbar = () => {
                 isActive(link.href) ? "text-primary" : "text-foreground/80"
               }`}
               style={{ animationDelay: `${index * 0.1}s` }}
-              onClick={() => { handleNavLinkClick(link.href); setIsMobileMenuOpen(false); }}
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               {link.name}
             </Link>

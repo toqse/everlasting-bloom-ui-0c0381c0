@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -8,13 +14,14 @@ interface LoadingContextType {
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
 export const LoadingProvider = ({ children }: { children: ReactNode }) => {
-  // Start false so no loading window appears on refresh; Navbar still uses setIsLoading for link transitions
   const [isLoading, setIsLoading] = useState(false);
+  const value = useMemo(
+    () => ({ isLoading, setIsLoading }),
+    [isLoading],
+  );
 
   return (
-    <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
-      {children}
-    </LoadingContext.Provider>
+    <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>
   );
 };
 

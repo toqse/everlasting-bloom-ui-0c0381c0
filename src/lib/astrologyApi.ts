@@ -3,7 +3,7 @@ import { useAuthStore } from "@/stores/authStore";
 
 type ApiErrorPayload = {
   success?: boolean;
-  error?: { code?: number; message?: string; details?: unknown };
+  error?: string | { code?: number; message?: string; details?: unknown };
   detail?: string | string[];
   message?: string;
   [key: string]: unknown;
@@ -11,7 +11,12 @@ type ApiErrorPayload = {
 
 const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): string => {
   const payload = (data ?? {}) as ApiErrorPayload;
-  if (payload.error?.message) return payload.error.message;
+  const err = payload.error;
+  if (typeof err === "string" && err.trim()) return err;
+  if (err && typeof err === "object" && "message" in err) {
+    const m = (err as { message?: string }).message;
+    if (typeof m === "string" && m.trim()) return m;
+  }
   if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
   if (typeof payload.detail === "string" && payload.detail.trim()) return payload.detail;
   if (Array.isArray(payload.detail) && payload.detail[0]) return String(payload.detail[0]);
@@ -125,6 +130,8 @@ export interface MatchFlags {
 export interface MatchBlock {
   bride_matri_id?: string;
   groom_matri_id?: string;
+  bride_profile_id?: number;
+  groom_profile_id?: number;
   poruthams?: Record<string, boolean>;
   matched_poruthams?: string[];
   score?: number;
@@ -281,6 +288,55 @@ export interface AstrologyPdfVerifyResponse {
   success: boolean;
   message?: string;
   data: AstrologyPdfVerifyData;
+}
+
+/** §4b chart JSON — GET match-chart / chart (plain JSON on success) */
+export type ChartJsonType = "rasi" | "amsakom" | "bhavam";
+
+export type ChartPlanetsMap = Record<string, string[]>;
+
+export interface MatchChartPersonJson {
+  name?: string;
+  nakshatra?: string;
+  nakshatra_pada?: number;
+  rasi?: string;
+  lagna?: string;
+  dasa_lord?: string;
+  dasa_balance?: string;
+  planets?: ChartPlanetsMap;
+}
+
+export interface MatchChartJsonResponse {
+  chart_type: ChartJsonType;
+  bride: MatchChartPersonJson;
+  groom: MatchChartPersonJson;
+}
+
+/** GET /api/v1/astrology/match-chart/<bride_id>/<groom_id>/<chart_type>/ — plain JSON, JWT only */
+export async function getMatchChartJson(
+  brideProfileId: number,
+  groomProfileId: number,
+  chartType: ChartJsonType,
+): Promise<MatchChartJsonResponse> {
+  const path = `v1/astrology/match-chart/${brideProfileId}/${groomProfileId}/${chartType}/`;
+  const url = `${BASE_URL}${path}`;
+  const token = useAuthStore.getState().accessToken;
+
+  logAstrologyRequest(path, "GET", null);
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const data = (await res.json().catch(() => ({}))) as MatchChartJsonResponse & ApiErrorPayload;
+  logAstrologyResponse(path, "GET", res.status, data);
+
+  if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
+  return data as MatchChartJsonResponse;
 }
 
 /** GET /api/v1/astrology/horoscope/me/ */
