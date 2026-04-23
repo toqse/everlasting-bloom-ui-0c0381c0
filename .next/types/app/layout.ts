@@ -1,4 +1,4 @@
-// File: C:\Unnikrishnan\Matrimony\app\layout.tsx
+// File: C:\Rosmi\everlasting-bloom-ui-0c0381c0\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
