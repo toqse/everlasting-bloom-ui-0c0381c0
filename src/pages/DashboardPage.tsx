@@ -543,12 +543,17 @@ const DashboardPage = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-5"
+          className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5"
         >
           {statsCards.map((stat, i) => (
             <div
               key={i}
-              className="flex min-w-0 flex-col gap-2 rounded-2xl bg-card p-3 shadow-card transition-shadow hover:shadow-elevated sm:flex-row sm:items-center sm:gap-3 sm:p-4 md:gap-4"
+              className={cn(
+                "flex min-w-0 rounded-2xl bg-card p-3 shadow-card transition-shadow hover:shadow-elevated sm:p-4",
+                "isAction" in stat && stat.isAction
+                  ? "flex-row items-center gap-3"
+                  : "flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 md:gap-4",
+              )}
             >
               <div className="w-12 h-12 rounded-xl bg-accent-rose flex items-center justify-center flex-shrink-0 relative">
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -556,32 +561,38 @@ const DashboardPage = () => {
                   <Lock className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 text-secondary" />
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                {"value" in stat && stat.value !== undefined && (
-                  <p className="font-serif text-xl font-bold text-foreground truncate">
-                    {stat.value}
+              {"isAction" in stat && stat.isAction ? (
+                <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground truncate">
+                    {stat.label}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-              {"isAction" in stat && stat.isAction && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0 w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0"
-                  onClick={() => router.push("/dashboard/plan")}
-                >
-                  Upgrade
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 px-3"
+                    onClick={() => router.push("/dashboard/plan")}
+                  >
+                    Upgrade
+                  </Button>
+                </div>
+              ) : (
+                <div className="min-w-0 flex-1">
+                  {"value" in stat && stat.value !== undefined && (
+                    <p className="font-serif text-xl font-bold text-foreground truncate">
+                      {stat.value}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
               )}
             </div>
           ))}
         </motion.div>
 
         {/* Two-column layout */}
-        <div className="grid min-w-0 gap-5 sm:gap-6 lg:grid-cols-12">
+        <div className="grid min-w-0 gap-5 sm:gap-6 xl:grid-cols-12">
           {/* Left content */}
-          <div className="min-w-0 space-y-5 sm:space-y-6 lg:col-span-8">
+          <div className="min-w-0 space-y-5 sm:space-y-6 xl:col-span-8">
             {/* New Matches — stories strip + Love Stories–style grid */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -708,7 +719,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Right sidebar */}
-          <aside className="min-w-0 space-y-5 sm:space-y-6 lg:col-span-4">
+          <aside className="min-w-0 space-y-5 sm:space-y-6 xl:col-span-4">
             {/* Horoscope widget */}
             {showHoroscope() && (
               <motion.div

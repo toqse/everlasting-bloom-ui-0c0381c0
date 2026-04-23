@@ -762,7 +762,7 @@ export default function JathagamPage() {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid xl:grid-cols-2 gap-8">
           <div className="bg-card rounded-2xl shadow-card p-6 border border-primary/10">
             <h2 className="font-serif text-lg font-bold text-foreground flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-primary" />
@@ -829,7 +829,7 @@ export default function JathagamPage() {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="default"
                   className="flex-1 bg-primary hover:bg-primary-dark py-6 gap-2"
@@ -851,7 +851,7 @@ export default function JathagamPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="py-6 gap-2 border-2 border-primary"
+                  className="w-full py-6 gap-2 border-2 border-primary"
                   onClick={handleRefreshChart}
                   disabled={refreshingChart || loadingInitial}
                   title="POST generate for your matri_id only"
@@ -865,10 +865,10 @@ export default function JathagamPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="w-full py-6 gap-2 border-2 border-primary bg-white text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-200 [&_svg]:text-current"
+                  className="w-full py-6 gap-2 border-2 border-primary bg-white text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-200 [&_svg]:text-current whitespace-normal text-center leading-snug"
                   type="button"
                   onClick={() => handleBuyAstrologyPdf("jathakam")}
                   disabled={processingPdfProduct != null}
@@ -887,7 +887,7 @@ export default function JathagamPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full py-6 gap-2 border-2 border-primary bg-white text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-200 [&_svg]:text-current"
+                  className="w-full py-6 gap-2 border-2 border-primary bg-white text-primary hover:bg-primary hover:text-primary-foreground transition-colors duration-200 [&_svg]:text-current whitespace-normal text-center leading-snug"
                   type="button"
                   onClick={() => handleBuyAstrologyPdf("thalakuri")}
                   disabled={processingPdfProduct != null}

@@ -349,7 +349,7 @@ const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
 
       {active && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
             {rows.map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -465,10 +465,10 @@ const PlanPage = () => {
     apiPlans.length <= 2
       ? "sm:grid-cols-2"
       : apiPlans.length === 3
-        ? "sm:grid-cols-2 lg:grid-cols-3"
+        ? "sm:grid-cols-2 xl:grid-cols-3"
         : apiPlans.length === 4
-          ? "sm:grid-cols-2 lg:grid-cols-4"
-          : "sm:grid-cols-2 lg:grid-cols-5";
+          ? "sm:grid-cols-2 xl:grid-cols-4"
+          : "sm:grid-cols-2 xl:grid-cols-5";
 
   return (
     <>

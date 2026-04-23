@@ -17,7 +17,6 @@ import {
 } from "@/components/astrology/southIndianChartLayout";
 
 const MAROON: [number, number, number] = [139, 35, 87];
-const MAROON_DARK: [number, number, number] = [90, 12, 40];
 const GOLD: [number, number, number] = [184, 134, 11];
 const TAN_BORDER: [number, number, number] = [166, 124, 82];
 const ROW_ALT: [number, number, number] = [232, 242, 252];
@@ -147,7 +146,7 @@ function drawFooter(doc: jsPDF, page: number, totalPages: number) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const barH = 8;
-  doc.setFillColor(MAROON_DARK[0], MAROON_DARK[1], MAROON_DARK[2]);
+  doc.setFillColor(MAROON[0], MAROON[1], MAROON[2]);
   doc.rect(0, h - barH, w, barH, "F");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
@@ -266,6 +265,26 @@ function poruthamDescriptionForKeys(
   return "—";
 }
 
+function pairValuesFromDescription(desc: string): { bride: string; groom: string } | null {
+  const t = desc.trim();
+  if (!t) return null;
+
+  // Preferred pattern: explanatory text with "(Bride / Groom)".
+  const paren = /\(([^()]*\/[^()]*)\)/.exec(t);
+  const pairText = paren?.[1] ?? t;
+  if (!pairText.includes("/")) return null;
+
+  const [leftRaw, rightRaw] = pairText.split("/").map((s) => s.trim());
+  const left = leftRaw.replace(/^[^A-Za-z]+|[^A-Za-z)\]]+$/g, "").trim();
+  const right = rightRaw.replace(/^[^A-Za-z]+|[^A-Za-z)\]]+$/g, "").trim();
+
+  // Guard against sentence-like fragments being treated as values.
+  if (!left || !right) return null;
+  if (left.length > 28 || right.length > 28) return null;
+  if (left.split(/\s+/).length > 3 || right.split(/\s+/).length > 3) return null;
+  return { bride: left, groom: right };
+}
+
 function normalizeKey(s: string | undefined): string {
   return (s ?? "").toLowerCase().replace(/[\s_-]+/g, "");
 }
@@ -326,6 +345,9 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
     "rejju",
     "reju",
   ]);
+  const ganaPair = pairValuesFromDescription(ganaLine);
+  const yoniPair = pairValuesFromDescription(yoniLine);
+  const rajjuPair = pairValuesFromDescription(rajjuLine);
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -438,18 +460,18 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
     { label: "Rasi Lord", b: "—", g: "—" },
     {
       label: "Gana",
-      b: ganaLine.includes(" / ") ? ganaLine.split(" / ")[0]?.trim() || "—" : ganaLine,
-      g: ganaLine.includes(" / ") ? ganaLine.split(" / ")[1]?.trim() || "—" : ganaLine,
+      b: ganaPair?.bride ?? "—",
+      g: ganaPair?.groom ?? "—",
     },
     {
       label: "Yoni",
-      b: yoniLine.includes(" / ") ? yoniLine.split(" / ")[0]?.trim() || "—" : yoniLine,
-      g: yoniLine.includes(" / ") ? yoniLine.split(" / ")[1]?.trim() || "—" : yoniLine,
+      b: yoniPair?.bride ?? "—",
+      g: yoniPair?.groom ?? "—",
     },
     {
       label: "Rajju",
-      b: rajjuLine.includes(" / ") ? rajjuLine.split(" / ")[0]?.trim() || "—" : rajjuLine,
-      g: rajjuLine.includes(" / ") ? rajjuLine.split(" / ")[1]?.trim() || "—" : rajjuLine,
+      b: rajjuPair?.bride ?? "—",
+      g: rajjuPair?.groom ?? "—",
     },
   ];
 
@@ -761,17 +783,6 @@ export async function downloadMatchCompatibilityReportPdf(opts: {
     doc.text(wrapped, m + 2, y + 9);
     y += 30;
   }
-
-  y = ensureSpace(doc, y, 16, m);
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
-  const disc = doc.splitTextToSize(
-    "This report is generated automatically using the Kerala Dashakoot (10-koota) matching system. Consult a qualified Jyotishi for final marriage compatibility advice. Planetary positions are calculated using the Lahiri ayanamsa.",
-    pageW - 2 * m,
-  );
-  doc.text(disc, m, y, { align: "left", maxWidth: pageW - 2 * m });
-  y += disc.length * 3.5 + 8;
 
   drawFooter(doc, 3, 3);
 

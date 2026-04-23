@@ -319,6 +319,7 @@ const MatchesPage = () => {
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const hasActiveFilters = useMemo(() => {
     const ageChanged =
@@ -737,7 +738,7 @@ const MatchesPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 lg:flex lg:items-center lg:justify-between lg:gap-4 lg:space-y-0">
+            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 xl:flex xl:items-center xl:justify-between xl:gap-4 xl:space-y-0">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Refine &amp; sort
               </p>
@@ -780,14 +781,27 @@ const MatchesPage = () => {
             </div>
           </motion.div>
 
-          {/* lg:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
-          <div className="flex min-h-0 flex-col gap-6 lg:h-0 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 lg:overflow-hidden">
-            {/* Filters — fixed column on lg (scroll inside column only if filters exceed viewport) */}
+          {/* xl:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
+          <div className="flex min-h-0 flex-col gap-6 xl:h-0 xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch xl:gap-8 xl:overflow-hidden">
+            <div className="xl:hidden">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-center border-primary/20"
+                onClick={() => setShowFiltersMobile((v) => !v)}
+              >
+                {showFiltersMobile ? "Hide filters" : "Show filters"}
+              </Button>
+            </div>
+            {/* Filters — fixed column on xl (scroll inside column only if filters exceed viewport) */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="w-full shrink-0 lg:w-72 xl:w-80 lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1"
+              className={cn(
+                "w-full shrink-0 xl:w-72 2xl:w-80 xl:min-h-0 xl:max-h-full xl:overflow-y-auto xl:overscroll-y-contain xl:pr-1",
+                !showFiltersMobile && "max-xl:hidden",
+              )}
             >
               <div className="space-y-0 rounded-2xl border border-primary/10 bg-card/95 p-4 shadow-card backdrop-blur-sm">
                 <div className="mb-3 flex items-center justify-between gap-2 px-1">

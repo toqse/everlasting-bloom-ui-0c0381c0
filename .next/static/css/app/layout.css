@@ -2237,6 +2237,9 @@ h1, h2, h3, h4, h5, h6 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.whitespace-normal {
+  white-space: normal;
+}
 .whitespace-nowrap {
   white-space: nowrap;
 }
@@ -5929,6 +5932,28 @@ html::-webkit-scrollbar-thumb:hover {
   --tw-text-opacity: 1;
   color: rgb(254 202 202 / var(--tw-text-opacity, 1));
 }
+@media not all and (min-width: 1280px) {
+
+  .max-xl\:hidden {
+    display: none;
+  }
+
+  .max-xl\:min-h-0 {
+    min-height: 0px;
+  }
+
+  .max-xl\:flex-none {
+    flex: none;
+  }
+
+  .max-xl\:overflow-visible {
+    overflow: visible;
+  }
+
+  .max-xl\:overflow-y-visible {
+    overflow-y: visible;
+  }
+}
 @media not all and (min-width: 1024px) {
 
   .max-lg\:h-full {
@@ -7213,6 +7238,46 @@ html::-webkit-scrollbar-thumb:hover {
 }
 @media (min-width: 1280px) {
 
+  .xl\:col-span-4 {
+    grid-column: span 4 / span 4;
+  }
+
+  .xl\:col-span-8 {
+    grid-column: span 8 / span 8;
+  }
+
+  .xl\:mb-5 {
+    margin-bottom: 1.25rem;
+  }
+
+  .xl\:flex {
+    display: flex;
+  }
+
+  .xl\:hidden {
+    display: none;
+  }
+
+  .xl\:h-0 {
+    height: 0px;
+  }
+
+  .xl\:h-full {
+    height: 100%;
+  }
+
+  .xl\:max-h-\[calc\(100dvh-22rem\)\] {
+    max-height: calc(100dvh - 22rem);
+  }
+
+  .xl\:max-h-full {
+    max-height: 100%;
+  }
+
+  .xl\:min-h-0 {
+    min-height: 0px;
+  }
+
   .xl\:w-2\/5 {
     width: 40%;
   }
@@ -7221,12 +7286,96 @@ html::-webkit-scrollbar-thumb:hover {
     width: 20rem;
   }
 
+  .xl\:w-72 {
+    width: 18rem;
+  }
+
+  .xl\:flex-1 {
+    flex: 1 1 0%;
+  }
+
   .xl\:grid-cols-\[1fr_minmax\(148px\2c 200px\)_1fr\] {
     grid-template-columns: 1fr minmax(148px,200px) 1fr;
   }
 
+  .xl\:grid-cols-12 {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .xl\:flex-row {
+    flex-direction: row;
+  }
+
+  .xl\:items-center {
+    align-items: center;
+  }
+
+  .xl\:items-stretch {
+    align-items: stretch;
+  }
+
+  .xl\:justify-between {
+    justify-content: space-between;
+  }
+
   .xl\:gap-6 {
     gap: 1.5rem;
+  }
+
+  .xl\:gap-4 {
+    gap: 1rem;
+  }
+
+  .xl\:gap-8 {
+    gap: 2rem;
+  }
+
+  .xl\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px * var(--tw-space-y-reverse));
+  }
+
+  .xl\:overflow-hidden {
+    overflow: hidden;
+  }
+
+  .xl\:overflow-y-auto {
+    overflow-y: auto;
+  }
+
+  .xl\:overscroll-y-contain {
+    overscroll-behavior-y: contain;
+  }
+
+  .xl\:pr-1 {
+    padding-right: 0.25rem;
+  }
+
+  .xl\:\[scrollbar-gutter\:stable\] {
+    scrollbar-gutter: stable;
+  }
+}
+@media (min-width: 1536px) {
+
+  .\32xl\:w-80 {
+    width: 20rem;
   }
 }
 .\[\&\:\:-webkit-scrollbar\]\:w-0::-webkit-scrollbar {
