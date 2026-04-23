@@ -21,7 +21,6 @@ import {
   Phone,
   Loader2,
   FileText,
-  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -336,7 +335,6 @@ export default function JathagamPage() {
     useState<HoroscopeMeData | null>(null);
   const [matchBlock, setMatchBlock] = useState<MatchBlock | null>(null);
   const [generatingChart, setGeneratingChart] = useState(false);
-  const [refreshingChart, setRefreshingChart] = useState(false);
   const [checkingMatch, setCheckingMatch] = useState(false);
   const [processingPdfProduct, setProcessingPdfProduct] =
     useState<AstrologyPdfProduct | null>(null);
@@ -480,27 +478,6 @@ export default function JathagamPage() {
       toast.error(msg);
     } finally {
       setGeneratingChart(false);
-    }
-  };
-
-  const handleRefreshChart = async () => {
-    const matriId = user?.matriId?.trim();
-    if (!matriId) {
-      toast.error("Matri ID not found. Please sign in again.");
-      return;
-    }
-    setRefreshingChart(true);
-    try {
-      const res = await postGenerateHoroscope({ matri_id: matriId });
-      setSelfHoroscopeData(res.data);
-      setMatchResponseData(null);
-      setMatchBlock(null);
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Could not refresh horoscope.",
-      );
-    } finally {
-      setRefreshingChart(false);
     }
   };
 
@@ -744,24 +721,6 @@ export default function JathagamPage() {
           {planBanner}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            className="bg-primary hover:bg-primary-dark"
-            onClick={handleUpdateBirthDetails}
-            disabled={savingBirthDetails || loadingInitial}
-          >
-            {savingBirthDetails ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Saving…
-              </>
-            ) : (
-              "Update Birth Details"
-            )}
-          </Button>
-        </div>
-
         <div className="grid xl:grid-cols-2 gap-8">
           <div className="bg-card rounded-2xl shadow-card p-6 border border-primary/10">
             <h2 className="font-serif text-lg font-bold text-foreground flex items-center gap-2 mb-4">
@@ -829,7 +788,23 @@ export default function JathagamPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full py-6 gap-2 border-2 border-primary"
+                  onClick={handleUpdateBirthDetails}
+                  disabled={savingBirthDetails || loadingInitial}
+                >
+                  {savingBirthDetails ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Update Birth Details"
+                  )}
+                </Button>
                 <Button
                   variant="default"
                   className="flex-1 bg-primary hover:bg-primary-dark py-6 gap-2"
@@ -847,21 +822,6 @@ export default function JathagamPage() {
                       Generate Horoscope (chart)
                     </>
                   )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full py-6 gap-2 border-2 border-primary"
-                  onClick={handleRefreshChart}
-                  disabled={refreshingChart || loadingInitial}
-                  title="POST generate for your matri_id only"
-                >
-                  {refreshingChart ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-5 h-5" />
-                  )}
-                  Refresh
                 </Button>
               </div>
 
