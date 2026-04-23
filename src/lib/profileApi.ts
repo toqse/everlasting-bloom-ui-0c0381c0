@@ -1,4 +1,5 @@
 import { BASE_URL } from "./config";
+import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
 
 /** GET v1/profile/ response */
@@ -325,18 +326,14 @@ async function authedFetch<TRes = unknown>(
   opts: { method: string; body?: string },
 ): Promise<TRes> {
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
 
   const bodyParsed: unknown | null =
     opts.body !== undefined ? (JSON.parse(opts.body) as unknown) : null;
   logProfileApiRequest(path, opts.method, bodyParsed);
 
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: opts.method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     ...(opts.body !== undefined && { body: opts.body }),
   });
   const data = (await res.json().catch(() => ({}))) as TRes &
@@ -373,11 +370,10 @@ async function authedPatch<TReq extends object, TRes = unknown>(
 export async function getProfile(): Promise<ProfileResponse> {
   const path = "v1/profile/";
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
   logProfileApiRequest(path, "GET", null);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as ProfileResponse &
     ProfileErrorPayload;
@@ -514,13 +510,10 @@ export async function patchEducation(body: EducationBody): Promise<unknown> {
 export async function getGenerateAbout(): Promise<GenerateAboutResponse> {
   const path = "v1/profile/generate-about/";
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
   logProfileApiRequest(path, "GET", null);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as GenerateAboutResponse &
     ProfileErrorPayload;
@@ -559,11 +552,10 @@ export async function getProfileBasic(): Promise<{
 }> {
   const path = "v1/profile/basic/";
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
   logProfileApiRequest(path, "GET", null);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as {
     success: boolean;
@@ -630,14 +622,10 @@ export async function updateBirthDetails(
 ): Promise<BirthDetailsPostResponse> {
   const path = "v1/profile/birth-details/";
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
   logProfileApiRequest(path, "POST", body);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as ProfileErrorPayload &
@@ -663,7 +651,6 @@ export async function patchPartnerPreferences(
 
 export async function postPhotos(body: PhotosBody): Promise<unknown> {
   const url = `${BASE_URL}v1/profile/photos/`;
-  const token = useAuthStore.getState().accessToken;
   const formData = new FormData();
 
   if (body.profile_photo) formData.append("profile_photo", body.profile_photo);
@@ -684,11 +671,8 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
   };
   logProfileApiRequest(path, "POST", bodyLog);
 
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     body: formData,
   });
 

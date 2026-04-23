@@ -217,11 +217,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     setSidebarOpen(false);
   }, [normalizedPath]);
 
-  // Warm heavy client chunks so route changes rarely show a full-section loading shell.
+  // Warm every dashboard section chunk once the shell is up so sidebar navigation stays snappy.
   useEffect(() => {
-    router.prefetch("/dashboard/matches");
-    router.prefetch("/dashboard/profile");
-    router.prefetch("/dashboard/jathagam");
+    const paths = [
+      ...baseSidebarLinks.map((l) => l.href),
+      "/dashboard/family-details",
+      "/dashboard/help",
+    ];
+    for (const href of paths) {
+      router.prefetch(href);
+    }
   }, [router]);
 
   const handleLogout = () => {

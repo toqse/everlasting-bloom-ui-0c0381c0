@@ -1,4 +1,5 @@
 import { BASE_URL } from "./config";
+import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
 
 type ApiErrorPayload = {
@@ -27,18 +28,12 @@ async function authedGet<T>(path: string): Promise<T> {
     throw new Error("Session expired. Please log in again.");
   }
   console.log("[dashboardApi] GET", path);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   console.log("[dashboardApi] response", { status: res.status, data });
-  if (res.status === 401) {
-    useAuthStore.getState().logout();
-  }
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
   return data as T;
 }
@@ -164,19 +159,13 @@ export async function postPartnerPreference(body: PartnerPreferenceBody): Promis
     throw new Error("Session expired. Please log in again.");
   }
   console.log("[dashboardApi] POST v1/profile/partner-preference/", body);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as { success: boolean; data: unknown } & ApiErrorPayload;
   console.log("[dashboardApi] response", { status: res.status, data });
-  if (res.status === 401) {
-    useAuthStore.getState().logout();
-  }
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to update partner preference"));
   return data;
 }

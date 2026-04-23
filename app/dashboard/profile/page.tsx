@@ -1,9 +1,4 @@
-import dynamic from "next/dynamic";
-import DashboardSectionLoading from "@/components/DashboardSectionLoading";
-
-const UserProfilePage = dynamic(() => import("@/pages/UserProfilePage"), {
-  loading: () => <DashboardSectionLoading />,
-});
+import UserProfilePage from "@/pages/UserProfilePage";
 
 export default function UserProfileRoutePage() {
   return <UserProfilePage />;

@@ -32,6 +32,7 @@ import {
   type TransactionType,
   type TransactionStatus,
 } from "@/lib/transactionsApi";
+import { formatDateDdMmYyyy } from "@/lib/utils";
 
 // ---- Config maps ----
 
@@ -78,17 +79,6 @@ const typeConfig: Record<
 function formatAmount(amount: number): string {
   const n = Math.abs(Number(amount) || 0);
   return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 // ---- Detail Modal ----
@@ -181,7 +171,7 @@ const DetailModal = ({ transactionId, onClose }: DetailModalProps) => {
                 {
                   icon: CalendarDays,
                   label: "Date",
-                  value: formatDate(detail.date),
+                  value: formatDateDdMmYyyy(detail.date),
                 },
               ].map(({ icon: Icon, label, value }) => (
                 <div
@@ -285,7 +275,7 @@ const TransactionsPage = () => {
     },
     {
       label: "Next Renewal",
-      value: nextRenewal ? formatDate(nextRenewal) : "—",
+      value: nextRenewal ? formatDateDdMmYyyy(nextRenewal) : "—",
       color: "from-green-50 to-emerald-50",
     },
   ];
@@ -405,7 +395,7 @@ const TransactionsPage = () => {
                             {txn.plan_name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {txn.transaction_id} · {formatDate(txn.date)}
+                            {txn.transaction_id} · {formatDateDdMmYyyy(txn.date)}
                           </p>
                         </div>
                       </div>

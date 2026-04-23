@@ -24,6 +24,7 @@ import {
   type AvailablePlan,
   type MyPlanDetails,
 } from "@/lib/plansApi";
+import { formatDateDdMmYyyy } from "@/lib/utils";
 
 /* ─── Styling map by plan name ──────────────────────────────── */
 type PlanStyle = {
@@ -288,13 +289,7 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
 /* ─── Page ──────────────────────────────────────────────────── */
 const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
   const active = my.is_plan_active && my.plan_name;
-  const valid = my.valid_until
-    ? new Date(my.valid_until).toLocaleDateString(undefined, {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "—";
+  const valid = my.valid_until ? formatDateDdMmYyyy(my.valid_until) : "—";
 
   const rows: {
     icon: React.ElementType;

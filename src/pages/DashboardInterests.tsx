@@ -12,6 +12,7 @@ import {
   cancelInterest,
   type InterestCard,
 } from "@/lib/interestsApi";
+import { formatDateTimeDdMmYyyy } from "@/lib/utils";
 
 type Tab = "received" | "sent";
 
@@ -316,16 +317,7 @@ const DashboardInterests = () => {
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         • Request on:{" "}
-                        {new Date(interest.created_at).toLocaleString(
-                          undefined,
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          },
-                        )}
+                        {formatDateTimeDdMmYyyy(interest.created_at)}
                       </p>
                       <button
                         type="button"

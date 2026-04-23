@@ -1,9 +1,4 @@
-import dynamic from "next/dynamic";
-import DashboardSectionLoading from "@/components/DashboardSectionLoading";
-
-const JathagamPage = dynamic(() => import("@/pages/JathagamPage"), {
-  loading: () => <DashboardSectionLoading />,
-});
+import JathagamPage from "@/pages/JathagamPage";
 
 export default function JathagamRoutePage() {
   return <JathagamPage />;

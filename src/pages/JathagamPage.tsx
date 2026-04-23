@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,39 @@ declare global {
 }
 
 type Meridian = "AM" | "PM";
+
+function jathagamAuthKey(): string {
+  const u = useAuthStore.getState().user;
+  return (u?.matriId?.trim() || u?.phone || u?.email || "").trim();
+}
+
+type JathagamPageSessionCache = {
+  authKey: string;
+  displayName: string;
+  timeOfBirth: string;
+  timeMeridian: Meridian;
+  placeOfBirth: string;
+  myPlan: MyPlanDetails | null;
+  candidates: BirthDetailCandidate[];
+  selectedMatriId: string;
+  candidatesError: string | null;
+};
+
+let jathagamPageSessionCache: JathagamPageSessionCache | null = null;
+
+function readJathagamPageCache(): JathagamPageSessionCache | null {
+  const key = jathagamAuthKey();
+  if (!key || !jathagamPageSessionCache || jathagamPageSessionCache.authKey !== key) {
+    return null;
+  }
+  return jathagamPageSessionCache;
+}
+
+function writeJathagamPageCache(patch: Omit<JathagamPageSessionCache, "authKey">) {
+  const key = jathagamAuthKey();
+  if (!key) return;
+  jathagamPageSessionCache = { authKey: key, ...patch };
+}
 
 function parseApiTimeTo12Hour(value: string): { time12: string; meridian: Meridian } {
   const t = value.trim();
@@ -380,17 +413,37 @@ function PoruthamChecklistColumn({ rows }: { rows: PoruthamDetailedItem[] }) {
 export default function JathagamPage() {
   const user = useAuthStore((s) => s.user);
 
-  const [displayName, setDisplayName] = useState("");
-  const [timeOfBirth, setTimeOfBirth] = useState("");
-  const [timeMeridian, setTimeMeridian] = useState<Meridian>("AM");
-  const [placeOfBirth, setPlaceOfBirth] = useState("");
+  const [displayName, setDisplayName] = useState(
+    () => readJathagamPageCache()?.displayName ?? "",
+  );
+  const [timeOfBirth, setTimeOfBirth] = useState(
+    () => readJathagamPageCache()?.timeOfBirth ?? "",
+  );
+  const [timeMeridian, setTimeMeridian] = useState<Meridian>(
+    () => readJathagamPageCache()?.timeMeridian ?? "AM",
+  );
+  const [placeOfBirth, setPlaceOfBirth] = useState(
+    () => readJathagamPageCache()?.placeOfBirth ?? "",
+  );
   const [savingBirthDetails, setSavingBirthDetails] = useState(false);
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [myPlan, setMyPlan] = useState<MyPlanDetails | null>(null);
+  const [loadingInitial, setLoadingInitial] = useState(
+    () => readJathagamPageCache() == null,
+  );
+  const [myPlan, setMyPlan] = useState<MyPlanDetails | null>(
+    () => readJathagamPageCache()?.myPlan ?? null,
+  );
 
-  const [candidates, setCandidates] = useState<BirthDetailCandidate[]>([]);
-  const [candidatesError, setCandidatesError] = useState<string | null>(null);
-  const [selectedMatriId, setSelectedMatriId] = useState<string>("");
+  const [candidates, setCandidates] = useState<BirthDetailCandidate[]>(
+    () => readJathagamPageCache()?.candidates ?? [],
+  );
+  const [candidatesError, setCandidatesError] = useState<string | null>(
+    () => readJathagamPageCache()?.candidatesError ?? null,
+  );
+  const [selectedMatriId, setSelectedMatriId] = useState(
+    () => readJathagamPageCache()?.selectedMatriId ?? "",
+  );
+  const selectedMatriIdRef = useRef(selectedMatriId);
+  selectedMatriIdRef.current = selectedMatriId;
 
   /** Shown only in Birth Details after "Generate Horoscope (chart)" or "Refresh" (self-only). */
   const [selfHoroscopeData, setSelfHoroscopeData] =
@@ -408,7 +461,10 @@ export default function JathagamPage() {
   const [matchJsonChartFailed, setMatchJsonChartFailed] = useState(false);
 
   const loadPageData = useCallback(async () => {
-    setLoadingInitial(true);
+    const hadWarmCache = readJathagamPageCache() != null;
+    if (!hadWarmCache) {
+      setLoadingInitial(true);
+    }
     setCandidatesError(null);
     try {
       const [bdRes, profRes, planRes] = await Promise.all([
@@ -422,38 +478,65 @@ export default function JathagamPage() {
 
       const t = bdRes.data?.time_of_birth?.trim() ?? "";
       const parsed = parseApiTimeTo12Hour(t);
+      const place = bdRes.data?.place_of_birth?.trim() ?? "";
       setTimeOfBirth(parsed.time12);
       setTimeMeridian(parsed.meridian);
-      setPlaceOfBirth(bdRes.data?.place_of_birth?.trim() ?? "");
+      setPlaceOfBirth(place);
+
+      let nextCandidates: BirthDetailCandidate[] = [];
+      let nextCandError: string | null = null;
+      let resolvedSelected = selectedMatriIdRef.current;
 
       if (planRes?.success && planRes.data) {
         setMyPlan(planRes.data);
         if (planRes.data.is_plan_active) {
           try {
             const cRes = await getBirthDetailCandidates({ limit: 20 });
-            setCandidates(cRes.data.results);
-            const first = cRes.data.results[0];
-            setSelectedMatriId((prev) => {
-              if (prev && cRes.data.results.some((r) => r.matri_id === prev))
-                return prev;
-              return first?.matri_id ?? "";
-            });
+            nextCandidates = cRes.data.results;
+            setCandidates(nextCandidates);
+            const firstId = nextCandidates[0]?.matri_id ?? "";
+            if (
+              resolvedSelected &&
+              nextCandidates.some((r) => r.matri_id === resolvedSelected)
+            ) {
+              setSelectedMatriId(resolvedSelected);
+            } else {
+              resolvedSelected = firstId;
+              setSelectedMatriId(resolvedSelected);
+            }
           } catch (e) {
+            nextCandidates = [];
+            resolvedSelected = "";
+            nextCandError =
+              e instanceof Error ? e.message : "Could not load candidates.";
             setCandidates([]);
             setSelectedMatriId("");
-            setCandidatesError(
-              e instanceof Error ? e.message : "Could not load candidates.",
-            );
+            setCandidatesError(nextCandError);
           }
         } else {
+          nextCandidates = [];
+          resolvedSelected = "";
           setCandidates([]);
           setSelectedMatriId("");
         }
       } else {
         setMyPlan(null);
+        nextCandidates = [];
+        resolvedSelected = "";
         setCandidates([]);
         setSelectedMatriId("");
       }
+
+      writeJathagamPageCache({
+        displayName: name,
+        timeOfBirth: parsed.time12,
+        timeMeridian: parsed.meridian,
+        placeOfBirth: place,
+        myPlan: planRes?.success && planRes.data ? planRes.data : null,
+        candidates: nextCandidates,
+        selectedMatriId: resolvedSelected,
+        candidatesError: nextCandError,
+      });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load page data.");
     } finally {

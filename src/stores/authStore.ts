@@ -92,6 +92,8 @@ interface AuthState {
   loginWithProfile: (profile: Partial<User> & { religion: string }) => void;
   /** Set auth state from verify/mobile API response. */
   setAuthFromVerify: (mobile: string, data: VerifyMobileData) => void;
+  /** After POST v1/auth/token/refresh/ — updates JWTs only (same user session). */
+  setTokensFromRefresh: (access_token: string, refresh_token: string) => void;
   /** Clear stored profile incomplete state (e.g. after user completes all steps). */
   clearProfileIncomplete: () => void;
   /** Mark a profile step as completed (persisted so "Complete Profile" resumes correctly). */
@@ -188,6 +190,14 @@ export const useAuthStore = create<AuthState>()(
         });
         setMatrimonyTokens(data.access_token, data.refresh_token);
         setProfileStepsToStorage(steps);
+      },
+      setTokensFromRefresh: (access_token, refresh_token) => {
+        set({
+          isLoggedIn: true,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        });
+        setMatrimonyTokens(access_token, refresh_token);
       },
       clearProfileIncomplete: () => {
         setProfileStepsToStorage(null);

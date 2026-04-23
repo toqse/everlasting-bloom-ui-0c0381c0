@@ -1,4 +1,5 @@
 import { BASE_URL } from "./config";
+import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
 
 function authHeaders(): HeadersInit {
@@ -59,7 +60,7 @@ async function request<T>(
   console.log("[settingsApi] URL:", url);
   if (_body !== undefined) console.log("[settingsApi] Body:", _body);
 
-  const res = await fetch(url, fetchOptions);
+  const res = await memberFetchWithAuthRetry(url, fetchOptions);
   const json = await res.json();
 
   console.log("[settingsApi] Response:", json);

@@ -2,14 +2,13 @@
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDateDdMmYyyy, parseApiDate } from "@/lib/utils";
 import {
   Send,
   Clock,
   Sparkles,
   Users,
   User,
-  TrendingUp,
   Ruler,
   BookOpen,
   Briefcase as BriefcaseIcon,
@@ -375,10 +374,6 @@ const MatchesPage = () => {
   }, []);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
-  const newProfilesCount = useMemo(
-    () => profiles.filter((p) => p.is_new).length,
-    [profiles],
-  );
   const currentBride = brideProfiles[currentBrideIndex] ?? null;
   const meGender = (me?.gender ?? "").trim().toLowerCase();
   const leftLabel =
@@ -740,19 +735,6 @@ const MatchesPage = () => {
                     : `${totalProfiles} compatible profiles waiting for you.`}
                 </p>
               </div>
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.12 }}
-                className="flex shrink-0 items-center gap-2 self-start rounded-full border border-secondary/35 bg-gradient-to-r from-accent-gold/80 to-secondary/10 px-4 py-2 shadow-sm"
-              >
-                <TrendingUp className="h-4 w-4 text-secondary" aria-hidden />
-                <span className="text-sm font-semibold text-secondary-foreground">
-                  {newProfilesCount > 0
-                    ? `+${newProfilesCount} new today`
-                    : `${totalProfiles} total`}
-                </span>
-              </motion.div>
             </div>
 
             <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 lg:flex lg:items-center lg:justify-between lg:gap-4 lg:space-y-0">
@@ -1291,10 +1273,15 @@ const MatchListCard = ({
   const photoUrl = profile.profile_photo?.trim() ?? "";
   const hasPhoto = hasPhotoUrl(photoUrl);
   const busy = actionLoading === profile.matri_id;
+  const lastSeenParsed = profile.last_seen
+    ? parseApiDate(profile.last_seen)
+    : null;
   const lastLoginLabel = isOnline
     ? "Online now"
     : profile.last_seen
-      ? `Last login ${profile.last_seen}`
+      ? lastSeenParsed
+        ? `Last login ${formatDateDdMmYyyy(lastSeenParsed)}`
+        : `Last login ${profile.last_seen}`
       : "Recently active";
 
   const canSendInterest =

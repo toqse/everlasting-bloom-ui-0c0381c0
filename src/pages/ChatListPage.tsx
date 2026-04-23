@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
 import { BASE_URL } from "@/lib/config";
+import { parseApiDate } from "@/lib/utils";
 
 function getAvatarUrl(path: string | null | undefined): string {
   if (!path) {
@@ -13,41 +14,6 @@ function getAvatarUrl(path: string | null | undefined): string {
   if (path.startsWith("http")) return path;
   const base = BASE_URL.replace(/\/api\/?$/, "");
   return `${base}${path.startsWith("/") ? "" : "/"}${path}`;
-}
-
-function parseApiDate(input: unknown): Date | null {
-  if (input instanceof Date)
-    return Number.isNaN(input.getTime()) ? null : input;
-  if (input === null || input === undefined) return null;
-
-  if (typeof input === "number" && Number.isFinite(input)) {
-    const ms = input < 1e12 ? input * 1000 : input;
-    const d = new Date(ms);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  if (typeof input === "string") {
-    const s = input.trim();
-    if (!s) return null;
-
-    if (/^\d+(\.\d+)?$/.test(s)) {
-      const n = Number(s);
-      if (!Number.isFinite(n)) return null;
-      const ms = n < 1e12 ? n * 1000 : n;
-      const d = new Date(ms);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-
-    let normalized = s.replace(" ", "T");
-    normalized = normalized.replace(/(\.\d{3})\d+/, "$1");
-    const d = new Date(normalized);
-    if (!Number.isNaN(d.getTime())) return d;
-
-    const d2 = new Date(s);
-    return Number.isNaN(d2.getTime()) ? null : d2;
-  }
-
-  return null;
 }
 
 const ChatListPage = () => {

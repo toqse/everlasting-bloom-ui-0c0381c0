@@ -23,3 +23,74 @@ export function isUsableProfilePhotoUrl(url: string | null | undefined): boolean
   if (t.includes("images.unsplash.com")) return false;
   return true;
 }
+
+/** Parse API / ISO / numeric epoch (seconds or ms) into a local `Date`. */
+export function parseApiDate(input: unknown): Date | null {
+  if (input instanceof Date)
+    return Number.isNaN(input.getTime()) ? null : input;
+  if (input === null || input === undefined) return null;
+
+  if (typeof input === "number" && Number.isFinite(input)) {
+    const ms = input < 1e12 ? input * 1000 : input;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (!s) return null;
+
+    if (/^\d+(\.\d+)?$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      const ms = n < 1e12 ? n * 1000 : n;
+      const d = new Date(ms);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    let normalized = s.replace(" ", "T");
+    normalized = normalized.replace(/(\.\d{3})\d+/, "$1");
+    const d = new Date(normalized);
+    if (!Number.isNaN(d.getTime())) return d;
+
+    const d2 = new Date(s);
+    return Number.isNaN(d2.getTime()) ? null : d2;
+  }
+
+  return null;
+}
+
+/** Display calendar date as DD/MM/YYYY. Non-parseable strings are returned as-is (e.g. relative phrases). */
+export function formatDateDdMmYyyy(input: unknown): string {
+  const d =
+    input instanceof Date && !Number.isNaN(input.getTime())
+      ? input
+      : parseApiDate(input);
+  if (!d || Number.isNaN(d.getTime())) {
+    if (typeof input === "string" && input.trim()) return input.trim();
+    return "—";
+  }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+/** DD/MM/YYYY plus local time (12-hour), for timestamps. */
+export function formatDateTimeDdMmYyyy(input: unknown): string {
+  const d =
+    input instanceof Date && !Number.isNaN(input.getTime())
+      ? input
+      : parseApiDate(input);
+  if (!d || Number.isNaN(d.getTime())) {
+    if (typeof input === "string" && input.trim()) return input.trim();
+    return "—";
+  }
+  const datePart = formatDateDdMmYyyy(d);
+  const timePart = d.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${datePart}, ${timePart}`;
+}

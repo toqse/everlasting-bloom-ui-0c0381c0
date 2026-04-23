@@ -1,5 +1,5 @@
 import { BASE_URL } from "./config";
-import { useAuthStore } from "@/stores/authStore";
+import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
 type ApiErrorPayload = {
   success?: boolean;
@@ -20,14 +20,10 @@ function getErrorMessage(data: ApiErrorPayload | unknown, fallback: string): str
 
 async function authedGet<T>(path: string): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
   console.log("[transactionsApi] GET", path);
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   console.log("[transactionsApi] response", { status: res.status, data });

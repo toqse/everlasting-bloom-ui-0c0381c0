@@ -36,7 +36,7 @@ import {
   type FullProfileDrawerDisplay,
 } from "@/lib/profileFullMapper";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, formatDateDdMmYyyy } from "@/lib/utils";
 
 /** KYC / ID slots — omit from the profile gallery (API may still return URLs). */
 function isHiddenProfilePhotoKey(key: string): boolean {
@@ -864,7 +864,9 @@ const ProfileViewDrawer = ({
                         { label: "Gender", value: String(bd?.gender ?? "—") },
                         {
                           label: "DOB",
-                          value: String(bd?.dob ?? "—"),
+                          value: bd?.dob
+                            ? formatDateDdMmYyyy(bd.dob)
+                            : "—",
                           wide: true,
                         },
                       ]}

@@ -1,5 +1,5 @@
 import { BASE_URL } from "./config";
-import { useAuthStore } from "@/stores/authStore";
+import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
 type ApiErrorPayload = {
   success?: boolean;
@@ -46,18 +46,14 @@ function logPlansResponse(path: string, method: string, status: number, response
 
 async function authedFetch<T>(path: string, opts: { method: string; body?: string }): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const token = useAuthStore.getState().accessToken;
 
   const bodyParsed: unknown | null =
     opts.body !== undefined ? (JSON.parse(opts.body) as unknown) : null;
   logPlansRequest(path, opts.method, bodyParsed);
 
-  const res = await fetch(url, {
+  const res = await memberFetchWithAuthRetry(url, {
     method: opts.method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     ...(opts.body !== undefined && { body: opts.body }),
   });
 

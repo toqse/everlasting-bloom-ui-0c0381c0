@@ -306,6 +306,58 @@ export async function verifyMobile(
   return data;
 }
 
+function pickStr(v: unknown): string {
+  return typeof v === "string" && v.trim() ? v.trim() : "";
+}
+
+/** Parse member refresh response (apidoc + common variants). */
+export function parseMemberRefreshTokens(data: unknown): {
+  access_token: string;
+  refresh_token: string;
+} | null {
+  const root = (data ?? {}) as Record<string, unknown>;
+  const d = (root.data ?? root) as Record<string, unknown>;
+  const tokens = (d.tokens ?? d.token) as Record<string, unknown> | undefined;
+  let access =
+    pickStr(d.access_token) || pickStr(d.access);
+  let refresh =
+    pickStr(d.refresh_token) || pickStr(d.refresh);
+  if (tokens && typeof tokens === "object") {
+    access =
+      access ||
+      pickStr(tokens.access_token) ||
+      pickStr(tokens.access);
+    refresh =
+      refresh ||
+      pickStr(tokens.refresh_token) ||
+      pickStr(tokens.refresh);
+  }
+  if (!access || !refresh) return null;
+  return { access_token: access, refresh_token: refresh };
+}
+
+export type MemberTokenRefreshResult =
+  | { ok: true; access_token: string; refresh_token: string }
+  | { ok: false; status: number };
+
+/** POST v1/auth/token/refresh/ — body `{ refresh }` per apidoc. No auth header. */
+export async function postMemberTokenRefresh(
+  refreshToken: string,
+): Promise<MemberTokenRefreshResult> {
+  const url = `${BASE_URL}v1/auth/token/refresh/`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh: refreshToken }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) return { ok: false, status: 401 };
+  if (!res.ok) return { ok: false, status: res.status };
+  const parsed = parseMemberRefreshTokens(data);
+  if (!parsed) return { ok: false, status: res.status };
+  return { ok: true, ...parsed };
+}
+
 /** POST v1/auth/logout/ — blacklist refresh token (member JWT). See apidoc: admin uses v1/admin/auth/logout/. */
 export async function authLogout(
   accessToken: string,

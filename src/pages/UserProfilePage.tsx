@@ -39,6 +39,7 @@ import {
   type EducationBody,
   type FamilyBody,
 } from "@/lib/profileApi";
+import { cn, formatDateDdMmYyyy } from "@/lib/utils";
 import {
   getCountries,
   getStates,
@@ -801,9 +802,11 @@ function EditSectionForm({
             <Label htmlFor="gender">Gender</Label>
             <select
               id="gender"
-              className={genderSelectClassName}
+              className={cn(genderSelectClassName, "bg-muted/50 cursor-not-allowed")}
               value={data.gender}
-              onChange={(e) => update("gender", e.target.value)}
+              disabled
+              aria-readonly="true"
+              title="Gender cannot be changed here"
             >
               <option value="" disabled>
                 Select gender
@@ -828,8 +831,10 @@ function EditSectionForm({
               id="phone"
               type="tel"
               value={data.phone}
-              onChange={(e) => update("phone", e.target.value)}
+              readOnly
               placeholder="e.g. +91 9876543210"
+              title="Phone number cannot be changed here"
+              className="bg-muted/50 cursor-default"
             />
           </div>
           <div className="grid gap-2">
@@ -1675,17 +1680,21 @@ function EditSectionForm({
 
 function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
   switch (section) {
-    case "Basic Info":
+    case "Basic Info": {
+      const dobDisplay = data.dob.trim()
+        ? formatDateDdMmYyyy(data.dob)
+        : "";
       return (
         [
           data.name,
           data.gender ? formatGenderLabel(data.gender) : "",
-          data.dob,
+          dobDisplay,
           data.email,
         ]
           .filter(Boolean)
           .join(" · ") || "—"
       );
+    }
     case "Religion":
       return (
         [data.religion, data.caste, data.motherTongue]
@@ -1799,7 +1808,10 @@ function ViewSectionContent({
         <div className="space-y-0 divide-y-0">
           {row("Name", data.name)}
           {row("Gender", formatGenderLabel(data.gender) || "—")}
-          {row("Date of Birth", data.dob)}
+          {row(
+            "Date of Birth",
+            data.dob.trim() ? formatDateDdMmYyyy(data.dob) : "",
+          )}
           {row("Phone", data.phone)}
           {row("Email", data.email)}
         </div>
