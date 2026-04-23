@@ -45,6 +45,11 @@ import {
   type MatchBlock,
   type PoruthamDetailedItem,
 } from "@/lib/astrologyApi";
+import {
+  extendedPoruthamChecklist,
+  poruthamRowsFromMatch,
+} from "@/lib/astrologyPoruthamDisplay";
+import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 
 declare global {
@@ -143,128 +148,6 @@ async function ensureRazorpayScript(): Promise<boolean> {
     });
   }
   return razorpayScriptPromise;
-}
-
-function poruthamRowsFromMatch(match: MatchBlock): PoruthamDetailedItem[] {
-  if (match.poruthams_detailed?.length)
-    return sortPoruthamRows(match.poruthams_detailed);
-  const p = match.poruthams;
-  if (!p || typeof p !== "object") return [];
-  const generated = Object.entries(p).map(([key, matched]) => ({
-    key,
-    label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    matched: Boolean(matched),
-    severity: "low",
-    is_critical: key === "rajju",
-  }));
-  return sortPoruthamRows(generated);
-}
-
-/** 10 poruthams + Kuja / Dasa Sandhi / Papam Samyom from `match.flags` (PairMaker-style checklist). */
-function extendedPoruthamChecklist(match: MatchBlock): PoruthamDetailedItem[] {
-  const base = poruthamRowsFromMatch(match);
-  const withPoints = base.map((item) => ({
-    ...item,
-    points: match.koota_points?.[item.key] ?? item.points,
-  }));
-  const f = match.flags;
-  if (!f) return withPoints;
-  const kujaAligned = f.kuja_dosham_bride === f.kuja_dosham_groom;
-  const extra: PoruthamDetailedItem[] = [
-    {
-      key: "kuja_alignment",
-      label: "Kuja Dosham",
-      matched: kujaAligned,
-      severity: "medium",
-      is_critical: false,
-      description: "Matched when both charts share the same Kuja pattern",
-    },
-    {
-      key: "dasa_sandhi",
-      label: "Dasa Sandhi",
-      matched: !f.dasa_sandhi,
-      severity: "low",
-      is_critical: false,
-      description:
-        "Favorable when neither side is at a major mahadasha boundary",
-    },
-    {
-      key: "papam_samyam",
-      label: "Papam Samyom",
-      matched: Boolean(f.papam_samyam_matched),
-      severity: "low",
-      is_critical: false,
-      description: "Kendra malefic alignment between charts",
-    },
-  ];
-  return sortPoruthamRows([...withPoints, ...extra]);
-}
-
-const PORUTHAM_DISPLAY_ORDER = [
-  "rasi",
-  "rasyadhip",
-  "vasyam",
-  "deergaham",
-  "dinam",
-  "mahendra",
-  "ganam",
-  "yoni",
-  "rajju_dosham",
-  "vedham",
-  "kuja_dosham",
-  "dasa_sandhi",
-  "papam_samyom",
-] as const;
-
-function normalizePoruthamKey(raw: string): string {
-  const key = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  const aliases: Record<string, string> = {
-    rasiyadhip: "rasyadhip",
-    rasyadhip: "rasyadhip",
-    rajju: "rajju_dosham",
-    reju_dosham: "rajju_dosham",
-    rejju_dosham: "rajju_dosham",
-    papam_samyam: "papam_samyom",
-    kuja_alignment: "kuja_dosham",
-  };
-  return aliases[key] ?? key;
-}
-
-function sortPoruthamRows(rows: PoruthamDetailedItem[]): PoruthamDetailedItem[] {
-  const order = new Map<string, number>(
-    PORUTHAM_DISPLAY_ORDER.map((key, idx) => [key, idx]),
-  );
-  const resolveOrderKey = (item: PoruthamDetailedItem): string => {
-    const candidates = [
-      normalizePoruthamKey(item.key ?? ""),
-      normalizePoruthamKey(item.label ?? ""),
-    ];
-    for (const c of candidates) {
-      if (order.has(c)) return c;
-      if (c.includes("rasyadhip") || c.includes("rasyadip") || c.includes("rasiyadhip"))
-        return "rasyadhip";
-      if (c.includes("deerg") || c.includes("deergh")) return "deergaham";
-      if (c.includes("dinam") || c === "dina") return "dinam";
-      if (c.includes("mahendra")) return "mahendra";
-      if (c.includes("ganam") || c.includes("gan")) return "ganam";
-      if (c.includes("yoni")) return "yoni";
-      if (c.includes("rajju") || c.includes("rejju") || c.includes("reju"))
-        return "rajju_dosham";
-      if (c.includes("vedham") || c.includes("veda")) return "vedham";
-      if (c.includes("kuja")) return "kuja_dosham";
-      if (c.includes("dasa") && c.includes("sandhi")) return "dasa_sandhi";
-      if (c.includes("papam") && (c.includes("samy") || c.includes("samo")))
-        return "papam_samyom";
-      if (c === "rasi") return "rasi";
-      if (c.includes("vasyam") || c.includes("vashyam")) return "vasyam";
-    }
-    return "";
-  };
-  return [...rows].sort((a, b) => {
-    const aPos = order.get(resolveOrderKey(a)) ?? 999;
-    const bPos = order.get(resolveOrderKey(b)) ?? 999;
-    return aPos - bPos;
-  });
 }
 
 function ProfileChartColumn({
@@ -457,6 +340,7 @@ export default function JathagamPage() {
   const [checkingMatch, setCheckingMatch] = useState(false);
   const [processingPdfProduct, setProcessingPdfProduct] =
     useState<AstrologyPdfProduct | null>(null);
+  const [downloadingMatchPdf, setDownloadingMatchPdf] = useState(false);
   /** If §4b JSON fails, show PNG charts in the pair columns again. */
   const [matchJsonChartFailed, setMatchJsonChartFailed] = useState(false);
 
@@ -661,6 +545,37 @@ export default function JathagamPage() {
     }
   };
 
+  const handleDownloadMatchReportPdf = async () => {
+    const myMatri = user?.matriId?.trim();
+    if (!myMatri) {
+      toast.error("Matri ID not found. Please sign in again.");
+      return;
+    }
+    if (!matchResponseData || !matchBlock) {
+      toast.error("Run Check Match first to build the report.");
+      return;
+    }
+    if (!matchResponseData.primary || !matchResponseData.partner) {
+      toast.error("Full pair profile is required for the PDF report.");
+      return;
+    }
+    setDownloadingMatchPdf(true);
+    try {
+      await downloadMatchCompatibilityReportPdf({
+        data: matchResponseData,
+        match: matchBlock,
+        userMatriId: myMatri,
+      });
+      toast.success("Match report downloaded.");
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not generate match report PDF.",
+      );
+    } finally {
+      setDownloadingMatchPdf(false);
+    }
+  };
+
   const handleBuyAstrologyPdf = async (product: AstrologyPdfProduct) => {
     setProcessingPdfProduct(product);
     try {
@@ -745,12 +660,21 @@ export default function JathagamPage() {
       matchBlock?.groom_profile_id != null,
   );
   const showPairColumnPng = !jsonMatchChartsEnabled || matchJsonChartFailed;
+  const displayScore =
+    matchBlock?.summary?.score ?? matchBlock?.score ?? null;
+  const displayMaxScore =
+    matchBlock?.summary?.max_score ?? matchBlock?.max_score ?? null;
+  const compatibilityGradeLabel =
+    matchBlock?.summary?.result ??
+    matchBlock?.summary?.grade ??
+    matchBlock?.result ??
+    "—";
   const scorePct =
     matchBlock?.summary?.percentage ??
-    (matchBlock?.max_score &&
-    matchBlock.max_score > 0 &&
-    matchBlock.score != null
-      ? (matchBlock.score / matchBlock.max_score) * 100
+    (displayMaxScore &&
+    displayMaxScore > 0 &&
+    displayScore != null
+      ? (displayScore / displayMaxScore) * 100
       : null);
   const selectedCandidate = candidates.find(
     (c) => c.matri_id === selectedMatriId,
@@ -1143,8 +1067,7 @@ export default function JathagamPage() {
                                     : "text-red-600",
                               )}
                             >
-                              {matchBlock.score ?? "—"}/
-                              {matchBlock.max_score ?? 10}
+                              {displayScore ?? "—"}/{displayMaxScore ?? "—"}
                             </span>
                             <span className="text-lg font-semibold text-muted-foreground">
                               ({Math.round(scorePct)}%)
@@ -1152,15 +1075,12 @@ export default function JathagamPage() {
                           </>
                         ) : (
                           <span className="text-3xl font-bold text-foreground">
-                            {matchBlock.score ?? "—"}/
-                            {matchBlock.max_score ?? 10}
+                            {displayScore ?? "—"}/{displayMaxScore ?? "—"}
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-sm font-medium text-foreground">
                           <Sparkles className="w-4 h-4 text-secondary" />
-                          {matchBlock.summary?.result ??
-                            matchBlock.result ??
-                            "Result"}
+                          {compatibilityGradeLabel}
                         </span>
                       </div>
                       {scorePct != null && (
@@ -1170,18 +1090,6 @@ export default function JathagamPage() {
                         />
                       )}
                     </div>
-
-                    {matchResponseData?.match_report_pdf_url ? (
-                      <a
-                        href={matchResponseData.match_report_pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Open match report (PDF)
-                      </a>
-                    ) : null}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {comparisonRows.map((item) => (
@@ -1226,6 +1134,33 @@ export default function JathagamPage() {
                     </p>
                   </>
                 )}
+                {showPairComparison ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                    <button
+                      type="button"
+                      onClick={handleDownloadMatchReportPdf}
+                      disabled={downloadingMatchPdf}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+                    >
+                      {downloadingMatchPdf ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
+                      )}
+                      Download match report (PDF)
+                    </button>
+                    {matchResponseData?.match_report_pdf_url ? (
+                      <a
+                        href={matchResponseData.match_report_pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline sm:ml-1"
+                      >
+                        Server-hosted PDF (optional)
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -1286,22 +1221,36 @@ export default function JathagamPage() {
                       "text-foreground",
                   )}
                 >
-                  Compatibility grade: {matchBlock.summary?.grade ?? "—"}
-                  {matchBlock.score != null && matchBlock.max_score != null
-                    ? ` (${matchBlock.score}/${matchBlock.max_score})`
+                  Compatibility grade: {compatibilityGradeLabel}
+                  {displayScore != null && displayMaxScore != null
+                    ? ` (${displayScore}/${displayMaxScore})`
                     : ""}
                 </p>
-                {matchResponseData.match_report_pdf_url ? (
-                  <a
-                    href={matchResponseData.match_report_pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end w-full">
+                  <button
+                    type="button"
+                    onClick={handleDownloadMatchReportPdf}
+                    disabled={downloadingMatchPdf}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
                   >
-                    <FileText className="w-4 h-4" />
-                    Open match report (PDF)
-                  </a>
-                ) : null}
+                    {downloadingMatchPdf ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileText className="w-4 h-4" />
+                    )}
+                    Download match report (PDF)
+                  </button>
+                  {matchResponseData.match_report_pdf_url ? (
+                    <a
+                      href={matchResponseData.match_report_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      Server-hosted PDF (optional)
+                    </a>
+                  ) : null}
+                </div>
               </div>
 
               {jsonMatchChartsEnabled &&
