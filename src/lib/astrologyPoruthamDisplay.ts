@@ -16,7 +16,7 @@ const PORUTHAM_DISPLAY_ORDER = [
   "papam_samyom",
 ] as const;
 
-function normalizePoruthamKey(raw: string): string {
+export function normalizePoruthamKey(raw: string): string {
   const key = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
   const aliases: Record<string, string> = {
     rasiyadhip: "rasyadhip",

@@ -16,6 +16,14 @@ export default {
       fontFamily: {
         serif: ["var(--font-serif)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        ml: [
+          "var(--font-ml)",
+          "Noto Sans Malayalam",
+          "AnjaliOldLipi",
+          "Kartika",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       colors: {
         border: "hsl(var(--border))",

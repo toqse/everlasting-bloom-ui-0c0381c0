@@ -17,7 +17,16 @@ const MARITAL_OPTIONS = [
   "Separated",
   "Widowed",
 ];
-const COLOR_OPTIONS = ['Very Fair', 'Fair', 'Wheatish', 'Wheatish Brown', 'Dark', 'Other',];
+const COLOR_OPTIONS = [
+  "White",
+  "Medium",
+  "Black",
+  "Very Fair",
+  "Fair",
+  "Wheatish",
+  "Wheatish Brown",
+  "Dark",
+];
 
 const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props) => {
   const [maritalOptions, setMaritalOptions] = useState<string[]>(MARITAL_OPTIONS);

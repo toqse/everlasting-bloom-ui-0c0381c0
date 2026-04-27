@@ -29,6 +29,7 @@ export interface ProfileData {
       religion_id?: number;
       religion?: string;
     }>;
+    partner_caste_preferences?: Record<string, number[]>;
   };
   personal_details?: {
     marital_status_id?: number | string;
@@ -58,14 +59,18 @@ export interface ProfileData {
   };
   family_details?: Record<string, unknown> & {
     father_name?: string;
+    father_status?: string;
     father_occupation?: string;
     mother_name?: string;
+    mother_status?: string;
     mother_occupation?: string;
     brothers?: number;
     married_brothers?: number;
     sisters?: number;
     married_sisters?: number;
     about_family?: string;
+    family_type?: string;
+    family_status?: string;
   };
   education_details?: {
     highest_education_id?: number;
@@ -125,14 +130,16 @@ export interface LocationBody {
 }
 
 export interface ReligionBody {
-  religion_id: number;
-  caste_id: number | null;
-  mother_tongue_id: number;
-  partner_preference_type:
+  religion_id?: number;
+  caste_id?: number | null;
+  mother_tongue_id?: number;
+  partner_religion_preference?: string;
+  partner_preference_type?:
     | "own_religion_only"
     | "open_to_all"
     | "specific_religions";
-  partner_religion_ids: number[];
+  partner_religion_ids?: number[];
+  partner_caste_preferences?: Record<string, number[]>;
 }
 
 export interface PersonalBody {
@@ -175,15 +182,40 @@ export interface BasicBody {
 
 /** PATCH v1/profile/family/ */
 export interface FamilyBody {
-  father_name: string;
-  father_occupation: string;
-  mother_name: string;
-  mother_occupation: string;
-  brothers: number;
-  married_brothers: number;
-  sisters: number;
-  married_sisters: number;
-  about_family: string;
+  father_name?: string;
+  father_status?: "Alive" | "Late";
+  father_occupation?: string;
+  mother_name?: string;
+  mother_status?: "Alive" | "Late";
+  mother_occupation?: string;
+  brothers?: number;
+  married_brothers?: number;
+  sisters?: number;
+  married_sisters?: number;
+  about_family?: string;
+  family_type?: string;
+  family_status?: string;
+}
+
+export interface FamilyDetailsData {
+  father_name?: string;
+  father_status?: "Alive" | "Late" | "";
+  father_occupation?: string;
+  mother_name?: string;
+  mother_status?: "Alive" | "Late" | "";
+  mother_occupation?: string;
+  brothers?: number;
+  married_brothers?: number;
+  sisters?: number;
+  married_sisters?: number;
+  about_family?: string;
+  family_type?: string;
+  family_status?: string;
+}
+
+export interface FamilyDetailsResponse {
+  success: boolean;
+  data: FamilyDetailsData;
 }
 
 export interface PhotosBody {
@@ -537,6 +569,10 @@ export async function patchFamily(body: FamilyBody): Promise<unknown> {
   return authedPatch("v1/profile/family/", body);
 }
 
+export async function getProfileFamily(): Promise<FamilyDetailsResponse> {
+  return authedGet<FamilyDetailsResponse>("v1/profile/family/");
+}
+
 export async function getProfileBasic(): Promise<{
   success: boolean;
   data: {
@@ -590,12 +626,51 @@ export async function getProfileViews(): Promise<{
 }
 
 export interface PartnerPreferenceBody {
-  partner_preference_type:
+  partner_preference_type?:
     | "own_religion_only"
     | "open_to_all"
     | "specific_religions";
   partner_religion_ids?: number[];
-  partner_caste_preference?: "any" | "own_caste_only";
+  partner_caste_preferences?: Record<string, number[]>;
+}
+
+export interface ReligionDetailsData {
+  religion_id?: number;
+  religion?: string;
+  caste_id?: number;
+  caste?: string;
+  mother_tongue_id?: number;
+  mother_tongue?: string;
+  partner_religion_preference?: string;
+  partner_preference_type?:
+    | "own_religion_only"
+    | "open_to_all"
+    | "specific_religions";
+  partner_preference_type_label?: string;
+  partner_religion_ids?: number[];
+  partner_religion_names?: string[];
+  partner_caste_preferences?: Record<string, number[]>;
+}
+
+export interface ReligionDetailsResponse {
+  success: boolean;
+  data: ReligionDetailsData;
+}
+
+export interface PartnerPreferenceData {
+  partner_preference_type?:
+    | "own_religion_only"
+    | "open_to_all"
+    | "specific_religions";
+  partner_preference_type_label?: string;
+  partner_religion_ids?: number[];
+  partner_religion_names?: string[];
+  partner_caste_preferences?: Record<string, number[]>;
+}
+
+export interface PartnerPreferenceResponse {
+  success: boolean;
+  data: PartnerPreferenceData;
 }
 
 /** GET v1/profile/birth-details/ */
@@ -647,6 +722,27 @@ export async function patchPartnerPreferences(
   body: PartnerPreferenceBody,
 ): Promise<unknown> {
   return authedPatch("v1/profile/partner-preferences/", body);
+}
+
+export async function getProfileReligion(): Promise<ReligionDetailsResponse> {
+  return authedGet<ReligionDetailsResponse>("v1/profile/religion/");
+}
+
+export async function patchProfileReligion(
+  body: ReligionBody,
+): Promise<ReligionDetailsResponse> {
+  return authedPatch<ReligionBody, ReligionDetailsResponse>(
+    "v1/profile/religion/",
+    body,
+  );
+}
+
+export async function getPartnerPreferences(): Promise<PartnerPreferenceResponse> {
+  return authedGet<PartnerPreferenceResponse>("v1/profile/partner-preferences/");
+}
+
+export async function getPartnerPreference(): Promise<PartnerPreferenceResponse> {
+  return authedGet<PartnerPreferenceResponse>("v1/profile/partner-preference/");
 }
 
 export async function postPhotos(body: PhotosBody): Promise<unknown> {

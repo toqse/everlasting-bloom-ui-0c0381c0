@@ -22,7 +22,11 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  formatDateDdMmYyyy,
+  formatTimeOfBirthDisplay,
+} from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
@@ -48,6 +52,16 @@ import {
   extendedPoruthamChecklist,
   poruthamRowsFromMatch,
 } from "@/lib/astrologyPoruthamDisplay";
+import { panelsBrideGroom } from "@/lib/astrologyBrideGroomPanels";
+import {
+  dasaDurationMalayalam,
+  grahaNameMalayalam,
+  ml,
+  nakshatraNameMalayalam,
+  poruthamRowLabelMalayalam,
+  rasiNameMalayalam,
+  roleNameMalayalam,
+} from "@/lib/malayalam/horoscopeDisplayMl";
 import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 
@@ -179,7 +193,7 @@ function ProfileChartColumn({
   const dasa = cp?.dasa;
 
   return (
-    <div className="flex flex-col items-stretch gap-3 rounded-xl border border-primary/15 bg-card p-4 shadow-sm">
+    <div className="flex flex-col items-stretch gap-3 rounded-xl border border-primary/15 bg-card p-4 shadow-sm font-ml">
       <div className="text-center space-y-1 border-b border-primary/10 pb-3">
         {panel.matri_id ? (
           <p className="text-xs font-mono text-muted-foreground tracking-tight">
@@ -190,7 +204,9 @@ function ProfileChartColumn({
           {panel.name ?? "—"}
         </p>
         {panel.role ? (
-          <p className="text-xs font-semibold text-primary">{panel.role}</p>
+          <p className="text-xs font-semibold text-primary">
+            {roleNameMalayalam(panel.role)}
+          </p>
         ) : null}
       </div>
       {showChartPng ? (
@@ -203,7 +219,7 @@ function ProfileChartColumn({
             />
           ) : (
             <div className="flex h-48 w-full max-w-[280px] items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 text-xs text-muted-foreground">
-              Chart not available
+              {ml.chartNotAvailable}
             </div>
           )}
         </div>
@@ -216,24 +232,47 @@ function ProfileChartColumn({
         ) : null}
         <p className="text-muted-foreground">
           {[
-            panel.chart_meta?.rasi_label ?? panel.rasi,
-            panel.chart_meta?.lagna_label ?? panel.lagna,
+            rasiNameMalayalam(panel.chart_meta?.rasi_label ?? panel.rasi),
+            rasiNameMalayalam(panel.chart_meta?.lagna_label ?? panel.lagna),
           ]
-            .filter(Boolean)
+            .filter((x) => x && x !== "—")
             .join(" · ")}
         </p>
+        {panel.date_of_birth?.trim() ||
+        panel.time_of_birth?.trim() ||
+        panel.place_of_birth?.trim() ? (
+          <div className="pt-1 space-y-0.5 text-[11px] text-muted-foreground">
+            {panel.date_of_birth?.trim() ? (
+              <p>
+                {ml.dob}: {formatDateDdMmYyyy(panel.date_of_birth)}
+              </p>
+            ) : null}
+            {panel.time_of_birth?.trim() ? (
+              <p>
+                {ml.tob}: {formatTimeOfBirthDisplay(panel.time_of_birth)}
+              </p>
+            ) : null}
+            {panel.place_of_birth?.trim() ? (
+              <p>
+                {ml.pob}: {panel.place_of_birth.trim()}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {cp?.nakshatra != null || cp?.padam != null ? (
           <div className="pt-2 border-t border-primary/10 space-y-0.5">
             {cp.nakshatra ? (
               <p>
-                <span className="text-muted-foreground">Nakshatra</span> ·{" "}
-                {cp.nakshatra}
-                {cp.nakshatra_english ? ` (${cp.nakshatra_english})` : ""}
+                <span className="text-muted-foreground">{ml.nakshatra}</span> ·{" "}
+                {nakshatraNameMalayalam(cp.nakshatra)}
+                {cp.nakshatra_english
+                  ? ` (${nakshatraNameMalayalam(cp.nakshatra_english)})`
+                  : ""}
               </p>
             ) : null}
             {cp.padam != null ? (
               <p>
-                <span className="text-muted-foreground">Padam</span> ·{" "}
+                <span className="text-muted-foreground">{ml.padam}</span> ·{" "}
                 {cp.padam}
               </p>
             ) : null}
@@ -241,14 +280,18 @@ function ProfileChartColumn({
         ) : null}
         {dasa && (dasa.remaining_label || dasa.lord) ? (
           <div className="pt-2 border-t border-primary/10 space-y-1">
-            <p className="font-semibold text-foreground">Dasa</p>
+            <p className="font-semibold text-foreground">{ml.dasaTitle}</p>
             {dasa.remaining_label ? (
-              <p className="text-foreground">{dasa.remaining_label}</p>
+              <p className="text-foreground">
+                {dasaDurationMalayalam(dasa.remaining_label)}
+              </p>
             ) : null}
             {dasa.lord ? (
               <p>
-                <span className="text-muted-foreground">Lord</span> ·{" "}
-                {dasa.lord}
+                <span className="text-muted-foreground">
+                  {ml.dasaLord}
+                </span>{" "}
+                · {grahaNameMalayalam(dasa.lord)}
               </p>
             ) : null}
           </div>
@@ -257,10 +300,12 @@ function ProfileChartColumn({
           <p className="text-[11px] text-muted-foreground pt-1">
             {[
               panel.kuja_dosham != null
-                ? `Kuja dosham: ${panel.kuja_dosham ? "Yes" : "No"}`
+                ? `${ml.kujaDosham}: ${
+                    panel.kuja_dosham ? ml.yes : ml.no
+                  }`
                 : null,
               panel.kendra_malefic_count != null
-                ? `Kendra malefics: ${panel.kendra_malefic_count}`
+                ? `${ml.kendraMalefic}: ${panel.kendra_malefic_count}`
                 : null,
             ]
               .filter(Boolean)
@@ -274,9 +319,9 @@ function ProfileChartColumn({
 
 function PoruthamChecklistColumn({ rows }: { rows: PoruthamDetailedItem[] }) {
   return (
-    <div className="flex flex-col justify-center gap-0 min-h-[120px] rounded-xl border-2 border-primary/20 bg-primary/5 px-3 py-4 sm:px-4">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 text-center">
-        Porutham
+    <div className="flex flex-col justify-center gap-0 min-h-[120px] rounded-xl border-2 border-primary/20 bg-primary/5 px-3 py-4 sm:px-4 font-ml">
+      <p className="text-[10px] tracking-wider text-muted-foreground font-semibold mb-2 text-center">
+        {ml.poruthamTitle}
       </p>
       <ul className="space-y-1.5 max-h-[min(70vh,520px)] overflow-y-auto pr-1">
         {rows.map((row) => (
@@ -285,7 +330,7 @@ function PoruthamChecklistColumn({ rows }: { rows: PoruthamDetailedItem[] }) {
             className="flex items-center justify-between gap-2 text-xs sm:text-sm py-1 border-b border-primary/5 last:border-0"
           >
             <span className="text-foreground font-medium leading-tight">
-              {row.label}
+              {poruthamRowLabelMalayalam(row.key, row.label)}
             </span>
             {typeof row.points === "number" ? (
               <span className="text-[11px] text-muted-foreground ml-auto mr-1">
@@ -654,6 +699,19 @@ export default function JathagamPage() {
       matchBlock?.groom_profile_id != null,
   );
   const showPairColumnPng = !jsonMatchChartsEnabled || matchJsonChartFailed;
+  const matchBrideGroomPanels =
+    showPairComparison &&
+    matchResponseData?.primary &&
+    matchResponseData?.partner &&
+    matchBlock?.bride_profile_id != null &&
+    matchBlock.groom_profile_id != null
+      ? panelsBrideGroom(
+          matchResponseData.primary,
+          matchResponseData.partner,
+          matchBlock.bride_profile_id,
+          matchBlock.groom_profile_id,
+        )
+      : null;
   const timeParts = get12HourParts(timeOfBirth);
   const displayScore =
     matchBlock?.summary?.score ?? matchBlock?.score ?? null;
@@ -1048,18 +1106,16 @@ export default function JathagamPage() {
             )}
 
             {!myPlan?.is_plan_active && (
-              <p className="text-sm text-muted-foreground mb-4">
-                An active subscription is required to list candidates and run
-                compatibility checks with other members.
+              <p className="text-sm text-muted-foreground mb-4 font-ml">
+                {ml.planRequiredBlurb}
               </p>
             )}
 
             {matchBlock && poruthamRows.length > 0 ? (
               <div className="space-y-4">
                 {showPairComparison ? (
-                  <p className="text-sm text-muted-foreground">
-                    Side-by-side Grahanila charts and the full checklist are
-                    shown in the report below.
+                  <p className="text-sm text-muted-foreground font-ml">
+                    {ml.sideBySideBlurb}
                   </p>
                 ) : (
                   <>
@@ -1129,7 +1185,7 @@ export default function JathagamPage() {
                                   : "text-amber-900 dark:text-amber-200",
                             )}
                           >
-                            {item.label}
+                            {poruthamRowLabelMalayalam(item.key, item.label)}
                             {typeof item.points === "number"
                               ? ` (${item.points.toFixed(1)})`
                               : ""}
@@ -1138,9 +1194,8 @@ export default function JathagamPage() {
                       ))}
                     </div>
 
-                    <p className="text-xs text-muted-foreground pt-2">
-                      Consult a jyotishi for final decision. Quota usage follows
-                      your plan rules on the server.
+                    <p className="text-xs text-muted-foreground pt-2 font-ml">
+                      {ml.jothishaAdviceShort}
                     </p>
                   </>
                 )}
@@ -1157,28 +1212,27 @@ export default function JathagamPage() {
                       ) : (
                         <FileText className="w-4 h-4" />
                       )}
-                      Download match report (PDF)
+                      {ml.downloadMatchPdf}
                     </button>
                   </div>
                 ) : null}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <p className="text-sm text-muted-foreground flex items-center gap-1 font-ml">
                 <Sparkles className="w-4 h-4" />
-                Click &quot;Check Match&quot; to see Porutham score. Fill your
-                birth details first for accurate results.
+                {ml.clickCheckMatchBlurb}
               </p>
             )}
 
             <a
               href="tel:8921726855"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary/5 px-4 py-3 text-center text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary/5 px-4 py-3 text-center text-sm font-medium text-primary hover:bg-primary/10 transition-colors font-ml"
             >
               <Phone className="w-4 h-4 shrink-0" />
               <span className="text-center">
-                Astrologer services are available
+                {ml.astrologerCta}
                 <br />
-                contact : 8921726855
+                {ml.astrologerContact}: 8921726855
               </span>
             </a>
           </div>
@@ -1187,10 +1241,10 @@ export default function JathagamPage() {
           matchBlock &&
           matchResponseData?.primary &&
           matchResponseData.partner ? (
-            <div className="lg:col-span-2 bg-card rounded-2xl shadow-card p-4 sm:p-6 border-2 border-primary/20 space-y-6">
+            <div className="lg:col-span-2 bg-card rounded-2xl shadow-card p-4 sm:p-6 border-2 border-primary/20 space-y-6 font-ml">
               <div className="text-center space-y-1">
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                  {matchResponseData.title ?? "Marriage Compatibility Report"}
+                  {matchResponseData.title ?? ml.defaultReportTitle}
                 </h3>
                 {matchResponseData.subtitle ? (
                   <p className="text-sm text-muted-foreground">
@@ -1221,7 +1275,7 @@ export default function JathagamPage() {
                       "text-foreground",
                   )}
                 >
-                  Compatibility grade: {compatibilityGradeLabel}
+                  {ml.compatibilityGrade}: {compatibilityGradeLabel}
                   {displayScore != null && displayMaxScore != null
                     ? ` (${displayScore}/${displayMaxScore})`
                     : ""}
@@ -1238,7 +1292,7 @@ export default function JathagamPage() {
                     ) : (
                       <FileText className="w-4 h-4" />
                     )}
-                    Download match report (PDF)
+                    {ml.downloadMatchPdf}
                   </button>
                 </div>
               </div>
@@ -1261,12 +1315,16 @@ export default function JathagamPage() {
 
               <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(148px,200px)_1fr] gap-5 xl:gap-6 items-start">
                 <ProfileChartColumn
-                  panel={matchResponseData.primary}
+                  panel={
+                    matchBrideGroomPanels?.bride ?? matchResponseData.primary
+                  }
                   showChartPng={showPairColumnPng}
                 />
                 <PoruthamChecklistColumn rows={comparisonRows} />
                 <ProfileChartColumn
-                  panel={matchResponseData.partner}
+                  panel={
+                    matchBrideGroomPanels?.groom ?? matchResponseData.partner
+                  }
                   showChartPng={showPairColumnPng}
                 />
               </div>
@@ -1286,8 +1344,7 @@ export default function JathagamPage() {
               ) : null}
 
               <p className="text-xs text-muted-foreground">
-                Consult a jyotishi for final decision. Quota usage follows your
-                plan rules on the server.
+                {ml.consultFooter}
               </p>
             </div>
           ) : null}

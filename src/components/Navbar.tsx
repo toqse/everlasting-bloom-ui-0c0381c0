@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
+import { withoutTrailingSlash } from "@/lib/utils";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,7 +24,9 @@ const Navbar = () => {
     { name: "Contact", href: "/contact" },
   ];
 
-  const isActive = (href: string) => pathname === href;
+  /** `trailingSlash: true` makes pathname e.g. `/success-stories/`; hrefs omit `/`, so compare normalized. */
+  const isActive = (href: string) =>
+    withoutTrailingSlash(pathname ?? "") === withoutTrailingSlash(href);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
@@ -36,10 +39,12 @@ const Navbar = () => {
         >
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
-            alt="Aiswarya Matrimony"
+            alt="Toqse Matrimony"
             className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain"
           />
-          <span className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wider -mt-3 ml-4">Since 1989</span>
+          <span className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wider -mt-3 ml-4">
+            Since 1989
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -50,13 +55,17 @@ const Navbar = () => {
               href={link.href}
               onClick={() => setIsMobileMenuOpen(false)}
               className={`relative font-medium transition-colors duration-300 group ${
-                isActive(link.href) ? "text-primary" : "text-foreground/80 hover:text-primary"
+                isActive(link.href)
+                  ? "text-primary"
+                  : "text-foreground/80 hover:text-primary"
               }`}
             >
               {link.name}
-              <span className={`absolute -bottom-1 left-0 h-0.5 bg-secondary transition-all duration-300 ${
-                isActive(link.href) ? "w-full" : "w-0 group-hover:w-full"
-              }`} />
+              <span
+                className={`absolute -bottom-1 left-0 h-0.5 bg-secondary transition-all duration-300 ${
+                  isActive(link.href) ? "w-full" : "w-0 group-hover:w-full"
+                }`}
+              />
             </Link>
           ))}
         </div>
@@ -66,17 +75,38 @@ const Navbar = () => {
           {isLoggedIn ? (
             <>
               {showCompleteProfile ? (
-                <Button variant="outline" className="gap-2" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    router.push("/auth");
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
                   <UserPen className="w-4 h-4" />
                   Complete Profile
                 </Button>
               ) : (
-                <Button variant="outline" className="gap-2" onClick={() => { router.push("/dashboard"); setIsMobileMenuOpen(false); }}>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    router.push("/dashboard");
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Button>
               )}
-              <Button variant="hero" className="gap-2" onClick={() => { logout(); router.push("/"); }}>
+              <Button
+                variant="hero"
+                className="gap-2"
+                onClick={() => {
+                  logout();
+                  router.push("/");
+                }}
+              >
                 <LogOut className="w-4 h-4" />
                 Logout
               </Button>
@@ -98,7 +128,11 @@ const Navbar = () => {
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="lg:hidden p-2.5 -mr-1 text-primary hover:scale-110 active:scale-95 transition-transform touch-manipulation"
         >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
         </button>
       </div>
 
@@ -128,15 +162,37 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 {showCompleteProfile ? (
-                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { router.push("/auth"); setIsMobileMenuOpen(false); }}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      router.push("/auth");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
                     <UserPen className="w-4 h-4" /> Complete Profile
                   </Button>
                 ) : (
-                  <Button variant="outline" className="flex-1 gap-2" onClick={() => { router.push("/dashboard"); setIsMobileMenuOpen(false); }}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      router.push("/dashboard");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Button>
                 )}
-                <Button variant="hero" className="flex-1 gap-2" onClick={() => { logout(); router.push("/"); setIsMobileMenuOpen(false); }}>
+                <Button
+                  variant="hero"
+                  className="flex-1 gap-2"
+                  onClick={() => {
+                    logout();
+                    router.push("/");
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
                   <LogOut className="w-4 h-4" /> Logout
                 </Button>
               </>

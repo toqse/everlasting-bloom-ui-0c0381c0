@@ -1,9 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Heart, ChevronLeft, ChevronRight, Calendar, MapPin, Star, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  formatWeddingDateDisplay,
+  getWebsiteSuccessStories,
+  resolveSuccessStoryPhotoUrl,
+} from "@/lib/successStoriesApi";
 
 export interface Story {
   id: number;
@@ -20,7 +25,7 @@ export const storiesData: Story[] = [
     id: 1,
     couple: "Rahul & Priya",
     image: "/images/download11.jpg",
-    quote: "We found each other on Aiswarya Matrimony and knew instantly that this was meant to be.",
+    quote: "We found each other on Toqse Matrimony and knew instantly that this was meant to be.",
     location: "Mumbai, India",
     marriedDate: "December 2023",
     yearsOnPlatform: "6 months",
@@ -47,7 +52,7 @@ export const storiesData: Story[] = [
     id: 4,
     couple: "Vikram & Ananya",
     image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&h=600&fit=crop",
-    quote: "Aiswarya Matrimony brought us together across continents. Now we're inseparable.",
+    quote: "Toqse Matrimony brought us together across continents. Now we're inseparable.",
     location: "Bangalore, India",
     marriedDate: "March 2024",
     yearsOnPlatform: "4 months",
@@ -266,6 +271,35 @@ const SuccessStories = () => {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { ref: revealRef, inView } = useScrollReveal();
+  const [homeStories, setHomeStories] = useState<Story[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getWebsiteSuccessStories(1);
+        const list = (res.data.stories ?? [])
+          .slice(0, 8)
+          .map(
+            (s): Story => ({
+              id: s.id,
+              couple: s.couple_names,
+              image: resolveSuccessStoryPhotoUrl(s.couple_photo) || "https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=800&h=600&fit=crop",
+              quote: s.description,
+              location: s.location,
+              marriedDate: formatWeddingDateDisplay(s.wedding_date),
+              yearsOnPlatform: "—",
+            })
+          );
+        if (!cancelled && list.length) setHomeStories(list);
+      } catch {
+        if (!cancelled) setHomeStories(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -357,7 +391,7 @@ const SuccessStories = () => {
             className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth px-8 md:px-12"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {storiesData.map((story, index) => (
+            {(homeStories ?? storiesData).map((story, index) => (
               <CoupleCard key={story.id} story={story} index={index} />
             ))}
           </div>

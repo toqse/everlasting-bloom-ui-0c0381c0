@@ -8,15 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, HelpCircle, ChevronDown, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getWebsitePlans, type WebsitePlan } from "@/lib/plansApi";
+import { WEBSITE_PLANS_FALLBACK } from "@/lib/websitePlansFallback";
 
 const faqs: { question: string; answer: string | string[] }[] = [
   {
-    question: "Why is Aiswarya Matrimonial better compared to other matrimonial websites?",
+    question: "Why is Toqse Matrimonial better compared to other matrimonial websites?",
     answer:
       "M/s Aiswarya Vivaha Bureau is following remarkable way of operations, that is I any customer can enter at any time of our schedule and collect all details and either accept or reject asper their desire. Our collection of data, newly implementing way of approach (different sources of information from rural, urban, city & abroad ) on the light of the above our website is outstanding than that of other websites.",
   },
   {
-    question: "Is Aiswarya Matrimonial a trustworthy matchmaking platform?",
+    question: "Is Toqse Matrimonial a trustworthy matchmaking platform?",
     answer:
       'Yes, our website is chiefly operating on the base of customer\'s trust and their evaluation. Our website promote different choices and making "Newly Constructive Attitude". So we have an opinion that the dream of customers will be materializing on the base of our offering.',
   },
@@ -31,7 +32,7 @@ const faqs: { question: string; answer: string | string[] }[] = [
       "Surely our customers will get maximum benefit at the time of there contact with the attempt, surprise benefit, extraordinary offerings and benefits will be releasing to the eligible customers.",
   },
   {
-    question: "How can I contact other members Aiswarya Matrimonial?",
+    question: "How can I contact other members Toqse Matrimonial?",
     answer: [
       "No wonder our website is everywhere and easy to open without any obstacle if the customers are ready to contact with our website. The meaning is the M/s Aiswarya Vivaha Bureau and its operation is as omni present.",
       "In shot our reputed website is a remedy for the customers those who are interested to select marriage alliance and share with us, maximum level of co-operation constructive attitude and spontaneous way of behavior. Our motto is maximum satisfaction with minimum level of customers attitude.",
@@ -45,7 +46,8 @@ const MembershipPage = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [plans, setPlans] = useState<WebsitePlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
-  const [plansError, setPlansError] = useState<string | null>(null);
+  /** Shown when API is empty or fails; we still render default plan cards. */
+  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
 
   const ICONS = [Zap, Star, Crown, Sparkles, Award];
   const CARD_ACCENTS = [
@@ -85,13 +87,25 @@ const MembershipPage = () => {
     (async () => {
       try {
         setLoadingPlans(true);
-        setPlansError(null);
+        setFallbackNotice(null);
         const res = await getWebsitePlans();
-        if (!cancelled) setPlans(res.data?.plans ?? []);
+        const raw = res.data?.plans ?? [];
+        if (!cancelled) {
+          if (raw.length > 0) {
+            setPlans(raw);
+          } else {
+            setPlans(WEBSITE_PLANS_FALLBACK);
+            setFallbackNotice(
+              "The server returned no membership plans. Showing default pricing until plans are published in the admin."
+            );
+          }
+        }
       } catch (e) {
         if (!cancelled) {
-          setPlans([]);
-          setPlansError(e instanceof Error ? e.message : "Failed to load plans");
+          setPlans(WEBSITE_PLANS_FALLBACK);
+          setFallbackNotice(
+            e instanceof Error ? e.message : "Could not load plans from the server. Showing default pricing."
+          );
         }
       } finally {
         if (!cancelled) setLoadingPlans(false);
@@ -121,15 +135,20 @@ const MembershipPage = () => {
         <div className="container mx-auto px-4 relative z-10">
           {loadingPlans ? (
             <div className="text-center py-10 text-muted-foreground">Loading membership plans...</div>
-          ) : plansError ? (
-            <div className="text-center py-10 text-destructive">{plansError}</div>
-          ) : plans.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">No membership plans available right now.</div>
+          ) : null}
+
+          {!loadingPlans && fallbackNotice ? (
+            <div
+              className="mb-8 max-w-3xl mx-auto rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950"
+              role="status"
+            >
+              {fallbackNotice}
+            </div>
           ) : null}
 
           {/* Pricing Cards - 5 columns */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-[90rem] mx-auto">
-            {plans.map((plan, index) => {
+            {!loadingPlans && plans.map((plan, index) => {
               const Icon = ICONS[index % ICONS.length];
               const features = [
                 `${plan.horoscope_match_limit} Horoscope Matching`,
@@ -199,6 +218,9 @@ const MembershipPage = () => {
               </div>
               );
             })}
+            {!loadingPlans && plans.length === 0 ? (
+              <p className="col-span-full text-center text-muted-foreground py-6">No plans to display.</p>
+            ) : null}
           </div>
         </div>
       </section>

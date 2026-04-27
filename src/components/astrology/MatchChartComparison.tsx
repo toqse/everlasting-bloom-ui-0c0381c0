@@ -12,41 +12,22 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SouthIndianChartGrid } from "./SouthIndianChartGrid";
+import { panelsBrideGroom } from "@/lib/astrologyBrideGroomPanels";
+import { ml, matchHeaderLineMl } from "@/lib/malayalam/horoscopeDisplayMl";
 import { cn } from "@/lib/utils";
 
-/** API `chart_type` values; labels match common Malayalam-style desktop UIs (Rasi / Amsakom / Bhavam). */
+/** API `chart_type` — labels in Malayalam. */
 const CHART_MODE_OPTIONS: { value: ChartJsonType; label: string }[] = [
-  { value: "rasi", label: "Rasi" },
-  { value: "amsakom", label: "Amsakom" },
-  { value: "bhavam", label: "Bhavam" },
+  { value: "rasi", label: ml.rasi },
+  { value: "amsakom", label: ml.amsakom },
+  { value: "bhavam", label: ml.bhavam },
 ];
 
+/** Left column = bride, right column = groom (match desktop / traditional order). */
 function columnPersons(
   payload: MatchChartJsonResponse,
-  brideProfileId: number,
-  groomProfileId: number,
-  primaryProfileId: number | undefined,
-  partnerProfileId: number | undefined,
 ): { left: MatchChartPersonJson; right: MatchChartPersonJson } {
-  const pick = (id?: number): MatchChartPersonJson | null => {
-    if (id === brideProfileId) return payload.bride;
-    if (id === groomProfileId) return payload.groom;
-    return null;
-  };
-
-  const left = pick(primaryProfileId) ?? payload.bride;
-  const right =
-    pick(partnerProfileId) ?? (left === payload.bride ? payload.groom : payload.bride);
-
-  return { left, right };
-}
-
-function headerFor(panel: HoroscopePrimaryPanel | undefined, fallback: string): string {
-  const id = panel?.matri_id?.trim();
-  const role = panel?.role?.trim();
-  if (id && role) return `${id} · ${role}`;
-  if (id) return id;
-  return fallback;
+  return { left: payload.bride, right: payload.groom };
 }
 
 export interface MatchChartComparisonProps {
@@ -140,45 +121,61 @@ export function MatchChartComparison({
     };
   }, [chartType, brideProfileId, groomProfileId, partner.matri_id]);
 
-  const leftRight =
-    activeData &&
-    columnPersons(
-      activeData,
-      brideProfileId,
-      groomProfileId,
-      primary.profile_id,
-      partner.profile_id,
-    );
+  const { bride: bridePanel, groom: groomPanel } = panelsBrideGroom(
+    primary,
+    partner,
+    brideProfileId,
+    groomProfileId,
+  );
+  const leftRight = activeData && columnPersons(activeData);
 
-  const pngLeft = primary.chart_url?.trim();
-  const pngRight = partner.chart_url?.trim();
+  const pngLeft = bridePanel.chart_url?.trim();
+  const pngRight = groomPanel.chart_url?.trim();
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-4 font-ml", className)} dir="ltr">
       <div className="min-h-[8rem]">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Loading chart…</span>
+            <span className="text-sm">{ml.loadingChart}</span>
           </div>
         ) : loadError ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-3 text-sm text-destructive">
             {loadError}
             {(pngLeft || pngRight) && (
               <p className="mt-2 text-xs text-muted-foreground">
-                You can still use the server PNG charts in the panels below.
+                {ml.chartJsonErrorHint}
               </p>
             )}
           </div>
         ) : leftRight ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <SouthIndianChartGrid
-              person={leftRight.left}
-              headerLine={headerFor(primary, "Primary")}
+              person={{
+                ...leftRight.left,
+                date_of_birth: leftRight.left.date_of_birth ?? bridePanel.date_of_birth,
+                time_of_birth: leftRight.left.time_of_birth ?? bridePanel.time_of_birth,
+                place_of_birth: leftRight.left.place_of_birth ?? bridePanel.place_of_birth,
+              }}
+              headerLine={matchHeaderLineMl(
+                bridePanel.matri_id,
+                bridePanel.role,
+                ml.roleBride,
+              )}
             />
             <SouthIndianChartGrid
-              person={leftRight.right}
-              headerLine={headerFor(partner, "Partner")}
+              person={{
+                ...leftRight.right,
+                date_of_birth: leftRight.right.date_of_birth ?? groomPanel.date_of_birth,
+                time_of_birth: leftRight.right.time_of_birth ?? groomPanel.time_of_birth,
+                place_of_birth: leftRight.right.place_of_birth ?? groomPanel.place_of_birth,
+              }}
+              headerLine={matchHeaderLineMl(
+                groomPanel.matri_id,
+                groomPanel.role,
+                ml.roleGroom,
+              )}
             />
           </div>
         ) : null}
@@ -188,7 +185,7 @@ export function MatchChartComparison({
         value={chartType}
         onValueChange={(v) => setChartType(v as ChartJsonType)}
         className="flex flex-row flex-wrap items-center justify-center gap-x-6 gap-y-2 border-y border-primary/10 py-3"
-        aria-label="Chart type"
+        aria-label={ml.rasi}
       >
         {CHART_MODE_OPTIONS.map((opt) => (
           <div key={opt.value} className="flex items-center gap-2">

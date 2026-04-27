@@ -1,6 +1,13 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, formatDateDdMmYyyy, formatTimeOfBirthDisplay } from "@/lib/utils";
+import {
+  dasaDurationMalayalam,
+  grahaNameMalayalam,
+  ml,
+  nakshatraNameMalayalam,
+  rasiNameMalayalam,
+} from "@/lib/malayalam/horoscopeDisplayMl";
 import type { MatchChartPersonJson } from "@/lib/astrologyApi";
 import { SOUTH_INDIAN_CELL_RC, SOUTH_INDIAN_GRID_SIGNS } from "./southIndianChartLayout";
 
@@ -21,7 +28,7 @@ export function SouthIndianChartGrid({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-primary/20 bg-card p-2 sm:p-3 shadow-sm",
+        "flex flex-col gap-2 rounded-xl border border-primary/20 bg-card p-2 sm:p-3 shadow-sm font-ml",
         className,
       )}
     >
@@ -44,8 +51,8 @@ export function SouthIndianChartGrid({
                 className="flex min-h-0 min-w-0 flex-col border border-primary/10 bg-background/95 p-0.5 sm:p-1"
                 style={{ gridRow: rc.row, gridColumn: rc.col }}
               >
-                <span className="text-[9px] font-semibold uppercase tracking-tight text-primary/80 leading-none truncate">
-                  {sign}
+                <span className="text-[9px] font-semibold tracking-tight text-primary/80 leading-none truncate text-center">
+                  {rasiNameMalayalam(sign)}
                 </span>
                 <div className="mt-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
                   {bodies.length === 0 ? (
@@ -73,23 +80,53 @@ export function SouthIndianChartGrid({
             <p className="text-[10px] font-semibold text-foreground leading-tight line-clamp-2">
               {person.name?.trim() || "—"}
             </p>
+            {person.date_of_birth?.trim() ? (
+              <p className="text-[9px] text-muted-foreground leading-tight">
+                {ml.dob}: {formatDateDdMmYyyy(person.date_of_birth)}
+              </p>
+            ) : null}
+            {person.time_of_birth?.trim() ? (
+              <p className="text-[9px] text-muted-foreground leading-tight">
+                {ml.tob}: {formatTimeOfBirthDisplay(person.time_of_birth)}
+              </p>
+            ) : null}
+            {person.place_of_birth?.trim() ? (
+              <p className="text-[9px] text-muted-foreground leading-tight line-clamp-2">
+                {ml.pob}: {person.place_of_birth.trim()}
+              </p>
+            ) : null}
             {person.nakshatra ? (
               <p className="text-[9px] text-muted-foreground leading-tight">
-                {person.nakshatra}
-                {person.nakshatra_pada != null ? ` · P${person.nakshatra_pada}` : ""}
+                {nakshatraNameMalayalam(person.nakshatra)}
+                {person.nakshatra_pada != null
+                  ? ` · ${ml.padaLabel(person.nakshatra_pada)}`
+                  : ""}
               </p>
             ) : null}
             {person.dasa_balance || person.dasa_lord ? (
               <p className="text-[9px] text-foreground leading-tight">
-                {person.dasa_lord ? <span className="font-medium">Lord: {person.dasa_lord}</span> : null}
+                {person.dasa_lord ? (
+                  <span className="font-medium">
+                    {ml.dasaLord}: {grahaNameMalayalam(person.dasa_lord)}
+                  </span>
+                ) : null}
                 {person.dasa_balance ? (
-                  <span className="block text-muted-foreground">Dasa: {person.dasa_balance}</span>
+                  <span className="block text-muted-foreground">
+                    {ml.dasa}: {dasaDurationMalayalam(person.dasa_balance)}
+                  </span>
                 ) : null}
               </p>
             ) : null}
             {(person.lagna || person.rasi) && (
               <p className="text-[8px] text-muted-foreground leading-tight">
-                {[person.lagna ? `Lagna ${person.lagna}` : null, person.rasi ? `Rasi ${person.rasi}` : null]
+                {[
+                  person.lagna
+                    ? `${ml.lagna}: ${rasiNameMalayalam(person.lagna)}`
+                    : null,
+                  person.rasi
+                    ? `${ml.rasiShort}: ${rasiNameMalayalam(person.rasi)}`
+                    : null,
+                ]
                   .filter(Boolean)
                   .join(" · ")}
               </p>

@@ -49,7 +49,7 @@ const TermsPage = () => {
 
           {/* Footer line */}
           <p className="text-center text-sm text-muted-foreground mt-12 pt-8 border-t border-primary/10">
-            Aiswarya Vivaha Bureau | 39 Years of Trust & Tradition
+          Aiswarya Vivaha Bureau | 39 Years of Trust & Tradition
           </p>
         </div>
       </main>

@@ -168,6 +168,20 @@ export interface WebsitePlansResponse {
   };
 }
 
+/** Accepts `{ data: { plans } }`, `{ data: { results } }` (some DRF wrappers), or empty. */
+function extractWebsitePlansFromPayload(data: unknown): WebsitePlan[] {
+  if (!data || typeof data !== "object") return [];
+  const root = data as Record<string, unknown>;
+  const inner = root["data"];
+  if (!inner || typeof inner !== "object") return [];
+  const d = inner as Record<string, unknown>;
+  const fromPlans = d["plans"];
+  if (Array.isArray(fromPlans) && fromPlans.length) return fromPlans as WebsitePlan[];
+  const fromResults = d["results"];
+  if (Array.isArray(fromResults) && fromResults.length) return fromResults as WebsitePlan[];
+  return [];
+}
+
 /** Public endpoint (no token): GET /api/v1/website/plans/ */
 export async function getWebsitePlans(): Promise<WebsitePlansResponse> {
   const path = "v1/website/plans/";
@@ -177,6 +191,10 @@ export async function getWebsitePlans(): Promise<WebsitePlansResponse> {
   const data = (await res.json().catch(() => ({}))) as WebsitePlansResponse & ApiErrorPayload;
   logPlansResponse(path, "GET", res.status, data);
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to load website plans"));
-  return data;
+  const plans = extractWebsitePlansFromPayload(data);
+  return {
+    success: Boolean((data as WebsitePlansResponse).success),
+    data: { plans },
+  };
 }
 

@@ -94,3 +94,16 @@ export function formatDateTimeDdMmYyyy(input: unknown): string {
   });
   return `${datePart}, ${timePart}`;
 }
+
+/** 24h HH:MM or HH:MM:SS → 12h for birth-time display; other strings returned trimmed. */
+export function formatTimeOfBirthDisplay(raw: string | undefined): string {
+  const t = (raw ?? "").trim();
+  if (!t) return "—";
+  const m = /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(t);
+  if (!m) return t;
+  const hour24 = Number(m[1]);
+  const minute = m[2];
+  const meridian = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${String(hour12).padStart(2, "0")}:${minute} ${meridian}`;
+}

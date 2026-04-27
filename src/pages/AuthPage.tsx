@@ -30,13 +30,15 @@ import {
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
 import {
   postLocation,
-  postReligion,
+  patchProfileReligion,
   postPersonal,
   postEducation,
   getGenerateAbout,
   postAbout,
   postPhotos,
   fetchAndSyncMeProfile,
+  getProfileReligion,
+  getPartnerPreferences,
 } from "@/lib/profileApi";
 import SignupStepIndicator, {
   SIGNUP_STEPS,
@@ -84,7 +86,16 @@ const MARITAL_OPTIONS = [
   "Widowed",
   "Separated",
 ] as const;
-const COLOR_OPTIONS = ["Fair", "Wheatish", "Dark", "Very Fair"] as const;
+const COLOR_OPTIONS = [
+  "White",
+  "Medium",
+  "Black",
+  "Very Fair",
+  "Fair",
+  "Wheatish",
+  "Wheatish Brown",
+  "Dark",
+] as const;
 const EMPLOYMENT_OPTIONS = [
   "Employed",
   "Self-Employed",
@@ -102,10 +113,7 @@ const INCOME_RANGES = [
   "10-25 Lakh",
   "25 Lakh+",
 ] as const;
-const REQUIRED_SIGNUP_PHOTO_KEYS = [
-  "full",
-  "passport",
-] as const;
+const REQUIRED_SIGNUP_PHOTO_KEYS = ["full", "passport"] as const;
 
 const normalizeToken = (v: string) => v.toLowerCase().replace(/[_\-\s]+/g, "");
 
@@ -145,6 +153,26 @@ const normalizeNumberForInput = (value: unknown): string => {
   if (!match) return "";
   const n = Number(match[0]);
   return Number.isFinite(n) ? String(n) : "";
+};
+
+const parsePartnerCastePreferences = (
+  raw: string | undefined,
+): Record<string, number[]> => {
+  if (!raw?.trim()) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, number[]> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!Array.isArray(value)) continue;
+      const ids = value
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id) && id > 0);
+      if (ids.length > 0) out[String(key)] = ids;
+    }
+    return out;
+  } catch {
+    return {};
+  }
 };
 
 const otpDigitsFromResponse = (
@@ -252,6 +280,25 @@ function mapProfileToFormData(
       }),
       ...(rel?.mother_tongue != null &&
         rel.mother_tongue !== "" && { motherTongue: rel.mother_tongue }),
+      ...(typeof rel?.partner_preference_type === "string" &&
+        rel.partner_preference_type !== "" && {
+          partner_preference_type: rel.partner_preference_type,
+        }),
+      ...(Array.isArray(rel?.partner_religion_ids) && {
+        partner_religion_ids: rel.partner_religion_ids
+          .map((item) =>
+            typeof item === "number" ? item : Number(item?.id ?? 0),
+          )
+          .filter((id) => Number.isFinite(id) && id > 0)
+          .join(","),
+      }),
+      ...(rel &&
+        typeof rel === "object" &&
+        "partner_caste_preferences" in (rel as Record<string, unknown>) && {
+          partner_caste_preferences: JSON.stringify(
+            (rel as Record<string, unknown>).partner_caste_preferences ?? {},
+          ),
+        }),
       ...(pers.marital_status != null &&
         String(pers.marital_status) !== "" && {
           maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
@@ -387,6 +434,7 @@ const AuthPage = () => {
     mother_tongue_id: "",
     partner_preference_type: "",
     partner_religion_ids: "",
+    partner_caste_preferences: "",
     maritalStatus: "",
     numberOfChildren: "",
     height: "",
@@ -451,6 +499,71 @@ const AuthPage = () => {
     if (!locked || !gender || formData.gender === gender) return;
     setFormData((prev) => ({ ...prev, gender }));
   }, [signupStep, formData.profileFor, formData.gender]);
+
+  useEffect(() => {
+    if (signupStep !== 3 || !accessToken) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [religionRes, prefRes] = await Promise.all([
+          getProfileReligion(),
+          getPartnerPreferences().catch(() => null),
+        ]);
+        if (cancelled) return;
+        const religionData = religionRes?.data ?? {};
+        const partnerData = prefRes?.data ?? {};
+        setFormData((prev) => ({
+          ...prev,
+          ...(religionData.religion_id != null && {
+            religion_id: String(religionData.religion_id),
+          }),
+          ...(religionData.religion != null &&
+            religionData.religion !== "" && {
+              religion: religionData.religion,
+            }),
+          ...(religionData.caste_id != null && {
+            caste_id: String(religionData.caste_id),
+          }),
+          ...(religionData.caste != null &&
+            religionData.caste !== "" && { caste: religionData.caste }),
+          ...(religionData.mother_tongue_id != null && {
+            mother_tongue_id: String(religionData.mother_tongue_id),
+          }),
+          ...(religionData.mother_tongue != null &&
+            religionData.mother_tongue !== "" && {
+              motherTongue: religionData.mother_tongue,
+            }),
+          partner_preference_type:
+            partnerData.partner_preference_type ??
+            religionData.partner_preference_type ??
+            prev.partner_preference_type,
+          partner_religion_ids: (
+            partnerData.partner_religion_ids ??
+            religionData.partner_religion_ids ??
+            []
+          )
+            .filter(
+              (id): id is number =>
+                Number.isFinite(Number(id)) && Number(id) > 0,
+            )
+            .map((id) => String(id))
+            .join(","),
+          partner_caste_preferences: JSON.stringify(
+            partnerData.partner_caste_preferences ??
+              religionData.partner_caste_preferences ??
+              {},
+          ),
+        }));
+      } catch {
+        // Keep existing prefill if this request fails.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [signupStep, accessToken]);
 
   useEffect(() => {
     const clearSignupDraft = () => {
@@ -522,7 +635,10 @@ const AuthPage = () => {
       setFormData((prev) => ({ ...prev, district_id: value, city_id: "" }));
       return;
     }
-    if (name === "gender" && getGenderFromProfileFor(formData.profileFor).locked) {
+    if (
+      name === "gender" &&
+      getGenderFromProfileFor(formData.profileFor).locked
+    ) {
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -870,18 +986,50 @@ const AuthPage = () => {
         | "own_religion_only"
         | "open_to_all"
         | "specific_religions";
-      const partnerReligionIds =
+      const selectedPartnerReligionIds =
         formData.partner_religion_ids
           ?.split(",")
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isFinite(n) && n > 0) ?? [];
+      const rawCastePreferences = parsePartnerCastePreferences(
+        formData.partner_caste_preferences,
+      );
+
+      let partnerReligionIds: number[] | undefined;
+      let partnerCastePreferences: Record<string, number[]> | undefined;
+
+      if (prefType === "specific_religions") {
+        if (selectedPartnerReligionIds.length === 0) {
+          toast.error("Select at least one partner religion");
+          return;
+        }
+        partnerReligionIds = selectedPartnerReligionIds;
+        const selectedSet = new Set(selectedPartnerReligionIds.map(String));
+        partnerCastePreferences = Object.fromEntries(
+          Object.entries(rawCastePreferences).filter(([key]) =>
+            selectedSet.has(String(key)),
+          ),
+        );
+      } else if (prefType === "own_religion_only") {
+        // API ignores partner_religion_ids in this mode.
+        partnerCastePreferences = Object.fromEntries(
+          Object.entries(rawCastePreferences).filter(
+            ([key]) => Number(key) === religionId,
+          ),
+        );
+      } else {
+        // open_to_all clears partner religion/caste filters.
+        partnerReligionIds = [];
+        partnerCastePreferences = {};
+      }
       try {
-        await postReligion({
+        await patchProfileReligion({
           religion_id: religionId,
           caste_id: casteId || null,
           mother_tongue_id: motherTongueId,
           partner_preference_type: prefType,
           partner_religion_ids: partnerReligionIds,
+          partner_caste_preferences: partnerCastePreferences,
         });
         useAuthStore.getState().markProfileStepComplete("religion");
         toast.success("Religious details saved");
@@ -1021,9 +1169,7 @@ const AuthPage = () => {
     }
     if (signupStep < SIGNUP_STEPS.length - 1) {
       if (signupStep === 0) {
-        const { locked, gender } = getGenderFromProfileFor(
-          formData.profileFor,
-        );
+        const { locked, gender } = getGenderFromProfileFor(formData.profileFor);
         if (locked && gender) {
           setFormData((prev) => ({ ...prev, gender }));
         }
@@ -1039,9 +1185,7 @@ const AuthPage = () => {
           (key) => !photos[key]?.file,
         );
         if (missingRequiredPhotos.length > 0) {
-          toast.error(
-            "Full Photo and Passport Photo are mandatory",
-          );
+          toast.error("Full Photo and Passport Photo are mandatory");
           return;
         }
 
@@ -1078,7 +1222,7 @@ const AuthPage = () => {
         }
         await fetchAndSyncMeProfile();
         toast.success("Account created successfully! 🎉", {
-          description: "Welcome to Aiswarya Matrimony!",
+          description: "Welcome to Toqse Matrimony!",
         });
         shouldReset = false;
         router.push("/dashboard");
@@ -1202,12 +1346,7 @@ const AuthPage = () => {
           />
         );
       case 7:
-        return (
-          <PhotosStep
-            photos={photos}
-            setPhotos={setPhotos}
-          />
-        );
+        return <PhotosStep photos={photos} setPhotos={setPhotos} />;
       default:
         return null;
     }
@@ -1281,7 +1420,7 @@ const AuthPage = () => {
                       <Sparkles className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 text-secondary animate-sparkle" />
                     </div>
                     <span className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold text-primary">
-                      Aiswarya <span className="text-secondary">Matrimony</span>
+                      Toqse <span className="text-secondary">Matrimony</span>
                     </span>
                   </div>
                   <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">

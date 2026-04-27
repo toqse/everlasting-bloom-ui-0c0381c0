@@ -270,6 +270,7 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "newest", label: "Newest First" },
   { value: "best_match", label: "Best Match" },
 ];
+type MatchesViewMode = "list" | "grid-2" | "grid-3";
 
 type MatchFilterOptions = {
   religions: { id: number; name: string }[];
@@ -306,6 +307,7 @@ const MatchesPage = () => {
   const [educationSearch, setEducationSearch] = useState("");
   const [occupationSearch, setOccupationSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("most_relevant");
+  const [viewMode, setViewMode] = useState<MatchesViewMode>("list");
   const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(
     null,
   );
@@ -704,7 +706,7 @@ const MatchesPage = () => {
   return (
     <>
       {/* Single root so layout flex height reaches the list scroller (lg). */}
-      <div className="flex flex-col gap-6 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-6 lg:overflow-hidden">
+      <div className="flex flex-col gap-5 lg:h-full lg:min-h-0 lg:flex-1 lg:gap-5 lg:overflow-hidden">
           <Suspense fallback={null}>
             <MatchesOpenFromQuery
               onPreview={completeMatchPreviewOpen}
@@ -715,16 +717,17 @@ const MatchesPage = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="shrink-0 rounded-2xl border border-primary/10 bg-card/90 px-5 py-5 shadow-card backdrop-blur-sm md:px-7 md:py-6"
+            className="relative shrink-0 overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] px-5 py-5 shadow-[0_12px_35px_-22px_hsl(var(--primary)/0.55)] backdrop-blur-sm md:px-7 md:py-6"
           >
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/[0.08] to-transparent" />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="font-serif text-2xl font-bold tracking-tight text-secondary md:text-3xl">
+                  <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                     New Matches Found
                   </h1>
                   <span
-                    className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground shadow-soft"
+                    className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground shadow-soft ring-4 ring-primary/10"
                     aria-label={`${totalProfiles} matches`}
                   >
                     {totalProfiles > 99 ? "99+" : totalProfiles}
@@ -743,12 +746,12 @@ const MatchesPage = () => {
                 Refine &amp; sort
               </p>
               {/* Mobile: one row (nowrap); sm+: can wrap */}
-              <div className="flex min-w-0 flex-nowrap items-center gap-2 sm:flex-wrap sm:gap-3">
+              <div className="flex min-w-0 flex-nowrap items-center gap-2 rounded-xl border border-primary/10 bg-background/70 p-2 sm:flex-wrap sm:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="shrink-0 gap-1.5 border-primary/25 bg-background/80 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:gap-2 sm:px-3 sm:text-sm"
+                  className="shrink-0 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:gap-2 sm:px-3 sm:text-sm"
                   onClick={() => openMatchModal()}
                 >
                   <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
@@ -760,7 +763,7 @@ const MatchesPage = () => {
                   </span>
                   <div className="relative min-w-0 max-w-[min(52vw,12rem)] sm:max-w-none">
                     <select
-                      className="h-9 w-full min-w-[6.5rem] cursor-pointer appearance-none rounded-lg border border-primary/15 bg-background py-2 pl-2 pr-8 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[10.5rem] sm:pl-3 sm:pr-9 sm:text-sm"
+                      className="h-9 w-full min-w-[6.5rem] cursor-pointer appearance-none rounded-lg border border-primary/20 bg-background py-2 pl-2 pr-8 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[10.5rem] sm:pl-3 sm:pr-9 sm:text-sm"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as SortBy)}
                       aria-label="Sort matches"
@@ -782,7 +785,7 @@ const MatchesPage = () => {
           </motion.div>
 
           {/* xl:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
-          <div className="flex min-h-0 flex-col gap-6 xl:h-0 xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch xl:gap-8 xl:overflow-hidden">
+          <div className="flex min-h-0 flex-col gap-5 xl:h-0 xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch xl:gap-6 xl:overflow-hidden">
             <div className="xl:hidden">
               <Button
                 type="button"
@@ -799,11 +802,11 @@ const MatchesPage = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
               className={cn(
-                "w-full shrink-0 xl:w-72 2xl:w-80 xl:min-h-0 xl:max-h-full xl:overflow-y-auto xl:overscroll-y-contain xl:pr-1",
+                "w-full shrink-0 xl:sticky xl:top-0 xl:w-72 2xl:w-80 xl:min-h-0 xl:max-h-full xl:overflow-y-auto xl:overscroll-y-contain xl:pr-1",
                 !showFiltersMobile && "max-xl:hidden",
               )}
             >
-              <div className="space-y-0 rounded-2xl border border-primary/10 bg-card/95 p-4 shadow-card backdrop-blur-sm">
+              <div className="space-y-0 rounded-3xl border border-primary/12 bg-card/95 p-4 shadow-[0_18px_40px_-30px_hsl(var(--primary)/0.45)] backdrop-blur-sm">
                 <div className="mb-3 flex items-center justify-between gap-2 px-1">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Filters
@@ -956,7 +959,7 @@ const MatchesPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="mb-4 flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b border-primary/10 pb-4 lg:mb-5"
+                className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/10 bg-card/70 px-3 py-3 lg:mb-5"
               >
                 <h2 className="font-serif text-lg font-bold text-foreground">
                   Showing{" "}
@@ -982,6 +985,38 @@ const MatchesPage = () => {
                     total
                   </span>
                 )}
+                <div className="ml-auto flex items-center gap-1 rounded-lg border border-primary/15 bg-background p-1">
+                  <span className="px-1 text-xs font-medium text-muted-foreground">
+                    View
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    className="h-7 rounded-md px-2 text-xs"
+                    onClick={() => setViewMode("list")}
+                  >
+                    List
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={viewMode === "grid-2" ? "default" : "ghost"}
+                    className="h-7 rounded-md px-2 text-xs"
+                    onClick={() => setViewMode("grid-2")}
+                  >
+                    2 x 2
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={viewMode === "grid-3" ? "default" : "ghost"}
+                    className="h-7 rounded-md px-2 text-xs"
+                    onClick={() => setViewMode("grid-3")}
+                  >
+                    3 x 3
+                  </Button>
+                </div>
               </motion.div>
 
               <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-22rem)] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
@@ -999,7 +1034,15 @@ const MatchesPage = () => {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="space-y-5"
+                    className={cn(
+                      viewMode === "list"
+                        ? "space-y-5"
+                        : "grid gap-4 sm:gap-5",
+                      viewMode === "grid-2" &&
+                        "grid-cols-1 md:grid-cols-2 xl:grid-cols-2",
+                      viewMode === "grid-3" &&
+                        "grid-cols-1 md:grid-cols-2 2xl:grid-cols-3",
+                    )}
                   >
                     {profiles.map((profile, index) => (
                       <MatchListCard
@@ -1016,6 +1059,7 @@ const MatchesPage = () => {
                         }
                         onCheckMatch={() => openMatchModal(profile.matri_id)}
                         actionLoading={actionLoading}
+                        compact={viewMode !== "list"}
                       />
                     ))}
                   </motion.div>
@@ -1269,6 +1313,7 @@ const MatchListCard = ({
   onViewDetails,
   onCheckMatch,
   actionLoading,
+  compact = false,
 }: {
   profile: ApiMatchProfile;
   index: number;
@@ -1278,6 +1323,7 @@ const MatchListCard = ({
   onViewDetails: () => void;
   onCheckMatch: () => void;
   actionLoading: string | null;
+  compact?: boolean;
 }) => {
   const normalizedProfile = profile as ApiMatchProfile & {
     can_interest_sent?: boolean;
@@ -1328,7 +1374,8 @@ const MatchListCard = ({
       }}
       whileHover={{ y: -2 }}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-shadow duration-300 hover:border-primary/20 hover:shadow-elevated md:flex-row md:items-stretch",
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-primary/12 bg-card shadow-[0_10px_30px_-24px_hsl(var(--foreground)/0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_16px_38px_-24px_hsl(var(--primary)/0.55)]",
+        compact ? "h-full" : "md:flex-row md:items-stretch",
         "cursor-pointer",
       )}
       onClick={onViewDetails}
@@ -1342,7 +1389,14 @@ const MatchListCard = ({
       }}
     >
       {/* Photo + online dot + last login (match_percentage from API is not shown) */}
-      <div className="relative h-56 w-full shrink-0 overflow-hidden bg-muted md:h-auto md:w-[min(100%,280px)] md:min-h-[260px] lg:w-[300px]">
+      <div
+        className={cn(
+          "relative w-full shrink-0 overflow-hidden bg-muted",
+          compact
+            ? "h-48 sm:h-52"
+            : "h-56 md:h-auto md:w-[min(100%,280px)] md:min-h-[260px] lg:w-[300px]",
+        )}
+      >
         {hasPhoto ? (
           <img
             src={photoUrl}
@@ -1373,7 +1427,12 @@ const MatchListCard = ({
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
         <div>
           <div className="mb-3 flex items-start justify-between gap-3">
-            <h3 className="min-w-0 flex-1 font-serif text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary md:text-2xl">
+            <h3
+              className={cn(
+                "min-w-0 flex-1 font-serif font-bold tracking-tight text-foreground transition-colors group-hover:text-primary",
+                compact ? "text-lg sm:text-xl" : "text-xl md:text-2xl",
+              )}
+            >
               {profile.name}
             </h3>
             <button
@@ -1397,19 +1456,26 @@ const MatchListCard = ({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="inline-flex max-w-full items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex max-w-full items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/15">
               <span className="truncate">{profile.education ?? "—"}</span>
             </span>
-            <span className="inline-flex max-w-full items-center rounded-full bg-secondary/20 px-3 py-1 text-xs font-semibold text-secondary-foreground">
+            <span className="inline-flex max-w-full items-center rounded-full bg-secondary/20 px-3 py-1 text-xs font-semibold text-secondary-foreground ring-1 ring-secondary/20">
               <span className="truncate">{profile.occupation ?? "—"}</span>
             </span>
-            <span className="inline-flex items-center rounded-full bg-[hsl(280_45%_94%)] px-3 py-1 text-xs font-semibold text-[hsl(280_35%_32%)]">
+            <span className="inline-flex items-center rounded-full bg-[hsl(280_45%_94%)] px-3 py-1 text-xs font-semibold text-[hsl(280_35%_32%)] ring-1 ring-[hsl(280_35%_82%)]">
               {profile.age} years old
             </span>
           </div>
         </div>
 
-        <div className="flex flex-nowrap gap-1.5 overflow-x-auto border-t border-primary/10 pt-4 [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:gap-2 sm:overflow-visible">
+        <div
+          className={cn(
+            "border-t border-primary/10 pt-4",
+            compact
+              ? "flex flex-wrap gap-2 overflow-visible"
+              : "flex flex-nowrap gap-1.5 overflow-x-auto [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:gap-2 sm:overflow-visible",
+          )}
+        >
           {showInterestAccepted || showInterestSent || showInterestRejected ? (
             <Button
               size="sm"
@@ -1428,7 +1494,7 @@ const MatchListCard = ({
             <Button
               size="sm"
               variant="outline"
-              className="shrink-0 gap-1.5 rounded-lg border-primary/25 text-[11px] font-semibold sm:text-xs"
+              className="shrink-0 gap-1.5 rounded-lg border-primary/30 bg-primary/[0.03] text-[11px] font-semibold sm:text-xs"
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation();
@@ -1442,7 +1508,7 @@ const MatchListCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="shrink-0 gap-1.5 rounded-lg text-[11px] font-semibold shadow-sm sm:text-xs"
+            className="shrink-0 gap-1.5 rounded-lg bg-secondary/80 text-[11px] font-semibold shadow-sm hover:bg-secondary sm:text-xs"
             disabled={busy}
             onClick={(e) => {
               e.stopPropagation();

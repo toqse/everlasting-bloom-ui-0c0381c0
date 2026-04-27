@@ -79,7 +79,7 @@ const Hero = () => {
           {/* Left: Text Content */}
           <div className="text-center lg:text-left min-w-0">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-8 sm:mb-10 -mt-6 sm:-mt-8 animate-fade-in-up tracking-tight">
-              Aiswarya Vivaha Bureau
+            Aiswarya Vivaha Bureau
             </h2>
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group" style={{ animationDelay: "0.05s" }}>
               <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
@@ -106,7 +106,7 @@ const Hero = () => {
 
             <p className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed font-bold" style={{ animationDelay: "0.2s" }}>
               Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
-              Join millions who found their soulmate with Aiswarya Matrimony.
+              Join millions who found their soulmate with Toqse Matrimony.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>

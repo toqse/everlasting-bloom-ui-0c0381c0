@@ -171,10 +171,10 @@ const AboutPage = () => {
             <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-2 uppercase tracking-wider" style={{ textDecoration: "underline", textDecorationColor: "hsl(var(--secondary))", textUnderlineOffset: "8px" }}>Welcome to</h2>
               <h3 className="font-serif text-3xl md:text-4xl font-bold mb-6">
-                <span className="text-gradient-primary italic">Aiswarya Matrimony</span>
+                <span className="text-gradient-primary italic">Toqse Matrimony</span>
               </h3>
               <p className="text-muted-foreground mb-4 leading-relaxed">
-                Aiswarya Bureau is a trusted matrimonial service with over 37 years of experience in connecting suitable brides and grooms. Located near Cherthala Private Bus Stand in Alappuzha District, Kerala, we serve families both within Kerala and outside the state.
+                Toqse Bureau is a trusted matrimonial service with over 37 years of experience in connecting suitable brides and grooms. Located near Cherthala Private Bus Stand in Alappuzha District, Kerala, we serve families both within Kerala and outside the state.
               </p>
               <p className="text-muted-foreground mb-4 leading-relaxed">
                 Our experienced team understands the preferences of families and helps them find the right life partner. Built on the values of trust, responsibility, and sincerity, we are committed to providing the best matrimonial connections at a reasonable cost.

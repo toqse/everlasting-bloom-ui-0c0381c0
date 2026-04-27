@@ -120,7 +120,7 @@ const Footer = () => {
                 <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-secondary animate-sparkle" />
               </div>
               <span className="font-serif text-2xl font-bold text-primary">
-                Aiswarya <span className="text-secondary">Matrimony</span>
+                Toqse <span className="text-secondary">Matrimony</span>
               </span>
             </Link>
             <p className="text-muted-foreground leading-relaxed mb-5">
@@ -199,7 +199,7 @@ const Footer = () => {
               <li className="flex items-start gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                 <span>
-                  Aiswarya Marriage Bureau,<br />
+                  Toqse Marriage Bureau,<br />
                   Near Private Bus Stand,<br />
                   Cherthala – 688524
                 </span>
@@ -212,7 +212,7 @@ const Footer = () => {
         <div className="border-t border-primary/10 mt-6 pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p className="flex items-center gap-1 font-bold">
-              © 2026 Aiswarya Matrimony. All rights reserved.
+              © 2026 Toqse Matrimony. All rights reserved.
             </p>
             <Link href="/terms-conditions" className="font-medium text-foreground hover:text-primary transition-colors">
               Terms and Conditions

@@ -81,7 +81,7 @@ const WhyChooseUs = () => {
           })}
         </div>
 
-        {/* Welcome to Aiswarya Matrimony - exact reference layout */}
+        {/* Welcome to Toqse Matrimony - exact reference layout */}
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center mb-12 sm:mb-20">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
@@ -129,7 +129,7 @@ const WhyChooseUs = () => {
               Welcome to
             </h2>
             <h3 className="font-serif text-3xl md:text-4xl font-bold mb-6">
-              <span className="text-gradient-primary italic">Aiswarya Matrimony</span>
+              <span className="text-gradient-primary italic">Toqse Matrimony</span>
             </h3>
             <p className="text-muted-foreground mb-4 leading-relaxed text-base">
               Best wedding matrimony — it is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.

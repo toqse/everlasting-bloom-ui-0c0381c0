@@ -296,6 +296,9 @@ export type ChartPlanetsMap = Record<string, string[]>;
 
 export interface MatchChartPersonJson {
   name?: string;
+  date_of_birth?: string;
+  time_of_birth?: string;
+  place_of_birth?: string;
   nakshatra?: string;
   nakshatra_pada?: number;
   rasi?: string;

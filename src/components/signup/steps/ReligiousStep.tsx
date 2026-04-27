@@ -31,11 +31,24 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
 
   const [prefKey, setPrefKey] = useState<PartnerPrefKey>("open");
   const [partnerReligionIds, setPartnerReligionIds] = useState<number[]>([]);
+  const [partnerCastesByReligion, setPartnerCastesByReligion] = useState<
+    Record<number, Caste[]>
+  >({});
+  const [loadingPartnerCastes, setLoadingPartnerCastes] = useState<
+    Record<number, boolean>
+  >({});
+  const [partnerCastePreferences, setPartnerCastePreferences] = useState<
+    Record<string, number[]>
+  >({});
 
   const religionId = formData.religion_id ? Number(formData.religion_id) : 0;
 
   const emitChange = (name: string, value: string) => {
     onChange({ target: { name, value } } as React.ChangeEvent<HTMLInputElement>);
+  };
+
+  const emitPartnerCastePreferences = (next: Record<string, number[]>) => {
+    emitChange("partner_caste_preferences", JSON.stringify(next));
   };
 
   const loadReligions = useCallback(async (search: string) => {
@@ -109,6 +122,90 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     setPartnerReligionIds(ids);
   }, [formData.partner_preference_type, formData.partner_religion_ids]);
 
+  useEffect(() => {
+    const raw = formData.partner_caste_preferences;
+    if (!raw?.trim()) {
+      setPartnerCastePreferences({});
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const normalized: Record<string, number[]> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (!Array.isArray(value)) continue;
+        const ids = value
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id > 0);
+        if (ids.length) normalized[String(key)] = ids;
+      }
+      setPartnerCastePreferences(normalized);
+    } catch {
+      setPartnerCastePreferences({});
+    }
+  }, [formData.partner_caste_preferences]);
+
+  useEffect(() => {
+    if (prefKey !== "specific" || partnerReligionIds.length === 0) {
+      setLoadingPartnerCastes({});
+      return;
+    }
+
+    const missingReligionIds = partnerReligionIds.filter(
+      (id) => !partnerCastesByReligion[id],
+    );
+    if (!missingReligionIds.length) return;
+
+    let cancelled = false;
+    missingReligionIds.forEach((id) =>
+      setLoadingPartnerCastes((prev) => ({ ...prev, [id]: true })),
+    );
+
+    Promise.all(
+      missingReligionIds.map(async (id) => {
+        try {
+          const list = await withMinDuration(180, getCastes(id));
+          return { id, list };
+        } catch {
+          return { id, list: [] as Caste[] };
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return;
+      setPartnerCastesByReligion((prev) => {
+        const next = { ...prev };
+        for (const item of results) next[item.id] = item.list;
+        return next;
+      });
+      setLoadingPartnerCastes((prev) => {
+        const next = { ...prev };
+        for (const item of results) next[item.id] = false;
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [prefKey, partnerReligionIds, partnerCastesByReligion]);
+
+  useEffect(() => {
+    if (prefKey !== "own" || !religionId) return;
+    const ownKey = String(religionId);
+    const ownOnly = Object.fromEntries(
+      Object.entries(partnerCastePreferences).filter(([key]) => key === ownKey),
+    );
+    const selectedCasteId = formData.caste_id ? Number(formData.caste_id) : 0;
+    if (
+      !ownOnly[ownKey]?.length &&
+      Number.isFinite(selectedCasteId) &&
+      selectedCasteId > 0
+    ) {
+      ownOnly[ownKey] = [selectedCasteId];
+    }
+    setPartnerCastePreferences(ownOnly);
+    emitPartnerCastePreferences(ownOnly);
+  }, [prefKey, religionId, formData.caste_id]);
+
   const handleSelectReligion = (name: string, value: string) => {
     const id = Number(value);
     const rel = religions.find((r) => r.id === id);
@@ -143,7 +240,9 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     setPrefKey(key);
     if (key !== "specific") {
       setPartnerReligionIds([]);
+      setPartnerCastePreferences({});
       emitChange("partner_religion_ids", "");
+      emitPartnerCastePreferences({});
     }
     emitChange("partner_preference_type", prefKeyToApi[key]);
   };
@@ -152,10 +251,33 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     setPartnerReligionIds((prev) => {
       const exists = prev.includes(id);
       const next = exists ? prev.filter((x) => x !== id) : [...prev, id];
+      const nextCastePrefs = Object.fromEntries(
+        Object.entries(partnerCastePreferences).filter(([key]) =>
+          next.includes(Number(key)),
+        ),
+      );
       // Update parent AFTER computing next list (outside render/updater of parent)
       queueMicrotask(() => {
         emitChange("partner_religion_ids", next.join(","));
+        emitPartnerCastePreferences(nextCastePrefs);
       });
+      setPartnerCastePreferences(nextCastePrefs);
+      return next;
+    });
+  };
+
+  const togglePartnerCaste = (religionIdForCaste: number, casteId: number) => {
+    setPartnerCastePreferences((prev) => {
+      const key = String(religionIdForCaste);
+      const existing = prev[key] ?? [];
+      const exists = existing.includes(casteId);
+      const nextIds = exists
+        ? existing.filter((id) => id !== casteId)
+        : [...existing, casteId];
+      const next = { ...prev };
+      if (nextIds.length > 0) next[key] = nextIds;
+      else delete next[key];
+      queueMicrotask(() => emitPartnerCastePreferences(next));
       return next;
     });
   };
@@ -261,6 +383,120 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                       </button>
                     ))}
                   </div>
+                  {partnerReligionIds.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      <p className="text-sm font-bold text-foreground">
+                        Select preferred castes (optional)
+                      </p>
+                      {partnerReligionIds.map((selectedReligionId) => {
+                        const rel = religions.find(
+                          (r) => r.id === selectedReligionId,
+                        );
+                        const relCastes =
+                          partnerCastesByReligion[selectedReligionId] ?? [];
+                        const relLoading =
+                          loadingPartnerCastes[selectedReligionId] ?? false;
+                        const selectedCastes =
+                          partnerCastePreferences[String(selectedReligionId)] ??
+                          [];
+
+                        return (
+                          <div
+                            key={selectedReligionId}
+                            className="rounded-lg border border-primary/10 p-3"
+                          >
+                            <p className="text-sm font-semibold text-foreground mb-2">
+                              {rel?.name ?? `Religion ${selectedReligionId}`}
+                            </p>
+                            {relLoading ? (
+                              <p className="text-xs text-muted-foreground">
+                                Loading castes...
+                              </p>
+                            ) : relCastes.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                No castes found for this religion.
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {relCastes.map((caste) => {
+                                  const isSelected = selectedCastes.includes(
+                                    caste.id,
+                                  );
+                                  return (
+                                    <button
+                                      key={`${selectedReligionId}-${caste.id}`}
+                                      type="button"
+                                      onClick={() =>
+                                        togglePartnerCaste(
+                                          selectedReligionId,
+                                          caste.id,
+                                        )
+                                      }
+                                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                        isSelected
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-muted text-foreground hover:bg-primary/10"
+                                      }`}
+                                    >
+                                      {caste.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {prefKey === "own" && religionId > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-4 p-4 rounded-xl border border-primary/10 bg-card"
+                >
+                  <p className="text-sm font-bold text-foreground mb-2">
+                    Select preferred castes in your religion (optional)
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    These preferences apply only within {activeReligionName}
+                  </p>
+                  {loadingCastes ? (
+                    <p className="text-xs text-muted-foreground">
+                      Loading castes...
+                    </p>
+                  ) : castes.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No castes found for this religion.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {castes.map((caste) => {
+                        const isSelected = (
+                          partnerCastePreferences[String(religionId)] ?? []
+                        ).includes(caste.id);
+                        return (
+                          <button
+                            key={`own-${religionId}-${caste.id}`}
+                            type="button"
+                            onClick={() =>
+                              togglePartnerCaste(religionId, caste.id)
+                            }
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-foreground hover:bg-primary/10"
+                            }`}
+                          >
+                            {caste.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </div>
