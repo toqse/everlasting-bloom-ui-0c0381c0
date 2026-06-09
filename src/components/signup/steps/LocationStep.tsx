@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, MapPin } from "lucide-react";
 import { withMinDuration } from "@/lib/withMinDuration";
 import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
 import type { Country, State, District, City } from "@/lib/masterApi";
+import { searchPlaces, type GeocodeResult } from "@/lib/geocode";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import { labelClass } from "../SignupFormFields";
+import { inputClass, labelClass } from "../SignupFormFields";
+
+const PLACE_DEBOUNCE_MS = 450;
 
 interface Props {
   formData: Record<string, string>;
@@ -20,9 +24,26 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
 
+  const [placeQuery, setPlaceQuery] = useState(formData.birth_place || "");
+  const [placeResults, setPlaceResults] = useState<GeocodeResult[]>([]);
+  const [placeLoading, setPlaceLoading] = useState(false);
+  const [placeOpen, setPlaceOpen] = useState(false);
+  const placeWrapRef = useRef<HTMLDivElement>(null);
+  const placeAbortRef = useRef<AbortController | null>(null);
+  const skipNextSearchRef = useRef(false);
+
   const countryId = formData.country_id ? Number(formData.country_id) : 0;
   const stateId = formData.state_id ? Number(formData.state_id) : 0;
   const districtId = formData.district_id ? Number(formData.district_id) : 0;
+
+  const hasHoroscope = formData.has_horoscope === "true";
+
+  const emit = useCallback(
+    (name: string, value: string) => {
+      onChange({ target: { name, value } } as React.ChangeEvent<HTMLInputElement>);
+    },
+    [onChange]
+  );
 
   const handleSelect = useCallback(
     (name: string, value: string) => {
@@ -129,6 +150,91 @@ const LocationStep = ({ formData, onChange }: Props) => {
     [districtId]
   );
 
+  useEffect(() => {
+    if (!hasHoroscope) return;
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
+    const q = placeQuery.trim();
+    if (q.length < 3) {
+      setPlaceResults([]);
+      setPlaceLoading(false);
+      return;
+    }
+    setPlaceLoading(true);
+    const handle = setTimeout(async () => {
+      placeAbortRef.current?.abort();
+      const controller = new AbortController();
+      placeAbortRef.current = controller;
+      const results = await searchPlaces(q, { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      setPlaceResults(results);
+      setPlaceLoading(false);
+      setPlaceOpen(true);
+    }, PLACE_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [placeQuery, hasHoroscope]);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!placeWrapRef.current?.contains(e.target as Node)) setPlaceOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  useEffect(() => {
+    if (formData.birth_place && !placeQuery) {
+      skipNextSearchRef.current = true;
+      setPlaceQuery(formData.birth_place);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.birth_place]);
+
+  const handleToggleHoroscope = useCallback(
+    (checked: boolean) => {
+      emit("has_horoscope", checked ? "true" : "");
+      if (!checked) {
+        emit("birth_time", "");
+        emit("birth_place", "");
+        emit("birth_latitude", "");
+        emit("birth_longitude", "");
+        emit("birth_timezone", "");
+        setPlaceQuery("");
+        setPlaceResults([]);
+        setPlaceOpen(false);
+      } else if (!formData.birth_timezone) {
+        emit("birth_timezone", "5.5");
+      }
+    },
+    [emit, formData.birth_timezone]
+  );
+
+  const handleSelectPlace = useCallback(
+    (place: GeocodeResult) => {
+      skipNextSearchRef.current = true;
+      setPlaceQuery(place.label);
+      emit("birth_place", place.label);
+      emit("birth_latitude", String(place.latitude));
+      emit("birth_longitude", String(place.longitude));
+      if (!formData.birth_timezone) emit("birth_timezone", "5.5");
+      setPlaceOpen(false);
+      setPlaceResults([]);
+    },
+    [emit, formData.birth_timezone]
+  );
+
+  const handlePlaceInput = useCallback(
+    (value: string) => {
+      setPlaceQuery(value);
+      emit("birth_place", value);
+      emit("birth_latitude", "");
+      emit("birth_longitude", "");
+    },
+    [emit]
+  );
+
   return (
     <>
       <div className="text-center mb-6">
@@ -200,6 +306,98 @@ const LocationStep = ({ formData, onChange }: Props) => {
             rows={3}
             className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none"
           />
+        </div>
+
+        <div className="rounded-2xl border-2 border-primary/10 bg-primary/[0.03] p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasHoroscope}
+              onChange={(e) => handleToggleHoroscope(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-2 border-primary/30 text-primary accent-primary focus:ring-primary/30"
+            />
+            <span>
+              <span className="block text-sm font-medium text-foreground">
+                Add horoscope details
+                <span className="text-muted-foreground font-normal"> (Optional)</span>
+              </span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                Provide your birth time and place to enable horoscope matching.
+              </span>
+            </span>
+          </label>
+
+          {hasHoroscope ? (
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className={labelClass}>Birth Time</label>
+                <input
+                  type="time"
+                  name="birth_time"
+                  value={formData.birth_time || ""}
+                  onChange={onChange}
+                  className={inputClass}
+                />
+              </div>
+
+              <div ref={placeWrapRef} className="relative">
+                <label className={labelClass}>Birth Place</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={placeQuery}
+                    onChange={(e) => handlePlaceInput(e.target.value)}
+                    onFocus={() => {
+                      if (placeResults.length) setPlaceOpen(true);
+                    }}
+                    placeholder="Search city or town…"
+                    autoComplete="off"
+                    className={`${inputClass} pr-10`}
+                  />
+                  {placeLoading ? (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-primary/55" />
+                  ) : (
+                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  )}
+
+                  {placeOpen && placeResults.length > 0 ? (
+                    <div className="absolute z-50 mt-1 w-full rounded-2xl border-2 border-primary/10 bg-white shadow-xl overflow-hidden">
+                      <div className="max-h-56 overflow-y-auto p-1">
+                        {placeResults.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => handleSelectPlace(p)}
+                            className="w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-primary/10"
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                {formData.birth_latitude && formData.birth_longitude ? (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Coordinates: {Number(formData.birth_latitude).toFixed(4)},{" "}
+                    {Number(formData.birth_longitude).toFixed(4)}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
+                  Place search powered by ©{" "}
+                  <a
+                    href="https://www.openstreetmap.org/copyright"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    OpenStreetMap
+                  </a>{" "}
+                  contributors
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </>

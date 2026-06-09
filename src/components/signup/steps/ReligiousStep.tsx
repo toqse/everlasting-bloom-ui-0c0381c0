@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { labelClass } from "../SignupFormFields";
+import { labelClass, inputClass } from "../SignupFormFields";
 import { Home, Globe, CheckSquare, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -39,6 +39,9 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
   >({});
   const [partnerCastePreferences, setPartnerCastePreferences] = useState<
     Record<string, number[]>
+  >({});
+  const [partnerCasteAllByReligion, setPartnerCasteAllByReligion] = useState<
+    Record<string, boolean>
   >({});
 
   const religionId = formData.religion_id ? Number(formData.religion_id) : 0;
@@ -126,6 +129,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     const raw = formData.partner_caste_preferences;
     if (!raw?.trim()) {
       setPartnerCastePreferences({});
+      setPartnerCasteAllByReligion({});
       return;
     }
     try {
@@ -139,8 +143,10 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
         if (ids.length) normalized[String(key)] = ids;
       }
       setPartnerCastePreferences(normalized);
+      setPartnerCasteAllByReligion({});
     } catch {
       setPartnerCastePreferences({});
+      setPartnerCasteAllByReligion({});
     }
   }, [formData.partner_caste_preferences]);
 
@@ -241,6 +247,7 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
     if (key !== "specific") {
       setPartnerReligionIds([]);
       setPartnerCastePreferences({});
+      setPartnerCasteAllByReligion({});
       emitChange("partner_religion_ids", "");
       emitPartnerCastePreferences({});
     }
@@ -256,12 +263,18 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
           next.includes(Number(key)),
         ),
       );
+      const nextAllByReligion = Object.fromEntries(
+        Object.entries(partnerCasteAllByReligion).filter(([key]) =>
+          next.includes(Number(key)),
+        ),
+      );
       // Update parent AFTER computing next list (outside render/updater of parent)
       queueMicrotask(() => {
         emitChange("partner_religion_ids", next.join(","));
         emitPartnerCastePreferences(nextCastePrefs);
       });
       setPartnerCastePreferences(nextCastePrefs);
+      setPartnerCasteAllByReligion(nextAllByReligion);
       return next;
     });
   };
@@ -280,9 +293,34 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
       queueMicrotask(() => emitPartnerCastePreferences(next));
       return next;
     });
+    setPartnerCasteAllByReligion((prev) => ({
+      ...prev,
+      [String(religionIdForCaste)]: false,
+    }));
+  };
+
+  const selectAllCastes = (religionIdForCaste: number) => {
+    setPartnerCastePreferences((prev) => {
+      const key = String(religionIdForCaste);
+      const next = { ...prev };
+      delete next[key];
+      queueMicrotask(() => emitPartnerCastePreferences(next));
+      return next;
+    });
+    setPartnerCasteAllByReligion((prev) => ({
+      ...prev,
+      [String(religionIdForCaste)]: true,
+    }));
   };
 
   const activeReligionName = formData.religion;
+  const partnerAgeFrom = formData.partner_age_from || "";
+  const partnerAgeTo = formData.partner_age_to || "";
+
+  const handleAgeInput = (name: "partner_age_from" | "partner_age_to", raw: string) => {
+    const digits = raw.replace(/[^\d]/g, "").slice(0, 2);
+    emitChange(name, digits);
+  };
 
   return (
     <>
@@ -399,6 +437,9 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                         const selectedCastes =
                           partnerCastePreferences[String(selectedReligionId)] ??
                           [];
+                        const isAllSelected =
+                          partnerCasteAllByReligion[String(selectedReligionId)] ??
+                          false;
 
                         return (
                           <div
@@ -418,6 +459,17 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                               </p>
                             ) : (
                               <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => selectAllCastes(selectedReligionId)}
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                    isAllSelected
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted text-foreground hover:bg-primary/10"
+                                  }`}
+                                >
+                                  All
+                                </button>
                                 {relCastes.map((caste) => {
                                   const isSelected = selectedCastes.includes(
                                     caste.id,
@@ -474,6 +526,17 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                     </p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => selectAllCastes(religionId)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          (partnerCasteAllByReligion[String(religionId)] ?? false)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground hover:bg-primary/10"
+                        }`}
+                      >
+                        All
+                      </button>
                       {castes.map((caste) => {
                         const isSelected = (
                           partnerCastePreferences[String(religionId)] ?? []
@@ -499,6 +562,47 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
                   )}
                 </motion.div>
               )}
+
+              <div className="mt-4 p-4 rounded-xl border border-primary/10 bg-card">
+                <p className="text-sm font-bold text-foreground mb-2">
+                  Partner Age Preference (optional)
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Enter preferred age range between 18 and 80
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Age From</label>
+                    <input
+                      type="number"
+                      min={18}
+                      max={80}
+                      step={1}
+                      value={partnerAgeFrom}
+                      onChange={(e) =>
+                        handleAgeInput("partner_age_from", e.target.value)
+                      }
+                      placeholder="18"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Age To</label>
+                    <input
+                      type="number"
+                      min={18}
+                      max={80}
+                      step={1}
+                      value={partnerAgeTo}
+                      onChange={(e) =>
+                        handleAgeInput("partner_age_to", e.target.value)
+                      }
+                      placeholder="80"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

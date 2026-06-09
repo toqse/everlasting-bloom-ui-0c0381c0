@@ -221,6 +221,110 @@ export interface HoroscopeMeResponse {
   data: HoroscopeMeData;
 }
 
+/** A graha/marker inside a decoded chart house cell. */
+export interface ChartBody {
+  key: string;
+  abbr: string;
+  abbr_ml?: string;
+  abbr_en?: string;
+  name: string;
+}
+
+/** Planet position in decoded chart grid (GET horoscope/me `charts`). */
+export interface ChartPlanetPosition extends ChartBody {
+  index: number;
+  sign: number;
+  sign_name: string;
+}
+
+/** One decoded chart (rasi / amsa / bhava) from HoroscopeProfileSerializer. */
+export interface ChartGridData {
+  lagna_sign: number;
+  sign_names: Record<string, string>;
+  houses: Record<string, ChartBody[]>;
+  planets: ChartPlanetPosition[];
+}
+
+export interface HoroscopeCharts {
+  rasi: ChartGridData;
+  amsa: ChartGridData;
+  bhava: ChartGridData;
+  star: { number: number; name: string; pada: number };
+  dasa: {
+    lord: string;
+    balance_days: number;
+    years?: number;
+    months?: number;
+    days?: number;
+    balance_text: string;
+  };
+}
+
+/** EXE-bridge profile returned by GET /api/v1/astrology/horoscope/me/ */
+export interface HoroscopeProfileData {
+  id: number;
+  pr_name?: string;
+  pr_dob?: string;
+  pr_tob?: string;
+  pr_lat?: number;
+  pr_lon?: number;
+  pr_tz?: number;
+  pr_rasi?: string;
+  pr_amsa?: string;
+  pr_bhav?: string;
+  pr_star?: number;
+  pr_pada?: number;
+  pr_dasabalance?: number;
+  lagnam?: string;
+  rasi_sign?: string;
+  star_name?: string;
+  nakshatra_pada?: number | null;
+  gana?: string;
+  yoni?: string;
+  rajju?: string;
+  is_calculated?: boolean;
+  calculated_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  star_display?: string;
+  dasa_display?: string;
+  lagnam_display?: string;
+  rasi_display?: string;
+  dasa_lord?: string;
+  charts?: HoroscopeCharts;
+}
+
+/** Summary record shown alongside the horoscope (GET horoscope/me `data.record`). */
+export interface HoroscopeRecord {
+  profile_id?: number;
+  user_id?: string;
+  matri_id?: string;
+  name?: string;
+  branch?: string;
+  religion?: string;
+  dob?: string;
+  rasi?: string;
+  nakshatram?: string;
+  dosham?: string;
+  mangal?: boolean | null;
+  jathagam?: string;
+  last_edited_at?: string;
+}
+
+/** GET /api/v1/astrology/horoscope/me/ envelope: { exists, record, horoscope }. */
+export interface HoroscopeProfileEnvelope {
+  exists: boolean;
+  record?: HoroscopeRecord | null;
+  horoscope?: HoroscopeProfileData | null;
+  /** Present when the bridge row does not exist yet. */
+  is_calculated?: boolean;
+}
+
+export interface HoroscopeProfileResponse {
+  success: boolean;
+  data: HoroscopeProfileEnvelope;
+}
+
 export interface GenerateBody {
   matri_id: string;
   partner_matri_id?: string;
@@ -409,10 +513,20 @@ export async function getMatchChartJson(
   return authedGet<MatchChartJsonResponse>(path);
 }
 
-/** GET /api/v1/astrology/horoscope/me/ */
+/** GET /api/v1/astrology/horoscope/me/ (legacy UI envelope with chart_url / primary). */
 export async function getMyHoroscope(style: ChartStyle = "south"): Promise<HoroscopeMeResponse> {
   const q = new URLSearchParams({ style });
   return authedFetch<HoroscopeMeResponse>(`v1/astrology/horoscope/me/?${q}`, {
+    method: "GET",
+  });
+}
+
+/** GET /api/v1/astrology/horoscope/me/ — EXE-bridge profile with decoded `charts`. */
+export async function getMyHoroscopeProfile(
+  style: ChartStyle = "south",
+): Promise<HoroscopeProfileResponse> {
+  const q = new URLSearchParams({ style });
+  return authedFetch<HoroscopeProfileResponse>(`v1/astrology/horoscope/me/?${q}`, {
     method: "GET",
   });
 }

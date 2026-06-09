@@ -30,6 +30,8 @@ export interface ProfileData {
       religion?: string;
     }>;
     partner_caste_preferences?: Record<string, number[]>;
+    partner_age_from?: number | null;
+    partner_age_to?: number | null;
   };
   personal_details?: {
     marital_status_id?: number | string;
@@ -127,6 +129,18 @@ export interface LocationBody {
   district_id: number;
   city_id: number;
   address: string;
+
+  /** Optional horoscope fields (persisted only when has_horoscope is true). */
+  has_horoscope?: boolean;
+  /** "HH:MM" or "HH:MM:SS". */
+  birth_time?: string;
+  birth_place?: string;
+  /** -90..90; resolved from birth_place via OpenStreetMap when available. */
+  birth_latitude?: number;
+  /** -180..180; resolved from birth_place via OpenStreetMap when available. */
+  birth_longitude?: number;
+  /** Offset in hours (e.g. 5.5 for IST). Backend defaults to 5.5 when omitted. */
+  birth_timezone?: number;
 }
 
 export interface ReligionBody {
@@ -140,6 +154,8 @@ export interface ReligionBody {
     | "specific_religions";
   partner_religion_ids?: number[];
   partner_caste_preferences?: Record<string, number[]>;
+  partner_age_from?: number | null;
+  partner_age_to?: number | null;
 }
 
 export interface PersonalBody {
@@ -632,6 +648,8 @@ export interface PartnerPreferenceBody {
     | "specific_religions";
   partner_religion_ids?: number[];
   partner_caste_preferences?: Record<string, number[]>;
+  partner_age_from?: number | null;
+  partner_age_to?: number | null;
 }
 
 export interface ReligionDetailsData {
@@ -650,6 +668,8 @@ export interface ReligionDetailsData {
   partner_religion_ids?: number[];
   partner_religion_names?: string[];
   partner_caste_preferences?: Record<string, number[]>;
+  partner_age_from?: number | null;
+  partner_age_to?: number | null;
 }
 
 export interface ReligionDetailsResponse {
@@ -666,6 +686,8 @@ export interface PartnerPreferenceData {
   partner_religion_ids?: number[];
   partner_religion_names?: string[];
   partner_caste_preferences?: Record<string, number[]>;
+  partner_age_from?: number | null;
+  partner_age_to?: number | null;
 }
 
 export interface PartnerPreferenceResponse {

@@ -9,7 +9,11 @@ import {
   rasiNameMalayalam,
 } from "@/lib/malayalam/horoscopeDisplayMl";
 import type { MatchChartPersonJson } from "@/lib/astrologyApi";
-import { SOUTH_INDIAN_CELL_RC, SOUTH_INDIAN_GRID_SIGNS } from "./southIndianChartLayout";
+import {
+  normalizeChartPlanetsMap,
+  SOUTH_INDIAN_CELL_RC,
+  SOUTH_INDIAN_GRID_SIGNS,
+} from "./southIndianChartLayout";
 
 export interface SouthIndianChartGridProps {
   person: MatchChartPersonJson;
@@ -23,7 +27,7 @@ export function SouthIndianChartGrid({
   headerLine,
   className,
 }: SouthIndianChartGridProps) {
-  const planets = person.planets ?? {};
+  const planets = normalizeChartPlanetsMap(person.planets);
 
   return (
     <div

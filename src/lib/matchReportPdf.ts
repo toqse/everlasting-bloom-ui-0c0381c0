@@ -13,6 +13,7 @@ import { poruthamRowsFromMatch } from "@/lib/astrologyPoruthamDisplay";
 import { panelsBrideGroom } from "@/lib/astrologyBrideGroomPanels";
 import { formatDateDdMmYyyy, formatTimeOfBirthDisplay } from "@/lib/utils";
 import {
+  normalizeChartPlanetsMap,
   SOUTH_INDIAN_CELL_RC,
   SOUTH_INDIAN_GRID_SIGNS,
 } from "@/components/astrology/southIndianChartLayout";
@@ -178,7 +179,7 @@ function southIndianChartDataUrl(person: MatchChartPersonJson, sizePx = 920): st
   const cardPad = Math.round(sizePx * 0.04);
   const gridSize = sizePx - cardPad * 2;
   const cell = gridSize / 4;
-  const planets = person.planets ?? {};
+  const planets = normalizeChartPlanetsMap(person.planets);
   ctx.fillStyle = "#fff7fb";
   ctx.fillRect(0, 0, sizePx, sizePx);
   ctx.strokeStyle = "#d9bfd0";

@@ -160,6 +160,14 @@ export async function getReligions(search?: string): Promise<Religion[]> {
 /** GET v1/master/castes/?religion_id=<id>&search= */
 export async function getCastes(religionId: number, search?: string): Promise<Caste[]> {
   const path = `v1/master/castes/?religion_id=${religionId}`;
+  const base = `${BASE_URL}${path.replace(/^\//, "")}`;
+  const requestUrl = new URL(base);
+  requestUrl.searchParams.set("page", "1");
+  requestUrl.searchParams.set("limit", "50");
+  if (search != null && search.trim() !== "") {
+    requestUrl.searchParams.set("search", search.trim());
+  }
+  console.log("[masterApi] getCastes url:", requestUrl.toString());
   const results = await getPaginated<Caste>(path, search);
   console.log("[masterApi] getCastes response:", { religionId, search, results });
   return results;

@@ -36,7 +36,7 @@ import {
 } from "@/lib/profileApi";
 import { getMyPlan, type MyPlanDetails } from "@/lib/plansApi";
 import {
-  getMyHoroscope,
+  getMyHoroscopeProfile,
   postGenerateHoroscope,
   getBirthDetailCandidates,
   postAstrologyPdfOrder,
@@ -45,6 +45,7 @@ import {
   type BirthDetailCandidate,
   type HoroscopeMeData,
   type HoroscopePrimaryPanel,
+  type HoroscopeProfileData,
   type MatchBlock,
   type PoruthamDetailedItem,
 } from "@/lib/astrologyApi";
@@ -64,6 +65,7 @@ import {
 } from "@/lib/malayalam/horoscopeDisplayMl";
 import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
+import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
 
 declare global {
   interface Window {
@@ -391,7 +393,7 @@ export default function JathagamPage() {
 
   /** Shown only in Birth Details after "Generate Horoscope (chart)" or "Refresh" (self-only). */
   const [selfHoroscopeData, setSelfHoroscopeData] =
-    useState<HoroscopeMeData | null>(null);
+    useState<HoroscopeProfileData | null>(null);
   /** Set only by "Check Match" — drives the comparison report; does not update the self Grahanila card. */
   const [matchResponseData, setMatchResponseData] =
     useState<HoroscopeMeData | null>(null);
@@ -531,8 +533,8 @@ export default function JathagamPage() {
   const handleGenerateChart = async () => {
     setGeneratingChart(true);
     try {
-      const res = await getMyHoroscope("south");
-      setSelfHoroscopeData(res.data);
+      const res = await getMyHoroscopeProfile("south");
+      setSelfHoroscopeData(res.data?.horoscope ?? null);
       setMatchResponseData(null);
       setMatchBlock(null);
     } catch (e) {
@@ -683,8 +685,6 @@ export default function JathagamPage() {
     }
   };
 
-  const selfPrimary = selfHoroscopeData?.primary;
-  const chartUrlSelf = selfPrimary?.chart_url ?? selfHoroscopeData?.chart_url;
   const poruthamRows = matchBlock ? poruthamRowsFromMatch(matchBlock) : [];
   const comparisonRows = matchBlock
     ? extendedPoruthamChecklist(matchBlock)
@@ -974,40 +974,60 @@ export default function JathagamPage() {
                 </Button>
               </div>
 
-              {selfHoroscopeData &&
-                (chartUrlSelf || selfPrimary?.chart_meta?.display_title) && (
-                  <div className="pt-4 border-t border-primary/10 space-y-3">
-                    {(selfPrimary?.chart_meta?.display_title ||
-                      selfHoroscopeData?.nakshatra) && (
-                      <p className="text-sm font-medium text-foreground">
-                        {selfPrimary?.chart_meta?.display_title ??
-                          [
-                            selfHoroscopeData?.nakshatra,
-                            selfHoroscopeData?.nakshatra_pada != null
-                              ? `Pada ${selfHoroscopeData.nakshatra_pada}`
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                      </p>
-                    )}
-                    {(selfPrimary?.rasi || selfHoroscopeData?.rasi) && (
-                      <p className="text-xs text-muted-foreground">
-                        Rasi: {selfPrimary?.rasi ?? selfHoroscopeData?.rasi}
-                        {selfPrimary?.lagna || selfHoroscopeData?.lagna
-                          ? ` · Lagna: ${selfPrimary?.lagna ?? selfHoroscopeData?.lagna}`
-                          : ""}
-                      </p>
-                    )}
-                    {chartUrlSelf ? (
-                      <img
-                        src={chartUrlSelf}
-                        alt="South Indian horoscope chart"
-                        className="w-full max-w-md rounded-lg border border-primary/10 bg-white"
-                      />
-                    ) : null}
-                  </div>
-                )}
+              {selfHoroscopeData ? (
+                <div className="pt-4 border-t border-primary/10 space-y-3">
+                  {(selfHoroscopeData.star_display ||
+                    selfHoroscopeData.charts?.star?.name) && (
+                    <p className="text-sm font-medium text-foreground">
+                      {[
+                        selfHoroscopeData.star_display ||
+                          selfHoroscopeData.charts?.star?.name,
+                        selfHoroscopeData.nakshatra_pada != null
+                          ? `Pada ${selfHoroscopeData.nakshatra_pada}`
+                          : selfHoroscopeData.charts?.star?.pada != null
+                            ? `Pada ${selfHoroscopeData.charts.star.pada}`
+                            : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {(selfHoroscopeData.rasi_display ||
+                    selfHoroscopeData.lagnam_display ||
+                    selfHoroscopeData.rasi_sign ||
+                    selfHoroscopeData.lagnam) && (
+                    <p className="text-xs text-muted-foreground">
+                      {[
+                        selfHoroscopeData.rasi_display || selfHoroscopeData.rasi_sign
+                          ? `Rasi: ${selfHoroscopeData.rasi_display || selfHoroscopeData.rasi_sign}`
+                          : null,
+                        selfHoroscopeData.lagnam_display || selfHoroscopeData.lagnam
+                          ? `Lagna: ${selfHoroscopeData.lagnam_display || selfHoroscopeData.lagnam}`
+                          : null,
+                        selfHoroscopeData.dasa_display
+                          ? `Dasa: ${selfHoroscopeData.dasa_display}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {selfHoroscopeData.charts ? (
+                    <SelfHoroscopeChart
+                      charts={selfHoroscopeData.charts}
+                      headerLine={user?.matriId?.trim()}
+                      name={selfHoroscopeData.pr_name || displayName}
+                      dateOfBirth={selfHoroscopeData.pr_dob}
+                      timeOfBirth={selfHoroscopeData.pr_tob}
+                      placeOfBirth={placeOfBirth}
+                    />
+                  ) : (
+                    <div className="flex h-48 w-full max-w-md items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 text-xs text-muted-foreground mx-auto">
+                      {ml.chartNotAvailable}
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
 

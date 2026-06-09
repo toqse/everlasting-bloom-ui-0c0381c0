@@ -30,7 +30,7 @@ import {
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
 import {
   postLocation,
-  patchProfileReligion,
+  postReligion,
   postPersonal,
   postEducation,
   getGenerateAbout,
@@ -299,6 +299,12 @@ function mapProfileToFormData(
             (rel as Record<string, unknown>).partner_caste_preferences ?? {},
           ),
         }),
+      ...(rel?.partner_age_from != null && {
+        partner_age_from: String(rel.partner_age_from),
+      }),
+      ...(rel?.partner_age_to != null && {
+        partner_age_to: String(rel.partner_age_to),
+      }),
       ...(pers.marital_status != null &&
         String(pers.marital_status) !== "" && {
           maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
@@ -425,6 +431,12 @@ const AuthPage = () => {
     state_id: "",
     district_id: "",
     city_id: "",
+    has_horoscope: "",
+    birth_time: "",
+    birth_place: "",
+    birth_latitude: "",
+    birth_longitude: "",
+    birth_timezone: "",
     religion: "",
     religion_id: "",
     caste: "",
@@ -435,6 +447,8 @@ const AuthPage = () => {
     partner_preference_type: "",
     partner_religion_ids: "",
     partner_caste_preferences: "",
+    partner_age_from: "",
+    partner_age_to: "",
     maritalStatus: "",
     numberOfChildren: "",
     height: "",
@@ -553,6 +567,18 @@ const AuthPage = () => {
             partnerData.partner_caste_preferences ??
               religionData.partner_caste_preferences ??
               {},
+          ),
+          partner_age_from: String(
+            partnerData.partner_age_from ??
+              religionData.partner_age_from ??
+              prev.partner_age_from ??
+              "",
+          ),
+          partner_age_to: String(
+            partnerData.partner_age_to ??
+              religionData.partner_age_to ??
+              prev.partner_age_to ??
+              "",
           ),
         }));
       } catch {
@@ -947,6 +973,34 @@ const AuthPage = () => {
         toast.error("Please enter your address");
         return;
       }
+
+      const hasHoroscope = formData.has_horoscope === "true";
+      const birthTime = formData.birth_time?.trim() || "";
+      const birthPlace = formData.birth_place?.trim() || "";
+      if (hasHoroscope) {
+        if (!formData.dob) {
+          toast.error("Date of birth is required for horoscope details");
+          return;
+        }
+        if (!birthTime) {
+          toast.error("Please enter your birth time");
+          return;
+        }
+        if (!birthPlace) {
+          toast.error("Please select your birth place");
+          return;
+        }
+      }
+      const birthLat = formData.birth_latitude?.trim()
+        ? Number(formData.birth_latitude)
+        : null;
+      const birthLng = formData.birth_longitude?.trim()
+        ? Number(formData.birth_longitude)
+        : null;
+      const birthTz = formData.birth_timezone?.trim()
+        ? Number(formData.birth_timezone)
+        : null;
+
       try {
         await postLocation({
           country_id: cid,
@@ -954,6 +1008,17 @@ const AuthPage = () => {
           district_id: did,
           city_id: cityId,
           address: formData.address.trim(),
+          ...(hasHoroscope && {
+            has_horoscope: true,
+            birth_time: birthTime,
+            birth_place: birthPlace,
+            ...(birthLat != null &&
+              Number.isFinite(birthLat) && { birth_latitude: birthLat }),
+            ...(birthLng != null &&
+              Number.isFinite(birthLng) && { birth_longitude: birthLng }),
+            ...(birthTz != null &&
+              Number.isFinite(birthTz) && { birth_timezone: birthTz }),
+          }),
         });
         useAuthStore.getState().markProfileStepComplete("location");
         toast.success("Location saved");
@@ -986,6 +1051,36 @@ const AuthPage = () => {
         | "own_religion_only"
         | "open_to_all"
         | "specific_religions";
+      const partnerAgeFrom = formData.partner_age_from.trim()
+        ? Number(formData.partner_age_from)
+        : null;
+      const partnerAgeTo = formData.partner_age_to.trim()
+        ? Number(formData.partner_age_to)
+        : null;
+      if (
+        partnerAgeFrom != null &&
+        (!Number.isInteger(partnerAgeFrom) ||
+          partnerAgeFrom < 18 ||
+          partnerAgeFrom > 80)
+      ) {
+        toast.error("Partner age from must be between 18 and 80");
+        return;
+      }
+      if (
+        partnerAgeTo != null &&
+        (!Number.isInteger(partnerAgeTo) || partnerAgeTo < 18 || partnerAgeTo > 80)
+      ) {
+        toast.error("Partner age to must be between 18 and 80");
+        return;
+      }
+      if (
+        partnerAgeFrom != null &&
+        partnerAgeTo != null &&
+        partnerAgeFrom > partnerAgeTo
+      ) {
+        toast.error("Partner age from cannot be greater than age to");
+        return;
+      }
       const selectedPartnerReligionIds =
         formData.partner_religion_ids
           ?.split(",")
@@ -1023,13 +1118,15 @@ const AuthPage = () => {
         partnerCastePreferences = {};
       }
       try {
-        await patchProfileReligion({
+        await postReligion({
           religion_id: religionId,
           caste_id: casteId || null,
           mother_tongue_id: motherTongueId,
           partner_preference_type: prefType,
           partner_religion_ids: partnerReligionIds,
           partner_caste_preferences: partnerCastePreferences,
+          partner_age_from: partnerAgeFrom,
+          partner_age_to: partnerAgeTo,
         });
         useAuthStore.getState().markProfileStepComplete("religion");
         toast.success("Religious details saved");
