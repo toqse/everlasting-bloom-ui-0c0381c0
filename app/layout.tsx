@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import ScrollToTop from "@/components/ScrollToTop";
-import { inter, notoMalayalam, playfair } from "@/lib/fonts";
+import { plusJakarta, notoMalayalam, playfair } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Aiswarya Matrimony",
@@ -13,12 +13,13 @@ export const metadata: Metadata = {
     title: "Aiswarya Matrimony",
     description: "Aiswarya Matrimony - Find Your Perfect Match",
     type: "website",
-    images: ["https://lovable.dev/opengraph-image-p98pqg.png"],
+    images: ["/favicon.svg"],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@Lovable",
-    images: ["https://lovable.dev/opengraph-image-p98pqg.png"],
+    title: "Aiswarya Matrimony",
+    description: "Aiswarya Matrimony - Find Your Perfect Match",
+    images: ["/favicon.svg"],
   },
 };
 
@@ -37,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${notoMalayalam.variable}`}
+      className={`${plusJakarta.variable} ${playfair.variable} ${notoMalayalam.variable}`}
     >
       <body>
         <Providers>

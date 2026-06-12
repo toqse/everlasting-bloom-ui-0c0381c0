@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { BASE_URL } from "@/lib/config";
 import { parseApiDate } from "@/lib/utils";
 
@@ -32,7 +33,7 @@ const ChatListPage = () => {
         if (mounted) setConversations(res.data.conversations);
       } catch (e) {
         if (mounted)
-          setError(e instanceof Error ? e.message : "Failed to load chats");
+          setError(getDisplayErrorMessage(e));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -44,8 +45,8 @@ const ChatListPage = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+    <div className="space-y-4 lg:space-y-6">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Chat list
         </h1>
 

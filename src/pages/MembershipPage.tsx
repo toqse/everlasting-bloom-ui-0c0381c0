@@ -9,6 +9,7 @@ import { Check, Crown, Sparkles, Star, Zap, Heart, Shield, ArrowRight, HelpCircl
 import { useRouter } from "next/navigation";
 import { getWebsitePlans, type WebsitePlan } from "@/lib/plansApi";
 import { WEBSITE_PLANS_FALLBACK } from "@/lib/websitePlansFallback";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 
 const faqs: { question: string; answer: string | string[] }[] = [
   {
@@ -104,7 +105,7 @@ const MembershipPage = () => {
         if (!cancelled) {
           setPlans(WEBSITE_PLANS_FALLBACK);
           setFallbackNotice(
-            e instanceof Error ? e.message : "Could not load plans from the server. Showing default pricing."
+            getDisplayErrorMessage(e)
           );
         }
       } finally {

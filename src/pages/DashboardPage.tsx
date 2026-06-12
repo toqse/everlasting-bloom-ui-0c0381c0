@@ -7,15 +7,15 @@ import {
   Heart,
   Eye,
   Send,
-  Star,
-  IndianRupee,
-  Lock,
+  Crown,
   Sparkles,
   MapPin,
   ArrowRight,
   Users,
   Loader2,
   AlertCircle,
+  MessageCircle,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -38,6 +38,7 @@ import {
 } from "@/lib/matchesApi";
 import { BASE_URL } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 
 /** In-session cache so returning to /dashboard does not blank the whole UI while refetching. */
 type DashboardSessionCache = {
@@ -78,173 +79,110 @@ function getMediaUrl(path: string | null | undefined): string {
     : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-function NewMatchesStoriesStrip({
-  profiles,
-  onStoryClick,
-}: {
-  profiles: DashboardProfile[];
-  onStoryClick: (matriId: string) => void;
-}) {
-  return (
-    <div className="flex min-w-0 max-w-full gap-3 sm:gap-5 overflow-x-auto overscroll-x-contain pb-2 pt-1 snap-x snap-mandatory [scrollbar-width:thin] touch-pan-x">
-      {profiles.map((profile) => {
-        const photoUrl = getMediaUrl(profile.profile_photo);
-        const initials = profile.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .slice(0, 2);
-        const firstName = profile.name.split(" ")[0] || profile.name;
-        const ringGradient = profile.is_new
-          ? "bg-gradient-to-tr from-amber-400 via-rose-500 to-violet-600 p-[3px]"
-          : "bg-gradient-to-tr from-primary/50 via-secondary/60 to-primary/40 p-[2.5px]";
-
-        return (
-          <button
-            key={profile.matri_id}
-            type="button"
-            onClick={() => onStoryClick(profile.matri_id)}
-            className="flex flex-col items-center gap-2 shrink-0 w-[78px] snap-center transition-transform active:scale-95 hover:opacity-95"
-          >
-            <div className={cn("rounded-full shadow-md", ringGradient)}>
-              <div className="rounded-full bg-white p-[3px]">
-                <div className="w-[68px] h-[68px] rounded-full overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                  {photoUrl ? (
-                    <img
-                      src={photoUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xl font-bold text-primary/50">
-                      {initials}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <span className="text-[11px] sm:text-xs font-semibold text-foreground text-center truncate w-full max-w-[78px] leading-tight">
-              {firstName}
-            </span>
-            {profile.is_new && (
-              <span className="text-[9px] font-bold uppercase tracking-wide text-rose-600 -mt-1">
-                New
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
+function formatPlanDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-// ---- Suggestion card (compact) ----
-interface SuggestionCardProps {
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2);
+}
+
+// ---- Recommended match card ----
+interface RecommendedCardProps {
   profile: DashboardProfile;
   index: number;
   onView: () => void;
   onInterest: () => void;
   sendingInterest: boolean;
-  showHoroscopeBadge?: boolean;
 }
 
-const SuggestionCard = ({
+const RecommendedCard = ({
   profile,
   index,
   onView,
   onInterest,
   sendingInterest,
-  showHoroscopeBadge,
-}: SuggestionCardProps) => {
+}: RecommendedCardProps) => {
   const photoUrl = getMediaUrl(profile.profile_photo);
-  const initials = profile.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
+  const initials = getInitials(profile.name);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 * index }}
-      className="bg-card rounded-2xl shadow-card border border-primary/10 overflow-hidden hover:shadow-elevated transition-all group flex flex-col"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-all hover:shadow-elevated"
     >
-      <div className="relative h-52 overflow-hidden bg-accent-rose/20 flex-shrink-0">
+      <div className="relative h-44 flex-shrink-0 overflow-hidden bg-accent-rose/30">
         {photoUrl ? (
           <img
             src={photoUrl}
             alt={profile.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center">
             <span className="text-3xl font-bold text-primary/40">
               {initials}
             </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         {(profile.match_percentage ?? 0) > 0 && (
-          <div className="absolute top-3 right-3 px-2 py-1 bg-white/90 rounded-full">
-            <span className="text-xs font-bold text-primary">
+          <div className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
+            <span className="text-[11px] font-bold text-primary">
               {profile.match_percentage}% Match
             </span>
           </div>
         )}
-        {showHoroscopeBadge && (
-          <span className="absolute top-3 left-3 px-2 py-1 bg-primary/90 rounded-full text-primary-foreground text-xs font-semibold flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Horoscope
-          </span>
-        )}
-        <div className="absolute bottom-3 left-3 right-3 text-white">
-          <h3 className="font-serif text-base font-bold leading-tight truncate">
+      </div>
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <div className="min-w-0">
+          <h3 className="truncate font-serif text-base font-bold leading-tight text-foreground">
             {profile.name}
           </h3>
-          <p className="text-xs opacity-90">
+          <p className="truncate text-xs text-muted-foreground">
             {profile.age} yrs
             {profile.location ? ` · ${profile.location.split(",")[0]}` : ""}
           </p>
-        </div>
-      </div>
-      <div className="p-3 flex-1 flex flex-col justify-between gap-2">
-        <div className="text-xs text-muted-foreground space-y-1">
           {profile.occupation && (
-            <p className="flex items-center gap-1.5 truncate">
-              <Users className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {profile.occupation}
             </p>
           )}
-          {profile.education && (
-            <p className="flex items-center gap-1.5 truncate">
-              <Star className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
-              {profile.education}
-            </p>
-          )}
         </div>
-        <div className="flex gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-1 text-xs"
-            onClick={onView}
-          >
-            <Eye className="w-3.5 h-3.5" /> View
-          </Button>
-          <Button
-            variant="hero"
-            size="sm"
-            className="flex-1 gap-1 text-xs"
+        <div className="mt-auto flex gap-2 pt-1">
+          <button
+            type="button"
             onClick={onInterest}
             disabled={sendingInterest}
+            aria-label="Send interest"
+            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-accent-rose text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
           >
             {sendingInterest ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Heart className="w-3.5 h-3.5" />
+              <Heart className="h-4 w-4" />
             )}
-            Interest
-          </Button>
+          </button>
+          <button
+            type="button"
+            onClick={onView}
+            aria-label="View profile"
+            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-accent-rose text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </motion.div>
@@ -254,15 +192,7 @@ const SuggestionCard = ({
 // ---- Main page ----
 
 const DashboardPage = () => {
-  const {
-    user,
-    hasPaidPlan,
-    getHoroscopeRemaining,
-    getHoroscopeQuota,
-  } = useAuthStore();
-  const showHoroscope = () => hasPaidPlan();
-  const horoscopeRemaining = getHoroscopeRemaining();
-  const horoscopeQuota = getHoroscopeQuota();
+  const { user, hasPaidPlan } = useAuthStore();
   const router = useRouter();
 
   const initialCache = readDashboardSessionCache();
@@ -341,7 +271,7 @@ const DashboardPage = () => {
     } catch (err) {
       console.error("Dashboard load error:", err);
       const msg =
-        err instanceof Error ? err.message : "Failed to load dashboard";
+        getDisplayErrorMessage(err);
       if (hasDashboardDataRef.current) {
         toast.error(msg);
       } else {
@@ -363,7 +293,7 @@ const DashboardPage = () => {
       setPreviewData(res.data);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not load profile",
+        getDisplayErrorMessage(err),
       );
     } finally {
       setPreviewLoading(false);
@@ -377,7 +307,7 @@ const DashboardPage = () => {
       toast.success(res.message || "Interest sent!");
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Failed to send interest";
+        getDisplayErrorMessage(err);
       if ((err as { status?: number }).status === 403) {
         toast.info("Please upgrade your plan to continue.");
         router.push("/dashboard/plan");
@@ -389,45 +319,44 @@ const DashboardPage = () => {
     }
   };
 
-  const statsCards = [
+  const displayLocation = summary?.location || user?.location || "";
+  const firstName = (user?.name || "User").split(" ")[0];
+  const paid = hasPaidPlan();
+  const planActive = summary?.plan?.is_plan_active ?? paid;
+  const planName =
+    summary?.plan?.plan_name || (planActive ? "Premium Member" : "Free Member");
+  const planValidUntil = formatPlanDate(summary?.plan?.valid_until);
+
+  const stats = [
     {
       icon: Eye,
       label: "Profile Views",
-      value: summary?.profile_views ?? "—",
-      color: "text-primary",
+      value: summary?.profile_views ?? 0,
+      iconBg: "bg-primary/10",
+      iconColor: "text-primary",
     },
     {
       icon: Heart,
       label: "Interests Received",
-      value: summary?.interests_received ?? "—",
-      color: "text-secondary",
+      value: summary?.interests_received ?? 0,
+      iconBg: "bg-rose-100",
+      iconColor: "text-rose-500",
     },
     {
       icon: Send,
       label: "Interests Sent",
-      value: summary?.interests_sent ?? "—",
-      color: "text-primary",
+      value: summary?.interests_sent ?? 0,
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-500",
     },
-    ...(showHoroscope()
-      ? [
-          {
-            icon: Star,
-            label: "Horoscope Active",
-            value: "—",
-            color: "text-secondary",
-          },
-        ]
-      : []),
     {
-      icon: IndianRupee,
-      label: "Upgrade Plan",
-      isAction: true as const,
-      color: "text-secondary",
+      icon: Users,
+      label: "New Matches",
+      value: summary?.new_matches ?? 0,
+      iconBg: "bg-violet-100",
+      iconColor: "text-violet-500",
     },
   ];
-
-  const displayLocation = summary?.location || user?.location || "";
-  const displayMatriId = summary?.matri_id || user?.matriId || "";
 
   if (loading) {
     return (
@@ -464,354 +393,361 @@ const DashboardPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-primary rounded-2xl shadow-card p-4 text-primary-foreground sm:p-6"
+          className="rounded-2xl border border-primary/10 bg-card p-5 shadow-card sm:p-6"
         >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-            <div className="min-w-0">
-              <h1 className="font-serif text-xl font-bold sm:text-2xl md:text-3xl">
-                Welcome back, {user?.name || "User"}
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-serif text-xl font-bold text-foreground sm:text-2xl">
+                Welcome back, {firstName}! <span aria-hidden>👋</span>
               </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-95 sm:text-sm sm:gap-3">
-                <span>Profile: {profileCompletion}% Complete</span>
-                {(displayMatriId || displayLocation) && (
-                  <>
-                    <span className="opacity-70">|</span>
-                    <span className="min-w-0 break-words">
-                      {[displayMatriId, displayLocation]
-                        .filter(Boolean)
-                        .join(" – ")}
+              <p className="mt-1 text-sm text-muted-foreground">
+                Complete your profile and increase your chances
+              </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1.5 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      Profile Completion
                     </span>
-                  </>
-                )}
+                    <span className="font-bold text-primary">
+                      {profileCompletion}%
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-accent-rose">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${profileCompletion}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="hero"
+                  className="shrink-0"
+                  onClick={() => router.push("/dashboard/profile")}
+                >
+                  Complete Profile
+                </Button>
               </div>
             </div>
-            <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-3">
-              <div className="min-w-0 rounded-xl bg-white/15 px-3 py-2.5 text-center sm:min-w-[120px] sm:px-4 sm:py-3">
-                <p className="text-xl font-bold sm:text-2xl">
-                  {summary?.interests_sent ?? 0}
+
+            <div className="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
+              {planActive ? (
+                <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-secondary/20 to-secondary/10 px-3.5 py-2 shadow-soft">
+                  <Crown className="h-4 w-4 shrink-0 text-secondary-dark" />
+                  <span className="truncate text-sm font-semibold text-secondary-dark">
+                    {planName}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/plan")}
+                  className="flex items-center gap-2 rounded-xl bg-accent-rose/60 px-3.5 py-2 transition-colors hover:bg-accent-rose"
+                >
+                  <Crown className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="truncate text-sm font-semibold text-primary">
+                    {planName}
+                  </span>
+                </button>
+              )}
+              {planActive && planValidUntil && (
+                <p className="text-[11px] text-muted-foreground sm:text-right">
+                  Valid until {planValidUntil}
                 </p>
-                <p className="text-[11px] opacity-90 sm:text-xs">Interests Sent</p>
-              </div>
-              <div className="min-w-0 rounded-xl bg-white/15 px-3 py-2.5 text-center sm:min-w-[120px] sm:px-4 sm:py-3">
-                <p className="text-xl font-bold sm:text-2xl">
-                  {summary?.new_matches ?? 0}
+              )}
+              {displayLocation && (
+                <p className="flex items-center gap-1 text-[11px] text-muted-foreground sm:justify-end">
+                  <MapPin className="h-3 w-3" />
+                  {displayLocation}
                 </p>
-                <p className="text-[11px] opacity-90 sm:text-xs">New Matches</p>
-              </div>
+              )}
             </div>
           </div>
         </motion.div>
-
-        {/* Horoscope / contact credit widget */}
-        {hasPaidPlan() && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.04 }}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-card p-3 shadow-card sm:p-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">
-                  Horoscope & contact views
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-bold text-primary">
-                    {horoscopeRemaining}
-                  </span>{" "}
-                  of {horoscopeQuota} remaining this period
-                </p>
-              </div>
-            </div>
-            {horoscopeRemaining <= 2 && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setPlanModalOpen(true)}
-              >
-                Get more
-              </Button>
-            )}
-          </motion.div>
-        )}
 
         {/* Stat cards */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"
         >
-          {statsCards.map((stat, i) => (
+          {stats.map((stat, i) => (
             <div
               key={i}
-              className={cn(
-                "flex min-w-0 rounded-2xl bg-card p-3 shadow-card transition-shadow hover:shadow-elevated sm:p-4",
-                "isAction" in stat && stat.isAction
-                  ? "flex-row items-center gap-3"
-                  : "flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 md:gap-4",
-              )}
+              className="flex min-w-0 items-center gap-3 rounded-2xl border border-primary/5 bg-card p-4 shadow-card transition-shadow hover:shadow-elevated"
             >
-              <div className="w-12 h-12 rounded-xl bg-accent-rose flex items-center justify-center flex-shrink-0 relative">
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                {"isAction" in stat && stat.isAction && (
-                  <Lock className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 text-secondary" />
+              <div
+                className={cn(
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                  stat.iconBg,
                 )}
+              >
+                <stat.icon className={cn("h-6 w-6", stat.iconColor)} />
               </div>
-              {"isAction" in stat && stat.isAction ? (
-                <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                  <p className="text-xs text-muted-foreground truncate">
-                    {stat.label}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0 px-3"
-                    onClick={() => router.push("/dashboard/plan")}
-                  >
-                    Upgrade
-                  </Button>
-                </div>
-              ) : (
-                <div className="min-w-0 flex-1">
-                  {"value" in stat && stat.value !== undefined && (
-                    <p className="font-serif text-xl font-bold text-foreground truncate">
-                      {stat.value}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              )}
+              <div className="min-w-0">
+                <p className="font-serif text-2xl font-bold leading-none text-foreground">
+                  {stat.value}
+                </p>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {stat.label}
+                </p>
+              </div>
             </div>
           ))}
+
+          {/* Premium / Upgrade card */}
+          <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-secondary/20 bg-gradient-to-br from-accent-gold/40 to-card p-4 shadow-card">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary to-secondary-light">
+              <Crown className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-serif text-sm font-bold text-foreground">
+                {paid ? "Premium Member" : "Upgrade Plan"}
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/plan")}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                {paid ? "View Benefits" : "View Plans"}
+              </button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Two-column layout */}
         <div className="grid min-w-0 gap-5 sm:gap-6 xl:grid-cols-12">
           {/* Left content */}
           <div className="min-w-0 space-y-5 sm:space-y-6 xl:col-span-8">
-            {/* New Matches — stories strip + Love Stories–style grid */}
+            {/* Recommended Matches */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-br from-white via-rose-50/40 to-violet-50/50 shadow-card sm:rounded-[1.75rem] md:rounded-[2rem]"
+              className="rounded-2xl border border-primary/10 bg-card p-4 shadow-card sm:p-6"
             >
-              <div className="p-4 sm:p-6 sm:pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-1">
-                  <div>
-                    <h2 className="font-serif text-2xl sm:text-[1.65rem] font-bold text-foreground tracking-tight">
-                      New matches
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif text-lg font-bold text-foreground sm:text-xl">
+                      Recommended Matches
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Tap someone to open their profile on My Matches
-                    </p>
+                    {newMatches.length > 0 && (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-600">
+                        {newMatches.length} New
+                      </span>
+                    )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push("/dashboard/matches")}
-                    className="gap-1.5 rounded-full border-primary/20 shrink-0 w-full sm:w-auto justify-center"
-                  >
-                    See all <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Matches based on your preferences and activity
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/matches")}
+                  className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                >
+                  View all <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
+
               {newMatches.length > 0 ? (
-                <div className="min-w-0 px-4 pb-5 sm:px-6 sm:pb-6">
-                  <NewMatchesStoriesStrip
-                    profiles={newMatches}
-                    onStoryClick={(matriId) => {
-                      router.push(
-                        `/dashboard/matches?open=${encodeURIComponent(matriId)}`,
-                      );
-                    }}
-                  />
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                  {newMatches.map((profile, i) => (
+                    <RecommendedCard
+                      key={profile.matri_id}
+                      profile={profile}
+                      index={i}
+                      sendingInterest={sendingInterest === profile.matri_id}
+                      onView={() => handleViewProfile(profile.matri_id)}
+                      onInterest={() => handleSendInterest(profile.matri_id)}
+                    />
+                  ))}
                 </div>
               ) : (
-                <div className="px-4 pb-8 text-center sm:px-6 sm:pb-10">
-                  <div className="rounded-2xl bg-white/60 border border-dashed border-primary/15 py-12 px-4">
-                    <Sparkles className="w-12 h-12 mx-auto mb-3 text-primary/30" />
-                    <p className="text-foreground font-medium">
-                      No new matches yet
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                      Complete your profile and set preferences — we&apos;ll
-                      surface fresh connections here.
-                    </p>
-                  </div>
+                <div className="rounded-2xl border border-dashed border-primary/15 bg-accent-rose/10 py-12 text-center">
+                  <Sparkles className="mx-auto mb-3 h-12 w-12 text-primary/30" />
+                  <p className="font-medium text-foreground">
+                    No recommended matches yet
+                  </p>
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                    Complete your profile and set preferences — we&apos;ll
+                    surface fresh connections here.
+                  </p>
                 </div>
               )}
             </motion.div>
 
-            {/* Nearby / Location Based */}
+            {/* Nearby Matches */}
             {displayLocation && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
+                className="rounded-2xl border border-primary/10 bg-card p-4 shadow-card sm:p-6"
               >
-                <h2 className="font-serif text-xl font-bold text-secondary mb-3">
-                  Nearby Matches
-                </h2>
-                <p className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  Based on your location – {displayLocation}
-                </p>
-                <div className="rounded-2xl border border-primary/10 bg-primary/10 p-3 sm:p-4">
-                  {suggestions.length > 0 ? (
-                    <div className="grid min-w-0 max-w-full grid-cols-2 gap-2 sm:flex sm:gap-4 sm:overflow-x-auto sm:pb-2 md:gap-3">
-                      {suggestions.slice(0, 4).map((profile) => {
-                        const photoUrl = getMediaUrl(profile.profile_photo);
-                        const initials = profile.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2);
-                        return (
-                          <div
-                            key={profile.matri_id}
-                            className="text-center min-w-0 sm:flex-shrink-0 sm:w-40"
-                          >
-                            {photoUrl ? (
-                              <img
-                                src={photoUrl}
-                                alt={profile.name}
-                                className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-accent-rose/30 flex items-center justify-center mx-auto mb-2 font-bold text-primary">
-                                {initials}
-                              </div>
-                            )}
-                            <p className="font-medium text-sm truncate">
-                              {profile.name.split(" ")[0]}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {profile.location
-                                ? profile.location.split(",")[0]
-                                : "—"}
-                            </p>
-                            <Button
-                              size="sm"
-                              variant="hero"
-                              className="mt-2 w-full text-xs"
-                              onClick={() => handleViewProfile(profile.matri_id)}
-                              disabled={previewLoading}
-                            >
-                              View Profile
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No nearby matches available right now.
-                    </p>
-                  )}
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <h2 className="font-serif text-lg font-bold text-foreground sm:text-xl">
+                      Nearby Matches
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      Near {displayLocation.split(",")[0]}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/dashboard/matches")}
+                    className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                  >
+                    <Search className="h-4 w-4" /> Expand search
+                  </button>
                 </div>
+
+                {suggestions.length > 0 ? (
+                  <div className="flex min-w-0 max-w-full gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+                    {suggestions.slice(0, 8).map((profile) => {
+                      const photoUrl = getMediaUrl(profile.profile_photo);
+                      const initials = getInitials(profile.name);
+                      return (
+                        <button
+                          key={profile.matri_id}
+                          type="button"
+                          onClick={() => handleViewProfile(profile.matri_id)}
+                          disabled={previewLoading}
+                          className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 text-center transition-transform active:scale-95 disabled:opacity-60"
+                        >
+                          <div className="relative">
+                            <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-primary/15 bg-accent-rose/30">
+                              {photoUrl ? (
+                                <img
+                                  src={photoUrl}
+                                  alt={profile.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center font-bold text-primary">
+                                  {initials}
+                                </div>
+                              )}
+                            </div>
+                            {(profile.match_percentage ?? 0) > 0 && (
+                              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
+                                {profile.match_percentage}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 w-full truncate text-xs font-semibold text-foreground">
+                            {profile.name.split(" ")[0]}
+                          </p>
+                          {profile.age ? (
+                            <p className="text-[11px] text-muted-foreground">
+                              {profile.age} yrs
+                            </p>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No nearby matches available right now.
+                  </p>
+                )}
               </motion.div>
             )}
           </div>
 
           {/* Right sidebar */}
           <aside className="min-w-0 space-y-5 sm:space-y-6 xl:col-span-4">
-            {/* Horoscope widget */}
-            {showHoroscope() && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="rounded-2xl border border-secondary/20 bg-accent-gold/20 p-4 shadow-card sm:rounded-3xl sm:p-6"
-              >
-                <h3 className="font-serif text-lg font-bold text-secondary mb-2 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-secondary" /> Horoscope Matching
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add your birth details for Jathagam charts and Porutham-based
-                  compatibility with your matches.
-                </p>
-                <Button
-                  variant="hero"
-                  className="w-full gap-2"
-                  onClick={() => router.push("/dashboard/jathagam")}
-                >
-                  Set Up Horoscope <ArrowRight className="w-4 h-4" />
-                </Button>
-              </motion.div>
-            )}
-
             {/* Today's Picks */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="rounded-2xl bg-card p-4 shadow-card sm:rounded-3xl sm:p-6"
+              transition={{ delay: 0.15 }}
+              className="rounded-2xl border border-primary/10 bg-card p-4 shadow-card sm:p-6"
             >
-              <h3 className="mb-3 font-serif text-base font-bold text-secondary sm:mb-4 sm:text-lg">
-                Today&apos;s Picks
-              </h3>
+              <div className="mb-4">
+                <h3 className="font-serif text-base font-bold text-foreground sm:text-lg">
+                  Today&apos;s Picks
+                </h3>
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-secondary-dark" />
+                  handpicked for you
+                </p>
+              </div>
               {todayPicks.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {todayPicks.map((profile) => {
                     const photoUrl = getMediaUrl(profile.profile_photo);
-                    const initials = profile.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2);
+                    const initials = getInitials(profile.name);
                     return (
                       <div
                         key={profile.matri_id}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent-rose/20 transition-colors"
+                        className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-accent-rose/20"
                       >
                         {photoUrl ? (
                           <img
                             src={photoUrl}
                             alt={profile.name}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-primary/10"
+                            className="h-11 w-11 flex-shrink-0 rounded-full border border-primary/10 object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-accent-rose/30 flex items-center justify-center font-bold text-sm text-primary flex-shrink-0">
+                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-accent-rose/30 text-sm font-bold text-primary">
                             {initials}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">
-                            {profile.name}
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {profile.name.split(" ")[0]}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="truncate text-xs text-muted-foreground">
                             {profile.age ? `${profile.age} yrs` : ""}
-                            {profile.occupation
-                              ? ` · ${profile.occupation}`
+                            {profile.location
+                              ? ` · ${profile.location.split(",")[0]}`
                               : ""}
                           </p>
+                          {(profile.match_percentage ?? 0) > 0 && (
+                            <p className="text-[11px] font-semibold text-primary">
+                              {profile.match_percentage}% Match
+                            </p>
+                          )}
                         </div>
                         <button
+                          type="button"
                           onClick={() => handleViewProfile(profile.matri_id)}
                           disabled={previewLoading}
-                          className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors flex-shrink-0 disabled:opacity-50"
+                          aria-label="View profile"
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
                         >
                           {previewLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Eye className="w-4 h-4" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/dashboard/matches")}
+                    className="mt-2 flex w-full items-center justify-center gap-1 text-sm font-semibold text-primary hover:underline"
+                  >
+                    View all picks <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="py-4 text-center text-sm text-muted-foreground">
                   No picks available today.
                 </p>
               )}
             </motion.div>
+
           </aside>
         </div>
       </div>

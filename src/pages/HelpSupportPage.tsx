@@ -44,8 +44,8 @@ const HelpSupportPage = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
+    <div className="space-y-4 lg:space-y-6">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary">
           Help & Support
         </h1>
 

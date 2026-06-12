@@ -21,6 +21,10 @@ export function normalizePoruthamKey(raw: string): string {
   const aliases: Record<string, string> = {
     rasiyadhip: "rasyadhip",
     rasyadhip: "rasyadhip",
+    rasyadhipam: "rasyadhip",
+    sthree_deerga: "deergaham",
+    vedha_dosham: "vedham",
+    chovva_dosham: "kuja_dosham",
     rajju: "rajju_dosham",
     reju_dosham: "rajju_dosham",
     rejju_dosham: "rajju_dosham",

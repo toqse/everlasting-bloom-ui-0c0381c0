@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { User, Phone, Mail, Calendar, ArrowRight } from "lucide-react";
+import { User, Mail, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
 import { SelectField } from "../SignupFormFields";
 import { Button } from "@/components/ui/button";
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
@@ -21,7 +22,9 @@ interface Props {
   resendOtpLoading?: boolean;
   phoneVerified: boolean;
   canSendOtp?: boolean;
+  sendingOtp?: boolean;
   fieldErrors?: { email?: string; dob?: string; phone?: string; general?: string };
+  onTermsClick?: () => void;
 }
 
 const apiErrorBanner = (message: string) => (
@@ -50,7 +53,9 @@ const BasicInfoStep = ({
   resendOtpLoading = false,
   phoneVerified,
   canSendOtp = false,
+  sendingOtp = false,
   fieldErrors,
+  onTermsClick,
 }: Props) => {
   const { locked: genderLocked, gender: profileLockedGender } =
     getGenderFromProfileFor(profileFor);
@@ -124,11 +129,16 @@ const BasicInfoStep = ({
             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="text" name="name" value={formData.name} onChange={onChange} placeholder="Full Name *" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-            <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
-            <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
-          </div>
+          <PhoneInput
+            name="phone"
+            value={formData.phone}
+            onChange={(v) =>
+              onChange({
+                target: { name: "phone", value: v },
+              } as React.ChangeEvent<HTMLInputElement>)
+            }
+            placeholder="Phone Number *"
+          />
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
@@ -140,7 +150,7 @@ const BasicInfoStep = ({
           <SelectField
             label="Gender"
             name="gender"
-            options={["Male", "Female", "Other"]}
+            options={["Male", "Female"]}
             value={genderSelectValue}
             onChange={onChange}
             disabled={genderLocked}
@@ -155,16 +165,25 @@ const BasicInfoStep = ({
             />
             <label htmlFor="agreeTerms" className="text-sm text-muted-foreground cursor-pointer">
               I agree to the{" "}
-              <Link href="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+              <Link href="/terms-conditions" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
               and Privacy Policy
             </label>
           </div>
           {registerApiMessage && apiErrorBanner(registerApiMessage)}
-          <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp} disabled={!canSendOtp}>
-            Send OTP
-            <ArrowRight className="w-5 h-5" />
+          <Button type="button" variant="hero" size="lg" className="w-full gap-2" onClick={onSendOtp} disabled={!canSendOtp || sendingOtp}>
+            {sendingOtp ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Sending OTP...
+              </>
+            ) : (
+              <>
+                Send OTP
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </Button>
         </div>
       </>
@@ -186,11 +205,16 @@ const BasicInfoStep = ({
             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="text" name="name" value={formData.name} onChange={onChange} placeholder="Full Name *" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-            <Phone className="absolute left-4 w-5 h-5 text-primary/50" />
-            <span className="pl-12 pr-1 text-sm text-foreground">+91</span>
-            <input type="tel" name="phone" value={formData.phone} onChange={onChange} placeholder="Phone Number *" minLength={10} maxLength={10} inputMode="numeric" pattern="[0-9]{10}" className="flex-1 px-2 py-3.5 rounded-r-2xl focus:ring-0 border-0 bg-transparent" />
-          </div>
+          <PhoneInput
+            name="phone"
+            value={formData.phone}
+            onChange={(v) =>
+              onChange({
+                target: { name: "phone", value: v },
+              } as React.ChangeEvent<HTMLInputElement>)
+            }
+            placeholder="Phone Number *"
+          />
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
@@ -202,7 +226,7 @@ const BasicInfoStep = ({
           <SelectField
             label="Gender"
             name="gender"
-            options={["Male", "Female", "Other"]}
+            options={["Male", "Female"]}
             value={genderSelectValue}
             onChange={onChange}
             disabled={genderLocked}
@@ -217,7 +241,7 @@ const BasicInfoStep = ({
             />
             <label htmlFor="agreeTermsVerified" className="text-sm text-muted-foreground cursor-pointer">
               I agree to the{" "}
-              <Link href="/terms-conditions" onClick={(e) => e.stopPropagation()} className="text-primary font-medium underline hover:no-underline">
+              <Link href="/terms-conditions" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
               and Privacy Policy

@@ -12,7 +12,6 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  Phone,
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +27,7 @@ import {
   type VerifyMobileProfile,
 } from "@/lib/authApi";
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
+import { ApiError, getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   postLocation,
   postReligion,
@@ -45,6 +45,8 @@ import SignupStepIndicator, {
 } from "@/components/signup/SignupStepIndicator";
 import ProfileForStep from "@/components/signup/steps/ProfileForStep";
 import BasicInfoStep from "@/components/signup/steps/BasicInfoStep";
+import PhoneInput from "@/components/PhoneInput";
+import { formatPhoneForApi, formatPhoneDisplay } from "@/lib/phone";
 import LocationStep from "@/components/signup/steps/LocationStep";
 import ReligiousStep from "@/components/signup/steps/ReligiousStep";
 import PersonalStep from "@/components/signup/steps/PersonalStep";
@@ -54,6 +56,7 @@ import PhotosStep from "@/components/signup/steps/PhotosStep";
 
 type AuthMode = "login" | "signup";
 const SIGNUP_DRAFT_STORAGE_KEY = "matrimony_signup_draft_v1";
+const AUTH_RETURN_STATE_STORAGE_KEY = "matrimony_auth_return_state_v1";
 
 const stepVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
@@ -397,6 +400,7 @@ const AuthPage = () => {
   const [interCaste, setInterCaste] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [signupOtpSent, setSignupOtpSent] = useState(false);
+  const [signupSendingOtp, setSignupSendingOtp] = useState(false);
   const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
   const [photos, setPhotos] = useState<
     Record<string, { file: File; previewUrl: string }>
@@ -490,6 +494,35 @@ const AuthPage = () => {
       }
     } catch {
       // ignore malformed draft data
+    }
+
+    try {
+      const rawReturnState = sessionStorage.getItem(
+        AUTH_RETURN_STATE_STORAGE_KEY,
+      );
+      if (!rawReturnState) return;
+      sessionStorage.removeItem(AUTH_RETURN_STATE_STORAGE_KEY);
+      const parsedReturnState = JSON.parse(rawReturnState) as {
+        mode?: AuthMode;
+        signupStep?: number;
+        agreeTerms?: boolean;
+        phoneVerified?: boolean;
+      };
+      if (parsedReturnState.mode !== "signup") return;
+      const nextSignupStep =
+        typeof parsedReturnState.signupStep === "number"
+          ? Math.min(
+              Math.max(0, parsedReturnState.signupStep),
+              SIGNUP_STEPS.length - 1,
+            )
+          : 1;
+      setMode("signup");
+      setDirection(1);
+      setSignupStep(nextSignupStep);
+      setAgreeTerms(Boolean(parsedReturnState.agreeTerms));
+      setPhoneVerified(Boolean(parsedReturnState.phoneVerified));
+    } catch {
+      // ignore malformed return state
     }
   }, []);
 
@@ -683,20 +716,18 @@ const AuthPage = () => {
       toast.error("Please enter your phone number");
       return;
     }
-    const digits = formData.phone.replace(/\D/g, "");
-    const len = digits.length;
-    if (len !== 10) {
+    const mobile = formatPhoneForApi(formData.phone);
+    if (!mobile.startsWith("+91") || mobile.length !== 13) {
       toast.error("Phone number must be 10 digits");
       return;
     }
-    const mobile = "+91" + digits;
     try {
       const res = await registerMobile({ mobile });
       setOtpSent(true);
       setOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success("OTP sent to your phone");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send OTP");
+      toast.error(getDisplayErrorMessage(err));
     }
   };
 
@@ -724,8 +755,7 @@ const AuthPage = () => {
       toast.error("Please enter the 6-digit OTP");
       return;
     }
-    const digits = formData.phone.replace(/\D/g, "");
-    const mobile = "+91" + digits;
+    const mobile = formatPhoneForApi(formData.phone);
     try {
       const response = await verifyMobile({ mobile, otp: otpCode });
       const data = response.data;
@@ -762,7 +792,7 @@ const AuthPage = () => {
         setHasChildren(prefill.hasChildren);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
+      toast.error(getDisplayErrorMessage(err));
     }
   };
 
@@ -772,9 +802,9 @@ const AuthPage = () => {
   };
 
   const getPhoneNumberE164 = (): string | null => {
-    const digits = formData.phone.replace(/\D/g, "");
-    if (digits.length !== 10) return null;
-    return "+91" + digits;
+    const mobile = formatPhoneForApi(formData.phone);
+    if (!mobile.startsWith("+91") || mobile.length !== 13) return null;
+    return mobile;
   };
 
   const handleLoginResendOtp = async () => {
@@ -793,7 +823,7 @@ const AuthPage = () => {
           : "OTP has been sent to your phone number.",
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
+      toast.error(getDisplayErrorMessage(err));
     } finally {
       setResendOtpLoading(false);
     }
@@ -815,19 +845,20 @@ const AuthPage = () => {
           : "OTP has been sent to your phone number.",
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
+      toast.error(getDisplayErrorMessage(err));
     } finally {
       setResendOtpLoading(false);
     }
   };
 
   const handleSignupSendOtp = async () => {
+    if (signupSendingOtp) return;
     if (!formData.name?.trim()) {
       toast.error("Please enter full name");
       return;
     }
-    const digits = formData.phone.replace(/\D/g, "");
-    if (digits.length !== 10) {
+    const phone_number = formatPhoneForApi(formData.phone);
+    if (!phone_number.startsWith("+91") || phone_number.length !== 13) {
       toast.error("Phone number must be 10 digits");
       return;
     }
@@ -843,7 +874,6 @@ const AuthPage = () => {
       toast.error("Please agree to Terms & Conditions and Privacy Policy");
       return;
     }
-    const phone_number = "+91" + digits;
     // Convert yyyy-mm-dd (input type="date") to DD-MM-YYYY
     const [y, m, d] = formData.dob.split("-");
     const dob = d && m && y ? `${d}-${m}-${y}` : formData.dob;
@@ -854,6 +884,7 @@ const AuthPage = () => {
         ? "O"
         : "M";
     const profile_for = normalizeRegisterProfileFor(formData.profileFor);
+    setSignupSendingOtp(true);
     try {
       const res = await registerApi({
         name: formData.name.trim(),
@@ -867,25 +898,33 @@ const AuthPage = () => {
       setSignupOtp(otpDigitsFromResponse(res) ?? ["", "", "", "", "", ""]);
       toast.success("OTP sent to +91 " + formData.phone);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to send OTP";
-      const lower = msg.toLowerCase();
       const nextErrors: {
         email?: string;
         dob?: string;
         phone?: string;
         general?: string;
       } = {};
-      if (lower.includes("email")) nextErrors.email = msg;
-      else if (
-        lower.includes("dob") ||
-        lower.includes("birth") ||
-        lower.includes("age")
-      )
-        nextErrors.dob = msg;
-      else if (lower.includes("phone") || lower.includes("already registered"))
-        nextErrors.phone = msg;
-      else nextErrors.general = msg;
+      if (err instanceof ApiError) {
+        // Actual API error response: map it to the relevant field when possible.
+        const msg = err.message;
+        const lower = msg.toLowerCase();
+        if (lower.includes("email")) nextErrors.email = msg;
+        else if (
+          lower.includes("dob") ||
+          lower.includes("birth") ||
+          lower.includes("age")
+        )
+          nextErrors.dob = msg;
+        else if (lower.includes("phone") || lower.includes("already registered"))
+          nextErrors.phone = msg;
+        else nextErrors.general = msg;
+      } else {
+        // Network/timeout -> "Network error"; anything else -> generic message.
+        nextErrors.general = getDisplayErrorMessage(err);
+      }
       setSignupErrors(nextErrors);
+    } finally {
+      setSignupSendingOtp(false);
     }
   };
 
@@ -896,8 +935,7 @@ const AuthPage = () => {
       toast.error("Please enter the 6-digit OTP");
       return;
     }
-    const digits = formData.phone.replace(/\D/g, "");
-    const mobile = "+91" + digits;
+    const mobile = formatPhoneForApi(formData.phone);
     try {
       const response = await verifyOtp({ mobile, otp: otpCode });
       if (response.data?.access_token) {
@@ -911,7 +949,7 @@ const AuthPage = () => {
       setSignupStep(2);
       toast.success("Phone verified!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to verify OTP");
+      toast.error(getDisplayErrorMessage(err));
     }
   };
 
@@ -1026,7 +1064,7 @@ const AuthPage = () => {
         setSignupStep(3);
       } catch (err) {
         toast.error(
-          err instanceof Error ? err.message : "Failed to save location",
+          getDisplayErrorMessage(err),
         );
       }
       return;
@@ -1133,11 +1171,7 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(4);
       } catch (err) {
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : "Failed to save religious details",
-        );
+        toast.error(getDisplayErrorMessage(err));
       }
       return;
     }
@@ -1199,11 +1233,7 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(5);
       } catch (err) {
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : "Failed to save personal details",
-        );
+        toast.error(getDisplayErrorMessage(err));
       }
       return;
     }
@@ -1242,11 +1272,7 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(6);
       } catch (err) {
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : "Failed to save education details",
-        );
+        toast.error(getDisplayErrorMessage(err));
       }
       return;
     }
@@ -1259,7 +1285,7 @@ const AuthPage = () => {
         setSignupStep(7);
       } catch (err) {
         toast.error(
-          err instanceof Error ? err.message : "Failed to save about me",
+          getDisplayErrorMessage(err),
         );
       }
       return;
@@ -1325,7 +1351,7 @@ const AuthPage = () => {
         router.push("/dashboard");
       } catch (err) {
         toast.error(
-          err instanceof Error ? err.message : "Failed to create account",
+          getDisplayErrorMessage(err),
         );
       } finally {
         if (shouldReset) setIsCreatingAccount(false);
@@ -1352,7 +1378,7 @@ const AuthPage = () => {
       toast.success("Suggestion added. You can edit it.");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to generate about me",
+        getDisplayErrorMessage(err),
       );
     }
   };
@@ -1368,6 +1394,22 @@ const AuthPage = () => {
     if (signupStep > minSignupStep) {
       setDirection(-1);
       setSignupStep(signupStep - 1);
+    }
+  };
+
+  const handleSignupTermsClick = () => {
+    try {
+      sessionStorage.setItem(
+        AUTH_RETURN_STATE_STORAGE_KEY,
+        JSON.stringify({
+          mode: "signup",
+          signupStep,
+          agreeTerms,
+          phoneVerified,
+        }),
+      );
+    } catch {
+      // ignore storage errors
     }
   };
 
@@ -1411,7 +1453,9 @@ const AuthPage = () => {
             resendOtpLoading={resendOtpLoading}
             phoneVerified={phoneVerified}
             canSendOtp={canSendSignupOtp}
+            sendingOtp={signupSendingOtp}
             fieldErrors={signupErrors}
+            onTermsClick={handleSignupTermsClick}
           />
         );
       case 2:
@@ -1531,24 +1575,19 @@ const AuthPage = () => {
                 {!otpSent ? (
                   <>
                     <form onSubmit={handleSendOtp} className="space-y-6">
-                      <div className="relative flex items-center border-2 border-primary/10 rounded-2xl bg-white focus-within:border-primary transition-colors">
-                        <Phone className="absolute left-6 w-7 h-7 text-primary/50" />
-                        <span className="pl-16 pr-2 text-lg text-foreground">
-                          +91
-                        </span>
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          placeholder="Phone Number"
-                          minLength={10}
-                          maxLength={10}
-                          inputMode="numeric"
-                          pattern="[0-9]{10}"
-                          className="flex-1 px-3 py-5 text-lg rounded-r-2xl focus:ring-0 border-0 bg-transparent"
-                        />
-                      </div>
+                      <PhoneInput
+                        value={formData.phone}
+                        onChange={(v) => {
+                          setFormData((prev) => ({ ...prev, phone: v }));
+                          setSignupErrors((prev) => ({
+                            ...prev,
+                            phone: undefined,
+                            general: undefined,
+                          }));
+                        }}
+                        placeholder="Phone Number"
+                        inputClassName="text-lg py-5"
+                      />
                       <Button
                         type="submit"
                         variant="hero"
@@ -1564,7 +1603,7 @@ const AuthPage = () => {
                     <p className="text-muted-foreground text-lg mb-4 text-center">
                       Enter the 6-digit OTP sent to{" "}
                       <span className="font-medium text-foreground">
-                        +91 {formData.phone}
+                        {formatPhoneDisplay(formData.phone)}
                       </span>
                     </p>
                     <form onSubmit={handleVerifyOtp} className="space-y-6">

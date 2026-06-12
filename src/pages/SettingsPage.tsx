@@ -14,6 +14,7 @@ import {
   type ProfileVisibility,
   type InterestPermission,
 } from "@/lib/settingsApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { isUsableProfilePhotoUrl } from "@/lib/utils";
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
@@ -94,8 +95,8 @@ const SettingsPage = () => {
         setInterestPerm(data.interest_permission);
         setFetchError(null);
       })
-      .catch((err: Error) => {
-        setFetchError(err.message);
+      .catch((err: unknown) => {
+        setFetchError(getDisplayErrorMessage(err));
       })
       .finally(() => setLoading(false));
   }, [accessToken]);
@@ -152,8 +153,8 @@ const SettingsPage = () => {
   ];
 
   return (
-    <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+    <div className="space-y-4 lg:space-y-6">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Profile settings
         </h1>
 

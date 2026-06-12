@@ -4,6 +4,8 @@ import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { RELIGION_CASTE_MAP } from "@/data/religionCaste";
 import { toast } from "sonner";
+import PhoneInput from "@/components/PhoneInput";
+import { isValidIndianMobile } from "@/lib/phone";
 
 const selectClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer text-sm";
 const inputClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all text-sm";
@@ -54,6 +56,10 @@ const SearchFilters = () => {
     e.preventDefault();
     if (!regName || !regMobile) {
       toast.error("Please fill Name and Mobile Number");
+      return;
+    }
+    if (!isValidIndianMobile(regMobile)) {
+      toast.error("Please enter a valid 10-digit mobile number");
       return;
     }
     router.push("/auth");
@@ -201,7 +207,7 @@ const SearchFilters = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-foreground mb-1.5">Mobile No.</label>
-                    <input type="tel" placeholder="Mobile No" value={regMobile} onChange={e => setRegMobile(e.target.value)} className={inputClass} />
+                    <PhoneInput value={regMobile} onChange={setRegMobile} placeholder="Mobile No" className="rounded-xl" inputClassName="py-3" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-foreground mb-1.5">Gender</label>

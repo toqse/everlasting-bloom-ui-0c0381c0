@@ -1,10 +1,14 @@
-import { Inter, Noto_Sans_Malayalam, Playfair_Display } from "next/font/google";
+import {
+  Plus_Jakarta_Sans,
+  Noto_Sans_Malayalam,
+  Playfair_Display,
+} from "next/font/google";
 
-export const inter = Inter({
+export const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const playfair = Playfair_Display({

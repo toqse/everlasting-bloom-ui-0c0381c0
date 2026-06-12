@@ -41,7 +41,7 @@ const baseSidebarLinks = [
   { name: "Profile", href: "/dashboard/profile", icon: User },
   { name: "Interests", href: "/dashboard/interests", icon: Heart },
   { name: "Chat List", href: "/dashboard/chat-list", icon: MessageCircle },
-  { name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
+  //{ name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -251,9 +251,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <DashboardAmbientBackground />
 
       {/* Desktop: fixed-height container so only main content scrolls; sidebar stays fixed. Mobile: normal flow. */}
-      <div className="relative z-10 flex w-full min-w-0 max-w-full flex-col px-3 pt-4 pb-8 min-h-screen max-lg:min-h-min sm:px-4 lg:h-screen lg:min-h-0 lg:overflow-hidden lg:px-10">
+      <div className="relative z-10 flex w-full min-w-0 max-w-full flex-col px-3 pt-2 pb-8 min-h-screen max-lg:min-h-min sm:px-4 lg:h-screen lg:min-h-0 lg:overflow-hidden lg:px-10 lg:pt-4">
         {/* Mobile header: stay inside horizontal padding — negative mx caused sub-pixel overflow/jerk */}
-        <div className="lg:hidden sticky top-0 z-40 py-3 mb-3 rounded-xl border border-primary/10 bg-background/95 backdrop-blur-md shadow-sm">
+        <div className="lg:hidden sticky top-0 z-40 py-2.5 mb-2 rounded-xl border border-primary/10 bg-background/95 backdrop-blur-md shadow-sm">
           <div className="flex items-center gap-3">
             <button
               type="button"

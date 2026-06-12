@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import PhotoCropDialog, {
   type PhotoCropDialogState,
@@ -21,8 +21,11 @@ import {
   MapPin,
   UserCircle,
   FileText,
+  Sparkles,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,7 +79,15 @@ import type {
   IncomeRangeMaster,
 } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { BASE_URL } from "@/lib/config";
+import DemoPaymentDialog from "@/components/DemoPaymentDialog";
+import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
+import {
+  getMyHoroscopeProfile,
+  postAstrologyPdfOrder,
+  type HoroscopeProfileData,
+} from "@/lib/astrologyApi";
 
 const PARENT_LIFE_STATUS_OPTIONS = ["Alive", "Late"];
 const PARTNER_RELIGION_OPTIONS = [
@@ -588,21 +599,24 @@ const PHOTO_KEYS = [
   "aadhaar_back",
 ] as const;
 
+/**
+ * Mirrors signup `PhotosStep`: the square "Full Photo" is the primary
+ * `profile_photo`, and the 4:5 "Passport Photo" is stored as `full_photo`.
+ */
 const PHOTO_LABELS: Record<string, string> = {
-  profile_photo: "Profile Photo",
-  full_photo: "Full Photo",
-  selfie_photo: "Selfie Photo",
+  profile_photo: "Full Photo",
+  full_photo: "Passport Photo",
+  selfie_photo: "Selfie",
   family_photo: "Family Photo",
-  aadhaar_front: "Aadhaar (Front)",
-  aadhaar_back: "Aadhaar (Back)",
+  aadhaar_front: "Aadhaar Front",
+  aadhaar_back: "Aadhaar Back",
 };
 
-/** Same tolerances and ratios as signup `PhotosStep` (see `PhotoCropDialog`). */
-const PHOTO_ASPECT_TOLERANCE = 0.02;
+/** Same slot ratios as signup `PhotosStep`. */
 const PHOTO_SLOT_ASPECTS: Partial<Record<(typeof PHOTO_KEYS)[number], number>> =
   {
-    profile_photo: 4 / 5,
-    full_photo: 1,
+    profile_photo: 1,
+    full_photo: 4 / 5,
     selfie_photo: 1,
     family_photo: 20 / 9,
   };
@@ -611,10 +625,12 @@ function PhotoSlotPreview({
   file,
   existingPath,
   label,
+  aspect,
 }: {
   file: File | null | undefined;
   existingPath: string | null | undefined;
   label: string;
+  aspect?: number;
 }) {
   const [objectUrl, setObjectUrl] = useState("");
   useEffect(() => {
@@ -633,7 +649,10 @@ function PhotoSlotPreview({
       : "";
   if (!previewUrl) return null;
   return (
-    <div className="rounded-xl overflow-hidden border border-border bg-muted/30 w-full max-w-[200px] aspect-[3/4]">
+    <div
+      className="rounded-xl overflow-hidden border border-border bg-muted/30 w-full max-w-[200px]"
+      style={{ aspectRatio: aspect ? String(aspect) : "3 / 4" }}
+    >
       <img
         src={previewUrl}
         alt={label}
@@ -777,21 +796,17 @@ function EditSectionForm({
       const url = URL.createObjectURL(file);
       const img = new window.Image();
       img.onload = () => {
-        const imageAspect = img.naturalWidth / img.naturalHeight;
-        const needsCrop =
-          Math.abs(imageAspect - aspect) > PHOTO_ASPECT_TOLERANCE;
-        if (needsCrop) {
-          setCropState({
+        // Always open the cropper for main slots so behavior matches signup.
+        setCropState((prev) => {
+          if (prev?.src) URL.revokeObjectURL(prev.src);
+          return {
             src: url,
             aspect,
             slotKey: key,
             fileName: file.name,
             label: PHOTO_LABELS[key] ?? key.replace(/_/g, " "),
-          });
-        } else {
-          URL.revokeObjectURL(url);
-          onPhotoChange?.(key, file);
-        }
+          };
+        });
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
@@ -907,7 +922,7 @@ function EditSectionForm({
             <Input
               id="phone"
               type="tel"
-              value={data.phone}
+              value={formatPhoneDisplay(data.phone)}
               readOnly
               placeholder="e.g. +91 9876543210"
               title="Phone number cannot be changed here"
@@ -919,7 +934,7 @@ function EditSectionForm({
             <Input
               id="email"
               type="email"
-              value={data.email}
+              defaultValue=""
               onChange={(e) => update("email", e.target.value)}
               placeholder="e.g. name@example.com"
             />
@@ -1522,6 +1537,11 @@ function EditSectionForm({
                       file={file ?? null}
                       existingPath={existingPath ?? null}
                       label={label}
+                      aspect={
+                        PHOTO_SLOT_ASPECTS[
+                          key as keyof typeof PHOTO_SLOT_ASPECTS
+                        ]
+                      }
                     />
                   </div>
                 );
@@ -1840,7 +1860,7 @@ function EditSectionForm({
               ))}
             </select>
           </div>
-          <div className="grid gap-4 md:col-span-3 md:grid-cols-4">
+          <div className="grid gap-4 md:col-span-3 grid-cols-2 md:grid-cols-4 items-end">
             <div className="grid gap-2">
               <Label htmlFor="numberOfBrothers">No. of Brothers</Label>
               <Input
@@ -2115,7 +2135,7 @@ function ViewSectionContent({
             "Date of Birth",
             data.dob.trim() ? formatDateDdMmYyyy(data.dob) : "",
           )}
-          {row("Phone", data.phone)}
+          {row("Phone", formatPhoneDisplay(data.phone))}
           {row("Email", data.email)}
         </div>
       );
@@ -2249,7 +2269,65 @@ const UserProfilePage = () => {
     null,
   );
   const [photoFiles, setPhotoFiles] = useState<Record<string, File | null>>({});
-  const editPanelRef = useRef<HTMLDivElement>(null);
+  const [horoscopeData, setHoroscopeData] = useState<HoroscopeProfileData | null>(
+    null,
+  );
+  const [horoscopeLoading, setHoroscopeLoading] = useState(false);
+  const [horoscopeError, setHoroscopeError] = useState<string | null>(null);
+  const [horoscopeOpen, setHoroscopeOpen] = useState(false);
+  const [loadingThalakuri, setLoadingThalakuri] = useState(false);
+  const [demoPaymentOpen, setDemoPaymentOpen] = useState(false);
+  const [demoDownloadUrl, setDemoDownloadUrl] = useState("");
+  const [demoPaymentAmount, setDemoPaymentAmount] = useState(20);
+
+  const handleFetchMyHoroscope = async () => {
+    setHoroscopeLoading(true);
+    setHoroscopeError(null);
+    try {
+      const res = await getMyHoroscopeProfile("south");
+      const profile = res.data;
+      const hasProfile =
+        !!profile && profile.exists !== false && profile.id != null;
+      if (!hasProfile) {
+        setHoroscopeData(null);
+        setHoroscopeError(
+          "No horoscope found yet. Please update your birth details first.",
+        );
+        return;
+      }
+      setHoroscopeData(profile);
+      setHoroscopeOpen(true);
+    } catch (e) {
+      setHoroscopeData(null);
+      setHoroscopeError(
+        e instanceof Error ? e.message : "Could not load horoscope.",
+      );
+    } finally {
+      setHoroscopeLoading(false);
+    }
+  };
+
+  const handleThalakuriPurchase = async () => {
+    setLoadingThalakuri(true);
+    try {
+      const orderRes = await postAstrologyPdfOrder({ product: "thalakuri" });
+      const order = orderRes.data;
+      const downloadUrl = order.download_url?.trim();
+      if (order.demo && downloadUrl) {
+        setDemoPaymentAmount(order.price_inr ?? 20);
+        setDemoDownloadUrl(downloadUrl);
+        setDemoPaymentOpen(true);
+        return;
+      }
+      toast.error("Thalakuri demo payment is unavailable. Please try again.");
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not start Thalakuri purchase.",
+      );
+    } finally {
+      setLoadingThalakuri(false);
+    }
+  };
 
   const [locationCountries, setLocationCountries] = useState<Country[]>([]);
   const [locationStates, setLocationStates] = useState<State[]>([]);
@@ -2666,14 +2744,6 @@ const UserProfilePage = () => {
     setPhotoFiles((prev) => ({ ...prev, [key]: file }));
   }, []);
 
-  useEffect(() => {
-    if (editingSection !== "Photos") return;
-    editPanelRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, [editingSection, photoFiles]);
-
   const buildLocationBody = (): LocationBody => ({
     country_id: profileData.country_id ?? 0,
     state_id: profileData.state_id ?? 0,
@@ -2823,8 +2893,8 @@ const UserProfilePage = () => {
   };
 
   return (
-    <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
+    <div className="space-y-4 lg:space-y-6">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary">
           My Profile
         </h1>
 
@@ -2851,39 +2921,196 @@ const UserProfilePage = () => {
               ))}
             </div>
 
-            {viewingSection && (
-              <div className="mt-4 bg-white rounded-3xl shadow-card p-6 border border-primary/10">
-                <h2 className="font-serif text-xl font-bold text-secondary mb-4">
-                  {viewingSection}
-                </h2>
+            <div className="rounded-3xl border border-primary/10 bg-white shadow-card p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-accent-rose/30 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-secondary">
+                    My Horoscope
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    View your horoscope details or download Thalakuri PDF
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-primary/20"
+                  type="button"
+                  onClick={handleFetchMyHoroscope}
+                  disabled={horoscopeLoading}
+                >
+                  {horoscopeLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading…
+                    </>
+                  ) : (
+                    "My Horoscope"
+                  )}
+                </Button>
+                <Button
+                  variant="hero"
+                  className="flex-1"
+                  type="button"
+                  onClick={handleThalakuriPurchase}
+                  disabled={loadingThalakuri}
+                >
+                  {loadingThalakuri ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Processing…
+                    </>
+                  ) : (
+                    "Thalakury"
+                  )}
+                </Button>
+              </div>
+
+              {horoscopeError && (
+                <p className="text-sm text-destructive">{horoscopeError}</p>
+              )}
+
+            </div>
+
+            <ResponsiveModal
+              open={horoscopeOpen}
+              onOpenChange={setHoroscopeOpen}
+              title="My Horoscope"
+              footer={
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setHoroscopeOpen(false)}
+                >
+                  Close
+                </Button>
+              }
+            >
+              {horoscopeData && (
+                <div className="space-y-3">
+                  {(horoscopeData.star_display ||
+                    horoscopeData.charts?.star?.name) && (
+                    <p className="text-sm font-medium text-foreground">
+                      {[
+                        horoscopeData.star_display ||
+                          horoscopeData.charts?.star?.name,
+                        horoscopeData.nakshatra_pada != null
+                          ? `Pada ${horoscopeData.nakshatra_pada}`
+                          : horoscopeData.charts?.star?.pada != null
+                            ? `Pada ${horoscopeData.charts.star.pada}`
+                            : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {(horoscopeData.rasi_display ||
+                    horoscopeData.lagnam_display ||
+                    horoscopeData.rasi_sign ||
+                    horoscopeData.lagnam) && (
+                    <p className="text-xs text-muted-foreground">
+                      {[
+                        horoscopeData.rasi_display || horoscopeData.rasi_sign
+                          ? `Rasi: ${horoscopeData.rasi_display || horoscopeData.rasi_sign}`
+                          : null,
+                        horoscopeData.lagnam_display || horoscopeData.lagnam
+                          ? `Lagna: ${horoscopeData.lagnam_display || horoscopeData.lagnam}`
+                          : null,
+                        horoscopeData.dasa_display
+                          ? `Dasa: ${horoscopeData.dasa_display}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {horoscopeData.charts ? (
+                    <div className="max-w-xs sm:max-w-sm mx-auto">
+                      <SelfHoroscopeChart
+                        charts={horoscopeData.charts}
+                        headerLine={user?.matriId?.trim()}
+                        name={horoscopeData.pr_name || profileData.name}
+                        dateOfBirth={horoscopeData.pr_dob}
+                        timeOfBirth={horoscopeData.pr_tob}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Horoscope loaded. Chart details will appear once
+                      calculation is complete.
+                    </p>
+                  )}
+                </div>
+              )}
+            </ResponsiveModal>
+
+            <ResponsiveModal
+              open={!!viewingSection}
+              onOpenChange={(o) => {
+                if (!o) setViewingSection(null);
+              }}
+              title={viewingSection ?? undefined}
+              footer={
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setViewingSection(null)}
+                >
+                  Close
+                </Button>
+              }
+            >
+              {viewingSection && (
                 <ViewSectionContent
                   section={viewingSection}
                   data={profileData}
                   photos={profileApiData?.photos}
                 />
-                <div className="flex justify-end mt-4">
+              )}
+            </ResponsiveModal>
+
+            <ResponsiveModal
+              open={!!editingSection}
+              onOpenChange={(o) => {
+                if (!o) {
+                  if (editingSection === "Photos") setPhotoFiles({});
+                  setEditingSection(null);
+                }
+              }}
+              title={editingSection ? `Edit ${editingSection}` : undefined}
+              contentClassName="max-w-3xl lg:max-w-4xl"
+              bodyClassName="[&_input]:bg-white [&_select]:bg-white [&_textarea]:bg-white [&_input]:border-border [&_select]:border-border [&_textarea]:border-border"
+              footer={
+                <>
                   <Button
                     variant="outline"
                     type="button"
-                    onClick={() => setViewingSection(null)}
+                    onClick={() => {
+                      if (editingSection === "Photos") setPhotoFiles({});
+                      setEditingSection(null);
+                    }}
                   >
-                    Close
+                    Cancel
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {editingSection && (
-              <div
-                ref={editPanelRef}
-                className="mt-4 bg-white rounded-3xl shadow-card p-6 border border-primary/10 min-h-[420px] md:min-h-[500px] [&_input]:bg-white [&_select]:bg-white [&_textarea]:bg-white [&_input]:border-border [&_select]:border-border [&_textarea]:border-border"
-              >
-                <h2 className="font-serif text-xl font-bold text-secondary mb-4">
-                  Edit {editingSection}
-                </h2>
-                {saveError && (
-                  <p className="text-sm text-destructive mb-4">{saveError}</p>
-                )}
+                  <Button
+                    variant="hero"
+                    type="button"
+                    onClick={handleSaveSection}
+                  >
+                    Save
+                  </Button>
+                </>
+              }
+            >
+              {saveError && (
+                <p className="text-sm text-destructive mb-4">{saveError}</p>
+              )}
+              {editingSection && (
                 <EditSectionForm
                   section={editingSection}
                   data={profileData}
@@ -3011,29 +3238,18 @@ const UserProfilePage = () => {
                     editingSection === "Photos" ? handlePhotoChange : undefined
                   }
                 />
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => {
-                      if (editingSection === "Photos") setPhotoFiles({});
-                      setEditingSection(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="hero"
-                    type="button"
-                    onClick={handleSaveSection}
-                  >
-                    Save
-                  </Button>
-                </div>
-              </div>
-            )}
+              )}
+            </ResponsiveModal>
           </>
         )}
+
+      <DemoPaymentDialog
+        open={demoPaymentOpen}
+        onOpenChange={setDemoPaymentOpen}
+        amount={demoPaymentAmount}
+        productLabel="Thalakuri PDF"
+        downloadUrl={demoDownloadUrl}
+      />
     </div>
   );
 };

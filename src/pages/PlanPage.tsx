@@ -24,6 +24,7 @@ import {
   type AvailablePlan,
   type MyPlanDetails,
 } from "@/lib/plansApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateDdMmYyyy } from "@/lib/utils";
 
 /* ─── Styling map by plan name ──────────────────────────────── */
@@ -413,11 +414,7 @@ const PlanPage = () => {
       setMyPlan(myRes.value.data);
       setMyPlanError(null);
     } else {
-      setMyPlanError(
-        myRes.reason instanceof Error
-          ? myRes.reason.message
-          : "Could not load your plan",
-      );
+      setMyPlanError(getDisplayErrorMessage(myRes.reason));
     }
   }, []);
 
@@ -436,20 +433,12 @@ const PlanPage = () => {
         if (plansRes.status === "fulfilled") {
           setApiPlans(plansRes.value.data.plans);
         } else {
-          setError(
-            plansRes.reason instanceof Error
-              ? plansRes.reason.message
-              : "Failed to load plans",
-          );
+          setError(getDisplayErrorMessage(plansRes.reason));
         }
         if (myRes.status === "fulfilled") {
           setMyPlan(myRes.value.data);
         } else {
-          setMyPlanError(
-            myRes.reason instanceof Error
-              ? myRes.reason.message
-              : "Could not load your plan",
-          );
+          setMyPlanError(getDisplayErrorMessage(myRes.reason));
           setMyPlan(null);
         }
       } finally {
@@ -473,10 +462,10 @@ const PlanPage = () => {
   return (
     <>
       <div className="space-y-8">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground pb-3 border-b border-gray-200">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-foreground pb-3 border-b border-gray-200">
           Plans &amp; Pricing
         </h1>
-        <p className="text-sm text-muted-foreground -mt-4 mb-2">
+        <p className="text-sm text-muted-foreground max-lg:mb-0 max-lg:mt-0 lg:-mt-4 mb-2">
           Your purchased plan and usage are loaded from your account. Upgrade or
           renew anytime below.
         </p>

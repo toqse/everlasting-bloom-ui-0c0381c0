@@ -78,7 +78,13 @@ async function authedFetch<T>(
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   logAstrologyResponse(path, opts.method, res.status, data);
 
-  if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
+  if (!res.ok) {
+    const error = new Error(getErrorMessage(data, "Request failed")) as Error & {
+      status?: number;
+    };
+    error.status = res.status;
+    throw error;
+  }
   return data as T;
 }
 
@@ -322,7 +328,12 @@ export interface HoroscopeProfileEnvelope {
 
 export interface HoroscopeProfileResponse {
   success: boolean;
-  data: HoroscopeProfileEnvelope;
+  /**
+   * Backend returns the horoscope profile FLAT inside `data`
+   * (HoroscopeProfileSerializer), or `{ exists: false, is_calculated: false }`
+   * when the profile has not been created yet.
+   */
+  data: HoroscopeProfileData & { exists?: boolean };
 }
 
 export interface GenerateBody {
@@ -335,22 +346,55 @@ export interface GenerateResponse {
   data: HoroscopeMeData;
 }
 
-export interface PoruthamBody {
-  bride_id: number;
-  groom_id: number;
+export interface PoruthamMatchBody {
+  matri_id: string;
+  partner_matri_id: string;
 }
 
-export interface PoruthamResponseData {
+export interface PoruthamGrahanilaPerson {
+  matri_id: string;
+  name: string;
+  gender: string;
+  profile_photo?: string | null;
+  horoscope: HoroscopeProfileData;
+}
+
+export interface PoruthamMatchData {
+  dinam?: number;
+  ganam?: number;
+  mahendra?: number;
+  sthree_deerga?: number;
+  yoni?: number;
+  rasi?: number;
+  rasyadhipam?: number;
+  vasyam?: number;
+  rajju_dosham?: number;
+  vedha_dosham?: number;
+  chovva_dosham?: boolean;
+  bride_papatha?: number;
+  groom_papatha?: number;
+  uthamam_count?: number;
+  madhyamam_count?: number;
+  adhamam_count?: number;
+  total_porutham_count?: number;
+  has_dosha?: boolean;
+  overall_result?: string;
+  grades?: Record<string, string>;
   poruthams: Record<string, boolean>;
-  koota_points?: Record<string, number>;
   score: number;
   max_score: number;
   result: string;
+  /** Absolute or relative URL to the match report PDF (preferred over match-report endpoint). */
+  match_report_url?: string | null;
+  grahanila?: {
+    bride: PoruthamGrahanilaPerson;
+    groom: PoruthamGrahanilaPerson;
+  };
 }
 
-export interface PoruthamResponse {
+export interface PoruthamMatchResponse {
   success: boolean;
-  data: PoruthamResponseData;
+  data: PoruthamMatchData;
 }
 
 export type AstrologyPdfProduct = "jathakam" | "thalakuri";
@@ -360,12 +404,15 @@ export interface AstrologyPdfOrderBody {
 }
 
 export interface AstrologyPdfOrderData {
-  order_id: string;
+  order_id?: string;
   amount: number;
   currency: string;
-  key_id: string;
+  key_id?: string;
   product: AstrologyPdfProduct;
   price_inr: number;
+  /** Present when Razorpay is not configured — demo Thalakuri flow. */
+  demo?: boolean;
+  download_url?: string;
 }
 
 export interface AstrologyPdfOrderResponse {
@@ -435,7 +482,13 @@ async function authedGet<T>(path: string): Promise<T> {
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
   logAstrologyResponse(path, "GET", res.status, data);
 
-  if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
+  if (!res.ok) {
+    const error = new Error(getErrorMessage(data, "Request failed")) as Error & {
+      status?: number;
+    };
+    error.status = res.status;
+    throw error;
+  }
   return data as T;
 }
 
@@ -558,12 +611,79 @@ export async function getBirthDetailCandidates(params?: {
   return authedFetch<BirthDetailCandidatesResponse>(path, { method: "GET" });
 }
 
-/** POST /api/v1/astrology/porutham/ — uses stored horoscopes only; consumes quota */
-export async function postPorutham(body: PoruthamBody): Promise<PoruthamResponse> {
-  return authedFetch<PoruthamResponse>("v1/astrology/porutham/", {
+/** POST /api/v1/astrology/porutham/ — matri_id + partner_matri_id; consumes horoscope quota */
+export async function postPoruthamMatch(
+  body: PoruthamMatchBody,
+): Promise<PoruthamMatchResponse> {
+  return authedFetch<PoruthamMatchResponse>("v1/astrology/porutham/", {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export interface MatchReportPdf {
+  blob: Blob;
+  filename: string;
+}
+
+/** Extracts the download filename from a Content-Disposition header. */
+function parseContentDispositionFilename(
+  disposition: string | null,
+  fallback: string,
+): string {
+  if (!disposition) return fallback;
+  const encoded = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(disposition);
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      /* fall through to basic match */
+    }
+  }
+  const basic = /filename="?([^";]+)"?/i.exec(disposition);
+  if (basic?.[1]) return basic[1].trim();
+  return fallback;
+}
+
+/**
+ * GET /api/v1/astrology/match-report/?partner_matri_id=... → PDF blob.
+ * Returns the binary report plus the server-provided filename. Throws with a
+ * `.status` (e.g. 403 when quota is exhausted) and a parsed JSON error message.
+ */
+export async function getMatchReportPdf(
+  partnerMatriId: string,
+): Promise<MatchReportPdf> {
+  const pid = partnerMatriId.trim();
+  const q = new URLSearchParams({ partner_matri_id: pid });
+  const path = `v1/astrology/match-report/?${q}`;
+  const url = `${BASE_URL}${path}`;
+  logAstrologyRequest(path, "GET", null);
+
+  const res = await memberFetchWithAuthRetry(url, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as ApiErrorPayload;
+    logAstrologyResponse(path, "GET", res.status, data);
+    const error = new Error(
+      getErrorMessage(data, "Could not download match report."),
+    ) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
+
+  const blob = await res.blob();
+  const filename = parseContentDispositionFilename(
+    res.headers.get("Content-Disposition"),
+    `match_report_${pid}.pdf`,
+  );
+  logAstrologyResponse(path, "GET", res.status, {
+    filename,
+    size: blob.size,
+    type: blob.type,
+  });
+  return { blob, filename };
 }
 
 /** POST /api/v1/astrology/pdf/order/ */

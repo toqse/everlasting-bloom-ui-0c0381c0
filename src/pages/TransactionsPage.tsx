@@ -32,6 +32,7 @@ import {
   type TransactionType,
   type TransactionStatus,
 } from "@/lib/transactionsApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateDdMmYyyy } from "@/lib/utils";
 
 // ---- Config maps ----
@@ -101,7 +102,7 @@ const DetailModal = ({ transactionId, onClose }: DetailModalProps) => {
     getTransactionDetail(transactionId)
       .then((res) => setDetail(res.data))
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load details"),
+        setError(getDisplayErrorMessage(err)),
       )
       .finally(() => setLoading(false));
   }, [transactionId]);
@@ -250,9 +251,7 @@ const TransactionsPage = () => {
       setTotalPages(Math.max(1, Math.ceil(listRes.data.total / LIMIT)));
       setTotalCount(countRes.data.total_transactions);
     } catch (err) {
-      setLoadError(
-        err instanceof Error ? err.message : "Failed to load transactions",
-      );
+      setLoadError(getDisplayErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -282,10 +281,10 @@ const TransactionsPage = () => {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-6">
         {/* Page header */}
         <div className="flex items-center justify-between">
-          <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
+          <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary">
             Transactions
           </h1>
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-gold/30 border border-secondary/20">

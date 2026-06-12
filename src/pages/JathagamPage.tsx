@@ -28,6 +28,7 @@ import {
   formatTimeOfBirthDisplay,
 } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { toast } from "sonner";
 import {
   getBirthDetails,
@@ -66,6 +67,7 @@ import {
 import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
+import DemoPaymentDialog from "@/components/DemoPaymentDialog";
 
 declare global {
   interface Window {
@@ -403,6 +405,9 @@ export default function JathagamPage() {
   const [processingPdfProduct, setProcessingPdfProduct] =
     useState<AstrologyPdfProduct | null>(null);
   const [downloadingMatchPdf, setDownloadingMatchPdf] = useState(false);
+  const [demoPaymentOpen, setDemoPaymentOpen] = useState(false);
+  const [demoDownloadUrl, setDemoDownloadUrl] = useState("");
+  const [demoPaymentAmount, setDemoPaymentAmount] = useState(20);
   /** If §4b JSON fails, show PNG charts in the pair columns again. */
   const [matchJsonChartFailed, setMatchJsonChartFailed] = useState(false);
 
@@ -454,7 +459,7 @@ export default function JathagamPage() {
             nextCandidates = [];
             resolvedSelected = "";
             nextCandError =
-              e instanceof Error ? e.message : "Could not load candidates.";
+              getDisplayErrorMessage(e);
             setCandidates([]);
             setSelectedMatriId("");
             setCandidatesError(nextCandError);
@@ -484,7 +489,7 @@ export default function JathagamPage() {
         candidatesError: nextCandError,
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load page data.");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setLoadingInitial(false);
     }
@@ -523,7 +528,7 @@ export default function JathagamPage() {
       setPlaceOfBirth(res.data?.place_of_birth?.trim() ?? place);
     } catch (e) {
       toast.error(
-        e instanceof Error ? e.message : "Could not save birth details.",
+        getDisplayErrorMessage(e),
       );
     } finally {
       setSavingBirthDetails(false);
@@ -534,11 +539,19 @@ export default function JathagamPage() {
     setGeneratingChart(true);
     try {
       const res = await getMyHoroscopeProfile("south");
-      setSelfHoroscopeData(res.data?.horoscope ?? null);
+      const profile = res.data;
+      const hasProfile =
+        !!profile && profile.exists !== false && profile.id != null;
+      setSelfHoroscopeData(hasProfile ? profile : null);
       setMatchResponseData(null);
       setMatchBlock(null);
+      if (!hasProfile) {
+        toast.message(
+          "No horoscope found yet. Please update your birth details first.",
+        );
+      }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not load horoscope.";
+      const msg = getDisplayErrorMessage(e);
       toast.error(msg);
     } finally {
       setGeneratingChart(false);
@@ -580,7 +593,7 @@ export default function JathagamPage() {
         // banner may stay stale; non-fatal
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not check match.");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setCheckingMatch(false);
     }
@@ -610,7 +623,7 @@ export default function JathagamPage() {
       toast.success("Match report downloaded.");
     } catch (e) {
       toast.error(
-        e instanceof Error ? e.message : "Could not generate match report PDF.",
+        getDisplayErrorMessage(e),
       );
     } finally {
       setDownloadingMatchPdf(false);
@@ -620,21 +633,36 @@ export default function JathagamPage() {
   const handleBuyAstrologyPdf = async (product: AstrologyPdfProduct) => {
     setProcessingPdfProduct(product);
     try {
+      const orderRes = await postAstrologyPdfOrder({ product });
+      const order = orderRes.data;
+
+      if (
+        product === "thalakuri" &&
+        order.demo &&
+        order.download_url?.trim()
+      ) {
+        setDemoPaymentAmount(order.price_inr ?? 20);
+        setDemoDownloadUrl(order.download_url.trim());
+        setDemoPaymentOpen(true);
+        return;
+      }
+
       const sdkReady = await ensureRazorpayScript();
       if (!sdkReady || !window.Razorpay) {
         throw new Error("Could not load Razorpay checkout.");
       }
       const RazorpayCtor = window.Razorpay;
 
-      const orderRes = await postAstrologyPdfOrder({ product });
-      const order = orderRes.data;
+      if (!order.order_id || !order.key_id) {
+        throw new Error("Invalid payment order response.");
+      }
 
       await new Promise<void>((resolve, reject) => {
         const rz = new RazorpayCtor({
-          key: order.key_id,
+          key: order.key_id!,
           amount: order.amount,
           currency: order.currency,
-          order_id: order.order_id,
+          order_id: order.order_id!,
           name: "Matrimony Astrology",
           description:
             product === "jathakam" ? "Jathakam PDF" : "Thalakuri PDF",
@@ -1369,6 +1397,14 @@ export default function JathagamPage() {
             </div>
           ) : null}
         </div>
+
+      <DemoPaymentDialog
+        open={demoPaymentOpen}
+        onOpenChange={setDemoPaymentOpen}
+        amount={demoPaymentAmount}
+        productLabel="Thalakuri PDF"
+        downloadUrl={demoDownloadUrl}
+      />
       </div>
   );
 }

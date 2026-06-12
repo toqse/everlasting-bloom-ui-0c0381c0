@@ -17,6 +17,7 @@ import {
   type MatchProfile,
   type ProfilePreviewData,
 } from "@/lib/matchesApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 
 const DEFAULT_LIMIT = 10;
 
@@ -41,7 +42,7 @@ const DashboardFavoritesPage = () => {
       setProfiles(res.data.profiles);
       setTotal(res.data.total);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load wishlist");
+      setError(getDisplayErrorMessage(e));
       setProfiles([]);
       setTotal(0);
     } finally {
@@ -63,7 +64,7 @@ const DashboardFavoritesPage = () => {
       setPreview(profileRes.data);
       setPreviewCanChat(!!chatRes.data.can_chat);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load profile");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setActionLoading(null);
     }
@@ -85,7 +86,7 @@ const DashboardFavoritesPage = () => {
         }
       } catch (e) {
         toast.error(
-          e instanceof Error ? e.message : "Failed to update wishlist",
+          getDisplayErrorMessage(e),
         );
       } finally {
         setActionLoading(null);
@@ -137,7 +138,7 @@ const DashboardFavoritesPage = () => {
         if (convoId) router.push(`/chat/${convoId}`);
         else router.push("/dashboard/chat-list");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to start chat");
+        toast.error(getDisplayErrorMessage(e));
       } finally {
         setActionLoading(null);
       }
@@ -165,8 +166,8 @@ const DashboardFavoritesPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl border border-primary/10 bg-card/90 px-5 py-5 shadow-card"
         >
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="font-serif text-2xl font-bold text-secondary">
+          <div className="flex items-center justify-between gap-3 max-lg:justify-start">
+            <h1 className="max-lg:hidden font-serif text-2xl font-bold text-secondary">
               Favorites
             </h1>
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">

@@ -49,17 +49,44 @@ const RASI_VARIANT_TO_CANONICAL: Record<string, string> = (() => {
   const pairs: Array<[readonly string[], string]> = [
     [["Meena", "Meenam", "meena", "meenam", "pisces", "pisceses"], "Meena"],
     [["Mesha", "Medam", "mesha", "mesam", "medam", "mesham", "aries"], "Mesha"],
-    [["Vrishabha", "Vrisha", "vrishabha", "idavam", "edavam", "taurus"], "Vrishabha"],
+    [
+      ["Vrishabha", "Vrisha", "vrishabha", "idavam", "edavam", "taurus"],
+      "Vrishabha",
+    ],
     [["Mithuna", "mithuna", "mithunam", "midhunam", "Gemini"], "Mithuna"],
     [["Kumbha", "Kumbham", "kumbha", "kumbham", "Aquarius"], "Kumbha"],
     [
-      ["Karka", "Karkataka", "Karkida", "karka", "karkataka", "karkatakam", "kark", "karkidakam", "cancer"],
+      [
+        "Karka",
+        "Karkataka",
+        "Karkida",
+        "karka",
+        "karkataka",
+        "karkatakam",
+        "kark",
+        "karkidakam",
+        "cancer",
+      ],
       "Karka",
     ],
     [["Makara", "makara", "makaram", "Capricorn"], "Makara"],
     [["Simha", "simha", "chingam", "simham", "leo"], "Simha"],
-    [["Dhanus", "Dhanu", "dhanus", "dhanu", "saggitarius", "sagittarius"], "Dhanus"],
-    [["Vrishchika", "Vrischika", "vrushchika", "vrishchika", "vrushchikam", "vrishchikam", "Scorpio"], "Vrishchika"],
+    [
+      ["Dhanus", "Dhanu", "dhanus", "dhanu", "saggitarius", "sagittarius"],
+      "Dhanus",
+    ],
+    [
+      [
+        "Vrishchika",
+        "Vrischika",
+        "vrushchika",
+        "vrishchika",
+        "vrushchikam",
+        "vrishchikam",
+        "Scorpio",
+      ],
+      "Vrishchika",
+    ],
     [["Tula", "Thula", "tula", "thulaam", "thulam", "tulaam", "Libra"], "Tula"],
     [["Kanya", "Kanni", "kanya", "kanni", "virgo"], "Kanya"],
   ];
@@ -75,8 +102,30 @@ const RASI_VARIANT_TO_CANONICAL: Record<string, string> = (() => {
   return out;
 })();
 
+/**
+ * Backend bug workaround: remap these Malayalam graha abbreviations as they come
+ * back in horoscope / porutham chart responses. Whole-string match via a single
+ * lookup, applied EXACTLY ONCE per label (only in {@link normalizeChartPlanetsMap}),
+ * so the conversions never chain — e.g. "ശ" → "മ" must NOT become "മാ".
+ */
+const ML_GRAHA_LABEL_FIX: Readonly<Record<string, string>> = {
+  കേ: "ശി",
+  ശ: "മ",
+  മ: "മാ",
+  രാ: "സ",
+};
+
+/** Apply the backend graha-label correction to a single chart body label. */
+export function correctGrahaLabel(label: string): string {
+  const t = label.trim();
+  return ML_GRAHA_LABEL_FIX[t] ?? label;
+}
+
 function stripParenLabel(s: string): string {
-  return s.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isMalayalamScript(s: string): boolean {
@@ -94,7 +143,9 @@ export function resolveChartRasiKey(rawKey: string): string | null {
     return hit ?? null;
   }
   const noParen = stripParenLabel(t);
-  const tryKeys = [t, noParen, t.split(/[\s,·]+/)[0] ?? t].map((k) => normSegment(k));
+  const tryKeys = [t, noParen, t.split(/[\s,·]+/)[0] ?? t].map((k) =>
+    normSegment(k),
+  );
   for (const k of tryKeys) {
     if (!k) continue;
     const hit = RASI_VARIANT_TO_CANONICAL[k];
@@ -107,7 +158,9 @@ export function resolveChartRasiKey(rawKey: string): string | null {
  * Merge planet lists from any API key spellings into the fixed grid keys the UI renders.
  * Without this, grahas under e.g. `pisces` / `meenam` / `Gemini` never appear in any cell.
  */
-export function normalizeChartPlanetsMap(raw: ChartPlanetsMap | undefined): ChartPlanetsMap {
+export function normalizeChartPlanetsMap(
+  raw: ChartPlanetsMap | undefined,
+): ChartPlanetsMap {
   if (!raw || typeof raw !== "object") return {};
   const out: ChartPlanetsMap = {};
   for (const [key, bodies] of Object.entries(raw)) {
@@ -117,7 +170,7 @@ export function normalizeChartPlanetsMap(raw: ChartPlanetsMap | undefined): Char
     if (!out[canon]) out[canon] = [];
     for (const b of bodies) {
       if (b == null) continue;
-      const label = String(b).trim();
+      const label = correctGrahaLabel(String(b).trim());
       if (label) out[canon]!.push(label);
     }
   }

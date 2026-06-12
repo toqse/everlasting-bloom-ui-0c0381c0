@@ -383,18 +383,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
                     {Number(formData.birth_longitude).toFixed(4)}
                   </p>
                 ) : null}
-                <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
-                  Place search powered by ©{" "}
-                  <a
-                    href="https://www.openstreetmap.org/copyright"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline"
-                  >
-                    OpenStreetMap
-                  </a>{" "}
-                  contributors
-                </p>
               </div>
             </div>
           ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatDateDdMmYyyy, parseApiDate } from "@/lib/utils";
 import {
@@ -18,6 +18,11 @@ import {
   Heart,
   Eye,
   RotateCcw,
+  SlidersHorizontal,
+  MapPin,
+  GraduationCap,
+  MessageCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,6 +49,7 @@ import {
   type ProfilePreviewData,
   type SortBy,
 } from "@/lib/matchesApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   getCastes,
   getEducations,
@@ -244,7 +250,7 @@ function MatchesOpenFromQuery({
       } catch (e) {
         if (!cancelled) {
           toast.error(
-            e instanceof Error ? e.message : "Failed to load profile",
+            getDisplayErrorMessage(e),
           );
           router.replace("/dashboard/matches", { scroll: false });
         }
@@ -317,6 +323,7 @@ const MatchesPage = () => {
     new Set(),
   );
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const skipPageFetchAfterResetRef = useRef(false);
 
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
   const [matchModalOpen, setMatchModalOpen] = useState(false);
@@ -491,7 +498,7 @@ const MatchesPage = () => {
           return next;
         });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load matches");
+        setError(getDisplayErrorMessage(e));
         setProfiles([]);
       } finally {
         setLoading(false);
@@ -511,12 +518,18 @@ const MatchesPage = () => {
   );
 
   useEffect(() => {
+    skipPageFetchAfterResetRef.current = true;
     setPage(1);
     fetchMatches(1);
   }, [fetchMatches]);
 
   useEffect(() => {
-    if (page === 1) return;
+    if (skipPageFetchAfterResetRef.current) {
+      if (page === 1) {
+        skipPageFetchAfterResetRef.current = false;
+      }
+      return;
+    }
     fetchMatches(page);
   }, [page, fetchMatches]);
 
@@ -588,7 +601,7 @@ const MatchesPage = () => {
         };
         await completeMatchPreviewOpen(mergedPreview);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to load profile");
+        toast.error(getDisplayErrorMessage(e));
       } finally {
         setActionLoading(null);
       }
@@ -639,7 +652,9 @@ const MatchesPage = () => {
 
   const handleCheckMatch = useCallback(
     (matriId: string) => {
-      router.push(`/dashboard/jathagam?profile=${encodeURIComponent(matriId)}`);
+      router.push(
+        `/dashboard/porutham-matching?partner=${encodeURIComponent(matriId)}`,
+      );
     },
     [router],
   );
@@ -649,7 +664,6 @@ const MatchesPage = () => {
       setActionLoading(matriId);
       try {
         const res = await startChatApi(matriId);
-        toast.success("Chat started.");
         const convoId = res.data.conversation_id;
         if (convoId) {
           router.push(`/chat/${convoId}`);
@@ -657,7 +671,7 @@ const MatchesPage = () => {
           router.push("/dashboard/chat-list");
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Failed to start chat";
+        const msg = getDisplayErrorMessage(e);
         if (
           msg.toLowerCase().includes("plan") ||
           msg.toLowerCase().includes("upgrade") ||
@@ -697,7 +711,7 @@ const MatchesPage = () => {
         return next;
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to update wishlist");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setActionLoading(null);
     }
@@ -717,13 +731,13 @@ const MatchesPage = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative shrink-0 overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] px-5 py-5 shadow-[0_12px_35px_-22px_hsl(var(--primary)/0.55)] backdrop-blur-sm md:px-7 md:py-6"
+            className="relative shrink-0 overflow-hidden lg:rounded-3xl lg:border lg:border-primary/15 lg:bg-gradient-to-br lg:from-card lg:via-card lg:to-primary/[0.04] lg:px-7 lg:py-6 lg:shadow-[0_12px_35px_-22px_hsl(var(--primary)/0.55)] lg:backdrop-blur-sm"
           >
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/[0.08] to-transparent" />
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/[0.08] to-transparent max-lg:hidden" />
+            <div className="flex flex-col gap-4 max-lg:hidden sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+                  <h1 className="max-lg:hidden font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                     New Matches Found
                   </h1>
                   <span
@@ -741,27 +755,38 @@ const MatchesPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 xl:flex xl:items-center xl:justify-between xl:gap-4 xl:space-y-0">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 max-lg:mt-0 max-lg:space-y-0 max-lg:border-0 max-lg:pt-0 xl:flex xl:items-center xl:justify-between xl:gap-4 xl:space-y-0">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground max-lg:hidden">
                 Refine &amp; sort
               </p>
-              {/* Mobile: one row (nowrap); sm+: can wrap */}
+              {/* Mobile: Check Match + Filters + Sort share one line; sm+: can wrap */}
               <div className="flex min-w-0 flex-nowrap items-center gap-2 rounded-xl border border-primary/10 bg-background/70 p-2 sm:flex-wrap sm:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="shrink-0 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:gap-2 sm:px-3 sm:text-sm"
+                  className="flex-1 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:flex-initial sm:shrink-0 sm:gap-2 sm:px-3 sm:text-sm"
                   onClick={() => openMatchModal()}
                 >
                   <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   Check Match
                 </Button>
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:flex-initial sm:justify-start sm:gap-2">
-                  <span className="shrink-0 text-xs text-muted-foreground sm:text-sm">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:flex-initial sm:shrink-0 sm:gap-2 sm:px-3 sm:text-sm xl:hidden"
+                  onClick={() => setShowFiltersMobile((v) => !v)}
+                  aria-expanded={showFiltersMobile}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                  Filters
+                </Button>
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 max-lg:hidden sm:flex-initial sm:justify-start sm:gap-2">
+                  <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline sm:text-sm">
                     Sort by
                   </span>
-                  <div className="relative min-w-0 max-w-[min(52vw,12rem)] sm:max-w-none">
+                  <div className="relative min-w-0 flex-1 sm:max-w-none">
                     <select
                       className="h-9 w-full min-w-[6.5rem] cursor-pointer appearance-none rounded-lg border border-primary/20 bg-background py-2 pl-2 pr-8 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[10.5rem] sm:pl-3 sm:pr-9 sm:text-sm"
                       value={sortBy}
@@ -786,16 +811,6 @@ const MatchesPage = () => {
 
           {/* xl:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
           <div className="flex min-h-0 flex-col gap-5 xl:h-0 xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch xl:gap-6 xl:overflow-hidden">
-            <div className="xl:hidden">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-center border-primary/20"
-                onClick={() => setShowFiltersMobile((v) => !v)}
-              >
-                {showFiltersMobile ? "Hide filters" : "Show filters"}
-              </Button>
-            </div>
             {/* Filters — fixed column on xl (scroll inside column only if filters exceed viewport) */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -959,7 +974,7 @@ const MatchesPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/10 bg-card/70 px-3 py-3 lg:mb-5"
+                className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/10 bg-card/70 px-3 py-3 max-lg:hidden lg:mb-5"
               >
                 <h2 className="font-serif text-lg font-bold text-foreground">
                   Showing{" "}
@@ -1058,6 +1073,7 @@ const MatchesPage = () => {
                           handleViewDetails(profile.matri_id)
                         }
                         onCheckMatch={() => openMatchModal(profile.matri_id)}
+                        onChat={() => handleChat(profile.matri_id)}
                         actionLoading={actionLoading}
                         compact={viewMode !== "list"}
                       />
@@ -1161,6 +1177,9 @@ const MatchesPage = () => {
         onChat={
           viewPreview ? () => handleChat(viewPreview.matri_id) : undefined
         }
+        onMatchHoroscope={
+          viewPreview ? () => handleCheckMatch(viewPreview.matri_id) : undefined
+        }
         onOpenPlanModal={() => setPlanModalOpen(true)}
       />
 
@@ -1174,11 +1193,11 @@ const MatchesPage = () => {
 
           {me && currentBride ? (
             <div className="space-y-4 sm:space-y-5">
-              <div className="grid grid-cols-2 gap-2 sm:gap-4 md:gap-6 items-stretch">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:gap-6 items-stretch">
                 {/* Profile owner (fixed) */}
                 <div className="flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-primary/10 bg-card p-2 shadow-card sm:gap-3 sm:p-4 md:min-h-[280px]">
                   <motion.div
-                    className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl"
+                    className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
@@ -1242,7 +1261,7 @@ const MatchesPage = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
-                        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-2xl">
                           {hasPhotoUrl(currentBride.profile_photo) ? (
                             <img
                               src={currentBride.profile_photo!.trim()}
@@ -1304,6 +1323,37 @@ const MatchesPage = () => {
   );
 };
 
+/** Convert a height in centimeters to a `5'4"` style string. */
+function cmToFtIn(cm: number | null | undefined): string | null {
+  if (!cm || cm <= 0) return null;
+  const totalInches = Math.round(cm / 2.54);
+  const ft = Math.floor(totalInches / 12);
+  const inch = totalInches % 12;
+  if (!ft) return null;
+  return `${ft}'${inch}"`;
+}
+
+/** One labelled cell in the desktop match card details grid. */
+const MatchDetailItem = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) => (
+  <div className="min-w-0">
+    <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-primary/60" aria-hidden />
+      <span className="truncate">{label}</span>
+    </div>
+    <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
+      {value || "—"}
+    </p>
+  </div>
+);
+
 const MatchListCard = ({
   profile,
   index,
@@ -1312,6 +1362,7 @@ const MatchListCard = ({
   onSendInterest,
   onViewDetails,
   onCheckMatch,
+  onChat,
   actionLoading,
   compact = false,
 }: {
@@ -1322,6 +1373,7 @@ const MatchListCard = ({
   onSendInterest: () => void;
   onViewDetails: () => void;
   onCheckMatch: () => void;
+  onChat?: () => void;
   actionLoading: string | null;
   compact?: boolean;
 }) => {
@@ -1362,6 +1414,33 @@ const MatchListCard = ({
       ? "Interest Rejected"
       : "Interest Sent";
 
+  // Compact detail rows used by the mobile list layout (matches the design spec).
+  const mobileDetailRows = [
+    [profile.age != null ? `${profile.age} yrs` : null, profile.location],
+    [profile.education, profile.occupation],
+    [profile.religion, profile.caste],
+  ]
+    .map((parts) => parts.filter(Boolean).join("  •  "))
+    .filter((row) => row.length > 0);
+
+  // Desktop (web) card derived values.
+  const heightDisplay = cmToFtIn(profile.height);
+  const idLine = [
+    profile.matri_id ? `ID: ${profile.matri_id}` : null,
+    [
+      profile.age != null ? `${profile.age} Yrs` : null,
+      heightDisplay,
+    ]
+      .filter(Boolean)
+      .join(", "),
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  const religionDisplay = [profile.religion, profile.caste]
+    .filter(Boolean)
+    .join(", ");
+  const shortLastSeen = profile.last_seen?.trim() || "Recently active";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -1374,8 +1453,8 @@ const MatchListCard = ({
       }}
       whileHover={{ y: -2 }}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-primary/12 bg-card shadow-[0_10px_30px_-24px_hsl(var(--foreground)/0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_16px_38px_-24px_hsl(var(--primary)/0.55)]",
-        compact ? "h-full" : "md:flex-row md:items-stretch",
+        "group relative flex overflow-hidden rounded-2xl border border-primary/12 bg-card shadow-[0_10px_30px_-24px_hsl(var(--foreground)/0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_16px_38px_-24px_hsl(var(--primary)/0.55)]",
+        compact ? "flex-col h-full" : "flex-row items-stretch",
         "cursor-pointer",
       )}
       onClick={onViewDetails}
@@ -1391,10 +1470,10 @@ const MatchListCard = ({
       {/* Photo + online dot + last login (match_percentage from API is not shown) */}
       <div
         className={cn(
-          "relative w-full shrink-0 overflow-hidden bg-muted",
+          "relative shrink-0 overflow-hidden bg-muted",
           compact
-            ? "h-48 sm:h-52"
-            : "h-56 md:h-auto md:w-[min(100%,280px)] md:min-h-[260px] lg:w-[300px]",
+            ? "h-48 w-full sm:h-52"
+            : "w-32 self-stretch sm:w-40 lg:w-44 lg:min-h-0",
         )}
       >
         {hasPhoto ? (
@@ -1412,127 +1491,306 @@ const MatchListCard = ({
             />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10">
+        {/* Bottom last-login overlay: grid (compact) cards only. */}
+        <div
+          className={cn(
+            "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pb-2 pt-10",
+            !compact && "hidden",
+          )}
+        >
           <p className="text-center text-xs font-medium text-white/95 drop-shadow-sm">
             {lastLoginLabel}
           </p>
         </div>
+        {/* Desktop list cards: status pill, top-left (per design). */}
+        {!compact && (
+          <div className="absolute left-2.5 top-2.5 z-10 hidden lg:block">
+            {isOnline ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-green-600/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                Online
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                {shortLastSeen}
+              </span>
+            )}
+          </div>
+        )}
         {profile.is_already_viewed === true ? (
-          <div className="absolute bottom-14 left-3 z-10 rounded-md border border-white/30 bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+          <div
+            className={cn(
+              "absolute left-2 z-10 rounded-md border border-white/30 bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm",
+              compact ? "bottom-14" : "bottom-2",
+            )}
+          >
             Viewed
           </div>
         ) : null}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
-        <div>
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <h3
-              className={cn(
-                "min-w-0 flex-1 font-serif font-bold tracking-tight text-foreground transition-colors group-hover:text-primary",
-                compact ? "text-lg sm:text-xl" : "text-xl md:text-2xl",
-              )}
-            >
-              {profile.name}
-            </h3>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLike();
-              }}
-              disabled={busy}
-              className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
-              aria-label={liked ? "Remove from favorites" : "Add to favorites"}
-              aria-pressed={liked}
-            >
-              <Heart
-                className={cn(
-                  "h-6 w-6",
-                  liked && "fill-secondary text-secondary",
-                )}
-              />
-            </button>
+      {compact ? (
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-3 sm:gap-4 sm:p-5">
+          <div>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h3 className="min-w-0 flex-1 truncate font-serif text-lg font-bold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-xl">
+                {profile.name}
+              </h3>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLike();
+                }}
+                disabled={busy}
+                className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                aria-label={liked ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={liked}
+              >
+                <Heart
+                  className={cn(
+                    "h-6 w-6",
+                    liked && "fill-secondary text-secondary",
+                  )}
+                />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex max-w-full items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/15">
+                <span className="truncate">{profile.education ?? "—"}</span>
+              </span>
+              <span className="inline-flex max-w-full items-center rounded-full bg-secondary/20 px-3 py-1 text-xs font-semibold text-secondary-foreground ring-1 ring-secondary/20">
+                <span className="truncate">{profile.occupation ?? "—"}</span>
+              </span>
+              <span className="inline-flex items-center rounded-full bg-[hsl(280_45%_94%)] px-3 py-1 text-xs font-semibold text-[hsl(280_35%_32%)] ring-1 ring-[hsl(280_35%_82%)]">
+                {profile.age} years old
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex max-w-full items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/15">
-              <span className="truncate">{profile.education ?? "—"}</span>
-            </span>
-            <span className="inline-flex max-w-full items-center rounded-full bg-secondary/20 px-3 py-1 text-xs font-semibold text-secondary-foreground ring-1 ring-secondary/20">
-              <span className="truncate">{profile.occupation ?? "—"}</span>
-            </span>
-            <span className="inline-flex items-center rounded-full bg-[hsl(280_45%_94%)] px-3 py-1 text-xs font-semibold text-[hsl(280_35%_32%)] ring-1 ring-[hsl(280_35%_82%)]">
-              {profile.age} years old
-            </span>
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "border-t border-primary/10 pt-4",
-            compact
-              ? "flex flex-wrap gap-2 overflow-visible"
-              : "flex flex-nowrap gap-1.5 overflow-x-auto [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:gap-2 sm:overflow-visible",
-          )}
-        >
-          {showInterestAccepted || showInterestSent || showInterestRejected ? (
+          <div className="flex flex-wrap gap-2 border-t border-primary/10 pt-4">
+            {showInterestAccepted || showInterestSent || showInterestRejected ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="shrink-0 gap-1.5 rounded-lg border-0 bg-primary text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary sm:text-xs"
+                type="button"
+                aria-disabled="true"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Heart className="h-3.5 w-3.5 shrink-0 fill-white text-white" />
+                {interestBadgeLabel}
+              </Button>
+            ) : showSendInterestButton ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 gap-1.5 rounded-lg border-primary/30 bg-primary/[0.03] text-[11px] font-semibold sm:text-xs"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSendInterest();
+                }}
+              >
+                <Send className="h-3.5 w-3.5 shrink-0" />
+                Send interest
+              </Button>
+            ) : null}
             <Button
               size="sm"
               variant="secondary"
-              className="shrink-0 gap-1.5 rounded-lg border-0 bg-primary text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary sm:text-xs"
-              type="button"
-              aria-disabled="true"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <Heart className="h-3.5 w-3.5 shrink-0 fill-white text-white" />
-              {interestBadgeLabel}
-            </Button>
-          ) : showSendInterestButton ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 gap-1.5 rounded-lg border-primary/30 bg-primary/[0.03] text-[11px] font-semibold sm:text-xs"
+              className="shrink-0 gap-1.5 rounded-lg bg-secondary/80 text-[11px] font-semibold shadow-sm hover:bg-secondary sm:text-xs"
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation();
-                onSendInterest();
+                onViewDetails();
               }}
             >
-              <Send className="h-3.5 w-3.5 shrink-0" />
-              Send interest
+              <Eye className="h-3.5 w-3.5 shrink-0" />
+              View details
             </Button>
-          ) : null}
-          <Button
-            size="sm"
-            variant="secondary"
-            className="shrink-0 gap-1.5 rounded-lg bg-secondary/80 text-[11px] font-semibold shadow-sm hover:bg-secondary sm:text-xs"
-            disabled={busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails();
-            }}
-          >
-            <Eye className="h-3.5 w-3.5 shrink-0" />
-            View details
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="shrink-0 gap-1.5 rounded-lg border-secondary/50 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary/15 sm:text-xs"
-            disabled={busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              onCheckMatch();
-            }}
-          >
-            <Sparkles className="h-3.5 w-3.5 shrink-0" />
-            Check Match
-          </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 gap-1.5 rounded-lg border-secondary/50 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary/15 sm:text-xs"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCheckMatch();
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              Check Match
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Mobile list (<lg): compact stacked rows */}
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-3 lg:hidden">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="min-w-0 flex-1 truncate font-serif text-lg font-bold tracking-tight text-foreground">
+                {profile.name}
+              </h3>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLike();
+                }}
+                disabled={busy}
+                className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                aria-label={liked ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={liked}
+              >
+                <Heart
+                  className={cn(
+                    "h-6 w-6",
+                    liked && "fill-secondary text-secondary",
+                  )}
+                />
+              </button>
+            </div>
+            <div className="space-y-1">
+              {mobileDetailRows.map((row, i) => (
+                <p
+                  key={i}
+                  className="truncate text-sm leading-snug text-muted-foreground"
+                >
+                  {row}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop list (lg+): detailed profile card per design */}
+          <div className="hidden min-w-0 flex-1 flex-col p-5 lg:flex">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="truncate font-serif text-xl font-bold tracking-tight text-primary xl:text-2xl">
+                  {profile.name}
+                </h3>
+                {idLine && (
+                  <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
+                    {idLine}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLike();
+                }}
+                disabled={busy}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+                aria-label={liked ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={liked}
+              >
+                <Heart
+                  className={cn(
+                    "h-5 w-5",
+                    liked && "fill-secondary text-secondary",
+                  )}
+                />
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 xl:grid-cols-3">
+              <MatchDetailItem
+                icon={MapPin}
+                label="Location"
+                value={profile.location ?? "—"}
+              />
+              <MatchDetailItem
+                icon={GraduationCap}
+                label="Education"
+                value={profile.education ?? "—"}
+              />
+              <MatchDetailItem
+                icon={BriefcaseIcon}
+                label="Occupation"
+                value={profile.occupation ?? "—"}
+              />
+              <MatchDetailItem
+                icon={BookOpen}
+                label="Religion"
+                value={religionDisplay}
+              />
+            </div>
+
+            <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+              <div className="min-w-0">
+                {showInterestAccepted ||
+                showInterestSent ||
+                showInterestRejected ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                      showInterestAccepted
+                        ? "bg-primary text-primary-foreground"
+                        : showInterestRejected
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-primary/10 text-primary",
+                    )}
+                  >
+                    <Heart
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        showInterestAccepted && "fill-current",
+                      )}
+                    />
+                    {interestBadgeLabel}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {showInterestAccepted ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="gap-1.5 rounded-lg font-semibold"
+                    disabled={busy}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChat?.();
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Send Message
+                  </Button>
+                ) : showSendInterestButton ? (
+                  <Button
+                    size="sm"
+                    className="gap-1.5 rounded-lg font-semibold"
+                    disabled={busy}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSendInterest();
+                    }}
+                  >
+                    <Send className="h-4 w-4" />
+                    Send Interest
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 rounded-lg border-primary/30 font-semibold"
+                  disabled={busy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetails();
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                  View Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 };

@@ -23,6 +23,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { useAuthStore } from "@/stores/authStore";
 import { useInterestStore } from "@/stores/interestStore";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import {
   type FullProfileDrawerDisplay,
 } from "@/lib/profileFullMapper";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatDateDdMmYyyy } from "@/lib/utils";
 
 /** KYC / ID slots — omit from the profile gallery (API may still return URLs). */
@@ -155,6 +157,8 @@ interface Props {
   canChat?: boolean;
   /** My Matches: start chat (e.g. POST v1/chat/start/). Omit to hide Chat in the footer. */
   onChat?: () => void;
+  /** My Matches: run a horoscope (porutham) match. Shown only when preview `can_horoscope_match` is true. */
+  onMatchHoroscope?: () => void;
   /** When credits are exhausted or user clicks Upgrade in credit dialog */
   onOpenPlanModal?: () => void;
 }
@@ -167,6 +171,7 @@ const ProfileViewDrawer = ({
   onSendInterest,
   canChat = false,
   onChat,
+  onMatchHoroscope,
   onOpenPlanModal,
 }: Props) => {
   const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
@@ -175,6 +180,7 @@ const ProfileViewDrawer = ({
   const getHoroscopeQuota = useAuthStore((s) => s.getHoroscopeQuota);
   const spendHoroscopeCredit = useAuthStore((s) => s.useHoroscopeCredit);
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const [contactRevealed, setContactRevealed] = useState(false);
   const [horoscopeRevealed, setHoroscopeRevealed] = useState(false);
@@ -212,6 +218,8 @@ const ProfileViewDrawer = ({
   const showSendInterestButton = ["pending", "rejected", "cancelled"].includes(
     interestStatus,
   );
+  const showMatchHoroscope =
+    !!onMatchHoroscope && !!activePreview?.can_horoscope_match;
 
   useEffect(() => {
     if (!open) {
@@ -548,12 +556,22 @@ const ProfileViewDrawer = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className="flex max-h-[min(92vh,1200px)] w-[min(96vw,1280px)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl border border-border/50 bg-card p-0 shadow-2xl"
+        mobileSheet
+        className={cn(
+          "flex flex-col gap-0 overflow-hidden border border-border/50 bg-card p-0 shadow-2xl",
+          isMobile
+            ? "max-h-[92vh] w-full max-w-none rounded-b-none rounded-t-2xl"
+            : "max-h-[min(92vh,1200px)] w-[min(96vw,1280px)] max-w-5xl rounded-xl",
+        )}
       >
         <DialogTitle className="sr-only">{displayName}</DialogTitle>
         <DialogDescription className="sr-only">
           Profile preview and contact details
         </DialogDescription>
+
+        {isMobile && (
+          <div className="absolute left-1/2 top-2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/50" />
+        )}
 
         {/* Header */}
         <div className="relative shrink-0 bg-gradient-to-br from-primary via-primary to-primary-dark px-6 py-6 text-primary-foreground md:px-8 md:py-7">
@@ -777,7 +795,7 @@ const ProfileViewDrawer = ({
                         <span className="font-normal text-muted-foreground">
                           Phone:{" "}
                         </span>
-                        {phoneShown}
+                        {formatPhoneDisplay(phoneShown)}
                       </p>
                     ) : null}
                     {emailShown ? (
@@ -1112,6 +1130,21 @@ const ProfileViewDrawer = ({
               <span className="text-center">
                 <span className="sm:hidden">Chat</span>
                 <span className="hidden sm:inline">Chat now</span>
+              </span>
+            </Button>
+          ) : null}
+          {showMatchHoroscope ? (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={onMatchHoroscope}
+              title="Match horoscope"
+              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/40 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-primary sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+            >
+              <Sparkles className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+              <span className="text-center">
+                <span className="sm:hidden">Match</span>
+                <span className="hidden sm:inline">Match Horoscope</span>
               </span>
             </Button>
           ) : null}

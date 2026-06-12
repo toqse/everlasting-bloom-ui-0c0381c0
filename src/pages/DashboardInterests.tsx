@@ -10,8 +10,18 @@ import {
   getMyInterests,
   respondInterest,
   cancelInterest,
+  sendInterest,
   type InterestCard,
 } from "@/lib/interestsApi";
+import {
+  getProfilePreview,
+  getChatPermission,
+  startChat,
+  type ProfilePreviewData,
+} from "@/lib/matchesApi";
+import ProfileViewDrawer from "@/components/ProfileViewDrawer";
+import ChoosePlanModal from "@/components/ChoosePlanModal";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateTimeDdMmYyyy } from "@/lib/utils";
 
 type Tab = "received" | "sent";
@@ -31,6 +41,14 @@ const DashboardInterests = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(
+    null,
+  );
+  const [previewBusyMatriId, setPreviewBusyMatriId] = useState<string | null>(
+    null,
+  );
+  const [previewCanChat, setPreviewCanChat] = useState(false);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,7 +87,7 @@ const DashboardInterests = () => {
       setReceivedTotal(receivedTotal);
       setSentTotal(sentTotal);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load interests");
+      setError(getDisplayErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -78,6 +96,89 @@ const DashboardInterests = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleViewFullProfile = useCallback(async (matriId: string) => {
+    setPreviewBusyMatriId(matriId);
+    try {
+      const res = await getProfilePreview(matriId);
+      let canChat = false;
+      try {
+        const perm = await getChatPermission(matriId);
+        canChat = perm.data.can_chat;
+      } catch {
+        canChat = false;
+      }
+      setPreviewCanChat(canChat);
+      setViewPreview(res.data);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to load profile");
+    } finally {
+      setPreviewBusyMatriId(null);
+    }
+  }, []);
+
+  const handlePreviewSendInterest = useCallback(
+    async (matriId: string) => {
+      try {
+        const res = await sendInterest(matriId);
+        toast.success(res.message || "Interest sent successfully.");
+        try {
+          const latest = await getProfilePreview(matriId);
+          setViewPreview((prev) =>
+            prev?.matri_id === matriId ? latest.data : prev,
+          );
+        } catch {
+          setViewPreview((prev) =>
+            prev?.matri_id === matriId
+              ? { ...prev, interest_status: "sent", is_interest_sent: true }
+              : prev,
+          );
+        }
+        void load();
+      } catch (e) {
+        const err = e as Error & { status?: number };
+        const msg = err.message || "Failed to send interest";
+        if (err.status === 403 || msg.toLowerCase().includes("plan")) {
+          toast.error(msg);
+          router.push("/dashboard/plan");
+          return;
+        }
+        toast.error(msg);
+      }
+    },
+    [load, router],
+  );
+
+  const handlePreviewChat = useCallback(
+    async (matriId: string) => {
+      try {
+        const res = await startChat(matriId);
+        const convoId = res.data.conversation_id;
+        router.push(convoId ? `/chat/${convoId}` : "/dashboard/chat-list");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to start chat";
+        if (
+          msg.toLowerCase().includes("plan") ||
+          msg.toLowerCase().includes("upgrade") ||
+          msg.toLowerCase().includes("expired")
+        ) {
+          setPlanModalOpen(true);
+        } else {
+          toast.error(msg);
+        }
+      }
+    },
+    [router],
+  );
+
+  const handlePreviewMatchHoroscope = useCallback(
+    (matriId: string) => {
+      router.push(
+        `/dashboard/porutham-matching?partner=${encodeURIComponent(matriId)}`,
+      );
+    },
+    [router],
+  );
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "received", label: "Received" },
@@ -125,7 +226,7 @@ const DashboardInterests = () => {
       );
       toast.info(res.message || `Declined ${name}'s interest`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to reject interest");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setBusyId(null);
     }
@@ -142,7 +243,7 @@ const DashboardInterests = () => {
       );
       toast.success(res.message || "Interest cancelled.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not cancel interest");
+      toast.error(getDisplayErrorMessage(e));
     } finally {
       setBusyId(null);
     }
@@ -159,8 +260,8 @@ const DashboardInterests = () => {
   };
 
   return (
-    <div className="space-y-6">
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary italic">
+    <div className="space-y-4 lg:space-y-6">
+        <h1 className="max-lg:hidden font-serif text-2xl md:text-3xl font-bold text-secondary italic">
           Interest request
         </h1>
 
@@ -321,14 +422,13 @@ const DashboardInterests = () => {
                       </p>
                       <button
                         type="button"
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/matches?open=${encodeURIComponent(interest.matri_id)}`,
-                          )
-                        }
-                        className="mt-2 text-xs px-3 py-1.5 border border-primary/20 rounded-lg text-foreground hover:bg-accent-rose transition-colors"
+                        onClick={() => handleViewFullProfile(interest.matri_id)}
+                        disabled={previewBusyMatriId === interest.matri_id}
+                        className="mt-2 text-xs px-3 py-1.5 border border-primary/20 rounded-lg text-foreground hover:bg-accent-rose transition-colors disabled:opacity-60"
                       >
-                        View full profile
+                        {previewBusyMatriId === interest.matri_id
+                          ? "Loading…"
+                          : "View full profile"}
                       </button>
                     </div>
 
@@ -376,6 +476,37 @@ const DashboardInterests = () => {
             )}
           </div>
         </motion.div>
+
+        <ProfileViewDrawer
+          open={!!viewPreview}
+          onOpenChange={(open) => {
+            if (!open) {
+              setViewPreview(null);
+              setPreviewCanChat(false);
+            }
+          }}
+          profile={null}
+          preview={viewPreview}
+          onSendInterest={
+            viewPreview
+              ? () => handlePreviewSendInterest(viewPreview.matri_id)
+              : undefined
+          }
+          canChat={previewCanChat}
+          onChat={
+            viewPreview
+              ? () => handlePreviewChat(viewPreview.matri_id)
+              : undefined
+          }
+          onMatchHoroscope={
+            viewPreview
+              ? () => handlePreviewMatchHoroscope(viewPreview.matri_id)
+              : undefined
+          }
+          onOpenPlanModal={() => setPlanModalOpen(true)}
+        />
+
+        <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
     </div>
   );
 };

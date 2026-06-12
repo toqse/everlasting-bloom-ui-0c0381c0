@@ -69,6 +69,9 @@ export interface MatchProfile {
   name: string;
   age: number;
   height: number | null;
+  location?: string | null;
+  religion?: string | null;
+  caste?: string | null;
   education: string | null;
   occupation: string | null;
   profile_photo: string | null;
@@ -149,6 +152,8 @@ export interface ProfilePreviewData {
   contact_locked: boolean;
   is_interest_sent?: boolean;
   interest_status?: string;
+  /** When true, the viewer is allowed to run a horoscope (porutham) match with this profile. */
+  can_horoscope_match?: boolean;
   /**
    * If true, API indicates the user has access to full details already.
    * Some deployments include a nested `profile` object (sectioned shape) with phone/email.
