@@ -39,7 +39,7 @@ const Navbar = () => {
         >
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
-            alt="Toqse Matrimony"
+            alt="Aiswarya Matrimony"
             className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain"
           />
           <span className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wider -mt-3 ml-4">

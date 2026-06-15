@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { Heart, ChevronLeft, ChevronRight, Calendar, MapPin, Star, Sparkles } from "lucide-react";
+import {
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  MapPin,
+  Star,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,7 +33,8 @@ export const storiesData: Story[] = [
     id: 1,
     couple: "Rahul & Priya",
     image: "/images/download11.jpg",
-    quote: "We found each other on Toqse Matrimony and knew instantly that this was meant to be.",
+    quote:
+      "We found each other on Aiswarya Matrimony and knew instantly that this was meant to be.",
     location: "Mumbai, India",
     marriedDate: "December 2023",
     yearsOnPlatform: "6 months",
@@ -34,7 +43,8 @@ export const storiesData: Story[] = [
     id: 2,
     couple: "Arjun & Sneha",
     image: "/images/12.jpg",
-    quote: "The compatibility matching was spot on! We share the same values and dreams.",
+    quote:
+      "The compatibility matching was spot on! We share the same values and dreams.",
     location: "Delhi NCR",
     marriedDate: "February 2024",
     yearsOnPlatform: "8 months",
@@ -42,8 +52,10 @@ export const storiesData: Story[] = [
   {
     id: 3,
     couple: "Karthik & Meera",
-    image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop",
-    quote: "From the first message to our wedding day, every moment has been magical.",
+    image:
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop",
+    quote:
+      "From the first message to our wedding day, every moment has been magical.",
     location: "Chennai, India",
     marriedDate: "January 2024",
     yearsOnPlatform: "1 year",
@@ -51,8 +63,10 @@ export const storiesData: Story[] = [
   {
     id: 4,
     couple: "Vikram & Ananya",
-    image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&h=600&fit=crop",
-    quote: "Toqse Matrimony brought us together across continents. Now we're inseparable.",
+    image:
+      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&h=600&fit=crop",
+    quote:
+      "Aiswarya Matrimony brought us together across continents. Now we're inseparable.",
     location: "Bangalore, India",
     marriedDate: "March 2024",
     yearsOnPlatform: "4 months",
@@ -60,8 +74,10 @@ export const storiesData: Story[] = [
   {
     id: 5,
     couple: "Aditya & Kavya",
-    image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
-    quote: "Our love story started with a simple hello. Now we're building a life together.",
+    image:
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
+    quote:
+      "Our love story started with a simple hello. Now we're building a life together.",
     location: "Hyderabad, India",
     marriedDate: "November 2023",
     yearsOnPlatform: "10 months",
@@ -70,7 +86,12 @@ export const storiesData: Story[] = [
 
 // Flower Bouquet SVG Component
 const FlowerBouquet = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 120 80" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    viewBox="0 0 120 80"
+    className={className}
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     {/* Left flower cluster */}
     <g className="animate-float" style={{ animationDelay: "0s" }}>
       <circle cx="25" cy="25" r="8" fill="#FFB020" opacity="0.9" />
@@ -79,7 +100,7 @@ const FlowerBouquet = ({ className = "" }: { className?: string }) => (
       <circle cx="20" cy="30" r="5" fill="#8B2252" opacity="0.7" />
       <circle cx="30" cy="32" r="5" fill="#FFB020" opacity="0.8" />
     </g>
-    
+
     {/* Center flowers */}
     <g className="animate-float" style={{ animationDelay: "0.3s" }}>
       <circle cx="60" cy="20" r="10" fill="#8B2252" opacity="0.9" />
@@ -88,7 +109,7 @@ const FlowerBouquet = ({ className = "" }: { className?: string }) => (
       <circle cx="55" cy="28" r="6" fill="#FFE4E1" />
       <circle cx="65" cy="28" r="6" fill="#FFB020" opacity="0.8" />
     </g>
-    
+
     {/* Right flower cluster */}
     <g className="animate-float" style={{ animationDelay: "0.6s" }}>
       <circle cx="95" cy="25" r="8" fill="#F8E0E6" />
@@ -97,20 +118,64 @@ const FlowerBouquet = ({ className = "" }: { className?: string }) => (
       <circle cx="90" cy="32" r="5" fill="#FFE4E1" />
       <circle cx="100" cy="30" r="5" fill="#FFB020" opacity="0.7" />
     </g>
-    
+
     {/* Small accent flowers */}
-    <circle cx="40" cy="35" r="4" fill="#FFB020" opacity="0.6" className="animate-pulse-soft" />
-    <circle cx="80" cy="35" r="4" fill="#8B2252" opacity="0.5" className="animate-pulse-soft" />
-    
+    <circle
+      cx="40"
+      cy="35"
+      r="4"
+      fill="#FFB020"
+      opacity="0.6"
+      className="animate-pulse-soft"
+    />
+    <circle
+      cx="80"
+      cy="35"
+      r="4"
+      fill="#8B2252"
+      opacity="0.5"
+      className="animate-pulse-soft"
+    />
+
     {/* Leaves */}
-    <ellipse cx="35" cy="50" rx="8" ry="4" fill="#4a7c59" opacity="0.7" transform="rotate(-30 35 50)" />
-    <ellipse cx="85" cy="50" rx="8" ry="4" fill="#4a7c59" opacity="0.7" transform="rotate(30 85 50)" />
+    <ellipse
+      cx="35"
+      cy="50"
+      rx="8"
+      ry="4"
+      fill="#4a7c59"
+      opacity="0.7"
+      transform="rotate(-30 35 50)"
+    />
+    <ellipse
+      cx="85"
+      cy="50"
+      rx="8"
+      ry="4"
+      fill="#4a7c59"
+      opacity="0.7"
+      transform="rotate(30 85 50)"
+    />
     <ellipse cx="60" cy="55" rx="10" ry="5" fill="#5a8f69" opacity="0.6" />
-    
+
     {/* Sparkles */}
     <circle cx="15" cy="10" r="2" fill="#FFB020" className="animate-sparkle" />
-    <circle cx="105" cy="10" r="2" fill="#FFB020" className="animate-sparkle" style={{ animationDelay: "0.5s" }} />
-    <circle cx="60" cy="5" r="2.5" fill="#8B2252" className="animate-sparkle" style={{ animationDelay: "1s" }} />
+    <circle
+      cx="105"
+      cy="10"
+      r="2"
+      fill="#FFB020"
+      className="animate-sparkle"
+      style={{ animationDelay: "0.5s" }}
+    />
+    <circle
+      cx="60"
+      cy="5"
+      r="2.5"
+      fill="#8B2252"
+      className="animate-sparkle"
+      style={{ animationDelay: "1s" }}
+    />
   </svg>
 );
 
@@ -132,15 +197,15 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
         src={story.image}
         alt={story.couple}
         className="absolute inset-0 w-full h-full object-cover"
-        animate={{ 
+        animate={{
           scale: isHovered ? 1.1 : 1,
-          filter: isHovered ? "brightness(0.7)" : "brightness(1)"
+          filter: isHovered ? "brightness(0.7)" : "brightness(1)",
         }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       />
-      
+
       {/* Gradient Overlay */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
         animate={{ opacity: isHovered ? 1 : 0.3 }}
         transition={{ duration: 0.4 }}
@@ -176,7 +241,7 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               {/* Couple Name */}
-              <motion.h3 
+              <motion.h3
                 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
@@ -186,7 +251,7 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
               </motion.h3>
 
               {/* Location */}
-              <motion.p 
+              <motion.p
                 className="text-white/90 text-sm md:text-base tracking-widest uppercase mb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -233,16 +298,16 @@ const CoupleCard = ({ story, index }: { story: Story; index: number }) => {
                   top: `${30 + (i % 3) * 20}%`,
                 }}
                 initial={{ opacity: 0, scale: 0 }}
-                animate={{ 
+                animate={{
                   opacity: [0, 1, 0],
                   scale: [0.5, 1, 0.5],
                   y: [0, -30, -60],
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   delay: 0.5 + i * 0.2,
                   repeat: Infinity,
-                  repeatDelay: 1
+                  repeatDelay: 1,
                 }}
               >
                 <Heart className="w-4 h-4 text-secondary fill-secondary" />
@@ -278,19 +343,19 @@ const SuccessStories = () => {
     (async () => {
       try {
         const res = await getWebsiteSuccessStories(1);
-        const list = (res.data.stories ?? [])
-          .slice(0, 8)
-          .map(
-            (s): Story => ({
-              id: s.id,
-              couple: s.couple_names,
-              image: resolveSuccessStoryPhotoUrl(s.couple_photo) || "https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=800&h=600&fit=crop",
-              quote: s.description,
-              location: s.location,
-              marriedDate: formatWeddingDateDisplay(s.wedding_date),
-              yearsOnPlatform: "—",
-            })
-          );
+        const list = (res.data.stories ?? []).slice(0, 8).map(
+          (s): Story => ({
+            id: s.id,
+            couple: s.couple_names,
+            image:
+              resolveSuccessStoryPhotoUrl(s.couple_photo) ||
+              "https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=800&h=600&fit=crop",
+            quote: s.description,
+            location: s.location,
+            marriedDate: formatWeddingDateDisplay(s.wedding_date),
+            yearsOnPlatform: "—",
+          }),
+        );
         if (!cancelled && list.length) setHomeStories(list);
       } catch {
         if (!cancelled) setHomeStories(null);
@@ -312,7 +377,11 @@ const SuccessStories = () => {
   };
 
   return (
-    <section id="stories" ref={revealRef} className="py-24 bg-background relative overflow-hidden">
+    <section
+      id="stories"
+      ref={revealRef}
+      className="py-24 bg-background relative overflow-hidden"
+    >
       {/* Decorative Background */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-pink/40 rounded-full blur-3xl animate-float" />
@@ -338,24 +407,27 @@ const SuccessStories = () => {
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <motion.div 
+          <motion.div
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent-rose border border-primary/10 mb-4 shadow-soft"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           >
             <Heart className="w-4 h-4 text-primary fill-primary animate-heart-beat" />
-            <span className="text-sm font-medium text-primary">Recent Couples</span>
+            <span className="text-sm font-medium text-primary">
+              Recent Couples
+            </span>
             <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
           </motion.div>
-          <motion.h2 
+          <motion.h2
             className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ delay: 0.1 }}
           >
-            Real Love, <span className="text-gradient-primary">Real Stories</span>
+            Real Love,{" "}
+            <span className="text-gradient-primary">Real Stories</span>
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-muted-foreground max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -386,7 +458,7 @@ const SuccessStories = () => {
           </motion.button>
 
           {/* Scrollable Container */}
-          <div 
+          <div
             ref={scrollContainerRef}
             className="flex gap-1 overflow-x-auto scrollbar-hide scroll-smooth px-8 md:px-12"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -416,21 +488,25 @@ const SuccessStories = () => {
               <div className="w-12 h-12 rounded-full bg-accent-rose flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
                 <stat.icon className="w-6 h-6 text-primary fill-primary/50 group-hover:animate-bounce-soft" />
               </div>
-              <div className="font-serif text-2xl md:text-3xl font-bold text-gradient-gold mb-1">{stat.value}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
+              <div className="font-serif text-2xl md:text-3xl font-bold text-gradient-gold mb-1">
+                {stat.value}
+              </div>
+              <div className="text-xs md:text-sm text-muted-foreground">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
 
         {/* CTA */}
-        <motion.div 
+        <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         >
-          <Button 
-            variant="hero" 
-            size="lg" 
+          <Button
+            variant="hero"
+            size="lg"
             className="group"
             onClick={() => router.push("/success-stories")}
           >

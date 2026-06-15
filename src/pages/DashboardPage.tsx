@@ -14,7 +14,6 @@ import {
   Users,
   Loader2,
   AlertCircle,
-  MessageCircle,
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -98,31 +97,61 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+function formatHeight(value: number | string | null | undefined): string {
+  if (value == null || value === "") return "";
+  const cm = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(cm) || cm <= 0) {
+    return typeof value === "string" ? value : "";
+  }
+  const totalInches = cm / 2.54;
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches - feet * 12);
+  return `${feet}'${inches}"`;
+}
+
 // ---- Recommended match card ----
 interface RecommendedCardProps {
   profile: DashboardProfile;
   index: number;
   onView: () => void;
-  onInterest: () => void;
-  sendingInterest: boolean;
+  loading: boolean;
 }
 
 const RecommendedCard = ({
   profile,
   index,
   onView,
-  onInterest,
-  sendingInterest,
+  loading,
 }: RecommendedCardProps) => {
   const photoUrl = getMediaUrl(profile.profile_photo);
   const initials = getInitials(profile.name);
+  const heightDisplay = formatHeight(profile.height);
+
+  const detailChips = [
+    profile.age ? `${profile.age} yrs` : null,
+    heightDisplay || null,
+    profile.location ? profile.location.split(",")[0] : null,
+  ].filter(Boolean) as string[];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 * index }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-all hover:shadow-elevated"
+      onClick={onView}
+      role="button"
+      tabIndex={0}
+      aria-disabled={loading}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onView();
+        }
+      }}
+      className={cn(
+        "group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        loading && "pointer-events-none opacity-70",
+      )}
     >
       <div className="relative h-44 flex-shrink-0 overflow-hidden bg-accent-rose/30">
         {photoUrl ? (
@@ -145,45 +174,37 @@ const RecommendedCard = ({
             </span>
           </div>
         )}
+        {profile.is_online && (
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-md bg-green-600/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            Online
+          </span>
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <Loader2 className="h-6 w-6 animate-spin text-white" />
+          </div>
+        )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <div className="min-w-0">
-          <h3 className="truncate font-serif text-base font-bold leading-tight text-foreground">
-            {profile.name}
-          </h3>
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        <h3 className="truncate font-serif text-base font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
+          {profile.name}
+        </h3>
+        {detailChips.length > 0 && (
           <p className="truncate text-xs text-muted-foreground">
-            {profile.age} yrs
-            {profile.location ? ` · ${profile.location.split(",")[0]}` : ""}
+            {detailChips.join(" · ")}
           </p>
-          {profile.occupation && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {profile.occupation}
-            </p>
-          )}
-        </div>
-        <div className="mt-auto flex gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onInterest}
-            disabled={sendingInterest}
-            aria-label="Send interest"
-            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-accent-rose text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
-          >
-            {sendingInterest ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Heart className="h-4 w-4" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onView}
-            aria-label="View profile"
-            className="flex h-9 flex-1 items-center justify-center rounded-lg bg-accent-rose text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-          >
-            <MessageCircle className="h-4 w-4" />
-          </button>
-        </div>
+        )}
+        {profile.occupation && (
+          <p className="truncate text-xs text-muted-foreground">
+            {profile.occupation}
+          </p>
+        )}
+        {profile.education && (
+          <p className="truncate text-xs text-muted-foreground">
+            {profile.education}
+          </p>
+        )}
       </div>
     </motion.div>
   );
@@ -561,9 +582,8 @@ const DashboardPage = () => {
                       key={profile.matri_id}
                       profile={profile}
                       index={i}
-                      sendingInterest={sendingInterest === profile.matri_id}
+                      loading={previewLoading}
                       onView={() => handleViewProfile(profile.matri_id)}
-                      onInterest={() => handleSendInterest(profile.matri_id)}
                     />
                   ))}
                 </div>

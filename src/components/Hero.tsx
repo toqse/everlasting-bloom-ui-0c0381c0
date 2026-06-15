@@ -11,7 +11,10 @@ const Hero = () => {
   const sparkles = Array.from({ length: 8 }, (_, i) => i);
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section
+      id="home"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+    >
       {/* Background image from public/images/hero-bg.png */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -79,22 +82,46 @@ const Hero = () => {
           {/* Left: Text Content */}
           <div className="text-center lg:text-left min-w-0">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-8 sm:mb-10 -mt-6 sm:-mt-8 animate-fade-in-up tracking-tight">
-            Aiswarya Vivaha Bureau
+              Aiswarya Vivaha Bureau
             </h2>
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group" style={{ animationDelay: "0.05s" }}>
+            <div
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-primary/20 shadow-soft mb-6 animate-fade-in-up hover-lift cursor-pointer group"
+              style={{ animationDelay: "0.05s" }}
+            >
               <Sparkles className="w-4 h-4 text-secondary animate-sparkle" />
-              <span className="text-sm font-medium text-primary">India's Most Trusted Matrimony</span>
+              <span className="text-sm font-medium text-primary">
+                India's Most Trusted Matrimony
+              </span>
               <Heart className="w-4 h-4 text-primary fill-primary group-hover:animate-heart-beat" />
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            <h1
+              className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6 animate-fade-in-up"
+              style={{ animationDelay: "0.1s" }}
+            >
               Find Your{" "}
               <span className="relative inline-block">
                 <span className="text-gradient-primary">Forever</span>
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none">
-                  <path d="M2 10C50 2 150 2 198 10" stroke="url(#gold-gradient)" strokeWidth="3" strokeLinecap="round" className="animate-pulse-soft" />
+                <svg
+                  className="absolute -bottom-2 left-0 w-full"
+                  viewBox="0 0 200 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 10C50 2 150 2 198 10"
+                    stroke="url(#gold-gradient)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    className="animate-pulse-soft"
+                  />
                   <defs>
-                    <linearGradient id="gold-gradient" x1="0" y1="0" x2="200" y2="0">
+                    <linearGradient
+                      id="gold-gradient"
+                      x1="0"
+                      y1="0"
+                      x2="200"
+                      y2="0"
+                    >
                       <stop offset="0%" stopColor="hsl(40, 100%, 56%)" />
                       <stop offset="100%" stopColor="hsl(42, 100%, 68%)" />
                     </linearGradient>
@@ -104,18 +131,38 @@ const Hero = () => {
               Love
             </h1>
 
-            <p className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed font-bold" style={{ animationDelay: "0.2s" }}>
-              Begin your beautiful journey towards a lifetime of love, trust, and togetherness. 
-              Join millions who found their soulmate with Toqse Matrimony.
+            <p
+              className="text-base sm:text-lg text-black max-w-xl mb-6 sm:mb-8 animate-fade-in-up leading-relaxed font-bold"
+              style={{ animationDelay: "0.2s" }}
+            >
+              Begin your beautiful journey towards a lifetime of love, trust,
+              and togetherness. Join millions who found their soulmate with
+              Aiswarya Matrimony.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-              <Button variant="hero" size="xl" className="group w-full sm:w-auto" onClick={() => router.push("/auth")}>
-                <Heart className="w-5 h-5 group-hover:animate-heart-beat" fill="currentColor" />
+            <div
+              className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 animate-fade-in-up"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <Button
+                variant="hero"
+                size="xl"
+                className="group w-full sm:w-auto"
+                onClick={() => router.push("/auth")}
+              >
+                <Heart
+                  className="w-5 h-5 group-hover:animate-heart-beat"
+                  fill="currentColor"
+                />
                 Start Your Journey
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="xl" className="group w-full sm:w-auto" onClick={() => router.push("/success-stories")}>
+              <Button
+                variant="outline"
+                size="xl"
+                className="group w-full sm:w-auto"
+                onClick={() => router.push("/success-stories")}
+              >
                 <Sparkles className="w-5 h-5 group-hover:animate-sparkle" />
                 View Success Stories
               </Button>
@@ -123,7 +170,10 @@ const Hero = () => {
           </div>
 
           {/* Right: Wedding Image */}
-          <div className="hidden lg:flex flex-col items-center justify-center animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+          <div
+            className="hidden lg:flex flex-col items-center justify-center animate-fade-in-up"
+            style={{ animationDelay: "0.3s" }}
+          >
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-br from-secondary/30 via-[hsl(330,60%,70%)/0.2] to-primary/20 rounded-[2rem] blur-xl" />
               <img
@@ -149,7 +199,10 @@ const Hero = () => {
       {/* Bottom Wave */}
       <div className="absolute bottom-0 left-0 right-0">
         <svg viewBox="0 0 1440 120" fill="none" className="w-full">
-          <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="white" />
+          <path
+            d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z"
+            fill="white"
+          />
         </svg>
       </div>
     </section>

@@ -915,7 +915,10 @@ const AuthPage = () => {
           lower.includes("age")
         )
           nextErrors.dob = msg;
-        else if (lower.includes("phone") || lower.includes("already registered"))
+        else if (
+          lower.includes("phone") ||
+          lower.includes("already registered")
+        )
           nextErrors.phone = msg;
         else nextErrors.general = msg;
       } else {
@@ -1063,9 +1066,7 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(3);
       } catch (err) {
-        toast.error(
-          getDisplayErrorMessage(err),
-        );
+        toast.error(getDisplayErrorMessage(err));
       }
       return;
     }
@@ -1106,7 +1107,9 @@ const AuthPage = () => {
       }
       if (
         partnerAgeTo != null &&
-        (!Number.isInteger(partnerAgeTo) || partnerAgeTo < 18 || partnerAgeTo > 80)
+        (!Number.isInteger(partnerAgeTo) ||
+          partnerAgeTo < 18 ||
+          partnerAgeTo > 80)
       ) {
         toast.error("Partner age to must be between 18 and 80");
         return;
@@ -1284,9 +1287,7 @@ const AuthPage = () => {
         setDirection(1);
         setSignupStep(7);
       } catch (err) {
-        toast.error(
-          getDisplayErrorMessage(err),
-        );
+        toast.error(getDisplayErrorMessage(err));
       }
       return;
     }
@@ -1345,14 +1346,12 @@ const AuthPage = () => {
         }
         await fetchAndSyncMeProfile();
         toast.success("Account created successfully! 🎉", {
-          description: "Welcome to Toqse Matrimony!",
+          description: "Welcome to Aiswarya Matrimony!",
         });
         shouldReset = false;
         router.push("/dashboard");
       } catch (err) {
-        toast.error(
-          getDisplayErrorMessage(err),
-        );
+        toast.error(getDisplayErrorMessage(err));
       } finally {
         if (shouldReset) setIsCreatingAccount(false);
       }
@@ -1377,9 +1376,7 @@ const AuthPage = () => {
       setAboutSuggestionIndex(index + 1);
       toast.success("Suggestion added. You can edit it.");
     } catch (err) {
-      toast.error(
-        getDisplayErrorMessage(err),
-      );
+      toast.error(getDisplayErrorMessage(err));
     }
   };
 
@@ -1561,7 +1558,7 @@ const AuthPage = () => {
                       <Sparkles className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 text-secondary animate-sparkle" />
                     </div>
                     <span className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold text-primary">
-                      Toqse <span className="text-secondary">Matrimony</span>
+                      Aiswarya <span className="text-secondary">Matrimony</span>
                     </span>
                   </div>
                   <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
