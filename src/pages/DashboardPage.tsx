@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle,
   Search,
+  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -167,13 +168,6 @@ const RecommendedCard = ({
             </span>
           </div>
         )}
-        {(profile.match_percentage ?? 0) > 0 && (
-          <div className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
-            <span className="text-[11px] font-bold text-primary">
-              {profile.match_percentage}% Match
-            </span>
-          </div>
-        )}
         {profile.is_online && (
           <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-md bg-green-600/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-white" />
@@ -187,8 +181,11 @@ const RecommendedCard = ({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <h3 className="truncate font-serif text-base font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
-          {profile.name}
+        <h3 className="flex items-center gap-1 font-serif text-base font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
+          <span className="truncate">{profile.name}</span>
+          {profile.is_verified && (
+            <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />
+          )}
         </h3>
         {detailChips.length > 0 && (
           <p className="truncate text-xs text-muted-foreground">
@@ -204,6 +201,11 @@ const RecommendedCard = ({
           <p className="truncate text-xs text-muted-foreground">
             {profile.education}
           </p>
+        )}
+        {profile.religion && (
+          <span className="mt-0.5 inline-flex w-fit items-center rounded-full bg-accent-rose/40 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            {profile.religion}
+          </span>
         )}
       </div>
     </motion.div>
@@ -265,8 +267,8 @@ const DashboardPage = () => {
         ]);
       const nextSummary = summaryRes.data;
       const nextMatches = Array.isArray(matchesRes.data) ? matchesRes.data : [];
-      const nextSuggestions = Array.isArray(suggestionsRes.data)
-        ? suggestionsRes.data
+      const nextSuggestions = Array.isArray(suggestionsRes.data?.results)
+        ? suggestionsRes.data.results
         : [];
       const nextToday = Array.isArray(todayRes.data) ? todayRes.data : [];
       const nextCompletion = nextSummary?.profile_completion ?? 0;
@@ -291,8 +293,7 @@ const DashboardPage = () => {
       hasDashboardDataRef.current = true;
     } catch (err) {
       console.error("Dashboard load error:", err);
-      const msg =
-        getDisplayErrorMessage(err);
+      const msg = getDisplayErrorMessage(err);
       if (hasDashboardDataRef.current) {
         toast.error(msg);
       } else {
@@ -313,9 +314,7 @@ const DashboardPage = () => {
       const res = await getProfilePreview(matriId);
       setPreviewData(res.data);
     } catch (err) {
-      toast.error(
-        getDisplayErrorMessage(err),
-      );
+      toast.error(getDisplayErrorMessage(err));
     } finally {
       setPreviewLoading(false);
     }
@@ -327,8 +326,7 @@ const DashboardPage = () => {
       const res = await sendInterest(matriId);
       toast.success(res.message || "Interest sent!");
     } catch (err) {
-      const msg =
-        getDisplayErrorMessage(err);
+      const msg = getDisplayErrorMessage(err);
       if ((err as { status?: number }).status === 403) {
         toast.info("Please upgrade your plan to continue.");
         router.push("/dashboard/plan");
@@ -629,49 +627,16 @@ const DashboardPage = () => {
                 </div>
 
                 {suggestions.length > 0 ? (
-                  <div className="flex min-w-0 max-w-full gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
-                    {suggestions.slice(0, 8).map((profile) => {
-                      const photoUrl = getMediaUrl(profile.profile_photo);
-                      const initials = getInitials(profile.name);
-                      return (
-                        <button
-                          key={profile.matri_id}
-                          type="button"
-                          onClick={() => handleViewProfile(profile.matri_id)}
-                          disabled={previewLoading}
-                          className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 text-center transition-transform active:scale-95 disabled:opacity-60"
-                        >
-                          <div className="relative">
-                            <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-primary/15 bg-accent-rose/30">
-                              {photoUrl ? (
-                                <img
-                                  src={photoUrl}
-                                  alt={profile.name}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center font-bold text-primary">
-                                  {initials}
-                                </div>
-                              )}
-                            </div>
-                            {(profile.match_percentage ?? 0) > 0 && (
-                              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
-                                {profile.match_percentage}%
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 w-full truncate text-xs font-semibold text-foreground">
-                            {profile.name.split(" ")[0]}
-                          </p>
-                          {profile.age ? (
-                            <p className="text-[11px] text-muted-foreground">
-                              {profile.age} yrs
-                            </p>
-                          ) : null}
-                        </button>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                    {suggestions.slice(0, 8).map((profile, i) => (
+                      <RecommendedCard
+                        key={profile.matri_id}
+                        profile={profile}
+                        index={i}
+                        loading={previewLoading}
+                        onView={() => handleViewProfile(profile.matri_id)}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <p className="py-4 text-center text-sm text-muted-foreground">
@@ -767,7 +732,6 @@ const DashboardPage = () => {
                 </p>
               )}
             </motion.div>
-
           </aside>
         </div>
       </div>

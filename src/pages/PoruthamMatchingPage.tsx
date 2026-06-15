@@ -12,16 +12,27 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  buildPersonForChart,
+  CHART_TYPES,
   SelfHoroscopeChart,
+  TAB_LABELS,
   type ChartLang,
+  type SelfChartType,
 } from "@/components/astrology/SelfHoroscopeChart";
+import { SouthIndianChartGrid } from "@/components/astrology/SouthIndianChartGrid";
 import {
   getMatchReportPdf,
   postPoruthamMatch,
   type PoruthamGrahanilaPerson,
   type PoruthamMatchData,
 } from "@/lib/astrologyApi";
-import { poruthamRowLabelMalayalam } from "@/lib/malayalam/horoscopeDisplayMl";
+import {
+  dasaDurationMalayalam,
+  grahaNameMalayalam,
+  nakshatraNameMalayalam,
+  poruthamRowLabelMalayalam,
+  rasiNameMalayalam,
+} from "@/lib/malayalam/horoscopeDisplayMl";
 import { BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
@@ -74,6 +85,60 @@ const DETAIL_LABELS = {
   dasa: "Dasa",
   lord: "Lord",
 } as const;
+
+/** Bride/groom birth-detail rows shown alongside (not inside) the chart. */
+function personDetailRows(
+  h: PoruthamGrahanilaPerson["horoscope"],
+  lang: ChartLang,
+): { label: string; value: string }[] {
+  const isMl = lang === "ml";
+  return [
+    {
+      label: DETAIL_LABELS.nakshatra,
+      value: h?.star_display
+        ? isMl
+          ? nakshatraNameMalayalam(h.star_display)
+          : h.star_display
+        : "—",
+    },
+    {
+      label: DETAIL_LABELS.padam,
+      value: h?.pr_pada != null ? String(h.pr_pada) : "—",
+    },
+    {
+      label: DETAIL_LABELS.rasi,
+      value: h?.rasi_display
+        ? isMl
+          ? rasiNameMalayalam(h.rasi_display)
+          : h.rasi_display
+        : "—",
+    },
+    {
+      label: DETAIL_LABELS.lagnam,
+      value: h?.lagnam_display
+        ? isMl
+          ? rasiNameMalayalam(h.lagnam_display)
+          : h.lagnam_display
+        : "—",
+    },
+    {
+      label: DETAIL_LABELS.dasa,
+      value: h?.dasa_display
+        ? isMl
+          ? dasaDurationMalayalam(h.dasa_display)
+          : h.dasa_display
+        : "—",
+    },
+    {
+      label: DETAIL_LABELS.lord,
+      value: h?.dasa_lord
+        ? isMl
+          ? grahaNameMalayalam(h.dasa_lord)
+          : h.dasa_lord
+        : "—",
+    },
+  ];
+}
 
 const GRADE_POINTS: Record<string, number> = {
   uthamam: 1,
@@ -231,18 +296,7 @@ function GrahanilaCard({
   const h = person.horoscope;
   const charts = h?.charts;
   const photo = resolveMediaUrl(person.profile_photo);
-
-  const details = [
-    { label: DETAIL_LABELS.nakshatra, value: h?.star_display || "—" },
-    {
-      label: DETAIL_LABELS.padam,
-      value: h?.pr_pada != null ? String(h.pr_pada) : "—",
-    },
-    { label: DETAIL_LABELS.rasi, value: h?.rasi_display || "—" },
-    { label: DETAIL_LABELS.lagnam, value: h?.lagnam_display || "—" },
-    { label: DETAIL_LABELS.dasa, value: h?.dasa_display || "—" },
-    { label: DETAIL_LABELS.lord, value: h?.dasa_lord || "—" },
-  ];
+  const details = personDetailRows(h, lang);
 
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-card font-ml">
@@ -266,7 +320,7 @@ function GrahanilaCard({
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <p className="truncate text-base font-bold text-foreground">
+            <p className="line-clamp-2 break-words text-base font-bold leading-tight text-foreground">
               {person.name || "—"}
             </p>
             {person.matri_id ? (
@@ -298,8 +352,11 @@ function GrahanilaCard({
             charts={charts}
             headerLine={person.matri_id}
             name={person.name}
+            dateOfBirth={h?.pr_dob}
+            timeOfBirth={h?.pr_tob}
+            placeOfBirth={h?.place_of_birth}
             lang={lang}
-            centerLang="en"
+            centerLang={lang}
             tabLang="en"
             variant="tabs"
             enableZoom
@@ -311,6 +368,109 @@ function GrahanilaCard({
         )}
       </div>
     </section>
+  );
+}
+
+/** Mobile-only: bride & groom charts shown as squares side by side, driven by one shared tab control at the bottom. */
+function MobileGrahanilaPair({
+  bride,
+  groom,
+  lang,
+}: {
+  bride: PoruthamGrahanilaPerson;
+  groom: PoruthamGrahanilaPerson;
+  lang: ChartLang;
+}) {
+  const [chartType, setChartType] = useState<SelfChartType>("rasi");
+  const tabLabels = TAB_LABELS.en;
+
+  const roleLabel = (isBride: boolean) =>
+    lang === "ml"
+      ? isBride
+        ? "സ്ത്രീ"
+        : "പുരുഷൻ"
+      : isBride
+        ? PAGE_COPY.bride
+        : PAGE_COPY.groom;
+
+  const renderChart = (
+    person: PoruthamGrahanilaPerson,
+    title: string,
+    isBride: boolean,
+  ) => {
+    const h = person.horoscope;
+    const charts = h?.charts;
+    const details = personDetailRows(h, lang);
+    const centerLabel = `${TAB_LABELS[lang][chartType]} (${roleLabel(isBride)})`;
+    return (
+      <section className="flex flex-col overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-card font-ml">
+        <div className="border-b border-primary/10 bg-accent-rose/15 py-2 text-center">
+          <span className="text-sm font-bold text-primary">{title}</span>
+        </div>
+        <div className="space-y-2 p-2">
+          {/* Birth details as a compact section, moved out of the chart centre. */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {details.map((d) => (
+              <div
+                key={d.label}
+                className="rounded-lg border border-primary/10 bg-muted/30 px-1.5 py-1"
+              >
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {d.label}
+                </p>
+                <p className="mt-0.5 text-xs font-bold leading-tight text-foreground">
+                  {d.value}
+                </p>
+              </div>
+            ))}
+          </div>
+          {charts ? (
+            <SouthIndianChartGrid
+              person={buildPersonForChart(charts, chartType, lang, {
+                name: person.name,
+                dateOfBirth: h?.pr_dob,
+                timeOfBirth: h?.pr_tob,
+                placeOfBirth: h?.place_of_birth,
+              })}
+              lang={lang}
+              centerLang={lang}
+              centerLabel={centerLabel}
+              dense
+            />
+          ) : (
+            <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 text-xs text-muted-foreground">
+              {PAGE_COPY.chartNotAvailable}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {renderChart(bride, PAGE_COPY.bride, true)}
+        {renderChart(groom, PAGE_COPY.groom, false)}
+      </div>
+      <div className="mx-auto flex w-full max-w-xs items-center gap-1 rounded-xl bg-muted/40 p-1 font-ml">
+        {CHART_TYPES.map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setChartType(value)}
+            className={cn(
+              "flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition-colors",
+              chartType === value
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tabLabels[value]}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -442,25 +602,38 @@ function PoruthamMatchingContent() {
           </Button>
         </div>
       ) : data?.grahanila ? (
-        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[1.35fr_1fr_1.35fr] lg:items-stretch lg:overflow-hidden">
-          {/* Mobile: match result on top, then bride, then groom. Desktop: bride | result | groom inline. */}
-          <div className="order-2 lg:order-1 lg:h-full lg:min-h-0 lg:overflow-hidden">
-            <GrahanilaCard
-              title={PAGE_COPY.bride}
-              person={data.grahanila.bride}
-              lang={lang}
-            />
-          </div>
+        <div className="flex flex-col gap-3 sm:gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[1.35fr_1fr_1.35fr] lg:items-stretch lg:overflow-hidden">
+          {/* Match result + porutham details: top on mobile, centre column on desktop. */}
           <div className="order-1 flex flex-col gap-3 sm:gap-4 lg:order-2 lg:h-full lg:min-h-0 lg:overflow-hidden">
             <MatchResultCard data={data} />
             <PoruthamDetailsCard data={data} lang={lang} />
           </div>
-          <div className="order-3 lg:h-full lg:min-h-0 lg:overflow-hidden">
-            <GrahanilaCard
-              title={PAGE_COPY.groom}
-              person={data.grahanila.groom}
+
+          {/* Mobile only: square charts side by side with a single shared tab control at the bottom. */}
+          <div className="order-2 lg:hidden">
+            <MobileGrahanilaPair
+              bride={data.grahanila.bride}
+              groom={data.grahanila.groom}
               lang={lang}
             />
+          </div>
+
+          {/* Desktop only: full bride & groom cards (photo, details, per-card tabs). */}
+          <div className="hidden lg:contents">
+            <div className="lg:order-1 lg:h-full lg:min-h-0 lg:overflow-hidden">
+              <GrahanilaCard
+                title={PAGE_COPY.bride}
+                person={data.grahanila.bride}
+                lang={lang}
+              />
+            </div>
+            <div className="lg:order-3 lg:h-full lg:min-h-0 lg:overflow-hidden">
+              <GrahanilaCard
+                title={PAGE_COPY.groom}
+                person={data.grahanila.groom}
+                lang={lang}
+              />
+            </div>
           </div>
         </div>
       ) : (

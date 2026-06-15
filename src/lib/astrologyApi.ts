@@ -272,6 +272,7 @@ export interface HoroscopeProfileData {
   pr_name?: string;
   pr_dob?: string;
   pr_tob?: string;
+  place_of_birth?: string;
   pr_lat?: number;
   pr_lon?: number;
   pr_tz?: number;

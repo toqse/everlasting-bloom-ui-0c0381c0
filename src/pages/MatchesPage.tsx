@@ -52,10 +52,14 @@ import {
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   getCastes,
+  getCities,
+  getCountries,
+  getDistricts,
   getEducations,
   getMaritalStatuses,
   getOccupations,
   getReligions,
+  getStates,
 } from "@/lib/masterApi";
 import { toast } from "sonner";
 
@@ -271,11 +275,6 @@ const DEFAULT_LIMIT = 10;
 const DEFAULT_AGE_RANGE: [number, number] = [18, 70];
 const DEFAULT_HEIGHT_RANGE: [number, number] = [120, 200];
 const LIMIT_OPTIONS = [10, 20, 30, 50] as const;
-const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: "most_relevant", label: "Most relative" },
-  { value: "newest", label: "Newest First" },
-  { value: "best_match", label: "Best Match" },
-];
 type MatchesViewMode = "list" | "grid-2" | "grid-3";
 
 type MatchFilterOptions = {
@@ -307,12 +306,24 @@ const MatchesPage = () => {
   const [casteId, setCasteId] = useState<number | null>(null);
   const [educationId, setEducationId] = useState<number | null>(null);
   const [occupationId, setOccupationId] = useState<number | null>(null);
+  const [countryId, setCountryId] = useState<number | null>(null);
+  const [stateId, setStateId] = useState<number | null>(null);
+  const [districtId, setDistrictId] = useState<number | null>(null);
+  const [cityId, setCityId] = useState<number | null>(null);
+  const [countries, setCountries] = useState<{ id: number; name: string }[]>([]);
+  const [states, setStates] = useState<{ id: number; name: string }[]>([]);
+  const [districts, setDistricts] = useState<{ id: number; name: string }[]>([]);
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   const [maritalSearch, setMaritalSearch] = useState("");
   const [religionSearch, setReligionSearch] = useState("");
   const [casteSearch, setCasteSearch] = useState("");
   const [educationSearch, setEducationSearch] = useState("");
   const [occupationSearch, setOccupationSearch] = useState("");
-  const [sortBy, setSortBy] = useState<SortBy>("most_relevant");
+  const [countrySearch, setCountrySearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [citySearch, setCitySearch] = useState("");
+  const [sortBy] = useState<SortBy>("most_relevant");
   const [viewMode, setViewMode] = useState<MatchesViewMode>("list");
   const [viewPreview, setViewPreview] = useState<ProfilePreviewData | null>(
     null,
@@ -342,7 +353,11 @@ const MatchesPage = () => {
       religionSearch.trim() !== "" ||
       casteSearch.trim() !== "" ||
       educationSearch.trim() !== "" ||
-      occupationSearch.trim() !== "";
+      occupationSearch.trim() !== "" ||
+      countrySearch.trim() !== "" ||
+      stateSearch.trim() !== "" ||
+      districtSearch.trim() !== "" ||
+      citySearch.trim() !== "";
     return (
       ageChanged ||
       heightChanged ||
@@ -351,6 +366,10 @@ const MatchesPage = () => {
       casteId != null ||
       educationId != null ||
       occupationId != null ||
+      countryId != null ||
+      stateId != null ||
+      districtId != null ||
+      cityId != null ||
       searchDirty
     );
   }, [
@@ -361,11 +380,19 @@ const MatchesPage = () => {
     casteId,
     educationId,
     occupationId,
+    countryId,
+    stateId,
+    districtId,
+    cityId,
     maritalSearch,
     religionSearch,
     casteSearch,
     educationSearch,
     occupationSearch,
+    countrySearch,
+    stateSearch,
+    districtSearch,
+    citySearch,
   ]);
 
   const clearAllFilters = useCallback(() => {
@@ -376,11 +403,22 @@ const MatchesPage = () => {
     setCasteId(null);
     setEducationId(null);
     setOccupationId(null);
+    setCountryId(null);
+    setStateId(null);
+    setDistrictId(null);
+    setCityId(null);
     setMaritalSearch("");
     setReligionSearch("");
     setCasteSearch("");
     setEducationSearch("");
     setOccupationSearch("");
+    setCountrySearch("");
+    setStateSearch("");
+    setDistrictSearch("");
+    setCitySearch("");
+    setStates([]);
+    setDistricts([]);
+    setCities([]);
   }, []);
 
   const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
@@ -394,13 +432,15 @@ const MatchesPage = () => {
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
     try {
-      const [religions, educations, occupations, maritalStatuses] =
+      const [religions, educations, occupations, maritalStatuses, countryList] =
         await Promise.all([
           getReligions(),
           getEducations(),
           getOccupations(),
           getMaritalStatuses(),
+          getCountries(),
         ]);
+      setCountries(countryList.map((c) => ({ id: c.id, name: c.name })));
       setFilters({
         religions: religions.map((r) => ({ id: r.id, name: r.name })),
         castes: [],
@@ -456,6 +496,99 @@ const MatchesPage = () => {
     };
   }, [religionId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchStates = async () => {
+      if (countryId == null) {
+        setStates([]);
+        setStateId(null);
+        setDistrictId(null);
+        setCityId(null);
+        setDistricts([]);
+        setCities([]);
+        return;
+      }
+      try {
+        const list = await getStates(countryId);
+        if (cancelled) return;
+        setStates(list.map((s) => ({ id: s.id, name: s.name })));
+        setStateId(null);
+        setDistrictId(null);
+        setCityId(null);
+        setDistricts([]);
+        setCities([]);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("Failed to load states", e);
+        setStates([]);
+      }
+    };
+
+    void fetchStates();
+    return () => {
+      cancelled = true;
+    };
+  }, [countryId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchDistricts = async () => {
+      if (stateId == null) {
+        setDistricts([]);
+        setDistrictId(null);
+        setCityId(null);
+        setCities([]);
+        return;
+      }
+      try {
+        const list = await getDistricts(stateId);
+        if (cancelled) return;
+        setDistricts(list.map((d) => ({ id: d.id, name: d.name })));
+        setDistrictId(null);
+        setCityId(null);
+        setCities([]);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("Failed to load districts", e);
+        setDistricts([]);
+      }
+    };
+
+    void fetchDistricts();
+    return () => {
+      cancelled = true;
+    };
+  }, [stateId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCities = async () => {
+      if (districtId == null) {
+        setCities([]);
+        setCityId(null);
+        return;
+      }
+      try {
+        const list = await getCities(districtId);
+        if (cancelled) return;
+        setCities(list.map((c) => ({ id: c.id, name: c.name })));
+        setCityId(null);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("Failed to load cities", e);
+        setCities([]);
+      }
+    };
+
+    void fetchCities();
+    return () => {
+      cancelled = true;
+    };
+  }, [districtId]);
+
   const fetchMatches = useCallback(
     async (pageNum: number) => {
       setLoading(true);
@@ -486,6 +619,10 @@ const MatchesPage = () => {
         if (educationId != null) params.education_id = educationId;
         if (occupationId != null) params.occupation_id = occupationId;
         if (maritalStatusId != null) params.marital_status = maritalStatusId;
+        if (countryId != null) params.country_id = countryId;
+        if (stateId != null) params.state_id = stateId;
+        if (districtId != null) params.district_id = districtId;
+        if (cityId != null) params.city_id = cityId;
         const res = await getMatches(params);
         setTotalProfiles(res.data.total_profiles);
         setProfiles(res.data.profiles);
@@ -512,6 +649,10 @@ const MatchesPage = () => {
       educationId,
       occupationId,
       maritalStatusId,
+      countryId,
+      stateId,
+      districtId,
+      cityId,
       sortBy,
       limit,
     ],
@@ -727,88 +868,6 @@ const MatchesPage = () => {
               setBusyMatriId={setActionLoading}
             />
           </Suspense>
-          {/* Header — maroon + gold, stats from existing API data only */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative shrink-0 overflow-hidden lg:rounded-3xl lg:border lg:border-primary/15 lg:bg-gradient-to-br lg:from-card lg:via-card lg:to-primary/[0.04] lg:px-7 lg:py-6 lg:shadow-[0_12px_35px_-22px_hsl(var(--primary)/0.55)] lg:backdrop-blur-sm"
-          >
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/[0.08] to-transparent max-lg:hidden" />
-            <div className="flex flex-col gap-4 max-lg:hidden sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="max-lg:hidden font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-                    New Matches Found
-                  </h1>
-                  <span
-                    className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-2 text-sm font-bold tabular-nums text-primary-foreground shadow-soft ring-4 ring-primary/10"
-                    aria-label={`${totalProfiles} matches`}
-                  >
-                    {totalProfiles > 99 ? "99+" : totalProfiles}
-                  </span>
-                </div>
-                <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  {totalProfiles === 1
-                    ? "1 compatible profile waiting for you."
-                    : `${totalProfiles} compatible profiles waiting for you.`}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-2 border-t border-primary/10 pt-5 max-lg:mt-0 max-lg:space-y-0 max-lg:border-0 max-lg:pt-0 xl:flex xl:items-center xl:justify-between xl:gap-4 xl:space-y-0">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground max-lg:hidden">
-                Refine &amp; sort
-              </p>
-              {/* Mobile: Check Match + Filters + Sort share one line; sm+: can wrap */}
-              <div className="flex min-w-0 flex-nowrap items-center gap-2 rounded-xl border border-primary/10 bg-background/70 p-2 sm:flex-wrap sm:gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:flex-initial sm:shrink-0 sm:gap-2 sm:px-3 sm:text-sm"
-                  onClick={() => openMatchModal()}
-                >
-                  <Sparkles className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                  Check Match
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 gap-1.5 border-primary/25 bg-background/90 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground sm:flex-initial sm:shrink-0 sm:gap-2 sm:px-3 sm:text-sm xl:hidden"
-                  onClick={() => setShowFiltersMobile((v) => !v)}
-                  aria-expanded={showFiltersMobile}
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                  Filters
-                </Button>
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 max-lg:hidden sm:flex-initial sm:justify-start sm:gap-2">
-                  <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline sm:text-sm">
-                    Sort by
-                  </span>
-                  <div className="relative min-w-0 flex-1 sm:max-w-none">
-                    <select
-                      className="h-9 w-full min-w-[6.5rem] cursor-pointer appearance-none rounded-lg border border-primary/20 bg-background py-2 pl-2 pr-8 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[10.5rem] sm:pl-3 sm:pr-9 sm:text-sm"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as SortBy)}
-                      aria-label="Sort matches"
-                    >
-                      {SORT_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground sm:right-2.5 sm:h-4 sm:w-4"
-                      aria-hidden
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
           {/* xl:h-0 + flex-1 = let this row shrink so the list column can scroll (flex overflow quirk) */}
           <div className="flex min-h-0 flex-col gap-5 xl:h-0 xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch xl:gap-6 xl:overflow-hidden">
             {/* Filters — fixed column on xl (scroll inside column only if filters exceed viewport) */}
@@ -896,6 +955,100 @@ const MatchesPage = () => {
                     </FilterSection>
 
                     <FilterSection
+                      title="Location"
+                      icon={<MapPin className="w-4 h-4 text-primary" />}
+                    >
+                      <div className="space-y-4">
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Country
+                          </p>
+                          <SearchableIdSelect
+                            placeholder="Search country..."
+                            options={countries}
+                            valueId={countryId}
+                            onSelect={(id) => {
+                              setCountryId(id);
+                              if (id == null) {
+                                setStateId(null);
+                                setDistrictId(null);
+                                setCityId(null);
+                              }
+                            }}
+                            searchQuery={countrySearch}
+                            onSearchChange={setCountrySearch}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            State
+                          </p>
+                          {countryId == null ? (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">
+                              Select a country first.
+                            </p>
+                          ) : (
+                            <SearchableIdSelect
+                              placeholder="Search state..."
+                              options={states}
+                              valueId={stateId}
+                              onSelect={(id) => {
+                                setStateId(id);
+                                if (id == null) {
+                                  setDistrictId(null);
+                                  setCityId(null);
+                                }
+                              }}
+                              searchQuery={stateSearch}
+                              onSearchChange={setStateSearch}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            District
+                          </p>
+                          {stateId == null ? (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">
+                              Select a state first.
+                            </p>
+                          ) : (
+                            <SearchableIdSelect
+                              placeholder="Search district..."
+                              options={districts}
+                              valueId={districtId}
+                              onSelect={(id) => {
+                                setDistrictId(id);
+                                if (id == null) setCityId(null);
+                              }}
+                              searchQuery={districtSearch}
+                              onSearchChange={setDistrictSearch}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            City
+                          </p>
+                          {districtId == null ? (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">
+                              Select a district first.
+                            </p>
+                          ) : (
+                            <SearchableIdSelect
+                              placeholder="Search city..."
+                              options={cities}
+                              valueId={cityId}
+                              onSelect={setCityId}
+                              searchQuery={citySearch}
+                              onSearchChange={setCitySearch}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </FilterSection>
+
+                    <FilterSection
                       title="Religion"
                       icon={<Sparkles className="w-4 h-4 text-primary" />}
                     >
@@ -974,67 +1127,93 @@ const MatchesPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/10 bg-card/70 px-3 py-3 max-lg:hidden lg:mb-5"
+                className="mb-4 flex shrink-0 flex-wrap items-center gap-2 rounded-2xl border border-primary/10 bg-card/70 px-3 py-2.5 lg:mb-5 lg:py-3"
               >
-                <h2 className="font-serif text-lg font-bold text-foreground">
-                  Showing{" "}
-                  <span className="text-secondary tabular-nums">
-                    {profiles.length}
-                  </span>
-                  {profiles.length === 1 ? " profile" : " profiles"}
-                </h2>
-                {totalProfiles > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    Page{" "}
-                    <span className="tabular-nums font-medium text-foreground">
-                      {page}
-                    </span>{" "}
-                    of{" "}
-                    <span className="tabular-nums font-medium text-foreground">
-                      {totalPages}
-                    </span>{" "}
-                    ·{" "}
-                    <span className="tabular-nums font-medium text-foreground">
-                      {totalProfiles}
-                    </span>{" "}
-                    total
-                  </span>
-                )}
-                <div className="ml-auto flex items-center gap-1 rounded-lg border border-primary/15 bg-background p-1">
-                  <span className="px-1 text-xs font-medium text-muted-foreground">
-                    View
-                  </span>
+                <div className="flex min-w-0 items-baseline gap-2">
+                  <h2 className="font-serif text-base font-bold text-foreground sm:text-lg">
+                    Showing{" "}
+                    <span className="text-secondary tabular-nums">
+                      {profiles.length}
+                    </span>
+                    {profiles.length === 1 ? " profile" : " profiles"}
+                  </h2>
+                  {totalProfiles > 0 && (
+                    <span className="hidden text-xs text-muted-foreground sm:inline sm:text-sm">
+                      Page{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {page}
+                      </span>{" "}
+                      of{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {totalPages}
+                      </span>{" "}
+                      ·{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {totalProfiles}
+                      </span>{" "}
+                      total
+                    </span>
+                  )}
+                </div>
+
+                <div className="ml-auto flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
+                    variant="outline"
                     size="sm"
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    className="h-7 rounded-md px-2 text-xs"
-                    onClick={() => setViewMode("list")}
+                    className="h-8 gap-1.5 rounded-lg border-primary/25 bg-background px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => openMatchModal()}
                   >
-                    List
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                    Check Match
                   </Button>
                   <Button
                     type="button"
+                    variant="outline"
                     size="sm"
-                    variant={viewMode === "grid-2" ? "default" : "ghost"}
-                    className="h-7 rounded-md px-2 text-xs"
-                    onClick={() => setViewMode("grid-2")}
+                    className="h-8 gap-1.5 rounded-lg border-primary/25 bg-background px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary hover:text-primary-foreground xl:hidden"
+                    onClick={() => setShowFiltersMobile((v) => !v)}
+                    aria-expanded={showFiltersMobile}
                   >
-                    2 x 2
+                    <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                    Filters
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={viewMode === "grid-3" ? "default" : "ghost"}
-                    className="h-7 rounded-md px-2 text-xs"
-                    onClick={() => setViewMode("grid-3")}
-                  >
-                    3 x 3
-                  </Button>
+                  <div className="hidden items-center gap-1 rounded-lg border border-primary/15 bg-background p-1 lg:flex">
+                    <span className="px-1 text-xs font-medium text-muted-foreground">
+                      View
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      className="h-7 rounded-md px-2 text-xs"
+                      onClick={() => setViewMode("list")}
+                    >
+                      List
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={viewMode === "grid-2" ? "default" : "ghost"}
+                      className="h-7 rounded-md px-2 text-xs"
+                      onClick={() => setViewMode("grid-2")}
+                    >
+                      2 x 2
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={viewMode === "grid-3" ? "default" : "ghost"}
+                      className="h-7 rounded-md px-2 text-xs"
+                      onClick={() => setViewMode("grid-3")}
+                    >
+                      3 x 3
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
 
-              <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-22rem)] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
+              <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-12rem)] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
                 {error && (
                   <div className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {error}

@@ -73,6 +73,10 @@ export interface SouthIndianChartGridProps {
   lang?: ChartGridLang;
   /** Language for the merged centre panel; defaults to {@link lang}. */
   centerLang?: ChartGridLang;
+  /** When set, the centre panel shows only this short label instead of the full birth-detail block. */
+  centerLabel?: string;
+  /** Compact rendering for small (e.g. side-by-side mobile) charts: smaller fonts, planets wrap to fit. */
+  dense?: boolean;
 }
 
 export function SouthIndianChartGrid({
@@ -81,6 +85,8 @@ export function SouthIndianChartGrid({
   className,
   lang = "ml",
   centerLang,
+  centerLabel,
+  dense = false,
 }: SouthIndianChartGridProps) {
   const planets = normalizeChartPlanetsMap(person.planets);
   const lagnaSign = person.lagna ? resolveChartRasiKey(person.lagna) : null;
@@ -107,7 +113,8 @@ export function SouthIndianChartGrid({
               <div
                 key={sign}
                 className={cn(
-                  "flex min-h-0 min-w-0 flex-col p-1 sm:p-1.5",
+                  "flex min-h-0 min-w-0 flex-col",
+                  dense ? "p-0.5" : "p-1 sm:p-1.5",
                   isLagna
                     ? "bg-muted ring-1 ring-inset ring-foreground/40"
                     : "bg-card",
@@ -115,15 +122,32 @@ export function SouthIndianChartGrid({
                 style={{ gridRow: rc.row, gridColumn: rc.col }}
                 title={isLagna ? L.lagna : undefined}
               >
-                <span className="text-[10px] sm:text-xs font-semibold tracking-tight leading-none truncate text-muted-foreground">
+                <span
+                  className={cn(
+                    "font-semibold tracking-tight leading-none truncate text-muted-foreground",
+                    dense ? "text-[8px]" : "text-[10px] sm:text-xs",
+                  )}
+                >
                   {rasiName(sign, lang)}
                 </span>
-                <div className="mt-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
+                <div
+                  className={cn(
+                    "flex min-h-0 flex-1 overflow-hidden",
+                    dense
+                      ? "mt-0 flex-row flex-wrap content-start gap-x-1 gap-y-0 leading-none"
+                      : "mt-0.5 flex-col gap-0.5",
+                  )}
+                >
                   {bodies.length === 0 ? null : (
                     bodies.map((label, bi) => (
                       <span
                         key={`${sign}-${bi}-${label}`}
-                        className="text-[11px] sm:text-sm font-semibold leading-tight text-foreground truncate"
+                        className={cn(
+                          "font-semibold leading-tight text-red-600",
+                          dense
+                            ? "text-[9px] leading-tight"
+                            : "text-[11px] sm:text-sm truncate",
+                        )}
                         title={label}
                       >
                         {label}
@@ -136,10 +160,16 @@ export function SouthIndianChartGrid({
           })}
 
           <div
-            className="flex flex-col items-center justify-center gap-0.5 bg-card px-1 py-1 text-center"
+            className="flex min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden bg-card px-1 py-1 text-center"
             style={{ gridRow: "2 / 4", gridColumn: "2 / 4" }}
           >
-            <p className="text-xs sm:text-sm font-semibold text-primary leading-tight line-clamp-2">
+            {centerLabel ? (
+              <p className="w-full break-words text-sm sm:text-base font-semibold text-primary leading-snug">
+                {centerLabel}
+              </p>
+            ) : (
+              <>
+            <p className="w-full break-words text-xs sm:text-sm font-semibold text-primary leading-tight line-clamp-2">
               {person.name?.trim() || "—"}
             </p>
             {person.date_of_birth?.trim() ? (
@@ -208,6 +238,8 @@ export function SouthIndianChartGrid({
                   .filter(Boolean)
                   .join(" · ")}
               </p>
+            )}
+              </>
             )}
           </div>
         </div>

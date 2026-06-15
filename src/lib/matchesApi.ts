@@ -107,6 +107,10 @@ export interface MatchesParams {
   education_id?: number;
   occupation_id?: number;
   marital_status?: number;
+  country_id?: number;
+  state_id?: number;
+  district_id?: number;
+  city_id?: number;
   profile_with_photo?: boolean | 1 | "true" | "yes";
   sort_by?: SortBy;
 }
@@ -207,6 +211,10 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
   if (params.education_id != null) sp.set("education_id", String(params.education_id));
   if (params.occupation_id != null) sp.set("occupation_id", String(params.occupation_id));
   if (params.marital_status != null) sp.set("marital_status", String(params.marital_status));
+  if (params.country_id != null) sp.set("country_id", String(params.country_id));
+  if (params.state_id != null) sp.set("state_id", String(params.state_id));
+  if (params.district_id != null) sp.set("district_id", String(params.district_id));
+  if (params.city_id != null) sp.set("city_id", String(params.city_id));
   if (params.profile_with_photo !== undefined) {
     const v = params.profile_with_photo;
     sp.set("profile_with_photo", v === true || v === 1 || v === "true" || v === "yes" ? "1" : "0");

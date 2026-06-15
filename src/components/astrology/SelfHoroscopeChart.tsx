@@ -15,15 +15,15 @@ import { cn } from "@/lib/utils";
 import { SouthIndianChartGrid } from "./SouthIndianChartGrid";
 import { chartGridToPlanetsMap } from "./southIndianChartLayout";
 
-type SelfChartType = "rasi" | "amsa" | "bhava";
+export type SelfChartType = "rasi" | "amsa" | "bhava";
 export type ChartLang = "en" | "ml";
 
-const TAB_LABELS: Record<ChartLang, Record<SelfChartType, string>> = {
+export const TAB_LABELS: Record<ChartLang, Record<SelfChartType, string>> = {
   en: { rasi: "Rasi", amsa: "Amshakam", bhava: "Bavam" },
   ml: { rasi: ml.rasi, amsa: ml.amsakom, bhava: ml.bhavam },
 };
 
-const CHART_TYPES: SelfChartType[] = ["rasi", "amsa", "bhava"];
+export const CHART_TYPES: SelfChartType[] = ["rasi", "amsa", "bhava"];
 
 export interface SelfHoroscopeChartProps {
   charts: HoroscopeCharts;
@@ -45,7 +45,7 @@ export interface SelfHoroscopeChartProps {
   enableZoom?: boolean;
 }
 
-function buildPersonForChart(
+export function buildPersonForChart(
   charts: HoroscopeCharts,
   chartType: SelfChartType,
   lang: ChartLang,

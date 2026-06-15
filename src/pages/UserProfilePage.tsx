@@ -249,6 +249,8 @@ interface ProfileFormData {
   >;
   partner_religion_names?: string[];
   partner_caste_preferences?: Record<string, number[]>;
+  partner_age_from?: number | null;
+  partner_age_to?: number | null;
   qualification: string;
   education_id?: number;
   educationSubject: string;
@@ -393,6 +395,8 @@ function mapProfileDataToForm(
       typeof religion.partner_caste_preferences === "object"
         ? religion.partner_caste_preferences
         : {},
+    partner_age_from: religion.partner_age_from ?? null,
+    partner_age_to: religion.partner_age_to ?? null,
     qualification: raw(education.highest_education),
     education_id:
       typeof education.highest_education_id === "number"
@@ -492,6 +496,8 @@ const defaultProfileData = (
   motherTongue: "",
   partnerReligionPreference: "",
   partner_caste_preferences: {},
+  partner_age_from: null,
+  partner_age_to: null,
   qualification: "",
   educationSubject: "",
   employmentStatus: "",
@@ -1097,6 +1103,15 @@ function EditSectionForm({
         onReligionChange({ partner_caste_preferences: next });
       };
 
+      const handlePartnerAgeChange = (
+        field: "partner_age_from" | "partner_age_to",
+        raw: string,
+      ) => {
+        if (!onReligionChange) return;
+        const digits = raw.replace(/\D/g, "").slice(0, 2);
+        onReligionChange({ [field]: digits === "" ? null : Number(digits) });
+      };
+
       return (
         <div className="grid gap-4 py-2">
           <SearchableSelect
@@ -1182,6 +1197,54 @@ function EditSectionForm({
                     )}
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-primary/10 pt-4">
+            <h3 className="font-serif text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+              🎂 Partner Age Preference
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              What age range are you looking for?
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="partner_age_from">From (years)</Label>
+                <Input
+                  id="partner_age_from"
+                  type="number"
+                  inputMode="numeric"
+                  min={18}
+                  max={80}
+                  value={
+                    data.partner_age_from != null
+                      ? String(data.partner_age_from)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handlePartnerAgeChange("partner_age_from", e.target.value)
+                  }
+                  placeholder="e.g. 23"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="partner_age_to">To (years)</Label>
+                <Input
+                  id="partner_age_to"
+                  type="number"
+                  inputMode="numeric"
+                  min={18}
+                  max={80}
+                  value={
+                    data.partner_age_to != null
+                      ? String(data.partner_age_to)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handlePartnerAgeChange("partner_age_to", e.target.value)
+                  }
+                  placeholder="e.g. 76"
+                />
               </div>
             </div>
           </div>
@@ -2149,6 +2212,12 @@ function ViewSectionContent({
           {partnerPreferenceType === "specific_religions"
             ? row("Specific Religions", specificReligionNames.join(", "))
             : null}
+          {row(
+            "Partner Age Preference",
+            data.partner_age_from != null || data.partner_age_to != null
+              ? `${data.partner_age_from ?? "Any"} - ${data.partner_age_to ?? "Any"} yrs`
+              : "",
+          )}
         </div>
       );
     case "Education":
@@ -2762,6 +2831,8 @@ const UserProfilePage = () => {
       .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
       .filter((id): id is number => Number.isFinite(id) && id > 0),
     partner_caste_preferences: profileData.partner_caste_preferences ?? {},
+    partner_age_from: profileData.partner_age_from ?? null,
+    partner_age_to: profileData.partner_age_to ?? null,
   });
 
   const buildPersonalBody = (): PersonalBody => {
@@ -2833,9 +2904,30 @@ const UserProfilePage = () => {
         case "Location":
           await patchLocation(buildLocationBody());
           break;
-        case "Religion":
+        case "Religion": {
+          const ageFrom = profileData.partner_age_from;
+          const ageTo = profileData.partner_age_to;
+          if (
+            ageFrom != null &&
+            (!Number.isInteger(ageFrom) || ageFrom < 18 || ageFrom > 80)
+          ) {
+            setSaveError("Partner age from must be between 18 and 80");
+            return;
+          }
+          if (
+            ageTo != null &&
+            (!Number.isInteger(ageTo) || ageTo < 18 || ageTo > 80)
+          ) {
+            setSaveError("Partner age to must be between 18 and 80");
+            return;
+          }
+          if (ageFrom != null && ageTo != null && ageFrom > ageTo) {
+            setSaveError("Partner age from cannot be greater than age to");
+            return;
+          }
           await patchReligion(buildReligionBody());
           break;
+        }
         case "Personal":
           await patchPersonal(buildPersonalBody());
           break;

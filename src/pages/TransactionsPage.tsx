@@ -23,9 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-  getTransactionSummary,
-  getTransactions,
-  getTransactionCount,
+  getTransactionsOverview,
   getTransactionDetail,
   type Transaction,
   type TransactionDetail,
@@ -239,17 +237,13 @@ const TransactionsPage = () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const [summaryRes, listRes, countRes] = await Promise.all([
-        getTransactionSummary(),
-        getTransactions(currentPage, LIMIT),
-        getTransactionCount(),
-      ]);
-      setTotalSpent(summaryRes.data.total_spent);
-      setActivePlan(summaryRes.data.active_plan);
-      setNextRenewal(summaryRes.data.next_renewal);
-      setTransactions(listRes.data.transactions ?? []);
-      setTotalPages(Math.max(1, Math.ceil(listRes.data.total / LIMIT)));
-      setTotalCount(countRes.data.total_transactions);
+      const { data } = await getTransactionsOverview(currentPage, LIMIT);
+      setTotalSpent(data.summary.total_spent);
+      setActivePlan(data.summary.active_plan);
+      setNextRenewal(data.summary.next_renewal);
+      setTransactions(data.transactions.transactions ?? []);
+      setTotalPages(Math.max(1, Math.ceil(data.transactions.total / LIMIT)));
+      setTotalCount(data.count.total_transactions);
     } catch (err) {
       setLoadError(getDisplayErrorMessage(err));
     } finally {
@@ -374,7 +368,7 @@ const TransactionsPage = () => {
 
                   return (
                     <motion.button
-                      key={txn.transaction_id}
+                      key={txn.transaction_id || `txn-${page}-${i}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}

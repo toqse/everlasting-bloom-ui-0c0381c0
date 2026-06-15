@@ -81,10 +81,14 @@ export interface DashboardProfile {
   education?: string | null;
   occupation?: string | null;
   location?: string | null;
+  religion?: string | null;
   profile_photo?: string | null;
+  full_photo?: string | null;
   is_online?: boolean;
   last_seen?: string | null;
   is_new?: boolean;
+  is_premium?: boolean;
+  is_verified?: boolean;
   match_percentage?: number | null;
   can_view_details?: boolean;
   can_send_interest?: boolean;
@@ -94,6 +98,20 @@ export interface DashboardProfile {
 export interface DashboardProfilesResponse {
   success: boolean;
   data: DashboardProfile[];
+}
+
+/** Paginated list shape returned by suggestions */
+export interface DashboardPaginatedData {
+  total: number;
+  page: number;
+  page_size: number;
+  limit: number;
+  results: DashboardProfile[];
+}
+
+export interface DashboardPaginatedResponse {
+  success: boolean;
+  data: DashboardPaginatedData;
 }
 
 export interface ProfileCompletionData {
@@ -147,8 +165,8 @@ export async function getDashboardNewMatches(limit = 4): Promise<DashboardProfil
   return authedGet<DashboardProfilesResponse>(`v1/dashboard/new-matches/?limit=${limit}`);
 }
 
-export async function getDashboardSuggestions(limit = 8): Promise<DashboardProfilesResponse> {
-  return authedGet<DashboardProfilesResponse>(`v1/dashboard/suggestions/?limit=${limit}`);
+export async function getDashboardSuggestions(limit = 8): Promise<DashboardPaginatedResponse> {
+  return authedGet<DashboardPaginatedResponse>(`v1/dashboard/suggestions/?limit=${limit}`);
 }
 
 export async function getDashboardTodayPicks(): Promise<DashboardProfilesResponse> {

@@ -61,25 +61,19 @@ export interface TransactionSummary {
   next_renewal: string | null;
 }
 
-export interface TransactionSummaryResponse {
-  success: boolean;
-  data: TransactionSummary;
-}
-
-export interface TransactionListResponse {
+export interface TransactionsOverviewResponse {
   success: boolean;
   data: {
-    total: number;
-    page: number;
-    limit: number;
-    transactions: Transaction[];
-  };
-}
-
-export interface TransactionCountResponse {
-  success: boolean;
-  data: {
-    total_transactions: number;
+    summary: TransactionSummary;
+    count: {
+      total_transactions: number;
+    };
+    transactions: {
+      total: number;
+      page: number;
+      limit: number;
+      transactions: Transaction[];
+    };
   };
 }
 
@@ -90,16 +84,13 @@ export interface TransactionDetailResponse {
 
 // ---- API functions ----
 
-export async function getTransactionSummary(): Promise<TransactionSummaryResponse> {
-  return authedGet<TransactionSummaryResponse>("v1/transactions/summary/");
-}
-
-export async function getTransactions(page = 1, limit = 20): Promise<TransactionListResponse> {
-  return authedGet<TransactionListResponse>(`v1/transactions/?page=${page}&limit=${limit}`);
-}
-
-export async function getTransactionCount(): Promise<TransactionCountResponse> {
-  return authedGet<TransactionCountResponse>("v1/transactions/count/");
+export async function getTransactionsOverview(
+  page = 1,
+  limit = 10,
+): Promise<TransactionsOverviewResponse> {
+  return authedGet<TransactionsOverviewResponse>(
+    `v1/transactions/overview/?page=${page}&limit=${limit}`,
+  );
 }
 
 export async function getTransactionDetail(transactionId: string): Promise<TransactionDetailResponse> {
