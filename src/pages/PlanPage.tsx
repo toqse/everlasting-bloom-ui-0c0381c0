@@ -21,11 +21,16 @@ import PaymentPopup from "@/components/PaymentPopup";
 import {
   getAvailablePlans,
   getMyPlan,
+  createServiceChargeOrder,
+  verifyServiceChargePayment,
   type AvailablePlan,
   type MyPlanDetails,
 } from "@/lib/plansApi";
+import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
+import { useAuthStore } from "@/stores/authStore";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateDdMmYyyy } from "@/lib/utils";
+import { toast } from "sonner";
 
 /* ─── Styling map by plan name ──────────────────────────────── */
 type PlanStyle = {
@@ -288,7 +293,15 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
 };
 
 /* ─── Page ──────────────────────────────────────────────────── */
-const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
+const CurrentPlanCard = ({
+  my,
+  onPayServiceCharge,
+  payingServiceCharge,
+}: {
+  my: MyPlanDetails;
+  onPayServiceCharge?: () => void;
+  payingServiceCharge?: boolean;
+}) => {
   const active = my.is_plan_active && my.plan_name;
   const valid = my.valid_until ? formatDateDdMmYyyy(my.valid_until) : "—";
 
@@ -381,9 +394,29 @@ const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
               </span>
             </div> */}
             {(my.service_charge_remaining ?? 0) > 0 && (
-              <div className="text-amber-700 font-medium">
-                If you require our service, the service fee payable is: ₹
-                {my.service_charge_remaining.toLocaleString("en-IN")}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="text-amber-700 font-medium">
+                  If you require our service, the service fee payable is: ₹
+                  {my.service_charge_remaining.toLocaleString("en-IN")}
+                </div>
+                {onPayServiceCharge && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={payingServiceCharge}
+                    onClick={onPayServiceCharge}
+                  >
+                    {payingServiceCharge ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Processing…
+                      </>
+                    ) : (
+                      "Pay remaining service charge"
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -394,6 +427,7 @@ const CurrentPlanCard = ({ my }: { my: MyPlanDetails }) => {
 };
 
 const PlanPage = () => {
+  const user = useAuthStore((s) => s.user);
   const [apiPlans, setApiPlans] = useState<AvailablePlan[]>([]);
   const [myPlan, setMyPlan] = useState<MyPlanDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -401,6 +435,7 @@ const PlanPage = () => {
   const [myPlanError, setMyPlanError] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<AvailablePlan | null>(null);
+  const [payingServiceCharge, setPayingServiceCharge] = useState(false);
 
   const refreshPlanData = useCallback(async () => {
     const [plansRes, myRes] = await Promise.allSettled([
@@ -450,6 +485,51 @@ const PlanPage = () => {
     };
   }, []);
 
+  const handlePayServiceCharge = useCallback(async () => {
+    setPayingServiceCharge(true);
+    try {
+      const orderRes = await createServiceChargeOrder();
+      const order = orderRes.data;
+      if ((order.amount_inr ?? 0) <= 0) {
+        toast.info(orderRes.message ?? "No remaining service charge to pay.");
+        await refreshPlanData();
+        return;
+      }
+      if (!order.order_id || !order.key_id) {
+        throw new Error("Invalid payment order response.");
+      }
+
+      await openRazorpayCheckout({
+        keyId: order.key_id,
+        orderId: order.order_id,
+        amount: order.amount!,
+        currency: order.currency ?? "INR",
+        description: "Remaining service charge",
+        prefill: {
+          name: user?.name ?? undefined,
+          email: user?.email ?? undefined,
+          contact: user?.phone ?? undefined,
+        },
+        onSuccess: async (payment) => {
+          const verifyRes = await verifyServiceChargePayment({
+            razorpay_order_id: payment.razorpay_order_id,
+            razorpay_payment_id: payment.razorpay_payment_id,
+            razorpay_signature: payment.razorpay_signature,
+          });
+          toast.success(verifyRes.message ?? "Service charge paid successfully.");
+          await refreshPlanData();
+        },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to pay service charge";
+      if (msg !== "Payment cancelled.") {
+        toast.error(msg);
+      }
+    } finally {
+      setPayingServiceCharge(false);
+    }
+  }, [refreshPlanData, user?.email, user?.name, user?.phone]);
+
   const gridCols =
     apiPlans.length <= 2
       ? "sm:grid-cols-2"
@@ -475,7 +555,13 @@ const PlanPage = () => {
             {myPlanError} — catalog below may still load.
           </div>
         )}
-        {!loading && myPlan && <CurrentPlanCard my={myPlan} />}
+        {!loading && myPlan && (
+          <CurrentPlanCard
+            my={myPlan}
+            onPayServiceCharge={handlePayServiceCharge}
+            payingServiceCharge={payingServiceCharge}
+          />
+        )}
 
         {error && (
           <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">

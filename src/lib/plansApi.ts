@@ -89,6 +89,8 @@ export async function getMyPlan(): Promise<MyPlanResponse> {
 
 export type PaymentMethod = "razorpay" | "stripe" | "upi" | "manual";
 
+export type PaymentOption = "plan_only" | "full";
+
 export interface AvailablePlan {
   id: number;
   name: string;
@@ -135,6 +137,103 @@ export async function purchasePlan(planId: number, paymentMethod: PaymentMethod)
   return authedFetch<PlanPurchaseResponse>("v1/plans/purchase/", {
     method: "POST",
     body: JSON.stringify({ plan_id: planId, payment_method: paymentMethod }),
+  });
+}
+
+export interface PlanOrderResponse {
+  success: boolean;
+  data: {
+    plan_id: number;
+    payment_option: PaymentOption;
+    amount_inr: number;
+    order_id: string;
+    amount: number;
+    currency: string;
+    key_id: string;
+  };
+}
+
+export interface PlanVerifyResponse {
+  success: boolean;
+  message: string;
+  data: PlanPurchaseResponse["data"] & {
+    payment_option?: PaymentOption;
+    carry_forward?: Record<string, number>;
+  };
+}
+
+export async function createPlanOrder(
+  planId: number,
+  paymentOption: PaymentOption = "plan_only",
+): Promise<PlanOrderResponse> {
+  return authedFetch<PlanOrderResponse>("v1/plans/order/", {
+    method: "POST",
+    body: JSON.stringify({ plan_id: planId, payment_option: paymentOption }),
+  });
+}
+
+export async function verifyPlanPayment(params: {
+  planId: number;
+  paymentOption: PaymentOption;
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}): Promise<PlanVerifyResponse> {
+  return authedFetch<PlanVerifyResponse>("v1/plans/verify/", {
+    method: "POST",
+    body: JSON.stringify({
+      plan_id: params.planId,
+      payment_option: params.paymentOption,
+      razorpay_order_id: params.razorpay_order_id,
+      razorpay_payment_id: params.razorpay_payment_id,
+      razorpay_signature: params.razorpay_signature,
+    }),
+  });
+}
+
+export interface ServiceChargeOrderResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    amount_inr: number;
+    order_id?: string;
+    amount?: number;
+    currency?: string;
+    key_id?: string;
+    amount_paid?: number;
+    service_charge_remaining?: number;
+  };
+}
+
+export interface ServiceChargeVerifyResponse {
+  success: boolean;
+  message: string;
+  data: {
+    transaction_id?: number;
+    amount_paid: number;
+    service_charge_remaining: number;
+  };
+}
+
+export async function createServiceChargeOrder(): Promise<ServiceChargeOrderResponse> {
+  return authedFetch<ServiceChargeOrderResponse>("v1/plans/pay-remaining-service/order/", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function verifyServiceChargePayment(params: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}): Promise<ServiceChargeVerifyResponse> {
+  return authedFetch<ServiceChargeVerifyResponse>("v1/plans/pay-remaining-service/verify/", {
+    method: "POST",
+    body: JSON.stringify({
+      razorpay_order_id: params.razorpay_order_id,
+      razorpay_payment_id: params.razorpay_payment_id,
+      razorpay_signature: params.razorpay_signature,
+    }),
   });
 }
 

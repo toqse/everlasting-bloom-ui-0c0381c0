@@ -68,27 +68,7 @@ import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
 import DemoPaymentDialog from "@/components/DemoPaymentDialog";
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: {
-      key: string;
-      amount: number;
-      currency: string;
-      order_id: string;
-      name?: string;
-      description?: string;
-      handler: (response: {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      }) => void;
-      prefill?: { name?: string };
-      theme?: { color?: string };
-      modal?: { ondismiss?: () => void };
-    }) => { open: () => void };
-  }
-}
+import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
 type Meridian = "AM" | "PM";
 
@@ -165,23 +145,6 @@ function build12HourTime(hour: string, minute: string): string {
   const m = /^([0-5]\d)$/.exec(minute);
   if (!m) return "";
   return `${String(h).padStart(2, "0")}:${m[1]}`;
-}
-
-let razorpayScriptPromise: Promise<boolean> | null = null;
-async function ensureRazorpayScript(): Promise<boolean> {
-  if (typeof window === "undefined") return false;
-  if (window.Razorpay) return true;
-  if (!razorpayScriptPromise) {
-    razorpayScriptPromise = new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  }
-  return razorpayScriptPromise;
 }
 
 function ProfileChartColumn({
@@ -647,60 +610,35 @@ export default function JathagamPage() {
         return;
       }
 
-      const sdkReady = await ensureRazorpayScript();
-      if (!sdkReady || !window.Razorpay) {
-        throw new Error("Could not load Razorpay checkout.");
-      }
-      const RazorpayCtor = window.Razorpay;
-
       if (!order.order_id || !order.key_id) {
         throw new Error("Invalid payment order response.");
       }
 
-      await new Promise<void>((resolve, reject) => {
-        const rz = new RazorpayCtor({
-          key: order.key_id!,
-          amount: order.amount,
-          currency: order.currency,
-          order_id: order.order_id!,
-          name: "Matrimony Astrology",
-          description:
-            product === "jathakam" ? "Jathakam PDF" : "Thalakuri PDF",
-          prefill: { name: displayName || undefined },
-          theme: { color: "#8d1b5b" },
-          handler: async (payment) => {
-            try {
-              const verifyRes = await postAstrologyPdfVerify({
-                product,
-                razorpay_order_id: payment.razorpay_order_id,
-                razorpay_payment_id: payment.razorpay_payment_id,
-                razorpay_signature: payment.razorpay_signature,
-              });
-              const downloadUrl = verifyRes.data?.download_url?.trim();
-              if (!downloadUrl) {
-                throw new Error(
-                  "Download URL missing in verification response.",
-                );
-              }
-              window.open(downloadUrl, "_blank", "noopener,noreferrer");
-              toast.success(
-                verifyRes.message ??
-                  `${product === "jathakam" ? "Jathakam" : "Thalakuri"} PDF is ready.`,
-              );
-              resolve();
-            } catch (e) {
-              reject(
-                e instanceof Error
-                  ? e
-                  : new Error("Payment verified but PDF could not be opened."),
-              );
-            }
-          },
-          modal: {
-            ondismiss: () => reject(new Error("Payment cancelled.")),
-          },
-        });
-        rz.open();
+      await openRazorpayCheckout({
+        keyId: order.key_id,
+        orderId: order.order_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Matrimony Astrology",
+        description: product === "jathakam" ? "Jathakam PDF" : "Thalakuri PDF",
+        prefill: { name: displayName || undefined },
+        onSuccess: async (payment) => {
+          const verifyRes = await postAstrologyPdfVerify({
+            product,
+            razorpay_order_id: payment.razorpay_order_id,
+            razorpay_payment_id: payment.razorpay_payment_id,
+            razorpay_signature: payment.razorpay_signature,
+          });
+          const downloadUrl = verifyRes.data?.download_url?.trim();
+          if (!downloadUrl) {
+            throw new Error("Download URL missing in verification response.");
+          }
+          window.open(downloadUrl, "_blank", "noopener,noreferrer");
+          toast.success(
+            verifyRes.message ??
+              `${product === "jathakam" ? "Jathakam" : "Thalakuri"} PDF is ready.`,
+          );
+        },
       });
     } catch (e) {
       const msg =
