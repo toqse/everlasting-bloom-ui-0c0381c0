@@ -29,6 +29,7 @@ export function normalizePoruthamKey(raw: string): string {
     reju_dosham: "rajju_dosham",
     rejju_dosham: "rajju_dosham",
     papam_samyam: "papam_samyom",
+    papa_samyam: "papam_samyom",
     kuja_alignment: "kuja_dosham",
   };
   return aliases[key] ?? key;

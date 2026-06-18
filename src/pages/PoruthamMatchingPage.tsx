@@ -223,6 +223,29 @@ function MatchResultCard({ data }: { data: PoruthamMatchData }) {
   );
 }
 
+function PoruthamStatusIcon({ points }: { points: number }) {
+  return (
+    <span
+      className={cn(
+        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+        points >= 1
+          ? "bg-green-500"
+          : points > 0
+            ? "bg-amber-400"
+            : "bg-red-500",
+      )}
+    >
+      {points >= 1 ? (
+        <Check className="h-4 w-4 text-white" strokeWidth={3} />
+      ) : points > 0 ? (
+        <Equal className="h-4 w-4 text-white" strokeWidth={3} />
+      ) : (
+        <X className="h-4 w-4 text-white" strokeWidth={3} />
+      )}
+    </span>
+  );
+}
+
 function PoruthamDetailsCard({
   data,
   lang,
@@ -242,6 +265,15 @@ function PoruthamDetailsCard({
     return { key, matched, points, label };
   });
 
+  const doshaRows = (data.dosha_checks ?? []).map((item) => ({
+    key: item.key,
+    matched: item.matched,
+    label:
+      lang === "en"
+        ? (item.label?.trim() || item.key)
+        : poruthamRowLabelMalayalam(item.key, item.label),
+  }));
+
   return (
     <div className="rounded-2xl border border-primary/15 bg-card p-3 shadow-card font-ml sm:p-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden">
       <div className="mb-1.5 flex shrink-0 items-center gap-2">
@@ -254,31 +286,34 @@ function PoruthamDetailsCard({
         {rows.map((row) => (
           <li
             key={row.key}
-            className="flex items-center gap-3 border-b border-primary/5 py-2 last:border-0"
+            className="flex items-center gap-3 border-b border-primary/5 py-2"
           >
             <span className="flex-1 text-sm font-medium text-foreground">
               {row.label}
             </span>
-            <span
-              className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                row.points >= 1
-                  ? "bg-green-500"
-                  : row.points > 0
-                    ? "bg-amber-400"
-                    : "bg-red-500",
-              )}
-            >
-              {row.points >= 1 ? (
-                <Check className="h-4 w-4 text-white" strokeWidth={3} />
-              ) : row.points > 0 ? (
-                <Equal className="h-4 w-4 text-white" strokeWidth={3} />
-              ) : (
-                <X className="h-4 w-4 text-white" strokeWidth={3} />
-              )}
-            </span>
+            <PoruthamStatusIcon points={row.points} />
           </li>
         ))}
+        {doshaRows.length > 0 ? (
+          <>
+            <li
+              className="list-none border-t border-primary/20 py-0"
+              role="separator"
+              aria-hidden
+            />
+            {doshaRows.map((row) => (
+              <li
+                key={row.key}
+                className="flex items-center gap-3 border-b border-primary/5 py-2 last:border-0"
+              >
+                <span className="flex-1 text-sm font-medium text-foreground">
+                  {row.label}
+                </span>
+                <PoruthamStatusIcon points={row.matched ? 1 : 0} />
+              </li>
+            ))}
+          </>
+        ) : null}
       </ul>
     </div>
   );

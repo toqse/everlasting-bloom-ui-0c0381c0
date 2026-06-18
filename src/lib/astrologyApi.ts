@@ -391,6 +391,8 @@ export interface PoruthamMatchData {
     bride: PoruthamGrahanilaPerson;
     groom: PoruthamGrahanilaPerson;
   };
+  /** Kuja / Papa Samyam / Dasa Sandhi checks returned below the 10 poruthams. */
+  dosha_checks?: PoruthamDetailedItem[];
 }
 
 export interface PoruthamMatchResponse {
