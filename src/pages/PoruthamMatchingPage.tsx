@@ -33,6 +33,7 @@ import {
   poruthamRowLabelMalayalam,
   rasiNameMalayalam,
 } from "@/lib/malayalam/horoscopeDisplayMl";
+import { normalizePoruthamKey } from "@/lib/astrologyPoruthamDisplay";
 import { BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
@@ -265,14 +266,19 @@ function PoruthamDetailsCard({
     return { key, matched, points, label };
   });
 
-  const doshaRows = (data.dosha_checks ?? []).map((item) => ({
-    key: item.key,
-    matched: item.matched,
-    label:
-      lang === "en"
-        ? (item.label?.trim() || item.key)
-        : poruthamRowLabelMalayalam(item.key, item.label),
-  }));
+  const doshaRows = (data.dosha_checks ?? [])
+    .filter(
+      (item) =>
+        normalizePoruthamKey(item.key ?? item.label ?? "") !== "kuja_dosham",
+    )
+    .map((item) => ({
+      key: item.key,
+      matched: item.matched,
+      label:
+        lang === "en"
+          ? (item.label?.trim() || item.key)
+          : poruthamRowLabelMalayalam(item.key, item.label),
+    }));
 
   return (
     <div className="rounded-2xl border border-primary/15 bg-card p-3 shadow-card font-ml sm:p-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden">
