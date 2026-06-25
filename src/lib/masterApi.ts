@@ -149,6 +149,19 @@ export async function getCities(districtId: number, search?: string): Promise<Ci
   return results;
 }
 
+/** GET v1/master/cities/?district_id=1&district_id=2 — cities for multiple districts */
+export async function getCitiesForDistricts(
+  districtIds: number[],
+  search?: string,
+): Promise<City[]> {
+  if (districtIds.length === 0) return [];
+  const qs = districtIds.map((id) => `district_id=${id}`).join("&");
+  const path = `v1/master/cities/?${qs}`;
+  const results = await getPaginated<City>(path, search);
+  console.log("[masterApi] getCitiesForDistricts response:", { districtIds, search, results });
+  return results;
+}
+
 /** GET v1/master/religions?search= */
 export async function getReligions(search?: string): Promise<Religion[]> {
   const path = "v1/master/religions";

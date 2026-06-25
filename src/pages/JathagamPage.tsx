@@ -18,7 +18,6 @@ import {
   Sparkles,
   Check,
   X,
-  Phone,
   Loader2,
   FileText,
 } from "lucide-react";
@@ -40,6 +39,7 @@ import {
   getMyHoroscopeProfile,
   postGenerateHoroscope,
   getBirthDetailCandidates,
+  openAstrologyPdfDownload,
   postAstrologyPdfOrder,
   postAstrologyPdfVerify,
   type AstrologyPdfProduct,
@@ -67,6 +67,7 @@ import {
 import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
+import { AstrologerServicesCallLink } from "@/components/astrology/AstrologerServicesCallLink";
 import DemoPaymentDialog from "@/components/DemoPaymentDialog";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
@@ -599,6 +600,17 @@ export default function JathagamPage() {
       const orderRes = await postAstrologyPdfOrder({ product });
       const order = orderRes.data;
 
+      if (order.already_purchased && order.download_url?.trim()) {
+        await openAstrologyPdfDownload(
+          order.download_url.trim(),
+          `${product}.pdf`,
+        );
+        toast.success(
+          `Your ${product === "jathakam" ? "Jathakam" : "Thalakuri"} PDF is ready.`,
+        );
+        return;
+      }
+
       if (
         product === "thalakuri" &&
         order.demo &&
@@ -633,7 +645,7 @@ export default function JathagamPage() {
           if (!downloadUrl) {
             throw new Error("Download URL missing in verification response.");
           }
-          window.open(downloadUrl, "_blank", "noopener,noreferrer");
+          await openAstrologyPdfDownload(downloadUrl, `${product}.pdf`);
           toast.success(
             verifyRes.message ??
               `${product === "jathakam" ? "Jathakam" : "Thalakuri"} PDF is ready.`,
@@ -1210,17 +1222,15 @@ export default function JathagamPage() {
               </p>
             )}
 
-            <a
-              href="tel:8921726855"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary/5 px-4 py-3 text-center text-sm font-medium text-primary hover:bg-primary/10 transition-colors font-ml"
-            >
-              <Phone className="w-4 h-4 shrink-0" />
-              <span className="text-center">
-                {ml.astrologerCta}
-                <br />
-                {ml.astrologerContact}: 8921726855
-              </span>
-            </a>
+            <p className="mt-4 text-xs text-muted-foreground text-center">
+              {ml.birthDetailsHintEn}
+            </p>
+
+            <AstrologerServicesCallLink
+              className="mt-2 font-ml"
+              label={ml.astrologerCtaEn}
+              showPhone={false}
+            />
           </div>
 
           {showPairComparison &&

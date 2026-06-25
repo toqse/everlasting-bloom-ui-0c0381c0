@@ -21,11 +21,10 @@ import {
   MapPin,
   UserCircle,
   FileText,
-  Sparkles,
-  Loader2,
   type LucideIcon,
 } from "lucide-react";
-import { formatPhoneDisplay } from "@/lib/phone";
+import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/phone";
+import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,11 +82,15 @@ import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { BASE_URL } from "@/lib/config";
 import DemoPaymentDialog from "@/components/DemoPaymentDialog";
 import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
+import { MyHoroscopeSection } from "@/components/astrology/MyHoroscopeSection";
 import {
   getMyHoroscopeProfile,
+  openAstrologyPdfDownload,
   postAstrologyPdfOrder,
+  postAstrologyPdfVerify,
   type HoroscopeProfileData,
 } from "@/lib/astrologyApi";
+import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
 const PARENT_LIFE_STATUS_OPTIONS = ["Alive", "Late"];
 const PARTNER_RELIGION_OPTIONS = [
@@ -118,6 +121,25 @@ const MARITAL_STATUS_OPTIONS = [
   "Separated",
   "Spearated",
 ];
+
+const MARITAL_STATUSES_WITH_CHILDREN = [
+  "Awaiting Divorce",
+  "Divorced",
+  "Widowed",
+  "Separated",
+];
+
+function isDivorcedMaritalStatus(status: string): boolean {
+  return status.trim().toLowerCase() === "divorced";
+}
+
+function showChildrenForMaritalStatus(status: string): boolean {
+  const normalized = status.trim().toLowerCase();
+  return MARITAL_STATUSES_WITH_CHILDREN.some(
+    (s) => s.toLowerCase() === normalized,
+  );
+}
+
 const COLOR_OPTIONS = [
   "White",
   "Medium",
@@ -276,6 +298,7 @@ interface ProfileFormData {
   height: string;
   weight: string;
   maritalStatus: string;
+  reasonForDivorce: string;
   hasChildren: string;
   numberOfChildren: string;
   color: string;
@@ -290,9 +313,13 @@ interface ProfileFormData {
   numberOfMarriedBrothers: string;
   numberOfSisters: string;
   numberOfMarriedSisters: string;
+  brothersOccupation: string;
+  sistersOccupation: string;
   aboutMyFamily: string;
   familyType: string;
   familyStatus: string;
+  familyContactNumber: string;
+  familyContactNumber2: string;
   bio: string;
   rashi: string;
   nakshatra: string;
@@ -437,6 +464,10 @@ function mapProfileDataToForm(
     height: heightForm,
     weight: weightForm,
     maritalStatus: raw(personal.marital_status ?? personal.marital_status_id),
+    reasonForDivorce: raw(
+      (personal as Record<string, unknown>).reason_for_divorce ??
+        (personal as Record<string, unknown>).reasonForDivorce,
+    ),
     hasChildren:
       personal.has_children != null
         ? personal.has_children
@@ -468,9 +499,13 @@ function mapProfileDataToForm(
     numberOfSisters: family.sisters != null ? String(family.sisters) : "",
     numberOfMarriedSisters:
       family.married_sisters != null ? String(family.married_sisters) : "",
+    brothersOccupation: raw(family.brother_occupation),
+    sistersOccupation: raw(family.sister_occupation),
     aboutMyFamily: raw(family.about_family),
     familyType: raw(family.family_type),
     familyStatus: raw(family.family_status),
+    familyContactNumber: digitsOnlyMobile(raw(family.family_contact)),
+    familyContactNumber2: digitsOnlyMobile(raw(family.family_contact_2)),
     bio: raw(data.about_me),
     rashi: "",
     nakshatra: "",
@@ -511,6 +546,7 @@ const defaultProfileData = (
   height: "",
   weight: "",
   maritalStatus: "",
+  reasonForDivorce: "",
   hasChildren: "no",
   numberOfChildren: "",
   color: "",
@@ -525,9 +561,13 @@ const defaultProfileData = (
   numberOfMarriedBrothers: "",
   numberOfSisters: "",
   numberOfMarriedSisters: "",
+  brothersOccupation: "",
+  sistersOccupation: "",
   aboutMyFamily: "",
   familyType: "",
   familyStatus: "",
+  familyContactNumber: "",
+  familyContactNumber2: "",
   bio: "",
   rashi: "",
   nakshatra: "",
@@ -1741,7 +1781,9 @@ function EditSectionForm({
         </div>
       );
     }
-    case "Personal":
+    case "Personal": {
+      const showChildren = showChildrenForMaritalStatus(data.maritalStatus);
+      const isDivorced = isDivorcedMaritalStatus(data.maritalStatus);
       return (
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
@@ -1749,7 +1791,20 @@ function EditSectionForm({
             <select
               id="maritalStatus"
               value={data.maritalStatus}
-              onChange={(e) => update("maritalStatus", e.target.value)}
+              onChange={(e) => {
+                const status = e.target.value;
+                const nextShowChildren = showChildrenForMaritalStatus(status);
+                const nextIsDivorced = isDivorcedMaritalStatus(status);
+                onChange({
+                  ...data,
+                  maritalStatus: status,
+                  reasonForDivorce: nextIsDivorced ? data.reasonForDivorce : "",
+                  hasChildren: nextShowChildren ? data.hasChildren : "no",
+                  numberOfChildren: nextShowChildren
+                    ? data.numberOfChildren
+                    : "",
+                });
+              }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="">Select marital status</option>
@@ -1763,37 +1818,55 @@ function EditSectionForm({
               ))}
             </select>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="hasChildren">Has Children</Label>
-            <select
-              id="hasChildren"
-              value={data.hasChildren}
-              onChange={(e) => {
-                const has = e.target.value;
-                onChange({
-                  ...data,
-                  hasChildren: has,
-                  numberOfChildren: has === "yes" ? data.numberOfChildren : "0",
-                });
-              }}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="numberOfChildren">No. of Children</Label>
-            <Input
-              id="numberOfChildren"
-              type="number"
-              min={0}
-              value={data.numberOfChildren}
-              onChange={(e) => update("numberOfChildren", e.target.value)}
-              placeholder="0"
-              disabled={data.hasChildren !== "yes"}
-            />
-          </div>
+          {isDivorced && (
+            <div className="grid gap-2">
+              <Label htmlFor="reasonForDivorce">Reason for Divorce</Label>
+              <Input
+                id="reasonForDivorce"
+                value={data.reasonForDivorce}
+                onChange={(e) =>
+                  update("reasonForDivorce", e.target.value)
+                }
+                placeholder="e.g. Mutual consent"
+              />
+            </div>
+          )}
+          {showChildren && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="hasChildren">Has Children</Label>
+                <select
+                  id="hasChildren"
+                  value={data.hasChildren}
+                  onChange={(e) => {
+                    const has = e.target.value;
+                    onChange({
+                      ...data,
+                      hasChildren: has,
+                      numberOfChildren:
+                        has === "yes" ? data.numberOfChildren : "",
+                    });
+                  }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="numberOfChildren">No. of Children</Label>
+                <Input
+                  id="numberOfChildren"
+                  type="number"
+                  min={0}
+                  value={data.numberOfChildren}
+                  onChange={(e) => update("numberOfChildren", e.target.value)}
+                  placeholder="0"
+                  disabled={data.hasChildren !== "yes"}
+                />
+              </div>
+            </>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="height">Height (cm)</Label>
             <Input
@@ -1854,6 +1927,7 @@ function EditSectionForm({
           </div>
         </div>
       );
+    }
     case "Family":
       return (
         <div className="grid gap-4 py-2 md:grid-cols-3">
@@ -1977,7 +2051,25 @@ function EditSectionForm({
               />
             </div>
           </div>
-          <div className="grid gap-2 md:col-span-3">
+          <div className="grid gap-2">
+            <Label htmlFor="brothersOccupation">Brother&apos;s Occupation</Label>
+            <Input
+              id="brothersOccupation"
+              value={data.brothersOccupation}
+              onChange={(e) => update("brothersOccupation", e.target.value)}
+              placeholder="e.g. Software Engineer"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="sistersOccupation">Sister&apos;s Occupation</Label>
+            <Input
+              id="sistersOccupation"
+              value={data.sistersOccupation}
+              onChange={(e) => update("sistersOccupation", e.target.value)}
+              placeholder="e.g. Teacher"
+            />
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="familyType">Family Type</Label>
             <Input
               id="familyType"
@@ -1986,13 +2078,31 @@ function EditSectionForm({
               placeholder="e.g. Nuclear"
             />
           </div>
-          <div className="grid gap-2 md:col-span-3">
+          <div className="grid gap-2">
             <Label htmlFor="familyStatus">Family Status</Label>
             <Input
               id="familyStatus"
               value={data.familyStatus}
               onChange={(e) => update("familyStatus", e.target.value)}
               placeholder="e.g. Upper Middle Class"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="familyContactNumber">Family Contact Number 1 (Optional)</Label>
+            <PhoneInput
+              id="familyContactNumber"
+              value={data.familyContactNumber}
+              onChange={(v) => update("familyContactNumber", v)}
+              placeholder="10-digit mobile"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="familyContactNumber2">Whatsapp Number (Optional)</Label>
+            <PhoneInput
+              id="familyContactNumber2"
+              value={data.familyContactNumber2}
+              onChange={(v) => update("familyContactNumber2", v)}
+              placeholder="10-digit mobile"
             />
           </div>
           <div className="grid gap-2 md:col-span-3">
@@ -2278,18 +2388,22 @@ function ViewSectionContent({
           {row("Address", data.address)}
         </div>
       );
-    case "Personal":
+    case "Personal": {
+      const showChildren = showChildrenForMaritalStatus(data.maritalStatus);
+      const isDivorced = isDivorcedMaritalStatus(data.maritalStatus);
       return (
         <div className="space-y-0">
           {row("Marital Status", data.maritalStatus)}
-          {row("Has Children", data.hasChildren === "yes" ? "Yes" : "No")}
-          {row("Number of Children", data.numberOfChildren)}
+          {isDivorced && row("Reason for Divorce", data.reasonForDivorce)}
+          {showChildren && row("Has Children", data.hasChildren === "yes" ? "Yes" : "No")}
+          {showChildren && row("Number of Children", data.numberOfChildren)}
           {row("Height (cm)", data.height)}
           {row("Weight (kg)", data.weight)}
           {row("Colour / Complexion", data.color)}
           {row("Blood Group", data.bloodGroup)}
         </div>
       );
+    }
     case "Family":
       return (
         <div className="space-y-0">
@@ -2303,8 +2417,12 @@ function ViewSectionContent({
           {row("Married Brothers", data.numberOfMarriedBrothers)}
           {row("Sisters", data.numberOfSisters)}
           {row("Married Sisters", data.numberOfMarriedSisters)}
+          {row("Brother's Occupation", data.brothersOccupation)}
+          {row("Sister's Occupation", data.sistersOccupation)}
           {row("Family Type", data.familyType)}
           {row("Family Status", data.familyStatus)}
+          {row("Family Contact Number 1", formatPhoneDisplay(data.familyContactNumber))}
+          {row("Family Contact Number 2", formatPhoneDisplay(data.familyContactNumber2))}
           {row("About Family", data.aboutMyFamily)}
         </div>
       );
@@ -2381,18 +2499,55 @@ const UserProfilePage = () => {
     try {
       const orderRes = await postAstrologyPdfOrder({ product: "thalakuri" });
       const order = orderRes.data;
-      const downloadUrl = order.download_url?.trim();
-      if (order.demo && downloadUrl) {
+
+      if (order.already_purchased && order.download_url?.trim()) {
+        await openAstrologyPdfDownload(order.download_url.trim(), "thalakuri.pdf");
+        toast.success("Your Thalakuri PDF is ready.");
+        return;
+      }
+
+      if (order.demo && order.download_url?.trim()) {
         setDemoPaymentAmount(order.price_inr ?? 20);
-        setDemoDownloadUrl(downloadUrl);
+        setDemoDownloadUrl(order.download_url.trim());
         setDemoPaymentOpen(true);
         return;
       }
-      toast.error("Thalakuri demo payment is unavailable. Please try again.");
+
+      if (!order.order_id || !order.key_id) {
+        throw new Error("Invalid payment order response.");
+      }
+
+      await openRazorpayCheckout({
+        keyId: order.key_id,
+        orderId: order.order_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Matrimony Astrology",
+        description: "Thalakuri PDF",
+        prefill: { name: profileData.name || user?.name || undefined },
+        onSuccess: async (payment) => {
+          const verifyRes = await postAstrologyPdfVerify({
+            product: "thalakuri",
+            razorpay_order_id: payment.razorpay_order_id,
+            razorpay_payment_id: payment.razorpay_payment_id,
+            razorpay_signature: payment.razorpay_signature,
+          });
+          const downloadUrl = verifyRes.data?.download_url?.trim();
+          if (!downloadUrl) {
+            throw new Error("Download URL missing in verification response.");
+          }
+          await openAstrologyPdfDownload(downloadUrl, "thalakuri.pdf");
+          toast.success(
+            verifyRes.message ?? "Thalakuri PDF is ready.",
+          );
+        },
+      });
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Could not start Thalakuri purchase.",
-      );
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Could not start Thalakuri purchase.";
+      if (msg !== "Payment cancelled.") toast.error(msg);
     } finally {
       setLoadingThalakuri(false);
     }
@@ -2794,12 +2949,24 @@ const UserProfilePage = () => {
               family.married_sisters != null
                 ? String(family.married_sisters)
                 : prev.numberOfMarriedSisters,
+            brothersOccupation: String(
+              family.brother_occupation ?? prev.brothersOccupation ?? "",
+            ),
+            sistersOccupation: String(
+              family.sister_occupation ?? prev.sistersOccupation ?? "",
+            ),
             aboutMyFamily: String(
               family.about_family ?? prev.aboutMyFamily ?? "",
             ),
             familyType: String(family.family_type ?? prev.familyType ?? ""),
             familyStatus: String(
               family.family_status ?? prev.familyStatus ?? "",
+            ),
+            familyContactNumber: digitsOnlyMobile(
+              String(family.family_contact ?? prev.familyContactNumber ?? ""),
+            ),
+            familyContactNumber2: digitsOnlyMobile(
+              String(family.family_contact_2 ?? prev.familyContactNumber2 ?? ""),
             ),
           }));
         })
@@ -2838,17 +3005,22 @@ const UserProfilePage = () => {
   const buildPersonalBody = (): PersonalBody => {
     const h = parseInt(String(profileData.height).replace(/\D/g, ""), 10);
     const w = parseFloat(String(profileData.weight).replace(/[^\d.]/g, ""));
+    const isDivorced = isDivorcedMaritalStatus(profileData.maritalStatus);
+    const showChildren = showChildrenForMaritalStatus(profileData.maritalStatus);
     return {
       marital_status: profileData.maritalStatus || "",
-      has_children: profileData.hasChildren === "yes",
+      has_children: showChildren && profileData.hasChildren === "yes",
       number_of_children:
-        profileData.hasChildren === "yes"
+        showChildren && profileData.hasChildren === "yes"
           ? parseInt(profileData.numberOfChildren, 10) || null
           : null,
       height_cm: Number.isFinite(h) ? h : 0,
       weight_kg: Number.isFinite(w) ? w : null,
       complexion: profileData.color || "",
       blood_group: profileData.bloodGroup || "O+ve",
+      reason_for_divorce: isDivorced
+        ? profileData.reasonForDivorce.trim()
+        : "",
     };
   };
 
@@ -2860,6 +3032,13 @@ const UserProfilePage = () => {
     annual_income: profileData.income || "",
   });
 
+  const optionalSiblingCount = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = parseInt(trimmed, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const buildFamilyBody = (): FamilyBody => ({
     father_status:
       profileData.fatherLifeStatus === "Late" ? "Late" : "Alive",
@@ -2869,13 +3048,21 @@ const UserProfilePage = () => {
       profileData.motherLifeStatus === "Late" ? "Late" : "Alive",
     mother_name: profileData.mothersName || "",
     mother_occupation: profileData.mothersOccupation || "",
-    brothers: parseInt(profileData.numberOfBrothers, 10) || 0,
-    married_brothers: parseInt(profileData.numberOfMarriedBrothers, 10) || 0,
-    sisters: parseInt(profileData.numberOfSisters, 10) || 0,
-    married_sisters: parseInt(profileData.numberOfMarriedSisters, 10) || 0,
+    brothers: optionalSiblingCount(profileData.numberOfBrothers),
+    married_brothers: optionalSiblingCount(profileData.numberOfMarriedBrothers),
+    sisters: optionalSiblingCount(profileData.numberOfSisters),
+    married_sisters: optionalSiblingCount(profileData.numberOfMarriedSisters),
+    brother_occupation: profileData.brothersOccupation || "",
+    sister_occupation: profileData.sistersOccupation || "",
     about_family: profileData.aboutMyFamily || "",
     family_type: profileData.familyType || "",
     family_status: profileData.familyStatus || "",
+    family_contact: profileData.familyContactNumber
+      ? formatPhoneForApi(profileData.familyContactNumber)
+      : "",
+    family_contact_2: profileData.familyContactNumber2
+      ? formatPhoneForApi(profileData.familyContactNumber2)
+      : "",
   });
 
   const handleSaveSection = async () => {
@@ -2929,6 +3116,13 @@ const UserProfilePage = () => {
           break;
         }
         case "Personal":
+          if (
+            isDivorcedMaritalStatus(profileData.maritalStatus) &&
+            !profileData.reasonForDivorce.trim()
+          ) {
+            setSaveError("Reason for divorce is required when marital status is Divorced.");
+            return;
+          }
           await patchPersonal(buildPersonalBody());
           break;
         case "Education":
@@ -2937,9 +3131,24 @@ const UserProfilePage = () => {
         case "About Me":
           await patchAbout({ about_me: profileData.bio || "" });
           break;
-        case "Family":
+        case "Family": {
+          if (
+            profileData.familyContactNumber &&
+            profileData.familyContactNumber.length !== 10
+          ) {
+            setSaveError("Family contact number must be a 10-digit mobile number.");
+            return;
+          }
+          if (
+            profileData.familyContactNumber2 &&
+            profileData.familyContactNumber2.length !== 10
+          ) {
+            setSaveError("Family contact number 2 must be a 10-digit mobile number.");
+            return;
+          }
           await patchFamily(buildFamilyBody());
           break;
+        }
         case "Photos": {
           const body: {
             profile_photo?: File;
@@ -3013,61 +3222,13 @@ const UserProfilePage = () => {
               ))}
             </div>
 
-            <div className="rounded-3xl border border-primary/10 bg-white shadow-card p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent-rose/30 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-serif text-lg font-bold text-secondary">
-                    My Horoscope
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    View your horoscope details or download Thalakuri PDF
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-primary/20"
-                  type="button"
-                  onClick={handleFetchMyHoroscope}
-                  disabled={horoscopeLoading}
-                >
-                  {horoscopeLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Loading…
-                    </>
-                  ) : (
-                    "My Horoscope"
-                  )}
-                </Button>
-                <Button
-                  variant="hero"
-                  className="flex-1"
-                  type="button"
-                  onClick={handleThalakuriPurchase}
-                  disabled={loadingThalakuri}
-                >
-                  {loadingThalakuri ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Processing…
-                    </>
-                  ) : (
-                    "Thalakury"
-                  )}
-                </Button>
-              </div>
-
-              {horoscopeError && (
-                <p className="text-sm text-destructive">{horoscopeError}</p>
-              )}
-
-            </div>
+            <MyHoroscopeSection
+              onViewHoroscope={handleFetchMyHoroscope}
+              onDownloadThalakuri={handleThalakuriPurchase}
+              horoscopeLoading={horoscopeLoading}
+              loadingThalakuri={loadingThalakuri}
+              horoscopeError={horoscopeError}
+            />
 
             <ResponsiveModal
               open={horoscopeOpen}

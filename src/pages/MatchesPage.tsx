@@ -22,6 +22,7 @@ import {
   MapPin,
   GraduationCap,
   MessageCircle,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -49,10 +50,11 @@ import {
   type ProfilePreviewData,
   type SortBy,
 } from "@/lib/matchesApi";
+import { chatUrl } from "@/lib/chatRoutes";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   getCastes,
-  getCities,
+  getCitiesForDistricts,
   getCountries,
   getDistricts,
   getEducations,
@@ -165,64 +167,101 @@ const SearchableIdSelect = ({
   );
 };
 
-/** Caste list filtered by selected religion_id */
-const CasteSelect = ({
-  castes,
-  religionId,
-  valueId,
-  onSelect,
+/** Multi-select searchable list by id/name (API filter options) */
+const SearchableMultiIdSelect = ({
+  placeholder,
+  options,
+  valueIds,
+  onChange,
   searchQuery,
   onSearchChange,
+  initialVisible = 8,
 }: {
-  castes: { id: number; name: string; religion_id: number }[];
-  religionId: number | null;
-  valueId: number | null;
-  onSelect: (id: number | null) => void;
+  placeholder: string;
+  options: { id: number; name: string }[];
+  valueIds: number[];
+  onChange: (ids: number[]) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  initialVisible?: number;
 }) => {
-  const filtered = useMemo(() => {
-    let list =
-      religionId != null
-        ? castes.filter((c) => c.religion_id === religionId)
-        : castes;
-    if (searchQuery.trim())
-      list = list.filter((c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    return list;
-  }, [castes, religionId, searchQuery]);
+  const [showAll, setShowAll] = useState(false);
+  const filtered = options.filter((o) =>
+    o.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+  const displayList = showAll ? filtered : filtered.slice(0, initialVisible);
+  const hasMore = !showAll && filtered.length > initialVisible;
+  const valueSet = useMemo(() => new Set(valueIds), [valueIds]);
+
+  const toggle = (id: number) => {
+    if (valueSet.has(id)) {
+      onChange(valueIds.filter((v) => v !== id));
+    } else {
+      onChange([...valueIds, id]);
+    }
+  };
+
+  const selectAllVisible = () => {
+    const merged = new Set([...valueIds, ...displayList.map((item) => item.id)]);
+    onChange([...merged]);
+  };
+
   return (
     <div className="space-y-2">
       <Input
-        placeholder="Search caste..."
+        placeholder={placeholder}
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
         className="h-9 text-sm rounded-lg border-primary/10"
       />
+      {(valueIds.length > 0 || displayList.length > 0) && (
+        <div className="flex items-center gap-3 px-0.5">
+          {displayList.length > 0 && (
+            <button
+              type="button"
+              onClick={selectAllVisible}
+              className="text-xs text-primary font-medium hover:underline"
+            >
+              Select all
+            </button>
+          )}
+          {valueIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-xs text-muted-foreground font-medium hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
       <div className="max-h-40 overflow-y-auto space-y-1">
-        <label className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm">
-          <Checkbox
-            checked={valueId === null}
-            onCheckedChange={(c) => c && onSelect(null)}
-          />
-          <span className="text-muted-foreground">Any</span>
-        </label>
-        {filtered.map((item) => (
+        {displayList.map((item) => (
           <label
             key={item.id}
             className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm"
           >
             <Checkbox
-              checked={valueId === item.id}
-              onCheckedChange={() =>
-                onSelect(valueId === item.id ? null : item.id)
-              }
+              checked={valueSet.has(item.id)}
+              onCheckedChange={() => toggle(item.id)}
             />
             <span className="text-muted-foreground">{item.name}</span>
           </label>
         ))}
+        {displayList.length === 0 && (
+          <p className="px-2 py-1 text-xs text-muted-foreground">No options found.</p>
+        )}
       </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="text-xs text-primary font-medium hover:underline"
+        >
+          More
+        </button>
+      )}
     </div>
   );
 };
@@ -285,6 +324,32 @@ type MatchFilterOptions = {
   marital_status: { id: number; name: string }[];
 };
 
+const VISUAL_PAIR_DISMISSED_KEY = "visual_pair_maker_dismissed";
+
+function loadDismissedPairMakerIds(matriId: string | undefined): Set<string> {
+  if (!matriId) return new Set();
+  try {
+    const raw = localStorage.getItem(`${VISUAL_PAIR_DISMISSED_KEY}_${matriId}`);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((id): id is string => typeof id === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDismissedPairMakerIds(matriId: string, ids: Set<string>) {
+  try {
+    localStorage.setItem(
+      `${VISUAL_PAIR_DISMISSED_KEY}_${matriId}`,
+      JSON.stringify([...ids]),
+    );
+  } catch {
+    // ignore localStorage errors
+  }
+}
+
 const MatchesPage = () => {
   const router = useRouter();
   const [profiles, setProfiles] = useState<ApiMatchProfile[]>([]);
@@ -303,13 +368,13 @@ const MatchesPage = () => {
   );
   const [maritalStatusId, setMaritalStatusId] = useState<number | null>(null);
   const [religionId, setReligionId] = useState<number | null>(null);
-  const [casteId, setCasteId] = useState<number | null>(null);
-  const [educationId, setEducationId] = useState<number | null>(null);
-  const [occupationId, setOccupationId] = useState<number | null>(null);
+  const [casteIds, setCasteIds] = useState<number[]>([]);
+  const [educationIds, setEducationIds] = useState<number[]>([]);
+  const [occupationIds, setOccupationIds] = useState<number[]>([]);
   const [countryId, setCountryId] = useState<number | null>(null);
   const [stateId, setStateId] = useState<number | null>(null);
-  const [districtId, setDistrictId] = useState<number | null>(null);
-  const [cityId, setCityId] = useState<number | null>(null);
+  const [districtIds, setDistrictIds] = useState<number[]>([]);
+  const [cityIds, setCityIds] = useState<number[]>([]);
   const [countries, setCountries] = useState<{ id: number; name: string }[]>([]);
   const [states, setStates] = useState<{ id: number; name: string }[]>([]);
   const [districts, setDistricts] = useState<{ id: number; name: string }[]>([]);
@@ -339,6 +404,9 @@ const MatchesPage = () => {
   // Local-only Match Check modal state – uses already-fetched profiles, no API changes
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [currentBrideIndex, setCurrentBrideIndex] = useState(0);
+  const [dismissedPairMakerIds, setDismissedPairMakerIds] = useState<
+    Set<string>
+  >(() => loadDismissedPairMakerIds(me?.matriId));
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const hasActiveFilters = useMemo(() => {
@@ -363,13 +431,13 @@ const MatchesPage = () => {
       heightChanged ||
       maritalStatusId != null ||
       religionId != null ||
-      casteId != null ||
-      educationId != null ||
-      occupationId != null ||
+      casteIds.length > 0 ||
+      educationIds.length > 0 ||
+      occupationIds.length > 0 ||
       countryId != null ||
       stateId != null ||
-      districtId != null ||
-      cityId != null ||
+      districtIds.length > 0 ||
+      cityIds.length > 0 ||
       searchDirty
     );
   }, [
@@ -377,13 +445,13 @@ const MatchesPage = () => {
     heightRange,
     maritalStatusId,
     religionId,
-    casteId,
-    educationId,
-    occupationId,
+    casteIds,
+    educationIds,
+    occupationIds,
     countryId,
     stateId,
-    districtId,
-    cityId,
+    districtIds,
+    cityIds,
     maritalSearch,
     religionSearch,
     casteSearch,
@@ -400,13 +468,13 @@ const MatchesPage = () => {
     setHeightRange(DEFAULT_HEIGHT_RANGE);
     setMaritalStatusId(null);
     setReligionId(null);
-    setCasteId(null);
-    setEducationId(null);
-    setOccupationId(null);
+    setCasteIds([]);
+    setEducationIds([]);
+    setOccupationIds([]);
     setCountryId(null);
     setStateId(null);
-    setDistrictId(null);
-    setCityId(null);
+    setDistrictIds([]);
+    setCityIds([]);
     setMaritalSearch("");
     setReligionSearch("");
     setCasteSearch("");
@@ -421,7 +489,13 @@ const MatchesPage = () => {
     setCities([]);
   }, []);
 
-  const brideProfiles = useMemo(() => profiles.slice(0, 10), [profiles]);
+  const brideProfiles = useMemo(
+    () =>
+      profiles
+        .slice(0, 10)
+        .filter((p) => !dismissedPairMakerIds.has(p.matri_id)),
+    [profiles, dismissedPairMakerIds],
+  );
   const currentBride = brideProfiles[currentBrideIndex] ?? null;
   const meGender = (me?.gender ?? "").trim().toLowerCase();
   const leftLabel =
@@ -460,29 +534,45 @@ const MatchesPage = () => {
   }, [fetchFilters]);
 
   useEffect(() => {
+    if (me?.matriId) {
+      setDismissedPairMakerIds(loadDismissedPairMakerIds(me.matriId));
+    }
+  }, [me?.matriId]);
+
+  useEffect(() => {
+    if (brideProfiles.length === 0) return;
+    setCurrentBrideIndex((prev) =>
+      prev >= brideProfiles.length ? 0 : prev,
+    );
+  }, [brideProfiles.length]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const fetchCastes = async () => {
       if (religionId == null) {
         setFilters((prev) => (prev ? { ...prev, castes: [] } : prev));
-        setCasteId(null);
+        setCasteIds([]);
         return;
       }
       try {
         const castes = await getCastes(religionId);
         if (cancelled) return;
+        const mapped = castes.map((c) => ({
+          id: c.id,
+          name: c.name,
+          religion_id: c.religion,
+        }));
         setFilters((prev) =>
           prev
             ? {
                 ...prev,
-                castes: castes.map((c) => ({
-                  id: c.id,
-                  name: c.name,
-                  religion_id: c.religion,
-                })),
+                castes: mapped,
               }
             : prev,
         );
+        const validIds = new Set(mapped.map((c) => c.id));
+        setCasteIds((prev) => prev.filter((id) => validIds.has(id)));
       } catch (e) {
         if (cancelled) return;
         console.error("Failed to load castes", e);
@@ -503,8 +593,8 @@ const MatchesPage = () => {
       if (countryId == null) {
         setStates([]);
         setStateId(null);
-        setDistrictId(null);
-        setCityId(null);
+        setDistrictIds([]);
+        setCityIds([]);
         setDistricts([]);
         setCities([]);
         return;
@@ -514,8 +604,8 @@ const MatchesPage = () => {
         if (cancelled) return;
         setStates(list.map((s) => ({ id: s.id, name: s.name })));
         setStateId(null);
-        setDistrictId(null);
-        setCityId(null);
+        setDistrictIds([]);
+        setCityIds([]);
         setDistricts([]);
         setCities([]);
       } catch (e) {
@@ -537,8 +627,8 @@ const MatchesPage = () => {
     const fetchDistricts = async () => {
       if (stateId == null) {
         setDistricts([]);
-        setDistrictId(null);
-        setCityId(null);
+        setDistrictIds([]);
+        setCityIds([]);
         setCities([]);
         return;
       }
@@ -546,8 +636,8 @@ const MatchesPage = () => {
         const list = await getDistricts(stateId);
         if (cancelled) return;
         setDistricts(list.map((d) => ({ id: d.id, name: d.name })));
-        setDistrictId(null);
-        setCityId(null);
+        setDistrictIds([]);
+        setCityIds([]);
         setCities([]);
       } catch (e) {
         if (cancelled) return;
@@ -566,16 +656,18 @@ const MatchesPage = () => {
     let cancelled = false;
 
     const fetchCities = async () => {
-      if (districtId == null) {
+      if (districtIds.length === 0) {
         setCities([]);
-        setCityId(null);
+        setCityIds([]);
         return;
       }
       try {
-        const list = await getCities(districtId);
+        const list = await getCitiesForDistricts(districtIds);
         if (cancelled) return;
-        setCities(list.map((c) => ({ id: c.id, name: c.name })));
-        setCityId(null);
+        const mapped = list.map((c) => ({ id: c.id, name: c.name }));
+        setCities(mapped);
+        const validIds = new Set(mapped.map((c) => c.id));
+        setCityIds((prev) => prev.filter((id) => validIds.has(id)));
       } catch (e) {
         if (cancelled) return;
         console.error("Failed to load cities", e);
@@ -587,7 +679,7 @@ const MatchesPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [districtId]);
+  }, [districtIds]);
 
   const fetchMatches = useCallback(
     async (pageNum: number) => {
@@ -615,14 +707,17 @@ const MatchesPage = () => {
           params.height_max = heightRange[1];
         }
         if (religionId != null) params.religion_id = religionId;
-        if (casteId != null) params.caste_id = casteId;
-        if (educationId != null) params.education_id = educationId;
-        if (occupationId != null) params.occupation_id = occupationId;
+        if (casteIds.length > 0) params.caste_ids = casteIds;
+        if (educationIds.length > 0) params.education_ids = educationIds;
+        if (occupationIds.length > 0) params.occupation_ids = occupationIds;
         if (maritalStatusId != null) params.marital_status = maritalStatusId;
         if (countryId != null) params.country_id = countryId;
         if (stateId != null) params.state_id = stateId;
-        if (districtId != null) params.district_id = districtId;
-        if (cityId != null) params.city_id = cityId;
+        if (cityIds.length > 0) {
+          params.city_ids = cityIds;
+        } else if (districtIds.length > 0) {
+          params.district_ids = districtIds;
+        }
         const res = await getMatches(params);
         setTotalProfiles(res.data.total_profiles);
         setProfiles(res.data.profiles);
@@ -645,14 +740,14 @@ const MatchesPage = () => {
       ageRange,
       heightRange,
       religionId,
-      casteId,
-      educationId,
-      occupationId,
+      casteIds,
+      educationIds,
+      occupationIds,
       maritalStatusId,
       countryId,
       stateId,
-      districtId,
-      cityId,
+      districtIds,
+      cityIds,
       sortBy,
       limit,
     ],
@@ -807,7 +902,7 @@ const MatchesPage = () => {
         const res = await startChatApi(matriId);
         const convoId = res.data.conversation_id;
         if (convoId) {
-          router.push(`/chat/${convoId}`);
+          router.push(chatUrl(convoId));
         } else {
           router.push("/dashboard/chat-list");
         }
@@ -840,6 +935,25 @@ const MatchesPage = () => {
     if (brideProfiles.length === 0) return;
     setCurrentBrideIndex((prev) => (prev + 1) % brideProfiles.length);
   };
+
+  const dismissCurrentBride = useCallback(() => {
+    if (!currentBride || !me?.matriId) return;
+    const dismissedId = currentBride.matri_id;
+    const remainingCount = brideProfiles.length - 1;
+
+    setDismissedPairMakerIds((prev) => {
+      const next = new Set(prev);
+      next.add(dismissedId);
+      saveDismissedPairMakerIds(me.matriId!, next);
+      return next;
+    });
+
+    setCurrentBrideIndex((prev) => {
+      if (remainingCount <= 0) return 0;
+      if (prev >= remainingCount) return 0;
+      return prev;
+    });
+  }, [brideProfiles.length, currentBride, me?.matriId]);
 
   const handleWishlist = useCallback(async (matriId: string) => {
     setActionLoading(matriId);
@@ -971,8 +1085,8 @@ const MatchesPage = () => {
                               setCountryId(id);
                               if (id == null) {
                                 setStateId(null);
-                                setDistrictId(null);
-                                setCityId(null);
+                                setDistrictIds([]);
+                                setCityIds([]);
                               }
                             }}
                             searchQuery={countrySearch}
@@ -995,8 +1109,8 @@ const MatchesPage = () => {
                               onSelect={(id) => {
                                 setStateId(id);
                                 if (id == null) {
-                                  setDistrictId(null);
-                                  setCityId(null);
+                                  setDistrictIds([]);
+                                  setCityIds([]);
                                 }
                               }}
                               searchQuery={stateSearch}
@@ -1013,14 +1127,11 @@ const MatchesPage = () => {
                               Select a state first.
                             </p>
                           ) : (
-                            <SearchableIdSelect
+                            <SearchableMultiIdSelect
                               placeholder="Search district..."
                               options={districts}
-                              valueId={districtId}
-                              onSelect={(id) => {
-                                setDistrictId(id);
-                                if (id == null) setCityId(null);
-                              }}
+                              valueIds={districtIds}
+                              onChange={setDistrictIds}
                               searchQuery={districtSearch}
                               onSearchChange={setDistrictSearch}
                             />
@@ -1030,16 +1141,16 @@ const MatchesPage = () => {
                           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                             City
                           </p>
-                          {districtId == null ? (
+                          {districtIds.length === 0 ? (
                             <p className="px-2 py-1 text-xs text-muted-foreground">
                               Select a district first.
                             </p>
                           ) : (
-                            <SearchableIdSelect
+                            <SearchableMultiIdSelect
                               placeholder="Search city..."
                               options={cities}
-                              valueId={cityId}
-                              onSelect={setCityId}
+                              valueIds={cityIds}
+                              onChange={setCityIds}
                               searchQuery={citySearch}
                               onSearchChange={setCitySearch}
                             />
@@ -1058,7 +1169,7 @@ const MatchesPage = () => {
                         valueId={religionId}
                         onSelect={(id) => {
                           setReligionId(id);
-                          setCasteId(null);
+                          setCasteIds([]);
                         }}
                         searchQuery={religionSearch}
                         onSearchChange={setReligionSearch}
@@ -1073,26 +1184,27 @@ const MatchesPage = () => {
                         <p className="px-2 py-1 text-xs text-muted-foreground">
                           Select a religion to load castes.
                         </p>
-                      ) : null}
-                      <CasteSelect
-                        castes={filters.castes}
-                        religionId={religionId}
-                        valueId={casteId}
-                        onSelect={setCasteId}
-                        searchQuery={casteSearch}
-                        onSearchChange={setCasteSearch}
-                      />
+                      ) : (
+                        <SearchableMultiIdSelect
+                          placeholder="Search caste..."
+                          options={filters.castes}
+                          valueIds={casteIds}
+                          onChange={setCasteIds}
+                          searchQuery={casteSearch}
+                          onSearchChange={setCasteSearch}
+                        />
+                      )}
                     </FilterSection>
 
                     <FilterSection
                       title="Education"
                       icon={<BookOpen className="w-4 h-4 text-primary" />}
                     >
-                      <SearchableIdSelect
+                      <SearchableMultiIdSelect
                         placeholder="Search education..."
                         options={filters.educations}
-                        valueId={educationId}
-                        onSelect={setEducationId}
+                        valueIds={educationIds}
+                        onChange={setEducationIds}
                         searchQuery={educationSearch}
                         onSearchChange={setEducationSearch}
                       />
@@ -1102,11 +1214,11 @@ const MatchesPage = () => {
                       title="Occupation"
                       icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}
                     >
-                      <SearchableIdSelect
+                      <SearchableMultiIdSelect
                         placeholder="Search occupation..."
                         options={filters.occupations}
-                        valueId={occupationId}
-                        onSelect={setOccupationId}
+                        valueIds={occupationIds}
+                        onChange={setOccupationIds}
                         searchQuery={occupationSearch}
                         onSearchChange={setOccupationSearch}
                       />
@@ -1412,6 +1524,14 @@ const MatchesPage = () => {
 
                 {/* Match carousel */}
                 <div className="relative flex min-h-0 min-w-0 flex-col justify-center rounded-2xl border border-primary/10 bg-card p-2 shadow-card sm:p-4 md:min-h-[280px]">
+                  <button
+                    type="button"
+                    onClick={dismissCurrentBride}
+                    className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-soft hover:bg-destructive/10 hover:text-destructive sm:right-2 sm:top-2 sm:h-8 sm:w-8"
+                    aria-label={`Dismiss ${currentBride.name}`}
+                  >
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>
                   {/* Prev / next — visible on mobile (was md-only) */}
                   <button
                     type="button"

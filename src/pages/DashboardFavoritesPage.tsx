@@ -17,6 +17,7 @@ import {
   type MatchProfile,
   type ProfilePreviewData,
 } from "@/lib/matchesApi";
+import { chatUrl } from "@/lib/chatRoutes";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 
 const DEFAULT_LIMIT = 10;
@@ -135,7 +136,7 @@ const DashboardFavoritesPage = () => {
       try {
         const res = await startChatApi(matriId);
         const convoId = res.data.conversation_id;
-        if (convoId) router.push(`/chat/${convoId}`);
+        if (convoId) router.push(chatUrl(convoId));
         else router.push("/dashboard/chat-list");
       } catch (e) {
         toast.error(getDisplayErrorMessage(e));

@@ -10,6 +10,7 @@ import { profilesData } from "@/components/FeaturedProfiles";
 import { toast } from "sonner";
 import { Heart, Sparkles, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { chatUrl } from "@/lib/chatRoutes";
 
 const Favorites = () => {
   const router = useRouter();
@@ -34,7 +35,7 @@ const Favorites = () => {
   };
 
   const handleChat = (profileId: number) => {
-    router.push(`/chat/${profileId}`);
+    router.push(chatUrl(profileId));
   };
 
   return (

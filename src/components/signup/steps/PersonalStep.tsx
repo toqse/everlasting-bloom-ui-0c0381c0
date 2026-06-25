@@ -68,6 +68,19 @@ const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props
       </div>
       <div className="space-y-4">
         <SelectField label="Marital Status" name="maritalStatus" options={maritalOptions} value={formData.maritalStatus} onChange={onChange} />
+        {formData.maritalStatus === "Divorced" && (
+          <div>
+            <label className={labelClass}>Reason for Divorce</label>
+            <input
+              type="text"
+              name="reasonForDivorce"
+              value={formData.reasonForDivorce ?? ""}
+              onChange={onChange}
+              placeholder="e.g. Mutual consent"
+              className={inputClass}
+            />
+          </div>
+        )}
         {showChildren && (
           <>
             <div>

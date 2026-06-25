@@ -17,7 +17,9 @@ import {
   Smartphone,
   Wallet,
 } from "lucide-react";
+import { openAstrologyPdfDownload } from "@/lib/astrologyApi";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface DemoPaymentDialogProps {
   open: boolean;
@@ -45,6 +47,7 @@ const DemoPaymentDialog = ({
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [phase, setPhase] = useState<"pay" | "processing" | "success">("pay");
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -63,10 +66,23 @@ const DemoPaymentDialog = ({
     setSubmitting(false);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const url = downloadUrl.trim();
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (!url || downloading) return;
+    setDownloading(true);
+    try {
+      await openAstrologyPdfDownload(
+        url,
+        `${productLabel.replace(/\s+/g, "_").toLowerCase()}.pdf`,
+      );
+      toast.success(`${productLabel} is ready.`);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not download PDF.",
+      );
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -95,10 +111,14 @@ const DemoPaymentDialog = ({
                 variant="hero"
                 className="w-full gap-2 mt-2"
                 onClick={handleDownload}
-                disabled={!downloadUrl.trim()}
+                disabled={!downloadUrl.trim() || downloading}
               >
-                <Download className="w-4 h-4" />
-                Download {productLabel}
+                {downloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {downloading ? "Opening..." : `Download ${productLabel}`}
               </Button>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Close

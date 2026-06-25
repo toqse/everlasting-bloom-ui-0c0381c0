@@ -15,6 +15,7 @@ import { useInterestStore, InterestStatus } from "@/stores/interestStore";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
+import { chatUrl } from "@/lib/chatRoutes";
 
 const StatusChip = ({ status }: { status: InterestStatus }) => {
   const config = {
@@ -69,7 +70,7 @@ const ProfileDetail = () => {
   };
 
   const handleMessage = () => {
-    if (chatEnabled) router.push(`/chat/${profile.id}`);
+    if (chatEnabled) router.push(chatUrl(profile.id));
     else toast.info("Chat unavailable", { description: "You can chat once your interest is accepted." });
   };
 

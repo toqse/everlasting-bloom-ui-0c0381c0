@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
+import { chatUrl } from "@/lib/chatRoutes";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { BASE_URL } from "@/lib/config";
 import { parseApiDate } from "@/lib/utils";
@@ -76,7 +77,7 @@ const ChatListPage = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => router.push(`/chat/${chat.conversation_id}`)}
+                onClick={() => router.push(chatUrl(chat.conversation_id))}
                 className="flex items-center gap-4 px-6 py-5 border-b border-primary/5 last:border-0 cursor-pointer hover:bg-accent-rose/30 transition-colors"
               >
                 <div className="relative flex-shrink-0">

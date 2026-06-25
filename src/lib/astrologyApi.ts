@@ -329,12 +329,9 @@ export interface HoroscopeProfileEnvelope {
 
 export interface HoroscopeProfileResponse {
   success: boolean;
-  /**
-   * Backend returns the horoscope profile FLAT inside `data`
-   * (HoroscopeProfileSerializer), or `{ exists: false, is_calculated: false }`
-   * when the profile has not been created yet.
-   */
-  data: HoroscopeProfileData & { exists?: boolean };
+  is_horoscope_generated?: boolean;
+  data?: HoroscopeProfileData & { exists?: boolean };
+  error?: string | { code?: number; message?: string; details?: unknown };
 }
 
 export interface GenerateBody {
@@ -415,6 +412,8 @@ export interface AstrologyPdfOrderData {
   price_inr: number;
   /** Present when Razorpay is not configured — demo Thalakuri flow. */
   demo?: boolean;
+  /** True when the user already paid; client should open download_url directly. */
+  already_purchased?: boolean;
   download_url?: string;
 }
 
@@ -582,9 +581,17 @@ export async function getMyHoroscopeProfile(
   style: ChartStyle = "south",
 ): Promise<HoroscopeProfileResponse> {
   const q = new URLSearchParams({ style });
-  return authedFetch<HoroscopeProfileResponse>(`v1/astrology/horoscope/me/?${q}`, {
+  const res = await authedFetch<HoroscopeProfileResponse>(`v1/astrology/horoscope/me/?${q}`, {
     method: "GET",
   });
+  if (res.success === false) {
+    const error = new Error(getErrorMessage(res, "Horoscope not available.")) as Error & {
+      is_horoscope_generated?: boolean;
+    };
+    error.is_horoscope_generated = res.is_horoscope_generated ?? false;
+    throw error;
+  }
+  return res;
 }
 
 /** POST /api/v1/astrology/generate/ */
@@ -707,4 +714,48 @@ export async function postAstrologyPdfVerify(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * Fetch a signed Jathakam/Thalakuri PDF URL and open it in a new tab.
+ * Surfaces API JSON errors (e.g. horoscope not calculated) instead of raw JSON in the browser.
+ */
+export async function openAstrologyPdfDownload(
+  downloadUrl: string,
+  fallbackFilename = "astrology.pdf",
+): Promise<void> {
+  const raw = downloadUrl.trim();
+  if (!raw) throw new Error("Download URL is missing.");
+
+  const url = raw.startsWith("http")
+    ? raw
+    : `${BASE_URL.replace(/\/$/, "")}/${raw.replace(/^\//, "")}`;
+
+  const res = await fetch(url, { method: "GET" });
+  const contentType = (res.headers.get("Content-Type") || "").toLowerCase();
+
+  if (!res.ok || contentType.includes("json")) {
+    if (contentType.includes("json")) {
+      const data = (await res.json().catch(() => ({}))) as ApiErrorPayload;
+      throw new Error(getErrorMessage(data, "Could not download PDF."));
+    }
+    const text = await res.text();
+    const match = text.match(/id="pdf-error-message"[^>]*>([^<]+)/i);
+    throw new Error(match?.[1]?.trim() || "Could not download PDF.");
+  }
+
+  const blob = await res.blob();
+  const filename = parseContentDispositionFilename(
+    res.headers.get("Content-Disposition"),
+    fallbackFilename,
+  );
+  const blobUrl = URL.createObjectURL(blob);
+  const opened = window.open(blobUrl, "_blank", "noopener,noreferrer");
+  if (!opened) {
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    a.click();
+  }
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
 }

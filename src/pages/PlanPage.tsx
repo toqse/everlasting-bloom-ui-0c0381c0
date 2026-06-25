@@ -15,7 +15,6 @@ import {
   Eye,
   Heart,
   MessageCircle,
-  IndianRupee,
 } from "lucide-react";
 import PaymentPopup from "@/components/PaymentPopup";
 import {
@@ -204,13 +203,25 @@ const TopBadge = () => (
 interface PlanCardProps {
   plan: AvailablePlan;
   style: PlanStyle;
+  myPlan?: MyPlanDetails | null;
   onChoose: (plan: AvailablePlan) => void;
 }
 
-const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
+const formatInr = (amount: number) =>
+  `₹${(amount ?? 0).toLocaleString("en-IN")}`;
+
+const PlanCard = ({ plan, style, myPlan, onChoose }: PlanCardProps) => {
   const Icon = style.icon;
   const features = buildFeatures(plan);
   const dur = durationLabel(plan.duration_days ?? 0);
+  const hasActivePlan = Boolean(myPlan?.is_plan_active && myPlan.plan_name);
+  const isCurrentPlan =
+    hasActivePlan &&
+    plan.name.toLowerCase() === (myPlan?.plan_name ?? "").toLowerCase();
+  const serviceChargePaid = myPlan?.service_charge_paid ?? 0;
+  const serviceChargeRemaining = myPlan?.service_charge_remaining ?? 0;
+  const showPersonalizedServiceCharge =
+    hasActivePlan && (serviceChargePaid > 0 || serviceChargeRemaining > 0);
 
   return (
     <div
@@ -261,18 +272,49 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
       {/* Customer Care + Service Charge footer */}
       <div className="mt-1 rounded-xl bg-card/70 text-card-foreground border border-border/60 px-3 py-2.5 space-y-1.5 backdrop-blur">
         <p className="text-xs font-semibold">Customer Care Assistance</p>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Service Charge</span>
-          <span className="font-medium text-foreground">
-            ₹{(plan.service_charge ?? 0).toLocaleString("en-IN")}
-          </span>
-        </div>
-        <div className="border-t border-border/60 pt-1 flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Remaining (Total)</span>
-          <span className="font-bold text-primary">
-            ₹{(plan.total_price ?? 0).toLocaleString("en-IN")}
-          </span>
-        </div>
+        {showPersonalizedServiceCharge ? (
+          <>
+            {serviceChargePaid > 0 && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Already paid</span>
+                <span className="font-medium text-emerald-700">
+                  {formatInr(serviceChargePaid)}
+                </span>
+              </div>
+            )}
+            {serviceChargeRemaining > 0 ? (
+              <div className="border-t border-border/60 pt-1 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Your remaining balance</span>
+                <span className="font-bold text-primary">
+                  {formatInr(serviceChargeRemaining)}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-emerald-700 font-medium">
+                Service charge fully paid
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              Total bureau fee: {formatInr(plan.service_charge ?? 0)}. Upgrade
+              fee below is separate from your remaining balance.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Service Charge</span>
+              <span className="font-medium text-foreground">
+                {formatInr(plan.service_charge ?? 0)}
+              </span>
+            </div>
+            <div className="border-t border-border/60 pt-1 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Remaining (Total)</span>
+              <span className="font-bold text-primary">
+                {formatInr(plan.total_price ?? 0)}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       <Button
@@ -280,13 +322,27 @@ const PlanCard = ({ plan, style, onChoose }: PlanCardProps) => {
         variant="hero"
         className="w-full gap-2 group/btn border-0 text-white"
         style={{
-          background: "#b23272",
-          boxShadow: "0 4px 14px -2px rgba(178,50,114,0.35)",
+          background: isCurrentPlan ? "#94a3b8" : "#b23272",
+          boxShadow: isCurrentPlan
+            ? "none"
+            : "0 4px 14px -2px rgba(178,50,114,0.35)",
         }}
+        disabled={isCurrentPlan}
         onClick={() => onChoose(plan)}
       >
-        Get Started
-        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+        {isCurrentPlan ? (
+          "Current plan"
+        ) : hasActivePlan ? (
+          <>
+            Upgrade
+            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </>
+        ) : (
+          <>
+            Get Started
+            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </>
+        )}
       </Button>
     </div>
   );
@@ -384,20 +440,13 @@ const CurrentPlanCard = ({
             ))}
           </div>
           <div className="flex flex-wrap gap-4 pt-3 border-t border-primary/10 text-sm">
-            {/* <div className="flex items-center gap-2 text-muted-foreground">
-              <IndianRupee className="w-4 h-4" />
-              <span>
-                Service charge paid:{" "}
-                <strong className="text-foreground">
-                  ₹{(my.service_charge_paid ?? 0).toLocaleString("en-IN")}
-                </strong>
-              </span>
-            </div> */}
             {(my.service_charge_remaining ?? 0) > 0 && (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="text-amber-700 font-medium">
-                  If you require our service, the service fee payable is: ₹
-                  {my.service_charge_remaining.toLocaleString("en-IN")}
+                  If you require our service, the service fee payable is:{" "}
+                  <strong className="text-foreground">
+                    {formatInr(my.service_charge_remaining)}
+                  </strong>
                 </div>
                 {onPayServiceCharge && (
                   <Button
@@ -586,6 +635,7 @@ const PlanPage = () => {
                 key={plan.id}
                 plan={plan}
                 style={getPlanStyle(plan.name, index, apiPlans.length)}
+                myPlan={myPlan}
                 onChoose={(p) => {
                   setSelectedPlan(p);
                   setPaymentOpen(true);
@@ -602,6 +652,7 @@ const PlanPage = () => {
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
           apiPlan={selectedPlan}
+          serviceChargeRemaining={myPlan?.service_charge_remaining}
           onPurchaseSuccess={refreshPlanData}
         />
       )}

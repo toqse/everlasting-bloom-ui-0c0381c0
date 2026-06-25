@@ -312,6 +312,10 @@ function mapProfileToFormData(
         String(pers.marital_status) !== "" && {
           maritalStatus: matchOption(pers.marital_status, MARITAL_OPTIONS),
         }),
+      ...((pers as Record<string, unknown>).reason_for_divorce != null &&
+        String((pers as Record<string, unknown>).reason_for_divorce) !== "" && {
+          reasonForDivorce: String((pers as Record<string, unknown>).reason_for_divorce),
+        }),
       ...((pers.height ?? pers.height_cm) != null && {
         height: normalizeNumberForInput(pers.height ?? pers.height_cm),
       }),
@@ -454,6 +458,7 @@ const AuthPage = () => {
     partner_age_from: "",
     partner_age_to: "",
     maritalStatus: "",
+    reasonForDivorce: "",
     numberOfChildren: "",
     height: "",
     weight: "",
@@ -1193,6 +1198,14 @@ const AuthPage = () => {
       }
 
       const maritalStatus = formData.maritalStatus;
+      if (
+        maritalStatus === "Divorced" &&
+        !formData.reasonForDivorce?.trim()
+      ) {
+        toast.error("Please enter reason for divorce");
+        return;
+      }
+
       const isStatusWithChildren =
         maritalStatus === "Awaiting Divorce" ||
         maritalStatus === "Divorced" ||
@@ -1230,6 +1243,10 @@ const AuthPage = () => {
           weight_kg: Number.isFinite(weightNumber) ? weightNumber : null,
           complexion: formData.skinTone,
           blood_group: formData.bloodGroup || "",
+          reason_for_divorce:
+            maritalStatus === "Divorced"
+              ? formData.reasonForDivorce.trim()
+              : "",
         });
         useAuthStore.getState().markProfileStepComplete("personal");
         toast.success("Personal details saved");

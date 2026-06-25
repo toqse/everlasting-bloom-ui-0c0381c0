@@ -25,6 +25,10 @@ const defaultFamilyData = {
   numberOfMarriedBrothers: "0",
   numberOfSisters: "1",
   numberOfMarriedSisters: "0",
+  brothersOccupation: "",
+  sistersOccupation: "",
+  familyContactNumber: "",
+  familyContactNumber2: "",
   aboutMyFamily: "We are a close-knit family with traditional values.",
 };
 
@@ -39,6 +43,10 @@ const FIELD_LABELS: Record<string, string> = {
   numberOfMarriedBrothers: "No. of Married Brothers",
   numberOfSisters: "No. of Sisters",
   numberOfMarriedSisters: "No. of Married Sisters",
+  brothersOccupation: "Brother's Occupation",
+  sistersOccupation: "Sister's Occupation",
+  familyContactNumber: "Family Contact Number 1",
+  familyContactNumber2: "Family Contact Number 2",
   aboutMyFamily: "About My Family",
 };
 
@@ -68,9 +76,16 @@ const VIEW_GROUPS: {
     keys: [
       "numberOfBrothers",
       "numberOfMarriedBrothers",
+      "brothersOccupation",
       "numberOfSisters",
       "numberOfMarriedSisters",
+      "sistersOccupation",
     ],
+  },
+  {
+    title: "Contact",
+    icon: UsersRound,
+    keys: ["familyContactNumber", "familyContactNumber2"],
   },
   { title: "About my family", icon: UsersRound, keys: ["aboutMyFamily"] },
 ];

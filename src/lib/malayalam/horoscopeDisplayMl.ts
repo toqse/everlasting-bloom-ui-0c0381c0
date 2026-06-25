@@ -237,11 +237,13 @@ export const ml = {
   consultFooter:
     "അന്തിമ നിർണയത്തിന് ഒരു ജോതിഷനെ കാണുക. ക്വാട്ടാ നിയമങ്ങൾ സെർവറിലെ പ്ലാൻ അനുസരിക്കും.",
   astrologerCta: "ജ്യോതിഷ സേവനങ്ങൾ ലഭ്യമാണ്",
+  astrologerCtaEn: "Astrologer services are available",
   astrologerContact: "സമ്പർക്കം",
   sideBySideBlurb:
     "താഴെയുള്ള റിപ്പോർട്ടിൽ രണ്ട് ഗ്രഹനില ചാർട്ടുകളും പൊരുത്ത പട്ടികയും കാണാം.",
   clickCheckMatchBlurb:
     "പൊരുത്തം കാണാൻ \"ചെക്ക് മാച്ച്\" ക്ലിക്ക് ചെയ്യുക. കൃത്യമായ ഫലത്തിന് ജനന വിവരങ്ങൾ പൂർത്തിയാക്കുക.",
+  birthDetailsHintEn: "Fill your birth details first for accurate results.",
   planRequiredBlurb:
     "മറ്റംഗങ്ങളെ പട്ടികപ്പെടുത്തി പൊരുത്തം പരിശോധിക്കാൻ സജീവമായ സബ്‌സ്‌ക്രിപ്‌ഷൻ വേണം.",
   jothishaAdviceShort:

@@ -10,6 +10,7 @@ import { profilesData } from "@/components/FeaturedProfiles";
 import { Send, Sparkles, Filter, Check, Clock, X } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { chatUrl } from "@/lib/chatRoutes";
 
 type FilterType = 'all' | 'pending' | 'accepted' | 'rejected';
 
@@ -24,7 +25,7 @@ const InterestSent = () => {
   });
 
   const handleChat = (profileId: number) => {
-    router.push(`/chat/${profileId}`);
+    router.push(chatUrl(profileId));
   };
 
   const filters: { id: FilterType; label: string; icon: any }[] = [

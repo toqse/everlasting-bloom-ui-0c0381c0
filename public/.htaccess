@@ -2,6 +2,9 @@
   RewriteEngine On
   RewriteBase /
 
+  # Legacy /chat/123/ → /chat/?id=123 (static export)
+  RewriteRule ^chat/([0-9]+)/?$ /chat/?id=$1 [R=301,L]
+
   # Don't rewrite real files (assets, static files)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d [OR]

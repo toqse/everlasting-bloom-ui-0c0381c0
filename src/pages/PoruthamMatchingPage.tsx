@@ -33,39 +33,15 @@ import {
   poruthamRowLabelMalayalam,
   rasiNameMalayalam,
 } from "@/lib/malayalam/horoscopeDisplayMl";
-import { normalizePoruthamKey } from "@/lib/astrologyPoruthamDisplay";
+import {
+  PORUTHAM_LABELS_EN,
+  poruthamMatchDisplayRows,
+} from "@/lib/astrologyPoruthamDisplay";
 import { BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { toast } from "sonner";
-
-/** Display order for the 10 poruthams returned by POST /astrology/porutham/ */
-const PORUTHAM_KEYS = [
-  "dinam",
-  "ganam",
-  "mahendra",
-  "sthree_deerga",
-  "yoni",
-  "rasi",
-  "rasyadhipam",
-  "vasyam",
-  "rajju_dosham",
-  "vedha_dosham",
-] as const;
-
-const PORUTHAM_LABELS_EN: Record<string, string> = {
-  dinam: "Dinam",
-  ganam: "Ganam",
-  mahendra: "Mahendram",
-  sthree_deerga: "Sthree Deergham",
-  yoni: "Yoni",
-  rasi: "Rasi",
-  rasyadhipam: "Rasyadhipathi",
-  vasyam: "Vasyam",
-  rajju_dosham: "Rajju",
-  vedha_dosham: "Vedha",
-};
 
 /** Page chrome (cards, headers, detail boxes) stays English regardless of toggle. */
 const PAGE_COPY = {
@@ -77,6 +53,9 @@ const PAGE_COPY = {
   chartNotAvailable: "Chart not available",
   matchedSummary: (s: number, m: number) => `${s} out of ${m} poruthams matched`,
 } as const;
+
+/** Hidden from the porutham checklist on this page only; API scoring is unchanged. */
+const PORUTHAM_ROWS_HIDDEN_UI = new Set(["kuja_dosham"]);
 
 const DETAIL_LABELS = {
   nakshatra: "Nakshatra",
@@ -139,18 +118,6 @@ function personDetailRows(
         : "—",
     },
   ];
-}
-
-const GRADE_POINTS: Record<string, number> = {
-  uthamam: 1,
-  madhyamam: 0.5,
-  adhamam: 0,
-};
-
-function poruthamPoints(key: string, data: PoruthamMatchData): number {
-  const grade = data.grades?.[key]?.toLowerCase();
-  if (grade && grade in GRADE_POINTS) return GRADE_POINTS[grade];
-  return data.poruthams?.[key] ? 1 : 0;
 }
 
 function resolveMediaUrl(raw?: string | null): string {
@@ -254,31 +221,16 @@ function PoruthamDetailsCard({
   data: PoruthamMatchData;
   lang: ChartLang;
 }) {
-  const rows = PORUTHAM_KEYS.filter(
-    (key) => key in (data.poruthams ?? {}),
-  ).map((key) => {
-    const matched = Boolean(data.poruthams[key]);
-    const points = poruthamPoints(key, data);
-    const label =
+  const rows = poruthamMatchDisplayRows(data)
+    .filter((row) => !PORUTHAM_ROWS_HIDDEN_UI.has(row.orderKey))
+    .map((row) => ({
+    key: row.key,
+    points: row.points,
+    label:
       lang === "en"
-        ? (PORUTHAM_LABELS_EN[key] ?? key)
-        : poruthamRowLabelMalayalam(key, key);
-    return { key, matched, points, label };
-  });
-
-  const doshaRows = (data.dosha_checks ?? [])
-    .filter(
-      (item) =>
-        normalizePoruthamKey(item.key ?? item.label ?? "") !== "kuja_dosham",
-    )
-    .map((item) => ({
-      key: item.key,
-      matched: item.matched,
-      label:
-        lang === "en"
-          ? (item.label?.trim() || item.key)
-          : poruthamRowLabelMalayalam(item.key, item.label),
-    }));
+        ? (PORUTHAM_LABELS_EN[row.orderKey] ?? row.key)
+        : poruthamRowLabelMalayalam(row.key, PORUTHAM_LABELS_EN[row.orderKey]),
+  }));
 
   return (
     <div className="rounded-2xl border border-primary/15 bg-card p-3 shadow-card font-ml sm:p-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden">
@@ -292,7 +244,7 @@ function PoruthamDetailsCard({
         {rows.map((row) => (
           <li
             key={row.key}
-            className="flex items-center gap-3 border-b border-primary/5 py-2"
+            className="flex items-center gap-3 border-b border-primary/5 py-2 last:border-0"
           >
             <span className="flex-1 text-sm font-medium text-foreground">
               {row.label}
@@ -300,26 +252,6 @@ function PoruthamDetailsCard({
             <PoruthamStatusIcon points={row.points} />
           </li>
         ))}
-        {doshaRows.length > 0 ? (
-          <>
-            <li
-              className="list-none border-t border-primary/20 py-0"
-              role="separator"
-              aria-hidden
-            />
-            {doshaRows.map((row) => (
-              <li
-                key={row.key}
-                className="flex items-center gap-3 border-b border-primary/5 py-2 last:border-0"
-              >
-                <span className="flex-1 text-sm font-medium text-foreground">
-                  {row.label}
-                </span>
-                <PoruthamStatusIcon points={row.matched ? 1 : 0} />
-              </li>
-            ))}
-          </>
-        ) : null}
       </ul>
     </div>
   );

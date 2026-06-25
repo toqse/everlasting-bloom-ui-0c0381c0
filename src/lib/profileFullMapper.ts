@@ -76,10 +76,10 @@ export function mapFullProfileToDrawerDisplay(
   const sib: string[] = [];
   if (fam.brothers != null)
     sib.push(
-      `Brothers: ${fam.brothers} (married: ${fam.married_brothers ?? 0})`,
+      `Brothers: ${fam.brothers} (married: ${fam.married_brothers ?? "—"})`,
     );
   if (fam.sisters != null)
-    sib.push(`Sisters: ${fam.sisters} (married: ${fam.married_sisters ?? 0})`);
+    sib.push(`Sisters: ${fam.sisters} (married: ${fam.married_sisters ?? "—"})`);
   if (sib.length) famLines.push(sib.join(". "));
   const aboutFamily =
     fam.about_family != null ? String(fam.about_family).trim() : "";

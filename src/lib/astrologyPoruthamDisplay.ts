@@ -1,6 +1,11 @@
-import type { MatchBlock, PoruthamDetailedItem } from "@/lib/astrologyApi";
+import type {
+  MatchBlock,
+  PoruthamDetailedItem,
+  PoruthamMatchData,
+} from "@/lib/astrologyApi";
 
-const PORUTHAM_DISPLAY_ORDER = [
+/** Canonical display order — matches the legacy Visual PairMaker EXE list. */
+export const PORUTHAM_DISPLAY_ORDER = [
   "rasi",
   "rasyadhip",
   "vasyam",
@@ -15,6 +20,104 @@ const PORUTHAM_DISPLAY_ORDER = [
   "dasa_sandhi",
   "papam_samyom",
 ] as const;
+
+/** English labels for the EXE-ordered porutham checklist. */
+export const PORUTHAM_LABELS_EN: Record<string, string> = {
+  rasi: "Rasi",
+  rasyadhip: "Rasyadhipam",
+  vasyam: "Vasyam",
+  deergaham: "Deergham",
+  dinam: "Dinam",
+  mahendra: "Mahendram",
+  ganam: "Ganam",
+  yoni: "Yoni",
+  rajju_dosham: "Rajju Dosham",
+  vedham: "Vedha Dosham",
+  kuja_dosham: "Kuja Dosham",
+  dasa_sandhi: "Dasa Sandhi",
+  papam_samyom: "Papam Samyam",
+};
+
+/** API field keys mapped to each canonical display-order slot. */
+const ORDER_KEY_TO_API_KEYS: Record<string, string[]> = {
+  rasi: ["rasi"],
+  rasyadhip: ["rasyadhipam"],
+  vasyam: ["vasyam"],
+  deergaham: ["sthree_deerga"],
+  dinam: ["dinam"],
+  mahendra: ["mahendra"],
+  ganam: ["ganam"],
+  yoni: ["yoni"],
+  rajju_dosham: ["rajju_dosham"],
+  vedham: ["vedha_dosham"],
+  kuja_dosham: ["chovva_dosham"],
+  dasa_sandhi: ["dasa_sandhi"],
+  papam_samyom: ["papa_samyam"],
+};
+
+const GRADE_POINTS: Record<string, number> = {
+  uthamam: 1,
+  madhyamam: 0.5,
+  adhamam: 0,
+};
+
+export interface PoruthamMatchDisplayRow {
+  key: string;
+  orderKey: string;
+  points: number;
+}
+
+/** Build porutham + dosha rows in EXE order for POST /astrology/porutham/ responses. */
+export function poruthamMatchDisplayRows(
+  data: PoruthamMatchData,
+): PoruthamMatchDisplayRow[] {
+  const doshaByKey = new Map<string, boolean>();
+  for (const item of data.dosha_checks ?? []) {
+    doshaByKey.set(
+      normalizePoruthamKey(item.key ?? item.label ?? ""),
+      Boolean(item.matched),
+    );
+  }
+
+  const pointsForApiKey = (apiKey: string): number => {
+    const grade = data.grades?.[apiKey]?.toLowerCase();
+    if (grade && grade in GRADE_POINTS) return GRADE_POINTS[grade]!;
+    return data.poruthams?.[apiKey] ? 1 : 0;
+  };
+
+  const rows: PoruthamMatchDisplayRow[] = [];
+
+  for (const orderKey of PORUTHAM_DISPLAY_ORDER) {
+    const apiKeys = ORDER_KEY_TO_API_KEYS[orderKey] ?? [orderKey];
+    let points: number | null = null;
+    let displayKey = apiKeys[0]!;
+
+    for (const apiKey of apiKeys) {
+      if (Object.prototype.hasOwnProperty.call(data.poruthams ?? {}, apiKey)) {
+        points = pointsForApiKey(apiKey);
+        displayKey = apiKey;
+        break;
+      }
+    }
+
+    if (points === null && doshaByKey.has(orderKey)) {
+      const matched = doshaByKey.get(orderKey)!;
+      points = matched ? 1 : 0;
+      displayKey = apiKeys[0]!;
+    }
+
+    if (points === null && orderKey === "kuja_dosham" && data.chovva_dosham != null) {
+      points = data.chovva_dosham ? 1 : 0;
+      displayKey = "chovva_dosham";
+    }
+
+    if (points === null) continue;
+
+    rows.push({ key: displayKey, orderKey, points });
+  }
+
+  return rows;
+}
 
 export function normalizePoruthamKey(raw: string): string {
   const key = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");

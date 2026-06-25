@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import { Button } from "@/components/ui/button";
@@ -60,8 +60,8 @@ const nextOptimisticMessageId = (seq: { current: number }) => {
 };
 
 const ChatPage = () => {
-  const params = useParams();
-  const profileId = (params?.profileId as string | undefined) ?? undefined;
+  const searchParams = useSearchParams();
+  const conversationId = searchParams?.get("id") ?? undefined;
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optimisticIdSeqRef = useRef(0);
@@ -92,7 +92,7 @@ const ChatPage = () => {
   }, [visibleMessages.length]);
 
   useEffect(() => {
-    const idNum = Number(profileId);
+    const idNum = Number(conversationId);
     if (!idNum) return;
 
     let cancelled = false;
@@ -221,7 +221,7 @@ const ChatPage = () => {
       wsRef.current = null;
       setWs(null);
     };
-  }, [profileId, reconnectKey]);
+  }, [conversationId, reconnectKey]);
 
   const handleRetryConnection = () => {
     if (isReconnecting) return;
@@ -249,7 +249,7 @@ const ChatPage = () => {
     }
   };
 
-  if (!profileId) {
+  if (!conversationId) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

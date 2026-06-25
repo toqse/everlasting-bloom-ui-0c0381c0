@@ -103,14 +103,16 @@ export interface MatchesParams {
   height_min?: number;
   height_max?: number;
   religion_id?: number;
-  caste_id?: number;
-  education_id?: number;
-  occupation_id?: number;
+  caste_ids?: number[];
+  education_ids?: number[];
+  occupation_ids?: number[];
   marital_status?: number;
   country_id?: number;
   state_id?: number;
   district_id?: number;
   city_id?: number;
+  district_ids?: number[];
+  city_ids?: number[];
   profile_with_photo?: boolean | 1 | "true" | "yes";
   sort_by?: SortBy;
 }
@@ -207,14 +209,26 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
   if (params.height_min != null) sp.set("height_min", String(params.height_min));
   if (params.height_max != null) sp.set("height_max", String(params.height_max));
   if (params.religion_id != null) sp.set("religion_id", String(params.religion_id));
-  if (params.caste_id != null) sp.set("caste_id", String(params.caste_id));
-  if (params.education_id != null) sp.set("education_id", String(params.education_id));
-  if (params.occupation_id != null) sp.set("occupation_id", String(params.occupation_id));
+  if (params.caste_ids != null && params.caste_ids.length > 0) {
+    sp.set("caste_ids", params.caste_ids.join(","));
+  }
+  if (params.education_ids != null && params.education_ids.length > 0) {
+    sp.set("education_ids", params.education_ids.join(","));
+  }
+  if (params.occupation_ids != null && params.occupation_ids.length > 0) {
+    sp.set("occupation_ids", params.occupation_ids.join(","));
+  }
   if (params.marital_status != null) sp.set("marital_status", String(params.marital_status));
   if (params.country_id != null) sp.set("country_id", String(params.country_id));
   if (params.state_id != null) sp.set("state_id", String(params.state_id));
   if (params.district_id != null) sp.set("district_id", String(params.district_id));
   if (params.city_id != null) sp.set("city_id", String(params.city_id));
+  if (params.district_ids != null && params.district_ids.length > 0) {
+    sp.set("district_ids", params.district_ids.join(","));
+  }
+  if (params.city_ids != null && params.city_ids.length > 0) {
+    sp.set("city_ids", params.city_ids.join(","));
+  }
   if (params.profile_with_photo !== undefined) {
     const v = params.profile_with_photo;
     sp.set("profile_with_photo", v === true || v === 1 || v === "true" || v === "yes" ? "1" : "0");

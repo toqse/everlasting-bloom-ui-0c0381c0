@@ -8,29 +8,12 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { Button } from "./ui/button";
 import Link from "next/link";
-import { toast } from "sonner";
-import { useState } from "react";
+import NewsletterBanner from "./NewsletterBanner";
 
 const Footer = () => {
-  const [email, setEmail] = useState("");
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email");
-      return;
-    }
-    toast.success("Thanks for subscribing! 💕", {
-      description: "You'll receive our latest updates and tips.",
-    });
-    setEmail("");
-  };
-
   const footerLinks = {
     company: [
       { name: "About Us", href: "/about" },
@@ -71,61 +54,7 @@ const Footer = () => {
         />
       ))}
 
-      {/* Newsletter Section */}
-      <div className="bg-primary py-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NCAwLTE4IDguMDYtMTggMTggMCAxMC45NCA4LjA2IDE4IDE4IDE4IDkuOTQgMCAxOC04LjA2IDE4LTE4IDAtOS45NC04LjA2LTE4LTE4LTE4eiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjIiLz48L2c+PC9zdmc+')] opacity-30" />
-
-        {/* Floating Hearts */}
-        {[...Array(3)].map((_, i) => (
-          <Heart
-            key={i}
-            className="absolute text-white/10 fill-white/10 animate-float"
-            style={{
-              left: `${15 + i * 30}%`,
-              top: `${20 + (i % 2) * 40}%`,
-              width: `${24 + i * 8}px`,
-              animationDelay: `${i * 0.8}s`,
-            }}
-          />
-        ))}
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-primary-foreground mb-2">
-                Get Marriage Tips & Updates
-              </h3>
-              <p className="text-primary-foreground/80">
-                Subscribe to receive relationship advice and exclusive offers
-              </p>
-            </div>
-            <form
-              onSubmit={handleSubscribe}
-              className="flex flex-col sm:flex-row gap-3 w-full md:w-auto"
-            >
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full sm:w-72 pl-12 pr-4 py-3 rounded-xl border-0 focus:ring-2 focus:ring-secondary"
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="gold"
-                size="lg"
-                className="gap-2 group"
-              >
-                Subscribe
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </form>
-          </div>
-        </div>
-      </div>
+      <NewsletterBanner />
 
       {/* Main Footer Content */}
       <div className="container mx-auto px-4 sm:px-4 pt-10 sm:pt-16 pb-6 sm:pb-8">

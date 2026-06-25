@@ -7,12 +7,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Check, Lock, CreditCard } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   createPlanOrder,
   verifyPlanPayment,
   type AvailablePlan,
-  type PaymentOption,
 } from "@/lib/plansApi";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 import { useAuthStore } from "@/stores/authStore";
@@ -23,6 +21,8 @@ interface PaymentPopupProps {
   onOpenChange: (open: boolean) => void;
   apiPlan?: AvailablePlan;
   defaultPlanId?: number;
+  /** User's actual remaining service charge from GET /my/plan/ (overrides catalog default). */
+  serviceChargeRemaining?: number;
   onPurchaseSuccess?: () => void | Promise<void>;
 }
 
@@ -38,24 +38,31 @@ const buildApiFeatures = (plan: AvailablePlan): string[] => {
   return list;
 };
 
-const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: PaymentPopupProps) => {
+const PaymentPopup = ({
+  open,
+  onOpenChange,
+  apiPlan,
+  serviceChargeRemaining: userServiceChargeRemaining,
+  onPurchaseSuccess,
+}: PaymentPopupProps) => {
   const user = useAuthStore((s) => s.user);
-  const [paymentOption, setPaymentOption] = useState<PaymentOption>("plan_only");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setPaymentOption("plan_only");
     setSubmitting(false);
   }, [apiPlan, open]);
 
   if (!apiPlan) return null;
 
   const planPrice = apiPlan.price ?? 0;
+  const catalogRemaining =
+    apiPlan.service_charge_remaining ??
+    Math.max(0, (apiPlan.service_charge ?? 0) - planPrice);
   const serviceChargeRemaining =
-    apiPlan.service_charge_remaining ?? Math.max(0, (apiPlan.service_charge ?? 0) - planPrice);
-  const canPayFull = serviceChargeRemaining > 0;
-  const payAmount =
-    paymentOption === "full" && canPayFull ? serviceChargeRemaining : planPrice;
+    userServiceChargeRemaining !== undefined
+      ? userServiceChargeRemaining
+      : catalogRemaining;
+  const hasServiceChargeRemaining = serviceChargeRemaining > 0;
 
   const features = buildApiFeatures(apiPlan);
 
@@ -63,7 +70,7 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: Paymen
     if (!apiPlan) return;
     setSubmitting(true);
     try {
-      const orderRes = await createPlanOrder(apiPlan.id, paymentOption);
+      const orderRes = await createPlanOrder(apiPlan.id, "plan_only");
       const order = orderRes.data;
       if (!order.order_id || !order.key_id) {
         throw new Error("Invalid payment order response.");
@@ -83,7 +90,7 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: Paymen
         onSuccess: async (payment) => {
           const verifyRes = await verifyPlanPayment({
             planId: apiPlan.id,
-            paymentOption,
+            paymentOption: "plan_only",
             razorpay_order_id: payment.razorpay_order_id,
             razorpay_payment_id: payment.razorpay_payment_id,
             razorpay_signature: payment.razorpay_signature,
@@ -128,7 +135,7 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: Paymen
                   </p>
                 )}
               </div>
-              {canPayFull && (
+              {hasServiceChargeRemaining && (
                 <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800">
                   <span className="font-semibold">Registration fee:</span> {formatPrice(planPrice)}
                   <br />
@@ -151,41 +158,15 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: Paymen
           <div className="p-6 flex flex-col">
             <h3 className="font-serif font-bold text-foreground mb-4">Payment</h3>
 
-            {canPayFull && (
-              <div className="space-y-2 mb-4">
-                <p className="text-sm text-muted-foreground">Choose what to pay now:</p>
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentOption("plan_only")}
-                    className={cn(
-                      "rounded-xl border-2 p-3 text-left text-sm transition-all",
-                      paymentOption === "plan_only"
-                        ? "border-primary bg-accent-rose/30"
-                        : "border-primary/10 hover:border-primary/30",
-                    )}
-                  >
-                    <span className="font-semibold">Registration fee only</span>
-                    <span className="block text-muted-foreground">{formatPrice(planPrice)}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentOption("full")}
-                    className={cn(
-                      "rounded-xl border-2 p-3 text-left text-sm transition-all",
-                      paymentOption === "full"
-                        ? "border-primary bg-accent-rose/30"
-                        : "border-primary/10 hover:border-primary/30",
-                    )}
-                  >
-                    <span className="font-semibold">Pay remaining service charge</span>
-                    <span className="block text-muted-foreground">
-                      {formatPrice(serviceChargeRemaining)}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="rounded-xl border-2 border-primary bg-accent-rose/30 p-3 mb-4 text-sm">
+              <span className="font-semibold">Registration fee</span>
+              <span className="block text-muted-foreground">{formatPrice(planPrice)}</span>
+              {hasServiceChargeRemaining && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Remaining service charge can be paid later from your membership section.
+                </p>
+              )}
+            </div>
 
             <div className="rounded-2xl border border-primary/15 bg-white p-4 flex items-start gap-3">
               <CreditCard className="w-8 h-8 text-primary flex-shrink-0 mt-0.5" />
@@ -209,7 +190,7 @@ const PaymentPopup = ({ open, onOpenChange, apiPlan, onPurchaseSuccess }: Paymen
                 disabled={submitting}
                 onClick={handlePay}
               >
-                {submitting ? "Processing..." : `Pay ${formatPrice(payAmount)} with Razorpay`}
+                {submitting ? "Processing..." : `Pay ${formatPrice(planPrice)} with Razorpay`}
               </Button>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel

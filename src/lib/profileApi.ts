@@ -47,6 +47,7 @@ export interface ProfileData {
     colour?: string;
     complexion?: string;
     blood_group?: string;
+    reason_for_divorce?: string;
   };
   location_details?: {
     country_id?: number;
@@ -166,6 +167,7 @@ export interface PersonalBody {
   weight_kg: number | null;
   complexion: string;
   blood_group: string;
+  reason_for_divorce?: string;
 }
 
 export interface EducationBody {
@@ -204,13 +206,17 @@ export interface FamilyBody {
   mother_name?: string;
   mother_status?: "Alive" | "Late";
   mother_occupation?: string;
-  brothers?: number;
-  married_brothers?: number;
-  sisters?: number;
-  married_sisters?: number;
+  brothers?: number | null;
+  married_brothers?: number | null;
+  sisters?: number | null;
+  married_sisters?: number | null;
+  brother_occupation?: string;
+  sister_occupation?: string;
   about_family?: string;
   family_type?: string;
   family_status?: string;
+  family_contact?: string;
+  family_contact_2?: string;
 }
 
 export interface FamilyDetailsData {
@@ -220,13 +226,17 @@ export interface FamilyDetailsData {
   mother_name?: string;
   mother_status?: "Alive" | "Late" | "";
   mother_occupation?: string;
-  brothers?: number;
-  married_brothers?: number;
-  sisters?: number;
-  married_sisters?: number;
+  brothers?: number | null;
+  married_brothers?: number | null;
+  sisters?: number | null;
+  married_sisters?: number | null;
+  brother_occupation?: string;
+  sister_occupation?: string;
   about_family?: string;
   family_type?: string;
   family_status?: string;
+  family_contact?: string;
+  family_contact_2?: string;
 }
 
 export interface FamilyDetailsResponse {

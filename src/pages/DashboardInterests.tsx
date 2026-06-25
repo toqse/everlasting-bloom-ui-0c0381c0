@@ -46,6 +46,7 @@ import {
 } from "@/lib/matchesApi";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
 import ChoosePlanModal from "@/components/ChoosePlanModal";
+import { chatUrl } from "@/lib/chatRoutes";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateTimeDdMmYyyy } from "@/lib/utils";
 
@@ -213,7 +214,7 @@ const DashboardInterests = () => {
       try {
         const res = await startChat(matriId);
         const convoId = res.data.conversation_id;
-        router.push(convoId ? `/chat/${convoId}` : "/dashboard/chat-list");
+        router.push(convoId ? chatUrl(convoId) : "/dashboard/chat-list");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to start chat";
         if (

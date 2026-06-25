@@ -74,8 +74,26 @@ export interface MyPlanDetails {
   chat_remaining: number;
   contact_view_remaining: number;
   horoscope_remaining: number;
+  service_charge?: number;
+  plan_price?: number;
+  total_price?: number;
   service_charge_remaining: number;
   service_charge_paid: number;
+}
+
+/** Align service charge fields when API has price_paid but service_charge_paid=0. */
+export function normalizeMyPlanDetails(data: MyPlanDetails): MyPlanDetails {
+  if (!data.is_plan_active) return data;
+  const serviceCharge = data.service_charge ?? 0;
+  const planPrice = data.plan_price ?? 0;
+  const paid = data.service_charge_paid ?? 0;
+  const effectivePaid = paid > 0 ? paid : planPrice;
+  if (effectivePaid <= 0 && (data.service_charge_remaining ?? 0) <= 0) return data;
+  return {
+    ...data,
+    service_charge_paid: effectivePaid,
+    service_charge_remaining: Math.max(0, serviceCharge - effectivePaid),
+  };
 }
 
 export interface MyPlanResponse {
@@ -84,7 +102,8 @@ export interface MyPlanResponse {
 }
 
 export async function getMyPlan(): Promise<MyPlanResponse> {
-  return authedFetch<MyPlanResponse>("v1/my/plan/", { method: "GET" });
+  const res = await authedFetch<MyPlanResponse>("v1/my/plan/", { method: "GET" });
+  return { ...res, data: normalizeMyPlanDetails(res.data) };
 }
 
 export type PaymentMethod = "razorpay" | "stripe" | "upi" | "manual";
