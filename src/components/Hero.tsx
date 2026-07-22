@@ -15,10 +15,10 @@ const Hero = () => {
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background image from public/images/hero-bg.png */}
+      {/* Background image from public/images/hero-bg.webp */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url("/images/hero-bg.png")' }}
+        style={{ backgroundImage: 'url("/images/hero-bg.webp")' }}
         aria-hidden
       />
       {/* Light gradient overlay for text readability */}

@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
@@ -27,13 +28,13 @@ async function authedGet<T>(path: string): Promise<T> {
     store.logout();
     throw new Error("Session expired. Please log in again.");
   }
-  console.log("[dashboardApi] GET", path);
+  debugLog("[dashboardApi] GET", path);
   const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
-  console.log("[dashboardApi] response", { status: res.status, data });
+  debugLog("[dashboardApi] response", { status: res.status, data });
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
   return data as T;
 }
@@ -193,14 +194,14 @@ export async function postPartnerPreference(body: PartnerPreferenceBody): Promis
     store.logout();
     throw new Error("Session expired. Please log in again.");
   }
-  console.log("[dashboardApi] POST v1/profile/partner-preference/", body);
+  debugLog("[dashboardApi] POST v1/profile/partner-preference/", body);
   const res = await memberFetchWithAuthRetry(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as { success: boolean; data: unknown } & ApiErrorPayload;
-  console.log("[dashboardApi] response", { status: res.status, data });
+  debugLog("[dashboardApi] response", { status: res.status, data });
   if (!res.ok) throw new Error(getErrorMessage(data, "Failed to update partner preference"));
   return data;
 }

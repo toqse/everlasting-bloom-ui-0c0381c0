@@ -122,9 +122,11 @@ const WhyChooseUs = () => {
               transition={{ type: "spring", stiffness: 200 }}
             >
               <img
-                src="/images/christian.png"
+                src="/images/christian.webp"
                 alt="Wedding couple"
                 className="w-full h-[240px] sm:h-[280px] lg:h-[320px] object-cover object-[center_30%]"
+                loading="lazy"
+                decoding="async"
               />
             </motion.div>
 

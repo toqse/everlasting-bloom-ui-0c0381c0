@@ -64,7 +64,6 @@ import {
   rasiNameMalayalam,
   roleNameMalayalam,
 } from "@/lib/malayalam/horoscopeDisplayMl";
-import { downloadMatchCompatibilityReportPdf } from "@/lib/matchReportPdf";
 import { MatchChartComparison } from "@/components/astrology/MatchChartComparison";
 import { SelfHoroscopeChart } from "@/components/astrology/SelfHoroscopeChart";
 import { AstrologerServicesCallLink } from "@/components/astrology/AstrologerServicesCallLink";
@@ -579,6 +578,9 @@ export default function JathagamPage() {
     }
     setDownloadingMatchPdf(true);
     try {
+      const { downloadMatchCompatibilityReportPdf } = await import(
+        "@/lib/matchReportPdf"
+      );
       await downloadMatchCompatibilityReportPdf({
         data: matchResponseData,
         match: matchBlock,

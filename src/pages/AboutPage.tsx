@@ -122,9 +122,10 @@ const AboutPage = () => {
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
           <img
-            src={"/images/" + encodeURIComponent("image about.png")}
+            src={"/images/" + encodeURIComponent("image about.webp")}
             alt="Wedding couple in traditional attire"
             className="w-full h-full object-cover object-[center_20%]"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>
@@ -213,8 +214,10 @@ const AboutPage = () => {
                 transition={{ type: "spring", stiffness: 200 }}
               >
                 <img
-                  src="/images/christian.png"
+                  src="/images/christian.webp"
                   alt="Wedding couple"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-[240px] sm:h-[280px] lg:h-[320px] object-cover object-[center_30%]"
                 />
               </motion.div>

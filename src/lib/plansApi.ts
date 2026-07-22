@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
@@ -36,12 +37,12 @@ function redactSensitive<T>(value: T): T {
 
 function logPlansRequest(path: string, method: string, body: unknown | null) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[plansApi] request", redactSensitive({ endpoint, path, method, body }));
+  debugLog("[plansApi] request", redactSensitive({ endpoint, path, method, body }));
 }
 
 function logPlansResponse(path: string, method: string, status: number, response: unknown) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[plansApi] response", redactSensitive({ endpoint, path, method, status, response }));
+  debugLog("[plansApi] response", redactSensitive({ endpoint, path, method, status, response }));
 }
 
 async function authedFetch<T>(path: string, opts: { method: string; body?: string }): Promise<T> {

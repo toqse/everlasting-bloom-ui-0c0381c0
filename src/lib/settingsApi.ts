@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { GENERIC_ERROR_MESSAGE } from "@/lib/apiErrors";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
@@ -58,13 +59,13 @@ async function request<T>(
 ): Promise<T> {
   const { _body, ...fetchOptions } = options;
 
-  console.log("[settingsApi] URL:", url);
-  if (_body !== undefined) console.log("[settingsApi] Body:", _body);
+  debugLog("[settingsApi] URL:", url);
+  if (_body !== undefined) debugLog("[settingsApi] Body:", _body);
 
   const res = await memberFetchWithAuthRetry(url, fetchOptions);
   const json = await res.json().catch(() => null);
 
-  console.log("[settingsApi] Response:", json);
+  debugLog("[settingsApi] Response:", json);
 
   if (!json || typeof json !== "object") {
     throw new Error(GENERIC_ERROR_MESSAGE);

@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
@@ -20,13 +21,13 @@ function getErrorMessage(data: ApiErrorPayload | unknown, fallback: string): str
 
 async function authedGet<T>(path: string): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  console.log("[transactionsApi] GET", path);
+  debugLog("[transactionsApi] GET", path);
   const res = await memberFetchWithAuthRetry(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
-  console.log("[transactionsApi] response", { status: res.status, data });
+  debugLog("[transactionsApi] response", { status: res.status, data });
   if (!res.ok) throw new Error(getErrorMessage(data, "Request failed"));
   return data as T;
 }

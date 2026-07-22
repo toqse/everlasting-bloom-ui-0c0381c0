@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
@@ -23,10 +24,10 @@ function logApi(endpoint: string, method: string, body?: unknown, response?: { s
   // Example: [matchesApi] GET v1/matches/?page=1 { ...response }
   try {
     // eslint-disable-next-line no-console
-    console.log("[matchesApi]", method, endpoint, body ?? "");
+    debugLog("[matchesApi]", method, endpoint, body ?? "");
     if (response) {
       // eslint-disable-next-line no-console
-      console.log("[matchesApi] response", response);
+      debugLog("[matchesApi] response", response);
     }
   } catch {
     // ignore logging errors

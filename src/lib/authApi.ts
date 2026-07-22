@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { ApiError, fetchWithTimeout } from "./apiErrors";
 
@@ -126,14 +127,14 @@ function buildRegisterPayload(body: RegisterBody): Record<string, unknown> {
 export async function register(body: RegisterBody): Promise<unknown> {
   const url = `${BASE_URL}v1/auth/register/`;
   const payload = buildRegisterPayload(body);
-  console.log("[authApi] register request body:", payload);
+  debugLog("[authApi] register request body:", payload);
   const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
-  console.log("[authApi] register response:", { status: res.status, data });
+  debugLog("[authApi] register response:", { status: res.status, data });
   if (!res.ok)
     throw new ApiError(getErrorMessage(data, "Registration failed"), res.status);
   return data;
@@ -154,14 +155,14 @@ export async function verifyOtp(
   body: VerifyOtpBody,
 ): Promise<VerifyOtpResponse> {
   const url = `${BASE_URL}v1/auth/verify-otp/`;
-  console.log("[authApi] verifyOtp request body:", body);
+  debugLog("[authApi] verifyOtp request body:", body);
   const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as VerifyOtpResponse;
-  console.log("[authApi] verifyOtp response:", { status: res.status, data });
+  debugLog("[authApi] verifyOtp response:", { status: res.status, data });
   if (!res.ok)
     throw new ApiError(
       getErrorMessage(data, "OTP verification failed"),
@@ -190,7 +191,7 @@ export async function resendOtp(
 ): Promise<ResendOtpResponse> {
   const url = `${BASE_URL}v1/auth/resend-otp/`;
   const payload = { phone_number: body.phone_number.trim() };
-  console.log("[authApi] resend-otp request body:", payload);
+  debugLog("[authApi] resend-otp request body:", payload);
   const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -291,14 +292,14 @@ export async function registerMobile(
   body: RegisterMobileBody,
 ): Promise<RegisterMobileResponse> {
   const url = `${BASE_URL}v1/auth/register/mobile/`;
-  console.log("[authApi] registerMobile request body:", body);
+  debugLog("[authApi] registerMobile request body:", body);
   const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as RegisterMobileResponse;
-  console.log("[authApi] registerMobile response:", {
+  debugLog("[authApi] registerMobile response:", {
     status: res.status,
     data,
   });
@@ -312,14 +313,14 @@ export async function verifyMobile(
   body: VerifyMobileBody,
 ): Promise<VerifyMobileResponse> {
   const url = `${BASE_URL}v1/auth/verify/mobile/`;
-  console.log("[authApi] verifyMobile request body:", body);
+  debugLog("[authApi] verifyMobile request body:", body);
   const res = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as VerifyMobileResponse;
-  console.log("[authApi] verifyMobile response:", { status: res.status, data });
+  debugLog("[authApi] verifyMobile response:", { status: res.status, data });
   if (!res.ok)
     throw new ApiError(getErrorMessage(data, "Failed to verify OTP"), res.status);
   return data;

@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { parseApiDate } from "./utils";
 
@@ -29,12 +30,12 @@ export const WEBSITE_SUCCESS_STORIES_PAGE_SIZE = 20;
 
 function logSuccessStoriesRequest(path: string, method: string) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[successStoriesApi] request", { endpoint, path, method, body: null });
+  debugLog("[successStoriesApi] request", { endpoint, path, method, body: null });
 }
 
 function logSuccessStoriesResponse(path: string, method: string, status: number, response: unknown) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[successStoriesApi] response", { endpoint, path, method, status, response });
+  debugLog("[successStoriesApi] response", { endpoint, path, method, status, response });
 }
 
 export interface WebsiteSuccessStory {

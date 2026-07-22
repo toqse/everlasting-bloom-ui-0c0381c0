@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
@@ -25,12 +26,12 @@ const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): str
 
 function logAstrologyRequest(path: string, method: string, body: unknown | null) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[astrologyApi] request", redactSensitive({ endpoint, path, method, body }));
+  debugLog("[astrologyApi] request", redactSensitive({ endpoint, path, method, body }));
 }
 
 function logAstrologyResponse(path: string, method: string, status: number, response: unknown) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log(
+  debugLog(
     "[astrologyApi] response",
     redactSensitive({ endpoint, path, method, status, response }),
   );

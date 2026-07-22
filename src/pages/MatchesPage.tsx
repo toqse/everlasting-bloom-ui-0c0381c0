@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, formatDateDdMmYyyy, parseApiDate } from "@/lib/utils";
 import {
@@ -366,6 +366,11 @@ const MatchesPage = () => {
   const [heightRange, setHeightRange] = useState<[number, number]>(
     DEFAULT_HEIGHT_RANGE,
   );
+  /** Applied filters (updated on slider commit) — drives API fetches without per-tick spam */
+  const [appliedAgeRange, setAppliedAgeRange] =
+    useState<[number, number]>(DEFAULT_AGE_RANGE);
+  const [appliedHeightRange, setAppliedHeightRange] =
+    useState<[number, number]>(DEFAULT_HEIGHT_RANGE);
   const [maritalStatusId, setMaritalStatusId] = useState<number | null>(null);
   const [religionId, setReligionId] = useState<number | null>(null);
   const [casteIds, setCasteIds] = useState<number[]>([]);
@@ -466,6 +471,8 @@ const MatchesPage = () => {
   const clearAllFilters = useCallback(() => {
     setAgeRange(DEFAULT_AGE_RANGE);
     setHeightRange(DEFAULT_HEIGHT_RANGE);
+    setAppliedAgeRange(DEFAULT_AGE_RANGE);
+    setAppliedHeightRange(DEFAULT_HEIGHT_RANGE);
     setMaritalStatusId(null);
     setReligionId(null);
     setCasteIds([]);
@@ -693,18 +700,18 @@ const MatchesPage = () => {
           sort_by: sortBy,
         };
         if (
-          ageRange[0] !== DEFAULT_AGE_RANGE[0] ||
-          ageRange[1] !== DEFAULT_AGE_RANGE[1]
+          appliedAgeRange[0] !== DEFAULT_AGE_RANGE[0] ||
+          appliedAgeRange[1] !== DEFAULT_AGE_RANGE[1]
         ) {
-          params.age_min = ageRange[0];
-          params.age_max = ageRange[1];
+          params.age_min = appliedAgeRange[0];
+          params.age_max = appliedAgeRange[1];
         }
         if (
-          heightRange[0] !== DEFAULT_HEIGHT_RANGE[0] ||
-          heightRange[1] !== DEFAULT_HEIGHT_RANGE[1]
+          appliedHeightRange[0] !== DEFAULT_HEIGHT_RANGE[0] ||
+          appliedHeightRange[1] !== DEFAULT_HEIGHT_RANGE[1]
         ) {
-          params.height_min = heightRange[0];
-          params.height_max = heightRange[1];
+          params.height_min = appliedHeightRange[0];
+          params.height_max = appliedHeightRange[1];
         }
         if (religionId != null) params.religion_id = religionId;
         if (casteIds.length > 0) params.caste_ids = casteIds;
@@ -737,8 +744,8 @@ const MatchesPage = () => {
       }
     },
     [
-      ageRange,
-      heightRange,
+      appliedAgeRange,
+      appliedHeightRange,
       religionId,
       casteIds,
       educationIds,
@@ -1023,6 +1030,9 @@ const MatchesPage = () => {
                       step={1}
                       value={ageRange}
                       onValueChange={(v) => setAgeRange(v as [number, number])}
+                      onValueCommit={(v) =>
+                        setAppliedAgeRange(v as [number, number])
+                      }
                       className="py-2"
                     />
                     <p className="text-xs text-muted-foreground text-center">
@@ -1043,6 +1053,9 @@ const MatchesPage = () => {
                       value={heightRange}
                       onValueChange={(v) =>
                         setHeightRange(v as [number, number])
+                      }
+                      onValueCommit={(v) =>
+                        setAppliedHeightRange(v as [number, number])
                       }
                       className="py-2"
                     />
@@ -1653,7 +1666,7 @@ const MatchDetailItem = ({
   </div>
 );
 
-const MatchListCard = ({
+const MatchListCard = memo(function MatchListCard({
   profile,
   index,
   liked,
@@ -1675,7 +1688,7 @@ const MatchListCard = ({
   onChat?: () => void;
   actionLoading: string | null;
   compact?: boolean;
-}) => {
+}) {
   const normalizedProfile = profile as ApiMatchProfile & {
     can_interest_sent?: boolean;
     is_interest_sent?: boolean;
@@ -2092,6 +2105,6 @@ const MatchListCard = ({
       )}
     </motion.div>
   );
-};
+});
 
 export default MatchesPage;

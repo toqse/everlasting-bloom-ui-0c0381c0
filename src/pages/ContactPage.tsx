@@ -69,9 +69,10 @@ const ContactPage = () => {
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
           <img
-            src="/images/banner.png"
+            src="/images/banner.webp"
             alt="Wedding couple"
             className="w-full h-full object-cover object-top"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
         </div>

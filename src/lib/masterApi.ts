@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 
 export interface Country {
@@ -121,7 +122,7 @@ async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
 export async function getCountries(search?: string): Promise<Country[]> {
   const path = "v1/master/countries";
   const results = await getPaginated<Country>(path, search);
-  console.log("[masterApi] getCountries response:", { search, results });
+  debugLog("[masterApi] getCountries response:", { search, results });
   return results;
 }
 
@@ -129,7 +130,7 @@ export async function getCountries(search?: string): Promise<Country[]> {
 export async function getStates(countryId: number, search?: string): Promise<State[]> {
   const path = `v1/master/states/?country_id=${countryId}`;
   const results = await getPaginated<State>(path, search);
-  console.log("[masterApi] getStates response:", { countryId, search, results });
+  debugLog("[masterApi] getStates response:", { countryId, search, results });
   return results;
 }
 
@@ -137,7 +138,7 @@ export async function getStates(countryId: number, search?: string): Promise<Sta
 export async function getDistricts(stateId: number, search?: string): Promise<District[]> {
   const path = `v1/master/districts/?state_id=${stateId}`;
   const results = await getPaginated<District>(path, search);
-  console.log("[masterApi] getDistricts response:", { stateId, search, results });
+  debugLog("[masterApi] getDistricts response:", { stateId, search, results });
   return results;
 }
 
@@ -145,7 +146,7 @@ export async function getDistricts(stateId: number, search?: string): Promise<Di
 export async function getCities(districtId: number, search?: string): Promise<City[]> {
   const path = `v1/master/cities/?district_id=${districtId}`;
   const results = await getPaginated<City>(path, search);
-  console.log("[masterApi] getCities response:", { districtId, search, results });
+  debugLog("[masterApi] getCities response:", { districtId, search, results });
   return results;
 }
 
@@ -158,7 +159,7 @@ export async function getCitiesForDistricts(
   const qs = districtIds.map((id) => `district_id=${id}`).join("&");
   const path = `v1/master/cities/?${qs}`;
   const results = await getPaginated<City>(path, search);
-  console.log("[masterApi] getCitiesForDistricts response:", { districtIds, search, results });
+  debugLog("[masterApi] getCitiesForDistricts response:", { districtIds, search, results });
   return results;
 }
 
@@ -166,7 +167,7 @@ export async function getCitiesForDistricts(
 export async function getReligions(search?: string): Promise<Religion[]> {
   const path = "v1/master/religions";
   const results = await getPaginated<Religion>(path, search);
-  console.log("[masterApi] getReligions response:", { search, results });
+  debugLog("[masterApi] getReligions response:", { search, results });
   return results;
 }
 
@@ -180,9 +181,9 @@ export async function getCastes(religionId: number, search?: string): Promise<Ca
   if (search != null && search.trim() !== "") {
     requestUrl.searchParams.set("search", search.trim());
   }
-  console.log("[masterApi] getCastes url:", requestUrl.toString());
+  debugLog("[masterApi] getCastes url:", requestUrl.toString());
   const results = await getPaginated<Caste>(path, search);
-  console.log("[masterApi] getCastes response:", { religionId, search, results });
+  debugLog("[masterApi] getCastes response:", { religionId, search, results });
   return results;
 }
 
@@ -190,7 +191,7 @@ export async function getCastes(religionId: number, search?: string): Promise<Ca
 export async function getMotherTongues(search?: string): Promise<MotherTongue[]> {
   const path = "v1/master/mother-tongues/";
   const results = await getPaginated<MotherTongue>(path, search);
-  console.log("[masterApi] getMotherTongues response:", { search, results });
+  debugLog("[masterApi] getMotherTongues response:", { search, results });
   return results;
 }
 
@@ -198,7 +199,7 @@ export async function getMotherTongues(search?: string): Promise<MotherTongue[]>
 export async function getEducations(search?: string): Promise<EducationMaster[]> {
   const path = "v1/master/educations/";
   const results = await getPaginated<EducationMaster>(path, search);
-  console.log("[masterApi] getEducations response:", { search, results });
+  debugLog("[masterApi] getEducations response:", { search, results });
   return results;
 }
 
@@ -209,7 +210,7 @@ export async function getEducationSubjects(
 ): Promise<EducationSubjectMaster[]> {
   const path = `v1/master/education-subjects/?education_id=${educationId}`;
   const results = await getPaginated<EducationSubjectMaster>(path, search);
-  console.log("[masterApi] getEducationSubjects response:", {
+  debugLog("[masterApi] getEducationSubjects response:", {
     educationId,
     search,
     results,
@@ -223,7 +224,7 @@ export async function getOccupations(
 ): Promise<OccupationMaster[]> {
   const path = "v1/master/occupations/";
   const results = await getPaginated<OccupationMaster>(path, search);
-  console.log("[masterApi] getOccupations response:", { search, results });
+  debugLog("[masterApi] getOccupations response:", { search, results });
   return results;
 }
 
@@ -233,7 +234,7 @@ export async function getEmploymentStatuses(
 ): Promise<EmploymentStatusMaster[]> {
   const path = "v1/master/employment-statuses/";
   const results = await getPaginated<EmploymentStatusMaster>(path, search);
-  console.log("[masterApi] getEmploymentStatuses response:", { search, results });
+  debugLog("[masterApi] getEmploymentStatuses response:", { search, results });
   return results;
 }
 
@@ -243,7 +244,7 @@ export async function getIncomeRanges(
 ): Promise<IncomeRangeMaster[]> {
   const path = "v1/master/income-ranges/";
   const results = await getPaginated<IncomeRangeMaster>(path, search);
-  console.log("[masterApi] getIncomeRanges response:", { search, results });
+  debugLog("[masterApi] getIncomeRanges response:", { search, results });
   return results;
 }
 
@@ -253,6 +254,6 @@ export async function getMaritalStatuses(
 ): Promise<MaritalStatusMaster[]> {
   const path = "v1/master/marital-status/";
   const results = await getPaginated<MaritalStatusMaster>(path, search);
-  console.log("[masterApi] getMaritalStatuses response:", { search, results });
+  debugLog("[masterApi] getMaritalStatuses response:", { search, results });
   return results;
 }

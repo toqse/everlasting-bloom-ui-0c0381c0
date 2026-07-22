@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
@@ -21,10 +22,10 @@ const getErrorMessage = (data: ApiErrorPayload | unknown, fallback: string): str
 const logApi = (endpoint: string, method: string, body?: unknown, response?: { status: number; data: unknown }) => {
   try {
     // eslint-disable-next-line no-console
-    console.log("[interestsApi]", method, endpoint, body ?? "");
+    debugLog("[interestsApi]", method, endpoint, body ?? "");
     if (response) {
       // eslint-disable-next-line no-console
-      console.log("[interestsApi] response", response);
+      debugLog("[interestsApi] response", response);
     }
   } catch {
     // ignore

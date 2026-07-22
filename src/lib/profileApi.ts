@@ -1,3 +1,4 @@
+import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
@@ -355,12 +356,12 @@ const getProfileErrorMessage = (
 
 function logProfileApiRequest(path: string, method: string, body: unknown | null) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[profileApi] request", redactSensitive({ endpoint, path, method, body }));
+  debugLog("[profileApi] request", redactSensitive({ endpoint, path, method, body }));
 }
 
 function logProfileApiResponse(path: string, method: string, status: number, response: unknown) {
   const endpoint = `${BASE_URL}${path}`;
-  console.log("[profileApi] response", redactSensitive({ endpoint, path, method, status, response }));
+  debugLog("[profileApi] response", redactSensitive({ endpoint, path, method, status, response }));
 }
 
 function redactSigInUrl(url: string): string {
