@@ -11,5 +11,5 @@ export function shouldShowTestingBanner(): boolean {
   return mode === "development" || mode === "testing";
 }
 
-/** Matches TestingBanner min-height (40–44px). Used to offset fixed headers. */
-export const TESTING_BANNER_HEIGHT_CSS = "2.625rem"; // 42px
+/** Matches TestingBanner min-height (56px). Used to offset fixed headers. */
+export const TESTING_BANNER_HEIGHT_CSS = "3.5rem"; // 56px

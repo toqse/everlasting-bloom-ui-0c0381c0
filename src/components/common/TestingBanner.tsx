@@ -11,12 +11,14 @@ export default function TestingBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-[60] flex min-h-[40px] items-center justify-center border-b border-[#FCD34D] bg-[#FEF3C7] px-4 py-2 text-center text-[13px] leading-snug text-[#92400E] sm:min-h-[42px] sm:text-sm"
+      className="sticky top-0 z-[60] flex min-h-[56px] w-full items-center justify-center border-b border-[#FCD34D] bg-[#FEF3C7] px-6 py-3.5 text-center text-[#92400E] shadow-sm"
     >
-      <p className="m-0 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
-        <span aria-hidden="true">🚧</span>
-        <span className="font-semibold">Testing Environment:</span>
-        <span className="font-normal">
+      <p className="m-0 flex flex-wrap items-center justify-center gap-2 text-sm font-medium leading-relaxed md:text-[15px] lg:text-base">
+        <span aria-hidden="true" className="text-lg leading-none sm:text-xl">
+          🚧
+        </span>
+        <span className="font-bold">Testing Environment:</span>
+        <span className="font-medium">
           This website is currently under development and testing.
         </span>
       </p>
