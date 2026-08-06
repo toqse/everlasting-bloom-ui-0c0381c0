@@ -325,7 +325,7 @@ const ChatPage = () => {
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg shadow-soft"
+        className="fixed top-[var(--testing-banner-height,0px)] left-0 right-0 z-50 bg-white/95 backdrop-blur-lg shadow-soft"
       >
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">

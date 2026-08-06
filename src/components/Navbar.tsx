@@ -29,7 +29,7 @@ const Navbar = () => {
     withoutTrailingSlash(pathname ?? "") === withoutTrailingSlash(href);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-soft py-2">
+    <nav className="fixed top-[var(--testing-banner-height,0px)] left-0 right-0 z-50 bg-white shadow-soft py-2">
       <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14 overflow-visible">
         {/* Logo - larger than bar so it overflows; bar height stays fixed */}
         <Link

@@ -66,26 +66,6 @@ const getErrorMessage = (
   return fallback;
 };
 
-/**
- * Backend includes `data.otp` only when Django DEBUG=True.
- * Log it to the browser console for local QA; never present in production responses.
- */
-function logDevOtpFromResponse(payload: unknown): void {
-  const root =
-    payload && typeof payload === "object"
-      ? (payload as Record<string, unknown>)
-      : null;
-  const nested =
-    root?.data && typeof root.data === "object"
-      ? (root.data as Record<string, unknown>)
-      : null;
-  const raw = nested?.otp ?? root?.otp;
-  if (typeof raw === "string" && raw.trim()) {
-    // eslint-disable-next-line no-console
-    console.log("[DEBUG] OTP:", raw.trim());
-  }
-}
-
 /** POST v1/auth/register/ — sends OTP after basic details */
 export type RegisterProfileFor =
   | "myself"
@@ -105,18 +85,6 @@ export interface RegisterBody {
   gender: "M" | "F" | "O";
   /** Who the profile is for; always sent lowercase to API */
   profile_for?: RegisterProfileFor;
-}
-
-export interface RegisterResponse {
-  success?: boolean;
-  message?: string;
-  data?: {
-    phone_number?: string;
-    otp_sent?: boolean;
-    registration_pending?: boolean;
-    /** Present only when Django DEBUG=True */
-    otp?: string;
-  };
 }
 
 const REGISTER_PROFILE_FOR_VALUES: readonly RegisterProfileFor[] = [
@@ -156,7 +124,7 @@ function buildRegisterPayload(body: RegisterBody): Record<string, unknown> {
   return payload;
 }
 
-export async function register(body: RegisterBody): Promise<RegisterResponse> {
+export async function register(body: RegisterBody): Promise<unknown> {
   const url = `${BASE_URL}v1/auth/register/`;
   const payload = buildRegisterPayload(body);
   debugLog("[authApi] register request body:", payload);
@@ -165,11 +133,10 @@ export async function register(body: RegisterBody): Promise<RegisterResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = (await res.json().catch(() => ({}))) as RegisterResponse;
+  const data = await res.json().catch(() => ({}));
   debugLog("[authApi] register response:", { status: res.status, data });
   if (!res.ok)
     throw new ApiError(getErrorMessage(data, "Registration failed"), res.status);
-  logDevOtpFromResponse(data);
   return data;
 }
 
@@ -233,7 +200,6 @@ export async function resendOtp(
   const data = (await res.json().catch(() => ({}))) as ResendOtpResponse;
   if (!res.ok)
     throw new ApiError(getErrorMessage(data, "Failed to resend OTP"), res.status);
-  logDevOtpFromResponse(data);
   return data;
 }
 
@@ -339,7 +305,6 @@ export async function registerMobile(
   });
   if (!res.ok)
     throw new ApiError(getErrorMessage(data, "Failed to send OTP"), res.status);
-  logDevOtpFromResponse(data);
   return data;
 }
 

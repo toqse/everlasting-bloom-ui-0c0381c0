@@ -6,6 +6,9 @@
 
 @layer base {
   :root {
+    /* Offset for fixed navbar when TestingBanner is visible (set inline on <html> when shown). */
+    --testing-banner-height: 0px;
+
     --background: 358 47% 89%; /* #f1d5d6 */
     --foreground: 340 50% 15%;
 
