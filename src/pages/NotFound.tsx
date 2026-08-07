@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 
@@ -24,9 +25,11 @@ const NotFound = () => {
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button onClick={() => router.push("/")} variant="hero" size="lg" className="gap-2">
-            <Home className="w-5 h-5" />
-            Return to Home
+          <Button variant="hero" size="lg" className="gap-2" asChild>
+            <Link href="/" prefetch>
+              <Home className="w-5 h-5" />
+              Return to Home
+            </Link>
           </Button>
           <Button onClick={() => router.back()} variant="outline" size="lg">
             Go Back

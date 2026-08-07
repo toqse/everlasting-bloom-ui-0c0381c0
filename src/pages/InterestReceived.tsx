@@ -2,14 +2,13 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import GlassProfileCard from "@/components/GlassProfileCard";
 import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { Heart, Sparkles, Inbox, Filter, Check, Clock, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getReceivedInterests, respondInterest, type InterestCard } from "@/lib/interestsApi";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import type { Profile } from "@/components/FeaturedProfiles";
@@ -141,22 +140,22 @@ const InterestReceived = () => {
   if (!accessToken) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 pt-32 pb-20 text-center">
           <Heart className="w-16 h-16 mx-auto text-primary mb-4 opacity-80" />
           <h1 className="font-serif text-2xl font-bold mb-2">Sign in to view interests</h1>
           <p className="text-muted-foreground mb-6">Log in to see who is interested in you.</p>
-          <Button onClick={() => router.push("/auth")}>Sign in</Button>
+          <Button asChild>
+            <Link href="/auth" prefetch>
+              Sign in
+            </Link>
+          </Button>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <section className="pt-28 pb-12 bg-gradient-romantic relative overflow-hidden">
         <div className="absolute top-20 left-10 w-72 h-72 bg-secondary/15 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float-delayed" />
@@ -303,7 +302,6 @@ const InterestReceived = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

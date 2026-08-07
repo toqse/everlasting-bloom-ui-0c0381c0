@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,8 +118,6 @@ const SuccessStoriesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <PageHeroBanner
         tagLabel="Real Love Stories"
         TagIcon={Heart}
@@ -361,7 +357,6 @@ const SuccessStoriesPage = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

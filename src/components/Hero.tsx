@@ -2,11 +2,10 @@
 
 import { Heart, Sparkles, ArrowRight, Star } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { stableUnit } from "@/lib/stableRandom";
 
 const Hero = () => {
-  const router = useRouter();
   const petals = Array.from({ length: 20 }, (_, i) => i);
   const sparkles = Array.from({ length: 8 }, (_, i) => i);
 
@@ -148,23 +147,27 @@ const Hero = () => {
                 variant="hero"
                 size="xl"
                 className="group w-full sm:w-auto"
-                onClick={() => router.push("/auth")}
+                asChild
               >
-                <Heart
-                  className="w-5 h-5 group-hover:animate-heart-beat"
-                  fill="currentColor"
-                />
-                Start Your Journey
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <Link href="/auth" prefetch>
+                  <Heart
+                    className="w-5 h-5 group-hover:animate-heart-beat"
+                    fill="currentColor"
+                  />
+                  Start Your Journey
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
               <Button
                 variant="outline"
                 size="xl"
                 className="group w-full sm:w-auto"
-                onClick={() => router.push("/success-stories")}
+                asChild
               >
-                <Sparkles className="w-5 h-5 group-hover:animate-sparkle" />
-                View Success Stories
+                <Link href="/success-stories" prefetch>
+                  <Sparkles className="w-5 h-5 group-hover:animate-sparkle" />
+                  View Success Stories
+                </Link>
               </Button>
             </div>
           </div>

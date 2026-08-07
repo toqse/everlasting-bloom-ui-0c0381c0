@@ -1,7 +1,5 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const clauses = [
   "M/s Aiswarya Vivaha Bureau is furnishing the following details for your information and further clarification- (proposals, and other concerned details is also added to this information)",
@@ -19,8 +17,6 @@ const clauses = [
 const TermsPage = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl w-full">
           {/* Logo */}
@@ -54,7 +50,6 @@ const TermsPage = () => {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 };

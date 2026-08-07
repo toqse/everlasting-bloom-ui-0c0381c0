@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Heart, Briefcase, ChevronDown, MessageCircle, Send, Clock, Sparkles, Users, GraduationCap, Ruler } from "lucide-react";
 import { profilesData, Profile } from "@/components/FeaturedProfiles";
@@ -62,8 +60,6 @@ const SearchProfiles = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Hero Banner */}
       <section className="pt-24 sm:pt-28 pb-8 sm:pb-12 bg-gradient-romantic relative overflow-hidden">
         <div className="absolute inset-0">
@@ -237,7 +233,6 @@ const SearchProfiles = () => {
       <ChoosePlanModal open={planModalOpen} onOpenChange={setPlanModalOpen} />
       <ProfileViewDrawer open={!!viewProfile} onOpenChange={(o) => !o && setViewProfile(null)} profile={viewProfile} onSendInterest={() => { setPlanModalOpen(true); setViewProfile(null); }} onOpenPlanModal={() => { setPlanModalOpen(true); setViewProfile(null); }} />
 
-      <Footer />
     </div>
   );
 };

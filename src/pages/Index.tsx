@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import StatsSection from "@/components/StatsSection";
 import SuccessStories from "@/components/SuccessStories";
 import WhyChooseUs from "@/components/WhyChooseUs";
 
 import PhotoGallery from "@/components/PhotoGallery";
-import Footer from "@/components/Footer";
 
 const Index = () => {
   useEffect(() => {
@@ -32,13 +30,11 @@ const Index = () => {
 
   return (
     <main className="min-h-screen overflow-x-clip">
-      <Navbar />
       <Hero />
       <StatsSection />
       <WhyChooseUs />
       <SuccessStories />
       <PhotoGallery />
-      <Footer />
     </main>
   );
 };

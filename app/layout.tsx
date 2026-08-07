@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import ScrollToTop from "@/components/ScrollToTop";
+import SiteChrome from "@/components/SiteChrome";
 import { plusJakarta, notoMalayalam, playfair } from "@/lib/fonts";
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <ScrollToTop />
-          {children}
+          <SiteChrome>{children}</SiteChrome>
         </Providers>
       </body>
     </html>

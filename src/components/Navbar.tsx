@@ -75,28 +75,26 @@ const Navbar = () => {
           {isLoggedIn ? (
             <>
               {showCompleteProfile ? (
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    router.push("/auth");
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <UserPen className="w-4 h-4" />
-                  Complete Profile
+                <Button variant="outline" className="gap-2" asChild>
+                  <Link
+                    href="/auth"
+                    prefetch
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <UserPen className="w-4 h-4" />
+                    Complete Profile
+                  </Link>
                 </Button>
               ) : (
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    router.push("/dashboard");
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
+                <Button variant="outline" className="gap-2" asChild>
+                  <Link
+                    href="/dashboard"
+                    prefetch
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
                 </Button>
               )}
               <Button
@@ -162,26 +160,24 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 {showCompleteProfile ? (
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
-                    onClick={() => {
-                      router.push("/auth");
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    <UserPen className="w-4 h-4" /> Complete Profile
+                  <Button variant="outline" className="flex-1 gap-2" asChild>
+                    <Link
+                      href="/auth"
+                      prefetch
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <UserPen className="w-4 h-4" /> Complete Profile
+                    </Link>
                   </Button>
                 ) : (
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
-                    onClick={() => {
-                      router.push("/dashboard");
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    <LayoutDashboard className="w-4 h-4" /> Dashboard
+                  <Button variant="outline" className="flex-1 gap-2" asChild>
+                    <Link
+                      href="/dashboard"
+                      prefetch
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="w-4 h-4" /> Dashboard
+                    </Link>
                   </Button>
                 )}
                 <Button

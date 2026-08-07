@@ -1,10 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Users, Camera, Crown, Heart, MessageCircle, Search, Shield, Sparkles, ArrowRight, Star } from "lucide-react";
 
 const services = [
@@ -19,12 +17,8 @@ const services = [
 ];
 
 const ServicesPage = () => {
-  const router = useRouter();
-
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Hero with wedding background */}
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
@@ -71,15 +65,16 @@ const ServicesPage = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="hero" size="lg" className="gap-2 group" onClick={() => router.push("/auth")}>
-              Get Started Now
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Button variant="hero" size="lg" className="gap-2 group" asChild>
+              <Link href="/auth" prefetch>
+                Get Started Now
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

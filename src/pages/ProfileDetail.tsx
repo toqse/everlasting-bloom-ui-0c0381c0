@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Shield, Phone, Mail, MapPinned, Clock, X, Check, Crown,
@@ -98,8 +96,6 @@ const ProfileDetail = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/80">
-      <Navbar />
-
       <section className="pt-20 pb-16">
         <div className="max-w-5xl mx-auto px-4">
           {/* Back */}
@@ -325,7 +321,6 @@ const ProfileDetail = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

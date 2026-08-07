@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import PageHeroBanner from "@/components/PageHeroBanner";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,8 +131,6 @@ const MembershipPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Hero banner (same style as Contact page) */}
       <PageHeroBanner
         tagLabel="Premium Memberships"
@@ -278,10 +274,12 @@ const MembershipPage = () => {
                           background: "#b23272",
                           boxShadow: "0 4px 14px -2px rgba(178, 50, 114, 0.35)",
                         }}
-                        onClick={() => router.push("/auth")}
+                        asChild
                       >
-                        Get Started
-                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                        <Link href="/auth" prefetch>
+                          Get Started
+                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -388,7 +386,6 @@ const MembershipPage = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

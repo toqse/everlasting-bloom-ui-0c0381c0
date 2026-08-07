@@ -1,8 +1,6 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import GlassProfileCard from "@/components/GlassProfileCard";
 import EmptyState from "@/components/EmptyState";
 import { useInterestStore } from "@/stores/interestStore";
@@ -40,8 +38,6 @@ const Favorites = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="pt-28 pb-12 bg-gradient-romantic relative overflow-hidden">
         {/* Animated Background */}
@@ -162,7 +158,6 @@ const Favorites = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

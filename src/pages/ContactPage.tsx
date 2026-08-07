@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Phone, Mail, MapPin, Clock, Send, Sparkles } from "lucide-react";
@@ -63,8 +61,6 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Hero with wedding background */}
       <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
@@ -236,7 +232,6 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };
