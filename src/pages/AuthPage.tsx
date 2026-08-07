@@ -1512,7 +1512,7 @@ const AuthPage = () => {
   // ---- LOGIN VIEW ----
   if (mode === "login") {
     return (
-      <div className="min-h-dvh lg:h-screen min-h-0 flex relative overflow-y-auto lg:overflow-hidden">
+      <div className="h-dvh min-h-0 flex relative overflow-hidden">
         {/* Left side - Couple Image */}
         <div className="hidden lg:flex w-1/2 relative min-h-0">
           <img
@@ -1533,7 +1533,7 @@ const AuthPage = () => {
         </div>
 
         {/* Right side - Login Form with ring background */}
-        <div className="flex-1 min-h-dvh lg:min-h-0 flex flex-col relative overflow-y-auto lg:overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
           <div className="absolute inset-0">
             <img
               src="/images/ring.jpg"
@@ -1546,7 +1546,7 @@ const AuthPage = () => {
           <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed" />
 
-          <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center pt-0 pb-6 px-3 sm:px-4 relative z-10">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain flex items-start justify-center pt-0 pb-6 px-3 sm:px-4 relative z-10">
             <div className="w-full max-w-xl min-w-0 py-2 sm:py-4">
               <div className="flex justify-center mb-0">
                 <img
