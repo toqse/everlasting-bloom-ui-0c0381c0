@@ -534,7 +534,7 @@ function PoruthamMatchingContent() {
   }, [myMatriId, partnerMatriId, router]);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 lg:max-w-6xl xl:max-w-7xl lg:h-[calc(100vh_-_3rem)] lg:min-h-0 lg:overflow-hidden">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 lg:max-w-6xl xl:max-w-7xl lg:h-full lg:min-h-0 lg:overflow-hidden">
       <div className="flex shrink-0 items-center justify-end gap-2">
         <LanguageToggle lang={lang} onChange={setLang} />
         {data ? (

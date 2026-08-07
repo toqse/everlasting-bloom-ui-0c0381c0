@@ -1338,7 +1338,7 @@ const MatchesPage = () => {
                 </div>
               </motion.div>
 
-              <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-12rem)] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
+              <div className="min-h-0 flex-1 max-lg:flex-none max-lg:min-h-0 max-lg:overflow-y-visible lg:h-0 lg:max-h-[calc(100dvh-12rem-var(--testing-banner-height,0px))] lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:pr-1 lg:[scrollbar-gutter:stable]">
                 {error && (
                   <div className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {error}

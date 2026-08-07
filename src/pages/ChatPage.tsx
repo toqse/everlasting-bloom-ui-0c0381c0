@@ -320,7 +320,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-romantic flex flex-col">
+    <div className="h-dvh min-h-0 bg-gradient-romantic flex flex-col overflow-hidden">
       {/* Chat Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
@@ -458,7 +458,7 @@ const ChatPage = () => {
       </AnimatePresence>
 
       {/* Messages Area */}
-      <div className="flex-1 pt-24 pb-24 overflow-y-auto">
+      <div className="flex-1 min-h-0 pt-24 pb-28 overflow-y-auto overscroll-y-contain">
         <div className="container mx-auto px-4 py-6">
           {/* Date Separator */}
           <div className="flex items-center justify-center mb-6">
@@ -531,7 +531,7 @@ const ChatPage = () => {
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-primary/5 shadow-elevated"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-primary/5 shadow-elevated pb-[env(safe-area-inset-bottom,0px)]"
       >
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-3">

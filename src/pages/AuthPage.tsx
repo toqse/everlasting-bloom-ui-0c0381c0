@@ -1708,7 +1708,7 @@ const AuthPage = () => {
 
   // ---- SIGNUP VIEW ----
   return (
-    <div className="h-screen min-h-0 flex overflow-hidden">
+    <div className="h-dvh min-h-0 flex relative overflow-hidden">
       {/* Left side - Wedding image (desktop) */}
       <div className="hidden lg:flex lg:w-2/5 xl:w-2/5 relative min-h-0 shrink-0">
         <img
@@ -1721,7 +1721,7 @@ const AuthPage = () => {
       </div>
 
       {/* Right side - Signup form with background image */}
-      <div className="flex-1 min-h-0 flex items-center justify-center relative overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4">
+      <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
         <div className="absolute inset-0">
           <img
             src="/images/image2.jpg"
@@ -1734,14 +1734,15 @@ const AuthPage = () => {
         <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
 
-        <div className="w-full max-w-4xl relative z-10 min-w-0">
-          <div className="flex justify-center mb-0">
-            <img
-              src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
-              alt="AVB - 39 Years of Trust & Tradition"
-              className="h-28 sm:h-36 md:h-40 w-auto object-contain"
-            />
-          </div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain flex items-start justify-center py-4 sm:py-6 md:py-8 px-3 sm:px-4 relative z-10">
+          <div className="w-full max-w-4xl relative z-10 min-w-0">
+            <div className="flex justify-center mb-0">
+              <img
+                src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
+                alt="AVB - 39 Years of Trust & Tradition"
+                className="h-28 sm:h-36 md:h-40 w-auto object-contain"
+              />
+            </div>
           {signupStep === 0 ? (
             <button
               onClick={() => setMode("login")}
@@ -1769,7 +1770,7 @@ const AuthPage = () => {
           >
             <SignupStepIndicator currentStep={signupStep} />
 
-            <div className="min-h-[320px] sm:min-h-[380px] max-h-[50vh] sm:max-h-[55vh] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:thin]">
+            <div className="min-h-[320px] sm:min-h-[380px] overflow-x-hidden pr-1">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={signupStep}
@@ -1844,6 +1845,7 @@ const AuthPage = () => {
               </div>
             )}
           </motion.div>
+        </div>
         </div>
       </div>
     </div>

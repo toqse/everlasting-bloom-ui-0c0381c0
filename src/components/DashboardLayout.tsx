@@ -166,6 +166,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   /** My Matches: main is a flex column with fixed height; list scrolls inside the page. */
   const isMatchesPage = normalizedPath === "/dashboard/matches";
+  const isViewportLockedPage =
+    isMatchesPage || normalizedPath === "/dashboard/porutham-matching";
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -251,7 +253,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <DashboardAmbientBackground />
 
       {/* Desktop: fixed-height container so only main content scrolls; sidebar stays fixed. Mobile: normal flow. */}
-      <div className="relative z-10 flex w-full min-w-0 max-w-full flex-col px-3 pt-2 pb-8 min-h-screen max-lg:min-h-min sm:px-4 lg:h-screen lg:min-h-0 lg:overflow-hidden lg:px-10 lg:pt-4">
+      <div className="relative z-10 flex w-full min-w-0 max-w-full flex-col px-3 pt-2 pb-8 min-h-screen max-lg:min-h-min sm:px-4 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:px-10 lg:pt-4">
         {/* Mobile header: stay inside horizontal padding — negative mx caused sub-pixel overflow/jerk */}
         <div className="lg:hidden sticky top-0 z-40 py-2.5 mb-2 rounded-xl border border-primary/10 bg-background/95 backdrop-blur-md shadow-sm">
           <div className="flex items-center gap-3">
@@ -385,19 +387,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </aside>
 
-          {/* Main Content — matches page locks height on lg so only the list column scrolls */}
+          {/* Main Content — matches/porutham lock height on lg so only inner columns scroll */}
           <main
             className={cn(
               "w-full min-w-0 min-h-0 flex-1 overflow-y-auto max-lg:flex-none max-lg:overflow-y-visible max-lg:overflow-x-clip",
-              isMatchesPage && "lg:flex lg:flex-col lg:overflow-hidden",
+              isViewportLockedPage && "lg:flex lg:flex-col lg:overflow-hidden",
             )}
           >
             {/* No route cross-fade: AnimatePresence + keyed motion blocked paint on section switches. */}
             <div
               className={cn(
                 "min-w-0 w-full max-lg:overflow-x-clip",
-                !isMatchesPage && "lg:min-h-full",
-                isMatchesPage &&
+                !isViewportLockedPage && "lg:min-h-full",
+                isViewportLockedPage &&
                   "min-h-full lg:flex lg:h-full lg:min-h-0 lg:w-full lg:flex-1 lg:flex-col lg:overflow-hidden",
               )}
             >
