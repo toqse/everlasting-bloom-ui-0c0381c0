@@ -36,7 +36,7 @@ function logApi(endpoint: string, method: string, body?: unknown, response?: { s
 
 async function authedFetch<T>(
   path: string,
-  opts: { method: string; body?: string }
+  opts: { method: string; body?: string; signal?: AbortSignal }
 ): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
@@ -46,6 +46,7 @@ async function authedFetch<T>(
     method: opts.method,
     headers: { "Content-Type": "application/json" },
     ...(opts.body !== undefined && { body: opts.body }),
+    ...(opts.signal ? { signal: opts.signal } : {}),
   });
 
   const data = (await res.json().catch(() => ({}))) as T & ApiErrorPayload;
@@ -241,8 +242,13 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
   return authedFetch<MatchesResponse>(path, { method: "GET" });
 }
 
-export async function getMatchFilters(): Promise<MatchFiltersResponse> {
-  return authedFetch<MatchFiltersResponse>(`${MATCHES_BASE}/filters/`, { method: "GET" });
+export async function getMatchFilters(
+  signal?: AbortSignal,
+): Promise<MatchFiltersResponse> {
+  return authedFetch<MatchFiltersResponse>(`${MATCHES_BASE}/filters/`, {
+    method: "GET",
+    signal,
+  });
 }
 
 export async function getProfilePreview(matriId: string): Promise<ProfilePreviewResponse> {

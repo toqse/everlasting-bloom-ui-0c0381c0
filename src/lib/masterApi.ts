@@ -119,6 +119,61 @@ async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
   return allResults;
 }
 
+/** Single-page master list fetch (no while-next drain). For fast filter bootstrap. */
+export async function fetchMasterPage<T>(
+  path: string,
+  opts?: {
+    limit?: number;
+    search?: string;
+    query?: Record<string, string | number | undefined>;
+    signal?: AbortSignal;
+  },
+): Promise<T[]> {
+  const base = path.startsWith("http") ? path : `${BASE_URL}${path.replace(/^\//, "")}`;
+  const url = new URL(base);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("limit", String(opts?.limit ?? 200));
+  if (opts?.search != null && opts.search.trim() !== "") {
+    url.searchParams.set("search", opts.search.trim());
+  }
+  if (opts?.query) {
+    for (const [k, v] of Object.entries(opts.query)) {
+      if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
+    }
+  }
+  const res = await fetch(url.toString(), { signal: opts?.signal });
+  const data = (await res.json().catch(() => ({}))) as PaginatedResponse<T>;
+  if (!res.ok)
+    throw new Error((data as { detail?: string })?.detail ?? "Request failed");
+  return Array.isArray(data.results) ? data.results : [];
+}
+
+/** One-shot helpers for Matches filter fallback (limit=200, no page walk). */
+export async function getReligionsPage(signal?: AbortSignal): Promise<Religion[]> {
+  return fetchMasterPage<Religion>("v1/master/religions", { limit: 200, signal });
+}
+
+export async function getEducationsPage(signal?: AbortSignal): Promise<EducationMaster[]> {
+  return fetchMasterPage<EducationMaster>("v1/master/educations/", { limit: 200, signal });
+}
+
+export async function getOccupationsPage(signal?: AbortSignal): Promise<OccupationMaster[]> {
+  return fetchMasterPage<OccupationMaster>("v1/master/occupations/", { limit: 200, signal });
+}
+
+export async function getMaritalStatusesPage(
+  signal?: AbortSignal,
+): Promise<MaritalStatusMaster[]> {
+  return fetchMasterPage<MaritalStatusMaster>("v1/master/marital-statuses/", {
+    limit: 200,
+    signal,
+  });
+}
+
+export async function getCountriesPage(signal?: AbortSignal): Promise<Country[]> {
+  return fetchMasterPage<Country>("v1/master/countries", { limit: 200, signal });
+}
+
 /** GET v1/master/countries?search= */
 export async function getCountries(search?: string): Promise<Country[]> {
   const path = "v1/master/countries";

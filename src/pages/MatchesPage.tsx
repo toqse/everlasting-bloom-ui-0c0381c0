@@ -56,12 +56,12 @@ import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   getCastes,
   getCitiesForDistricts,
-  getCountries,
+  getCountriesPage,
   getDistricts,
-  getEducations,
-  getMaritalStatuses,
-  getOccupations,
-  getReligions,
+  getEducationsPage,
+  getMaritalStatusesPage,
+  getOccupationsPage,
+  getReligionsPage,
   getStates,
 } from "@/lib/masterApi";
 import { toast } from "sonner";
@@ -519,17 +519,11 @@ const MatchesPage = () => {
 
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
+    const ac = new AbortController();
+    const timeoutId = window.setTimeout(() => ac.abort(), 8000);
 
-    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
-      Promise.race([
-        promise,
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} timed out`)), ms),
-        ),
-      ]);
-
-    // Countries load independently (paginated walk must not block filter options).
-    void withTimeout(getCountries(), 15000, "getCountries")
+    // Countries: independent one-shot (never blocks religion/marital/etc.).
+    void getCountriesPage()
       .then((countryList) => {
         setCountries(countryList.map((c) => ({ id: c.id, name: c.name })));
       })
@@ -537,93 +531,67 @@ const MatchesPage = () => {
         console.error("Failed to load countries", e);
       });
 
-    // Primary: public master lists (cached, reliable). Do not wait on /matches/filters/.
     try {
-      const [religions, educations, occupations, maritalStatuses] =
-        await withTimeout(
-          Promise.all([
-            getReligions(),
-            getEducations(),
-            getOccupations(),
-            getMaritalStatuses(),
-          ]),
-          20000,
-          "master filter options",
-        );
-      setCasteApiFallback(true);
-      setAllCastes([]);
+      // Primary: one cached GET /matches/filters/
+      const filterRes = await getMatchFilters(ac.signal);
+      window.clearTimeout(timeoutId);
+      const d = filterRes.data;
+      if (!d) throw new Error("Empty match filters response");
+      setCasteApiFallback(false);
+      setAllCastes(
+        (d.castes || []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          religion_id: c.religion_id,
+        })),
+      );
       setFilters({
-        religions: religions.map((r) => ({ id: r.id, name: r.name })),
+        religions: (d.religions || []).map((r) => ({ id: r.id, name: r.name })),
         castes: [],
-        educations: educations.map((e) => ({ id: e.id, name: e.name })),
-        occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
-        marital_status: maritalStatuses.map((m) => ({
+        educations: (d.educations || []).map((e) => ({ id: e.id, name: e.name })),
+        occupations: (d.occupations || []).map((o) => ({
+          id: o.id,
+          name: o.name,
+        })),
+        marital_status: (d.marital_status || []).map((m) => ({
           id: m.id,
           name: m.name,
         })),
       });
-      setFiltersLoading(false);
-    } catch (masterErr) {
-      console.error("Failed to load master filter options", masterErr);
-      // Last resort: try bundled match filters endpoint.
+    } catch (primaryErr) {
+      window.clearTimeout(timeoutId);
+      console.warn("getMatchFilters failed; using master one-shot fallback", primaryErr);
       try {
-        const filterRes = await withTimeout(getMatchFilters(), 12000, "getMatchFilters");
-        const d = filterRes.data;
-        if (!d) throw new Error("Empty match filters response");
-        setCasteApiFallback(false);
-        setAllCastes(
-          (d.castes || []).map((c) => ({
-            id: c.id,
-            name: c.name,
-            religion_id: c.religion_id,
-          })),
-        );
+        const [religions, educations, occupations, maritalStatuses] =
+          await Promise.all([
+            getReligionsPage(),
+            getEducationsPage(),
+            getOccupationsPage(),
+            getMaritalStatusesPage(),
+          ]);
+        setCasteApiFallback(true);
+        setAllCastes([]);
         setFilters({
-          religions: (d.religions || []).map((r) => ({ id: r.id, name: r.name })),
+          religions: religions.map((r) => ({ id: r.id, name: r.name })),
           castes: [],
-          educations: (d.educations || []).map((e) => ({
-            id: e.id,
-            name: e.name,
-          })),
-          occupations: (d.occupations || []).map((o) => ({
-            id: o.id,
-            name: o.name,
-          })),
-          marital_status: (d.marital_status || []).map((m) => ({
+          educations: educations.map((e) => ({ id: e.id, name: e.name })),
+          occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
+          marital_status: maritalStatuses.map((m) => ({
             id: m.id,
             name: m.name,
           })),
         });
-      } catch (bundleErr) {
-        console.error("Failed to load match filters bundle", bundleErr);
+      } catch (fallbackErr) {
+        console.error("Failed to load filter options", fallbackErr);
         toast.error(
-          getDisplayErrorMessage(bundleErr) ||
+          getDisplayErrorMessage(fallbackErr) ||
             "Failed to load filter options. Please refresh.",
         );
-      } finally {
-        setFiltersLoading(false);
       }
-      return;
+    } finally {
+      window.clearTimeout(timeoutId);
+      setFiltersLoading(false);
     }
-
-    // Optional upgrade: load full caste list from /matches/filters/ in background.
-    void withTimeout(getMatchFilters(), 12000, "getMatchFilters")
-      .then((filterRes) => {
-        const d = filterRes.data;
-        if (!d?.castes?.length) return;
-        setAllCastes(
-          d.castes.map((c) => ({
-            id: c.id,
-            name: c.name,
-            religion_id: c.religion_id,
-          })),
-        );
-        setCasteApiFallback(false);
-      })
-      .catch((e) => {
-        console.warn("Match filters bundle unavailable; using per-religion castes", e);
-        setCasteApiFallback(true);
-      });
   }, []);
 
   useEffect(() => {
@@ -1118,6 +1086,11 @@ const MatchesPage = () => {
                     Clear all
                   </Button>
                 </div>
+                {filtersLoading && !filters && (
+                  <p className="mb-2 px-1 text-xs text-muted-foreground">
+                    Loading filter options…
+                  </p>
+                )}
                 <FilterSection
                   title="Age"
                   icon={<Clock className="w-4 h-4 text-primary" />}
@@ -1144,7 +1117,6 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Height"
                   icon={<Ruler className="w-4 h-4 text-primary" />}
-                  defaultOpen
                 >
                   <div className="space-y-3 pt-1">
                     <Slider
@@ -1169,22 +1141,15 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Marital Status"
                   icon={<Heart className="w-4 h-4 text-primary" />}
-                  defaultOpen
                 >
-                  {filtersLoading && !filters ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">
-                      Loading filters…
-                    </p>
-                  ) : (
-                    <SearchableIdSelect
-                      placeholder="Search marital status..."
-                      options={filters?.marital_status ?? []}
-                      valueId={maritalStatusId}
-                      onSelect={setMaritalStatusId}
-                      searchQuery={maritalSearch}
-                      onSearchChange={setMaritalSearch}
-                    />
-                  )}
+                  <SearchableIdSelect
+                    placeholder="Search marital status..."
+                    options={filters?.marital_status ?? []}
+                    valueId={maritalStatusId}
+                    onSelect={setMaritalStatusId}
+                    searchQuery={maritalSearch}
+                    onSearchChange={setMaritalSearch}
+                  />
                 </FilterSection>
 
                 <FilterSection
@@ -1196,9 +1161,9 @@ const MatchesPage = () => {
                       <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                         Country
                       </p>
-                      {filtersLoading && countries.length === 0 ? (
+                      {countries.length === 0 && filtersLoading ? (
                         <p className="px-2 py-1 text-xs text-muted-foreground">
-                          Loading filters…
+                          Loading…
                         </p>
                       ) : (
                         <SearchableIdSelect
@@ -1287,25 +1252,18 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Religion"
                   icon={<Sparkles className="w-4 h-4 text-primary" />}
-                  defaultOpen
                 >
-                  {filtersLoading && !filters ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">
-                      Loading filters…
-                    </p>
-                  ) : (
-                    <SearchableIdSelect
-                      placeholder="Search religion..."
-                      options={filters?.religions ?? []}
-                      valueId={religionId}
-                      onSelect={(id) => {
-                        setReligionId(id);
-                        setCasteIds([]);
-                      }}
-                      searchQuery={religionSearch}
-                      onSearchChange={setReligionSearch}
-                    />
-                  )}
+                  <SearchableIdSelect
+                    placeholder="Search religion..."
+                    options={filters?.religions ?? []}
+                    valueId={religionId}
+                    onSelect={(id) => {
+                      setReligionId(id);
+                      setCasteIds([]);
+                    }}
+                    searchQuery={religionSearch}
+                    onSearchChange={setReligionSearch}
+                  />
                 </FilterSection>
 
                 <FilterSection
@@ -1332,40 +1290,28 @@ const MatchesPage = () => {
                   title="Education"
                   icon={<BookOpen className="w-4 h-4 text-primary" />}
                 >
-                  {filtersLoading && !filters ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">
-                      Loading filters…
-                    </p>
-                  ) : (
-                    <SearchableMultiIdSelect
-                      placeholder="Search education..."
-                      options={filters?.educations ?? []}
-                      valueIds={educationIds}
-                      onChange={setEducationIds}
-                      searchQuery={educationSearch}
-                      onSearchChange={setEducationSearch}
-                    />
-                  )}
+                  <SearchableMultiIdSelect
+                    placeholder="Search education..."
+                    options={filters?.educations ?? []}
+                    valueIds={educationIds}
+                    onChange={setEducationIds}
+                    searchQuery={educationSearch}
+                    onSearchChange={setEducationSearch}
+                  />
                 </FilterSection>
 
                 <FilterSection
                   title="Occupation"
                   icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}
                 >
-                  {filtersLoading && !filters ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">
-                      Loading filters…
-                    </p>
-                  ) : (
-                    <SearchableMultiIdSelect
-                      placeholder="Search occupation..."
-                      options={filters?.occupations ?? []}
-                      valueIds={occupationIds}
-                      onChange={setOccupationIds}
-                      searchQuery={occupationSearch}
-                      onSearchChange={setOccupationSearch}
-                    />
-                  )}
+                  <SearchableMultiIdSelect
+                    placeholder="Search occupation..."
+                    options={filters?.occupations ?? []}
+                    valueIds={occupationIds}
+                    onChange={setOccupationIds}
+                    searchQuery={occupationSearch}
+                    onSearchChange={setOccupationSearch}
+                  />
                 </FilterSection>
               </div>
             </motion.div>
