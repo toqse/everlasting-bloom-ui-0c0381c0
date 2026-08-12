@@ -3,15 +3,15 @@
 
 const clauses = [
   "M/s Aiswarya Vivaha Bureau is furnishing the following details for your information and further clarification- (proposals, and other concerned details is also added to this information)",
-  "As per the rules and regulations of Aiswarya Vivaha Bureau, if you remit to the fees properly at the time of entrance you can select or choose the information from our office (Downloading)",
-  "Genuine information can be collected from our office and if you use this information on any malpractice or misuse, definitely it is illegal and immoral. In such a situation you will face disciplinary action or legal steps from the institution.",
-  "If you select any proposal according to your taste and preference, no change will be possible thereafter.",
-  "At the time of your submission of information, if any error or mistake or confusion (Groom / Bride) occurs, the full responsibility lies with either the Bride party or the Groom party.",
-  "Our reputed institution has been operating for more than 39 years with perfect operation and a sincere, responsible attitude towards the parties we serve.",
-  "M/s Aiswarya Vivaha Bureau charges Rs. 10,000/- from Bride and Rs. 15,000/- from Groom as service charge. Our staff will provide full support throughout the process. We do not collect any additional or unauthorized amounts — this is an outstanding merit of our institution.",
-  "For any complaint or false information from our institution, we will take necessary steps to avoid such mistakes and provide suitable remedy. You can contact our customer cell number.",
-  "If any mistake or illegal activities occur from the part of our institution regarding selected marriage proposals, legal proceedings will be taken in Cherthala Legal Jurisdiction.",
-  "We have a number of branches across Kerala. You can visit our website to collect information and send your proposal to any branch. Our full support and follow-up is our basic obligation.",
+  "As per the rules and regulations of Aiswarya Vivaha Bureau, if you remit to the fees properly at the time of entrance you can select or choose the information from our office ( Downloading)",
+  "Genuine information can be collecting from our office and if you these use this information on any malpractice or misuse, defiantly it is illegal and immoral so such a situation you will face disciplinary action or legal way of steps from the institution.",
+  "If you select any proposal according to your taste and preference no change will not be possible",
+  "At the time of your submission of information, if any error or mistake or confusion (Groom / Bride) the full responsibility is going to either Bride party or Groom Party.",
+  "Our reputed institution is operating more than 39years since then perfect operation and perfect attitude towards the parties the meaning is that our service is sincere, responsible sofar.",
+  "M/s Aiswrya Vivaha Bureau is operating especially matrimonial service wants as the amount 10000/- from Bride, 15000/- from Groom as a part of service charge. If you are selecting the process, our staff's full support to that attempt. The most important specialty is that not enjoying additional amount or wrong way reward or other related fund collection. It is an outstanding merit of our institution than that of other institution if any.",
+  "Anycompliant or false information from our institution if happen, surely we will take necessary steps for avoiding such mistake or false information, suitable remedy will be taken. You can contact customer cell number.",
+  "If any mistake or illegal activities from the part of our institution selected to marriage proposals legal proceeding will be taken in Cherthala Legal Jurisdiction",
+  "We have number of branches of in Kerala you can select our Website and collect information, you can send your proposal as per any branch of our institution full support and follow up is over basic obligation.",
 ];
 
 const TermsPage = () => {
