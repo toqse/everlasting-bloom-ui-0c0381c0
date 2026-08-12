@@ -93,13 +93,14 @@ interface PaginatedResponse<T> {
 async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
   const base = path.startsWith("http") ? path : `${BASE_URL}${path.replace(/^\//, "")}`;
   const perPageLimit = 50;
+  const maxPages = 40;
   let page = 1;
   const allResults: T[] = [];
 
   // Uses explicit page+limit params as requested:
   // /api/v1/master/.../?page=1&limit=50
   // and continues page-by-page until server indicates no next page.
-  while (true) {
+  while (page <= maxPages) {
     const url = new URL(base);
     url.searchParams.set("page", String(page));
     url.searchParams.set("limit", String(perPageLimit));

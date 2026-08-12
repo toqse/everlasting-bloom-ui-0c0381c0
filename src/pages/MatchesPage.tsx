@@ -520,8 +520,16 @@ const MatchesPage = () => {
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
 
-    // Countries load independently so a slow/failing page-walk cannot block filter options.
-    void getCountries()
+    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+        ),
+      ]);
+
+    // Countries load independently (paginated walk must not block filter options).
+    void withTimeout(getCountries(), 15000, "getCountries")
       .then((countryList) => {
         setCountries(countryList.map((c) => ({ id: c.id, name: c.name })));
       })
@@ -529,62 +537,93 @@ const MatchesPage = () => {
         console.error("Failed to load countries", e);
       });
 
+    // Primary: public master lists (cached, reliable). Do not wait on /matches/filters/.
     try {
-      const filterRes = await getMatchFilters();
-      const d = filterRes.data;
-      setCasteApiFallback(false);
-      setAllCastes(
-        (d.castes || []).map((c) => ({
-          id: c.id,
-          name: c.name,
-          religion_id: c.religion_id,
-        })),
-      );
-      setFilters({
-        religions: (d.religions || []).map((r) => ({ id: r.id, name: r.name })),
-        castes: [],
-        educations: (d.educations || []).map((e) => ({ id: e.id, name: e.name })),
-        occupations: (d.occupations || []).map((o) => ({
-          id: o.id,
-          name: o.name,
-        })),
-        marital_status: (d.marital_status || []).map((m) => ({
-          id: m.id,
-          name: m.name,
-        })),
-      });
-    } catch (primaryErr) {
-      console.error("Failed to load match filters; trying master fallback", primaryErr);
-      try {
-        const [religions, educations, occupations, maritalStatuses] =
-          await Promise.all([
+      const [religions, educations, occupations, maritalStatuses] =
+        await withTimeout(
+          Promise.all([
             getReligions(),
             getEducations(),
             getOccupations(),
             getMaritalStatuses(),
-          ]);
-        setCasteApiFallback(true);
-        setAllCastes([]);
+          ]),
+          20000,
+          "master filter options",
+        );
+      setCasteApiFallback(true);
+      setAllCastes([]);
+      setFilters({
+        religions: religions.map((r) => ({ id: r.id, name: r.name })),
+        castes: [],
+        educations: educations.map((e) => ({ id: e.id, name: e.name })),
+        occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
+        marital_status: maritalStatuses.map((m) => ({
+          id: m.id,
+          name: m.name,
+        })),
+      });
+      setFiltersLoading(false);
+    } catch (masterErr) {
+      console.error("Failed to load master filter options", masterErr);
+      // Last resort: try bundled match filters endpoint.
+      try {
+        const filterRes = await withTimeout(getMatchFilters(), 12000, "getMatchFilters");
+        const d = filterRes.data;
+        if (!d) throw new Error("Empty match filters response");
+        setCasteApiFallback(false);
+        setAllCastes(
+          (d.castes || []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            religion_id: c.religion_id,
+          })),
+        );
         setFilters({
-          religions: religions.map((r) => ({ id: r.id, name: r.name })),
+          religions: (d.religions || []).map((r) => ({ id: r.id, name: r.name })),
           castes: [],
-          educations: educations.map((e) => ({ id: e.id, name: e.name })),
-          occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
-          marital_status: maritalStatuses.map((m) => ({
+          educations: (d.educations || []).map((e) => ({
+            id: e.id,
+            name: e.name,
+          })),
+          occupations: (d.occupations || []).map((o) => ({
+            id: o.id,
+            name: o.name,
+          })),
+          marital_status: (d.marital_status || []).map((m) => ({
             id: m.id,
             name: m.name,
           })),
         });
-      } catch (fallbackErr) {
-        console.error("Failed to load match filters (fallback)", fallbackErr);
+      } catch (bundleErr) {
+        console.error("Failed to load match filters bundle", bundleErr);
         toast.error(
-          getDisplayErrorMessage(fallbackErr) ||
+          getDisplayErrorMessage(bundleErr) ||
             "Failed to load filter options. Please refresh.",
         );
+      } finally {
+        setFiltersLoading(false);
       }
-    } finally {
-      setFiltersLoading(false);
+      return;
     }
+
+    // Optional upgrade: load full caste list from /matches/filters/ in background.
+    void withTimeout(getMatchFilters(), 12000, "getMatchFilters")
+      .then((filterRes) => {
+        const d = filterRes.data;
+        if (!d?.castes?.length) return;
+        setAllCastes(
+          d.castes.map((c) => ({
+            id: c.id,
+            name: c.name,
+            religion_id: c.religion_id,
+          })),
+        );
+        setCasteApiFallback(false);
+      })
+      .catch((e) => {
+        console.warn("Match filters bundle unavailable; using per-religion castes", e);
+        setCasteApiFallback(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -1082,6 +1121,7 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Age"
                   icon={<Clock className="w-4 h-4 text-primary" />}
+                  defaultOpen
                 >
                   <div className="space-y-3 pt-1">
                     <Slider
@@ -1104,6 +1144,7 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Height"
                   icon={<Ruler className="w-4 h-4 text-primary" />}
+                  defaultOpen
                 >
                   <div className="space-y-3 pt-1">
                     <Slider
@@ -1128,6 +1169,7 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Marital Status"
                   icon={<Heart className="w-4 h-4 text-primary" />}
+                  defaultOpen
                 >
                   {filtersLoading && !filters ? (
                     <p className="px-2 py-1 text-xs text-muted-foreground">
@@ -1245,6 +1287,7 @@ const MatchesPage = () => {
                 <FilterSection
                   title="Religion"
                   icon={<Sparkles className="w-4 h-4 text-primary" />}
+                  defaultOpen
                 >
                   {filtersLoading && !filters ? (
                     <p className="px-2 py-1 text-xs text-muted-foreground">
