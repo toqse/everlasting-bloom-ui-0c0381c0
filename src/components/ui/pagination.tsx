@@ -52,11 +52,11 @@ const PaginationLink = ({
   if (href) {
     return (
       <Link
-        href={href}
         aria-current={isActive ? "page" : undefined}
         className={classes}
         prefetch
-        {...(props as React.ComponentProps<typeof Link>)}
+        {...(props as Omit<React.ComponentProps<typeof Link>, "href">)}
+        href={href}
       />
     );
   }
