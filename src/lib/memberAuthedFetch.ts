@@ -1,4 +1,5 @@
 import { postMemberTokenRefresh } from "@/lib/authApi";
+import { debugLog, isApiDebugEnabled } from "@/lib/debugLog";
 import { useAuthStore } from "@/stores/authStore";
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -42,6 +43,7 @@ export async function memberFetchWithAuthRetry(
   url: string,
   init: RequestInit,
 ): Promise<Response> {
+  const method = (init.method || "GET").toUpperCase();
   const isFormData =
     typeof FormData !== "undefined" && init.body instanceof FormData;
 
@@ -57,6 +59,10 @@ export async function memberFetchWithAuthRetry(
     return h;
   };
 
+  if (isApiDebugEnabled()) {
+    debugLog(`[api] ${method} URL:`, url);
+  }
+
   const run = () =>
     fetch(url, {
       ...init,
@@ -67,8 +73,14 @@ export async function memberFetchWithAuthRetry(
   if (res.status === 401) {
     const refreshed = await refreshMemberSessionOrLogout();
     if (refreshed) {
+      if (isApiDebugEnabled()) {
+        debugLog(`[api] ${method} retry URL:`, url);
+      }
       res = await run();
     }
+  }
+  if (isApiDebugEnabled()) {
+    debugLog(`[api] ${method} response:`, res.status, url);
   }
   if (res.status === 401) {
     useAuthStore.getState().logout();

@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import {
   getMatches,
+  getMatchFilters,
   getProfilePreview,
   getChatPermission,
   sendInterest as sendInterestApi,
@@ -360,6 +361,12 @@ const MatchesPage = () => {
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MatchFilterOptions | null>(null);
+  /** Full caste list from GET /matches/filters/ — filtered client-side by religion. */
+  const [allCastes, setAllCastes] = useState<
+    { id: number; name: string; religion_id: number }[]
+  >([]);
+  /** True when match-filters failed and we use getCastes(religionId) instead. */
+  const [casteApiFallback, setCasteApiFallback] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const me = useAuthStore((s) => s.user);
   const [ageRange, setAgeRange] = useState<[number, number]>(DEFAULT_AGE_RANGE);
@@ -512,25 +519,69 @@ const MatchesPage = () => {
 
   const fetchFilters = useCallback(async () => {
     setFiltersLoading(true);
-    try {
-      const [religions, educations, occupations, maritalStatuses, countryList] =
-        await Promise.all([
-          getReligions(),
-          getEducations(),
-          getOccupations(),
-          getMaritalStatuses(),
-          getCountries(),
-        ]);
-      setCountries(countryList.map((c) => ({ id: c.id, name: c.name })));
-      setFilters({
-        religions: religions.map((r) => ({ id: r.id, name: r.name })),
-        castes: [],
-        educations: educations.map((e) => ({ id: e.id, name: e.name })),
-        occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
-        marital_status: maritalStatuses.map((m) => ({ id: m.id, name: m.name })),
+
+    // Countries load independently so a slow/failing page-walk cannot block filter options.
+    void getCountries()
+      .then((countryList) => {
+        setCountries(countryList.map((c) => ({ id: c.id, name: c.name })));
+      })
+      .catch((e) => {
+        console.error("Failed to load countries", e);
       });
-    } catch (e) {
-      console.error("Failed to load match filters", e);
+
+    try {
+      const filterRes = await getMatchFilters();
+      const d = filterRes.data;
+      setCasteApiFallback(false);
+      setAllCastes(
+        (d.castes || []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          religion_id: c.religion_id,
+        })),
+      );
+      setFilters({
+        religions: (d.religions || []).map((r) => ({ id: r.id, name: r.name })),
+        castes: [],
+        educations: (d.educations || []).map((e) => ({ id: e.id, name: e.name })),
+        occupations: (d.occupations || []).map((o) => ({
+          id: o.id,
+          name: o.name,
+        })),
+        marital_status: (d.marital_status || []).map((m) => ({
+          id: m.id,
+          name: m.name,
+        })),
+      });
+    } catch (primaryErr) {
+      console.error("Failed to load match filters; trying master fallback", primaryErr);
+      try {
+        const [religions, educations, occupations, maritalStatuses] =
+          await Promise.all([
+            getReligions(),
+            getEducations(),
+            getOccupations(),
+            getMaritalStatuses(),
+          ]);
+        setCasteApiFallback(true);
+        setAllCastes([]);
+        setFilters({
+          religions: religions.map((r) => ({ id: r.id, name: r.name })),
+          castes: [],
+          educations: educations.map((e) => ({ id: e.id, name: e.name })),
+          occupations: occupations.map((o) => ({ id: o.id, name: o.name })),
+          marital_status: maritalStatuses.map((m) => ({
+            id: m.id,
+            name: m.name,
+          })),
+        });
+      } catch (fallbackErr) {
+        console.error("Failed to load match filters (fallback)", fallbackErr);
+        toast.error(
+          getDisplayErrorMessage(fallbackErr) ||
+            "Failed to load filter options. Please refresh.",
+        );
+      }
     } finally {
       setFiltersLoading(false);
     }
@@ -553,10 +604,26 @@ const MatchesPage = () => {
     );
   }, [brideProfiles.length]);
 
+  // Primary path: filter bundled castes by religion_id client-side.
   useEffect(() => {
+    if (casteApiFallback) return;
+    if (religionId == null) {
+      setFilters((prev) => (prev ? { ...prev, castes: [] } : prev));
+      setCasteIds([]);
+      return;
+    }
+    const mapped = allCastes.filter((c) => c.religion_id === religionId);
+    setFilters((prev) => (prev ? { ...prev, castes: mapped } : prev));
+    const validIds = new Set(mapped.map((c) => c.id));
+    setCasteIds((prev) => prev.filter((id) => validIds.has(id)));
+  }, [religionId, allCastes, casteApiFallback]);
+
+  // Fallback path: fetch castes per religion when match-filters bundle was unavailable.
+  useEffect(() => {
+    if (!casteApiFallback) return;
     let cancelled = false;
 
-    const fetchCastes = async () => {
+    const fetchCastesForReligion = async () => {
       if (religionId == null) {
         setFilters((prev) => (prev ? { ...prev, castes: [] } : prev));
         setCasteIds([]);
@@ -570,14 +637,7 @@ const MatchesPage = () => {
           name: c.name,
           religion_id: c.religion,
         }));
-        setFilters((prev) =>
-          prev
-            ? {
-                ...prev,
-                castes: mapped,
-              }
-            : prev,
-        );
+        setFilters((prev) => (prev ? { ...prev, castes: mapped } : prev));
         const validIds = new Set(mapped.map((c) => c.id));
         setCasteIds((prev) => prev.filter((id) => validIds.has(id)));
       } catch (e) {
@@ -587,11 +647,11 @@ const MatchesPage = () => {
       }
     };
 
-    void fetchCastes();
+    void fetchCastesForReligion();
     return () => {
       cancelled = true;
     };
-  }, [religionId]);
+  }, [religionId, casteApiFallback]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1065,184 +1125,205 @@ const MatchesPage = () => {
                   </div>
                 </FilterSection>
 
-                {filters && (
-                  <>
-                    <FilterSection
-                      title="Marital Status"
-                      icon={<Heart className="w-4 h-4 text-primary" />}
-                    >
-                      <SearchableIdSelect
-                        placeholder="Search marital status..."
-                        options={filters.marital_status}
-                        valueId={maritalStatusId}
-                        onSelect={setMaritalStatusId}
-                        searchQuery={maritalSearch}
-                        onSearchChange={setMaritalSearch}
-                      />
-                    </FilterSection>
+                <FilterSection
+                  title="Marital Status"
+                  icon={<Heart className="w-4 h-4 text-primary" />}
+                >
+                  {filtersLoading && !filters ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      Loading filters…
+                    </p>
+                  ) : (
+                    <SearchableIdSelect
+                      placeholder="Search marital status..."
+                      options={filters?.marital_status ?? []}
+                      valueId={maritalStatusId}
+                      onSelect={setMaritalStatusId}
+                      searchQuery={maritalSearch}
+                      onSearchChange={setMaritalSearch}
+                    />
+                  )}
+                </FilterSection>
 
-                    <FilterSection
-                      title="Location"
-                      icon={<MapPin className="w-4 h-4 text-primary" />}
-                    >
-                      <div className="space-y-4">
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            Country
-                          </p>
-                          <SearchableIdSelect
-                            placeholder="Search country..."
-                            options={countries}
-                            valueId={countryId}
-                            onSelect={(id) => {
-                              setCountryId(id);
-                              if (id == null) {
-                                setStateId(null);
-                                setDistrictIds([]);
-                                setCityIds([]);
-                              }
-                            }}
-                            searchQuery={countrySearch}
-                            onSearchChange={setCountrySearch}
-                          />
-                        </div>
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            State
-                          </p>
-                          {countryId == null ? (
-                            <p className="px-2 py-1 text-xs text-muted-foreground">
-                              Select a country first.
-                            </p>
-                          ) : (
-                            <SearchableIdSelect
-                              placeholder="Search state..."
-                              options={states}
-                              valueId={stateId}
-                              onSelect={(id) => {
-                                setStateId(id);
-                                if (id == null) {
-                                  setDistrictIds([]);
-                                  setCityIds([]);
-                                }
-                              }}
-                              searchQuery={stateSearch}
-                              onSearchChange={setStateSearch}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            District
-                          </p>
-                          {stateId == null ? (
-                            <p className="px-2 py-1 text-xs text-muted-foreground">
-                              Select a state first.
-                            </p>
-                          ) : (
-                            <SearchableMultiIdSelect
-                              placeholder="Search district..."
-                              options={districts}
-                              valueIds={districtIds}
-                              onChange={setDistrictIds}
-                              searchQuery={districtSearch}
-                              onSearchChange={setDistrictSearch}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            City
-                          </p>
-                          {districtIds.length === 0 ? (
-                            <p className="px-2 py-1 text-xs text-muted-foreground">
-                              Select a district first.
-                            </p>
-                          ) : (
-                            <SearchableMultiIdSelect
-                              placeholder="Search city..."
-                              options={cities}
-                              valueIds={cityIds}
-                              onChange={setCityIds}
-                              searchQuery={citySearch}
-                              onSearchChange={setCitySearch}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </FilterSection>
-
-                    <FilterSection
-                      title="Religion"
-                      icon={<Sparkles className="w-4 h-4 text-primary" />}
-                    >
-                      <SearchableIdSelect
-                        placeholder="Search religion..."
-                        options={filters.religions}
-                        valueId={religionId}
-                        onSelect={(id) => {
-                          setReligionId(id);
-                          setCasteIds([]);
-                        }}
-                        searchQuery={religionSearch}
-                        onSearchChange={setReligionSearch}
-                      />
-                    </FilterSection>
-
-                    <FilterSection
-                      title="Caste"
-                      icon={<Users className="w-4 h-4 text-primary" />}
-                    >
-                      {religionId == null ? (
+                <FilterSection
+                  title="Location"
+                  icon={<MapPin className="w-4 h-4 text-primary" />}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Country
+                      </p>
+                      {filtersLoading && countries.length === 0 ? (
                         <p className="px-2 py-1 text-xs text-muted-foreground">
-                          Select a religion to load castes.
+                          Loading filters…
+                        </p>
+                      ) : (
+                        <SearchableIdSelect
+                          placeholder="Search country..."
+                          options={countries}
+                          valueId={countryId}
+                          onSelect={(id) => {
+                            setCountryId(id);
+                            if (id == null) {
+                              setStateId(null);
+                              setDistrictIds([]);
+                              setCityIds([]);
+                            }
+                          }}
+                          searchQuery={countrySearch}
+                          onSearchChange={setCountrySearch}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        State
+                      </p>
+                      {countryId == null ? (
+                        <p className="px-2 py-1 text-xs text-muted-foreground">
+                          Select a country first.
+                        </p>
+                      ) : (
+                        <SearchableIdSelect
+                          placeholder="Search state..."
+                          options={states}
+                          valueId={stateId}
+                          onSelect={(id) => {
+                            setStateId(id);
+                            if (id == null) {
+                              setDistrictIds([]);
+                              setCityIds([]);
+                            }
+                          }}
+                          searchQuery={stateSearch}
+                          onSearchChange={setStateSearch}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        District
+                      </p>
+                      {stateId == null ? (
+                        <p className="px-2 py-1 text-xs text-muted-foreground">
+                          Select a state first.
                         </p>
                       ) : (
                         <SearchableMultiIdSelect
-                          placeholder="Search caste..."
-                          options={filters.castes}
-                          valueIds={casteIds}
-                          onChange={setCasteIds}
-                          searchQuery={casteSearch}
-                          onSearchChange={setCasteSearch}
+                          placeholder="Search district..."
+                          options={districts}
+                          valueIds={districtIds}
+                          onChange={setDistrictIds}
+                          searchQuery={districtSearch}
+                          onSearchChange={setDistrictSearch}
                         />
                       )}
-                    </FilterSection>
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        City
+                      </p>
+                      {districtIds.length === 0 ? (
+                        <p className="px-2 py-1 text-xs text-muted-foreground">
+                          Select a district first.
+                        </p>
+                      ) : (
+                        <SearchableMultiIdSelect
+                          placeholder="Search city..."
+                          options={cities}
+                          valueIds={cityIds}
+                          onChange={setCityIds}
+                          searchQuery={citySearch}
+                          onSearchChange={setCitySearch}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </FilterSection>
 
-                    <FilterSection
-                      title="Education"
-                      icon={<BookOpen className="w-4 h-4 text-primary" />}
-                    >
-                      <SearchableMultiIdSelect
-                        placeholder="Search education..."
-                        options={filters.educations}
-                        valueIds={educationIds}
-                        onChange={setEducationIds}
-                        searchQuery={educationSearch}
-                        onSearchChange={setEducationSearch}
-                      />
-                    </FilterSection>
+                <FilterSection
+                  title="Religion"
+                  icon={<Sparkles className="w-4 h-4 text-primary" />}
+                >
+                  {filtersLoading && !filters ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      Loading filters…
+                    </p>
+                  ) : (
+                    <SearchableIdSelect
+                      placeholder="Search religion..."
+                      options={filters?.religions ?? []}
+                      valueId={religionId}
+                      onSelect={(id) => {
+                        setReligionId(id);
+                        setCasteIds([]);
+                      }}
+                      searchQuery={religionSearch}
+                      onSearchChange={setReligionSearch}
+                    />
+                  )}
+                </FilterSection>
 
-                    <FilterSection
-                      title="Occupation"
-                      icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}
-                    >
-                      <SearchableMultiIdSelect
-                        placeholder="Search occupation..."
-                        options={filters.occupations}
-                        valueIds={occupationIds}
-                        onChange={setOccupationIds}
-                        searchQuery={occupationSearch}
-                        onSearchChange={setOccupationSearch}
-                      />
-                    </FilterSection>
-                  </>
-                )}
-                {filtersLoading && (
-                  <p className="text-sm text-muted-foreground py-2">
-                    Loading filters…
-                  </p>
-                )}
+                <FilterSection
+                  title="Caste"
+                  icon={<Users className="w-4 h-4 text-primary" />}
+                >
+                  {religionId == null ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      Select a religion to load castes.
+                    </p>
+                  ) : (
+                    <SearchableMultiIdSelect
+                      placeholder="Search caste..."
+                      options={filters?.castes ?? []}
+                      valueIds={casteIds}
+                      onChange={setCasteIds}
+                      searchQuery={casteSearch}
+                      onSearchChange={setCasteSearch}
+                    />
+                  )}
+                </FilterSection>
+
+                <FilterSection
+                  title="Education"
+                  icon={<BookOpen className="w-4 h-4 text-primary" />}
+                >
+                  {filtersLoading && !filters ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      Loading filters…
+                    </p>
+                  ) : (
+                    <SearchableMultiIdSelect
+                      placeholder="Search education..."
+                      options={filters?.educations ?? []}
+                      valueIds={educationIds}
+                      onChange={setEducationIds}
+                      searchQuery={educationSearch}
+                      onSearchChange={setEducationSearch}
+                    />
+                  )}
+                </FilterSection>
+
+                <FilterSection
+                  title="Occupation"
+                  icon={<BriefcaseIcon className="w-4 h-4 text-primary" />}
+                >
+                  {filtersLoading && !filters ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      Loading filters…
+                    </p>
+                  ) : (
+                    <SearchableMultiIdSelect
+                      placeholder="Search occupation..."
+                      options={filters?.occupations ?? []}
+                      valueIds={occupationIds}
+                      onChange={setOccupationIds}
+                      searchQuery={occupationSearch}
+                      onSearchChange={setOccupationSearch}
+                    />
+                  )}
+                </FilterSection>
               </div>
             </motion.div>
 
