@@ -48,6 +48,26 @@ export function parseApiDate(input: unknown): Date | null {
       return Number.isNaN(d.getTime()) ? null : d;
     }
 
+    // ISO date-only (YYYY-MM-DD) — local calendar date, avoids UTC shift.
+    const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (isoDate) {
+      const y = Number(isoDate[1]);
+      const mo = Number(isoDate[2]) - 1;
+      const day = Number(isoDate[3]);
+      const d = new Date(y, mo, day);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    // Kerala / API DOB: DD-MM-YYYY or DD/MM/YYYY (day first — not US MM/DD).
+    const dmy = /^(\d{2})[/-](\d{2})[/-](\d{4})$/.exec(s);
+    if (dmy) {
+      const day = Number(dmy[1]);
+      const mo = Number(dmy[2]) - 1;
+      const y = Number(dmy[3]);
+      const d = new Date(y, mo, day);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
     let normalized = s.replace(" ", "T");
     normalized = normalized.replace(/(\.\d{3})\d+/, "$1");
     const d = new Date(normalized);
