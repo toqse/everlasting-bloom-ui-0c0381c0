@@ -6,6 +6,7 @@ import type { Country, State, District, City } from "@/lib/masterApi";
 import { searchPlaces, type GeocodeResult } from "@/lib/geocode";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { inputClass, labelClass } from "../SignupFormFields";
+import { BirthTimePicker } from "../BirthTimePicker";
 
 const PLACE_DEBOUNCE_MS = 450;
 
@@ -331,12 +332,9 @@ const LocationStep = ({ formData, onChange }: Props) => {
             <div className="space-y-4 mt-4">
               <div>
                 <label className={labelClass}>Birth Time</label>
-                <input
-                  type="time"
-                  name="birth_time"
+                <BirthTimePicker
                   value={formData.birth_time || ""}
-                  onChange={onChange}
-                  className={inputClass}
+                  onChange={(v) => emit("birth_time", v)}
                 />
               </div>
 
