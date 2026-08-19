@@ -1,16 +1,17 @@
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Search } from "lucide-react";
-import { SelectField, inputClass, labelClass } from "../SignupFormFields";
+import { ChevronDown, Loader2, Search } from "lucide-react";
+import { SelectField, labelClass } from "../SignupFormFields";
 import { toast } from "sonner";
 import {
-  getEducations,
-  getEducationSubjects,
-  getOccupations,
-  getEmploymentStatuses,
-  getIncomeRanges,
   type EducationMaster,
 } from "@/lib/masterApi";
+import {
+  getFallbackEducations,
+  loadEducationSubjectsForName,
+  loadSignupEducationMaster,
+  matchesMasterSearch,
+} from "@/lib/signupEducationMasterCache";
 
 interface Props {
   formData: Record<string, string>;
@@ -21,11 +22,13 @@ function SearchableEducationSelect({
   value,
   onChange,
   options,
+  syncing,
   disabled,
 }: {
   value: string;
   onChange: Props["onChange"];
   options: string[];
+  syncing?: boolean;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -35,10 +38,9 @@ function SearchableEducationSelect({
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
     const list = [...options];
-    if (!q) return list;
-    return list.filter((opt) => opt.toLowerCase().includes(q));
+    if (!search.trim()) return list;
+    return list.filter((opt) => matchesMasterSearch(opt, search));
   }, [options, search]);
 
   const updatePosition = useCallback(() => {
@@ -84,6 +86,7 @@ function SearchableEducationSelect({
 
   const dropdown =
     open &&
+    !disabled &&
     position.width > 0 &&
     createPortal(
       <div
@@ -113,34 +116,52 @@ function SearchableEducationSelect({
           </div>
         </div>
         <div className="overflow-y-auto p-1 flex-1 min-h-0 [scrollbar-width:thin]">
-          {value && !inList && (
-            <button
-              type="button"
-              onClick={() => select(value)}
-              className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-amber-50 text-amber-900 hover:bg-amber-100 mb-1"
-            >
-              Current: {value}
-            </button>
-          )}
-          {filtered.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">No qualification matches your search</div>
+          {syncing && options.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Loading qualifications...
+            </div>
           ) : (
-            filtered.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => select(opt)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                  opt === value ? "bg-primary text-primary-foreground font-medium" : "hover:bg-primary/10 text-foreground"
-                }`}
-              >
-                {opt}
-              </button>
-            ))
+            <>
+              {syncing ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground border-b border-primary/5 mb-1">
+                  Updating qualification list…
+                </p>
+              ) : null}
+              {value && !inList && (
+                <button
+                  type="button"
+                  onClick={() => select(value)}
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-amber-50 text-amber-900 hover:bg-amber-100 mb-1"
+                >
+                  Current: {value}
+                </button>
+              )}
+              {filtered.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No qualification matches your search
+                </div>
+              ) : (
+                filtered.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => select(opt)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      opt === value
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "hover:bg-primary/10 text-foreground"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))
+              )}
+            </>
           )}
         </div>
       </div>,
-      document.body
+      document.body,
     );
 
   return (
@@ -148,12 +169,21 @@ function SearchableEducationSelect({
       <label className={labelClass}>Highest Education</label>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (disabled) return;
+          setOpen((o) => !o);
+        }}
         className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         disabled={disabled}
       >
         <span className={value ? "" : "text-muted-foreground"}>{display}</span>
-        <ChevronDown className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        {syncing ? (
+          <Loader2 className="w-5 h-5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+        ) : (
+          <ChevronDown
+            className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
       {dropdown}
     </div>
@@ -164,11 +194,13 @@ function SearchableSubjectSelect({
   value,
   onChange,
   options,
+  loading,
   disabled,
 }: {
   value: string;
   onChange: Props["onChange"];
   options: string[];
+  loading?: boolean;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -178,10 +210,9 @@ function SearchableSubjectSelect({
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
     const list = [...options];
-    if (!q) return list;
-    return list.filter((opt) => opt.toLowerCase().includes(q));
+    if (!search.trim()) return list;
+    return list.filter((opt) => matchesMasterSearch(opt, search));
   }, [options, search]);
 
   const updatePosition = useCallback(() => {
@@ -221,11 +252,16 @@ function SearchableSubjectSelect({
     setSearch("");
   };
 
-  const display = value && value.trim() !== "" ? value : "Select Subject";
+  const display = loading
+    ? "Loading subjects..."
+    : value && value.trim() !== ""
+      ? value
+      : "Select Subject";
   const inList = (options as readonly string[]).includes(value);
 
   const dropdown =
     open &&
+    !disabled &&
     position.width > 0 &&
     createPortal(
       <div
@@ -248,6 +284,7 @@ function SearchableSubjectSelect({
               placeholder="Search subject..."
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-primary/10 focus:border-primary focus:ring-1 focus:ring-primary/20 text-sm text-foreground placeholder:text-muted-foreground bg-white"
               autoFocus
+              disabled={loading}
               onKeyDown={(e) => {
                 if (e.key === "Escape") setOpen(false);
               }}
@@ -255,34 +292,47 @@ function SearchableSubjectSelect({
           </div>
         </div>
         <div className="overflow-y-auto p-1 flex-1 min-h-0 [scrollbar-width:thin]">
-          {value && !inList && (
-            <button
-              type="button"
-              onClick={() => select(value)}
-              className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-amber-50 text-amber-900 hover:bg-amber-100 mb-1"
-            >
-              Current: {value}
-            </button>
-          )}
-          {filtered.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">No subject matches your search</div>
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Loading subjects...
+            </div>
           ) : (
-            filtered.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => select(opt)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                  opt === value ? "bg-primary text-primary-foreground font-medium" : "hover:bg-primary/10 text-foreground"
-                }`}
-              >
-                {opt}
-              </button>
-            ))
+            <>
+              {value && !inList && (
+                <button
+                  type="button"
+                  onClick={() => select(value)}
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-amber-50 text-amber-900 hover:bg-amber-100 mb-1"
+                >
+                  Current: {value}
+                </button>
+              )}
+              {filtered.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No subject matches your search
+                </div>
+              ) : (
+                filtered.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => select(opt)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      opt === value
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "hover:bg-primary/10 text-foreground"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))
+              )}
+            </>
           )}
         </div>
       </div>,
-      document.body
+      document.body,
     );
 
   return (
@@ -290,12 +340,21 @@ function SearchableSubjectSelect({
       <label className={labelClass}>Subject</label>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (disabled || loading) return;
+          setOpen((o) => !o);
+        }}
         className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={disabled}
+        disabled={disabled || loading}
       >
-        <span className={value ? "" : "text-muted-foreground"}>{display}</span>
-        <ChevronDown className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className={value && !loading ? "" : "text-muted-foreground"}>{display}</span>
+        {loading ? (
+          <Loader2 className="w-5 h-5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+        ) : (
+          <ChevronDown
+            className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
       {dropdown}
     </div>
@@ -303,34 +362,38 @@ function SearchableSubjectSelect({
 }
 
 const EducationStep = ({ formData, onChange }: Props) => {
-  const [educations, setEducations] = useState<EducationMaster[]>([]);
+  const [educations, setEducations] = useState<EducationMaster[]>(() => getFallbackEducations());
   const [subjects, setSubjects] = useState<string[]>([]);
   const [occupations, setOccupations] = useState<string[]>([]);
   const [employmentStatuses, setEmploymentStatuses] = useState<string[]>([]);
   const [incomeRanges, setIncomeRanges] = useState<string[]>([]);
+  const [loadingMaster, setLoadingMaster] = useState(true);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [masterReady, setMasterReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    setLoadingMaster(true);
     (async () => {
       try {
-        const [eduRes, occRes, empRes, incRes] = await Promise.all([
-          getEducations(),
-          getOccupations(),
-          getEmploymentStatuses(),
-          getIncomeRanges(),
-        ]);
+        const data = await loadSignupEducationMaster();
         if (!mounted) return;
-        setEducations(eduRes);
-        setOccupations(occRes.map((o) => o.name));
-        setEmploymentStatuses(empRes.map((e) => e.name));
-        setIncomeRanges(incRes.map((i) => i.name));
+        setEducations(data.educations);
+        setOccupations(data.occupations);
+        setEmploymentStatuses(data.employmentStatuses);
+        setIncomeRanges(data.incomeRanges);
+        setMasterReady(!data.usedFallbackOnly);
+        if (data.usedFallbackOnly) {
+          toast.error("Could not load qualifications from server. Showing offline list.");
+        }
       } catch (e) {
-        toast.error(
-          e instanceof Error
-            ? e.message
-            : "Failed to load education master data",
-        );
+        if (mounted) {
+          toast.error(
+            e instanceof Error ? e.message : "Failed to load education master data",
+          );
+        }
+      } finally {
+        if (mounted) setLoadingMaster(false);
       }
     })();
     return () => {
@@ -340,11 +403,13 @@ const EducationStep = ({ formData, onChange }: Props) => {
 
   useEffect(() => {
     let mounted = true;
-    const selectedEducationId = educations.find(
-      (e) => e.name === formData.education,
-    )?.id;
 
-    if (!selectedEducationId) {
+    if (!formData.education) {
+      setSubjects([]);
+      return;
+    }
+
+    if (!masterReady) {
       setSubjects([]);
       return;
     }
@@ -352,9 +417,8 @@ const EducationStep = ({ formData, onChange }: Props) => {
     setLoadingSubjects(true);
     (async () => {
       try {
-        const subjectRes = await getEducationSubjects(selectedEducationId);
+        const names = await loadEducationSubjectsForName(educations, formData.education);
         if (!mounted) return;
-        const names = subjectRes.map((s) => s.name);
         setSubjects(names);
         if (formData.educationSubject && !names.includes(formData.educationSubject)) {
           onChange({
@@ -364,9 +428,7 @@ const EducationStep = ({ formData, onChange }: Props) => {
       } catch (e) {
         if (mounted) {
           toast.error(
-            e instanceof Error
-              ? e.message
-              : "Failed to load education subjects",
+            e instanceof Error ? e.message : "Failed to load education subjects",
           );
           setSubjects([]);
         }
@@ -378,7 +440,9 @@ const EducationStep = ({ formData, onChange }: Props) => {
     return () => {
       mounted = false;
     };
-  }, [educations, formData.education, formData.educationSubject, onChange]);
+  }, [educations, formData.education, formData.educationSubject, masterReady, onChange]);
+
+  const educationNames = useMemo(() => educations.map((e) => e.name), [educations]);
 
   return (
     <>
@@ -390,13 +454,15 @@ const EducationStep = ({ formData, onChange }: Props) => {
         <SearchableEducationSelect
           value={formData.education}
           onChange={onChange}
-          options={educations.map((e) => e.name)}
+          options={educationNames}
+          syncing={loadingMaster}
         />
         <SearchableSubjectSelect
           value={formData.educationSubject}
           onChange={onChange}
           options={subjects}
-          disabled={!formData.education || loadingSubjects}
+          loading={loadingSubjects}
+          disabled={!formData.education || !masterReady || loadingMaster}
         />
         <SelectField
           label="Employment"
@@ -404,6 +470,7 @@ const EducationStep = ({ formData, onChange }: Props) => {
           options={employmentStatuses}
           value={formData.employmentStatus}
           onChange={onChange}
+          disabled={loadingMaster}
         />
         <SelectField
           label="Occupation"
@@ -411,6 +478,7 @@ const EducationStep = ({ formData, onChange }: Props) => {
           options={occupations}
           value={formData.occupation}
           onChange={onChange}
+          disabled={loadingMaster}
         />
         <SelectField
           label="Annual Income"
@@ -418,6 +486,7 @@ const EducationStep = ({ formData, onChange }: Props) => {
           options={incomeRanges}
           value={formData.annualIncome || ""}
           onChange={onChange}
+          disabled={loadingMaster}
         />
       </div>
     </>

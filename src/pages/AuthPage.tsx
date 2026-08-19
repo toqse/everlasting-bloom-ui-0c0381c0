@@ -53,6 +53,7 @@ import PersonalStep from "@/components/signup/steps/PersonalStep";
 import EducationStep from "@/components/signup/steps/EducationStep";
 import AboutMeStep from "@/components/signup/steps/AboutMeStep";
 import PhotosStep from "@/components/signup/steps/PhotosStep";
+import { prefetchSignupEducationMaster } from "@/lib/signupEducationMasterCache";
 
 type AuthMode = "login" | "signup";
 const SIGNUP_DRAFT_STORAGE_KEY = "matrimony_signup_draft_v1";
@@ -399,6 +400,12 @@ const AuthPage = () => {
       }
     }
   }, [accessToken, getProfileIncompleteSignupStep, profilePrefill]);
+
+  useEffect(() => {
+    if (mode !== "signup") return;
+    prefetchSignupEducationMaster();
+  }, [mode]);
+
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [hasChildren, setHasChildren] = useState<"yes" | "no">("no");
   const [interCaste, setInterCaste] = useState(false);
@@ -1512,9 +1519,9 @@ const AuthPage = () => {
   // ---- LOGIN VIEW ----
   if (mode === "login") {
     return (
-      <div className="h-dvh min-h-0 flex relative overflow-hidden">
+      <div className="min-h-dvh flex flex-col lg:flex-row relative">
         {/* Left side - Couple Image */}
-        <div className="hidden lg:flex w-1/2 relative min-h-0">
+        <div className="hidden lg:flex lg:w-1/2 relative shrink-0 lg:sticky lg:top-0 lg:h-dvh">
           <img
             src="/images/login.jpg"
             alt="Happy Indian wedding couple"
@@ -1533,7 +1540,7 @@ const AuthPage = () => {
         </div>
 
         {/* Right side - Login Form with ring background */}
-        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
+        <div className="flex-1 flex flex-col relative min-h-dvh">
           <div className="absolute inset-0">
             <img
               src="/images/ring.jpg"
@@ -1543,10 +1550,10 @@ const AuthPage = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-primary/25" />
           </div>
-          <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed" />
+          <div className="absolute top-10 left-10 w-48 h-48 bg-rose-300/40 rounded-full blur-3xl animate-float pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-64 h-64 bg-amber-300/35 rounded-full blur-3xl animate-float-delayed pointer-events-none" />
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain flex items-start justify-center pt-0 pb-6 px-3 sm:px-4 relative z-10">
+          <div className="relative z-10 flex flex-col items-center pt-0 pb-10 sm:pb-12 px-3 sm:px-4">
             <div className="w-full max-w-xl min-w-0 py-2 sm:py-4">
               <div className="flex justify-center mb-0">
                 <img
@@ -1708,9 +1715,9 @@ const AuthPage = () => {
 
   // ---- SIGNUP VIEW ----
   return (
-    <div className="h-dvh min-h-0 flex relative overflow-hidden">
+    <div className="min-h-dvh flex flex-col lg:flex-row relative">
       {/* Left side - Wedding image (desktop) */}
-      <div className="hidden lg:flex lg:w-2/5 xl:w-2/5 relative min-h-0 shrink-0">
+      <div className="hidden lg:flex lg:w-2/5 xl:w-2/5 relative shrink-0 lg:sticky lg:top-0 lg:h-dvh">
         <img
           src="/images/image2.jpg"
           alt="Wedding couple"
@@ -1721,7 +1728,7 @@ const AuthPage = () => {
       </div>
 
       {/* Right side - Signup form with background image */}
-      <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
+      <div className="flex-1 flex flex-col relative min-h-dvh">
         <div className="absolute inset-0">
           <img
             src="/images/image2.jpg"
@@ -1731,10 +1738,10 @@ const AuthPage = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/75 to-primary/20" />
         </div>
-        <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute top-10 left-10 w-48 h-48 bg-secondary/25 rounded-full blur-3xl animate-float pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary/15 rounded-full blur-3xl animate-float-delayed pointer-events-none" />
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain flex items-start justify-center py-4 sm:py-6 md:py-8 px-3 sm:px-4 relative z-10">
+        <div className="relative z-10 flex flex-col items-center py-4 sm:py-6 md:py-8 pb-10 sm:pb-12 px-3 sm:px-4">
           <div className="w-full max-w-4xl relative z-10 min-w-0">
             <div className="flex justify-center mb-0">
               <img
@@ -1770,7 +1777,7 @@ const AuthPage = () => {
           >
             <SignupStepIndicator currentStep={signupStep} />
 
-            <div className="min-h-[320px] sm:min-h-[380px] overflow-x-hidden pr-1">
+            <div className="overflow-x-hidden pr-1">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={signupStep}
