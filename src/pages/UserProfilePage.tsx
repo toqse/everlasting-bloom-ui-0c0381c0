@@ -2462,6 +2462,9 @@ const UserProfilePage = () => {
   const [horoscopeLoading, setHoroscopeLoading] = useState(false);
   const [horoscopeError, setHoroscopeError] = useState<string | null>(null);
   const [horoscopeOpen, setHoroscopeOpen] = useState(false);
+  const [isHoroscopeGenerated, setIsHoroscopeGenerated] = useState<boolean | null>(
+    null,
+  );
   const [loadingThalakuri, setLoadingThalakuri] = useState(false);
   const [demoPaymentOpen, setDemoPaymentOpen] = useState(false);
   const [demoDownloadUrl, setDemoDownloadUrl] = useState("");
@@ -2477,15 +2480,19 @@ const UserProfilePage = () => {
         !!profile && profile.exists !== false && profile.id != null;
       if (!hasProfile) {
         setHoroscopeData(null);
+        setIsHoroscopeGenerated(false);
         setHoroscopeError(
           "No horoscope found yet. Please update your birth details first.",
         );
         return;
       }
       setHoroscopeData(profile);
+      setIsHoroscopeGenerated(true);
+      setHoroscopeError(null);
       setHoroscopeOpen(true);
     } catch (e) {
       setHoroscopeData(null);
+      setIsHoroscopeGenerated(false);
       setHoroscopeError(
         e instanceof Error ? e.message : "Could not load horoscope.",
       );
@@ -2495,6 +2502,14 @@ const UserProfilePage = () => {
   };
 
   const handleThalakuriPurchase = async () => {
+    if (!isHoroscopeGenerated) {
+      toast.error(
+        horoscopeError ??
+          "Horoscope has not been generated yet. Please contact the administrator.",
+      );
+      return;
+    }
+
     setLoadingThalakuri(true);
     try {
       const orderRes = await postAstrologyPdfOrder({ product: "thalakuri" });
@@ -2882,6 +2897,28 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     let cancelled = false;
+    getMyHoroscopeProfile("south")
+      .then(() => {
+        if (!cancelled) {
+          setIsHoroscopeGenerated(true);
+          setHoroscopeError(null);
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setIsHoroscopeGenerated(false);
+          setHoroscopeError(
+            e instanceof Error ? e.message : "Horoscope not available.",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
     setProfileError(null);
     getProfile()
       .then((res) => {
@@ -3228,6 +3265,7 @@ const UserProfilePage = () => {
               horoscopeLoading={horoscopeLoading}
               loadingThalakuri={loadingThalakuri}
               horoscopeError={horoscopeError}
+              thalakuriEnabled={isHoroscopeGenerated === true}
             />
 
             <ResponsiveModal

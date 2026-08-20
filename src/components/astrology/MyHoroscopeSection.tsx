@@ -10,6 +10,8 @@ type MyHoroscopeSectionProps = {
   horoscopeLoading?: boolean;
   loadingThalakuri?: boolean;
   horoscopeError?: string | null;
+  /** When false, Thalakuri purchase/download is blocked until EXE generates the horoscope. */
+  thalakuriEnabled?: boolean;
   className?: string;
 };
 
@@ -19,6 +21,7 @@ export function MyHoroscopeSection({
   horoscopeLoading = false,
   loadingThalakuri = false,
   horoscopeError = null,
+  thalakuriEnabled = true,
   className,
 }: MyHoroscopeSectionProps) {
   return (
@@ -59,8 +62,13 @@ export function MyHoroscopeSection({
           variant="outline"
           icon={FileText}
           title="Download Thalakuri PDF"
-          subtitle="Complete astrological report"
+          subtitle={
+            thalakuriEnabled
+              ? "Complete astrological report"
+              : "Available after your horoscope is generated"
+          }
           onClick={onDownloadThalakuri}
+          disabled={!thalakuriEnabled}
           loading={loadingThalakuri}
           loadingLabel="Processing…"
         />
