@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, MapPin } from "lucide-react";
-import { withMinDuration } from "@/lib/withMinDuration";
 import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
 import type { Country, State, District, City } from "@/lib/masterApi";
 import { searchPlaces, type GeocodeResult } from "@/lib/geocode";
@@ -24,6 +23,18 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const countriesRef = useRef<Country[]>([]);
+  const statesRef = useRef<State[]>([]);
+  const districtsRef = useRef<District[]>([]);
+  const citiesRef = useRef<City[]>([]);
+  countriesRef.current = countries;
+  statesRef.current = states;
+  districtsRef.current = districts;
+  citiesRef.current = cities;
+  const countriesAbortRef = useRef<AbortController | null>(null);
+  const statesAbortRef = useRef<AbortController | null>(null);
+  const districtsAbortRef = useRef<AbortController | null>(null);
+  const citiesAbortRef = useRef<AbortController | null>(null);
 
   const [placeQuery, setPlaceQuery] = useState(formData.birth_place || "");
   const [placeResults, setPlaceResults] = useState<GeocodeResult[]>([]);
@@ -56,6 +67,9 @@ const LocationStep = ({ formData, onChange }: Props) => {
         onChange({ target: { name: "state", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        setStates([]);
+        setDistricts([]);
+        setCities([]);
         return;
       }
 
@@ -64,6 +78,8 @@ const LocationStep = ({ formData, onChange }: Props) => {
         onChange({ target: { name: "state", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        setDistricts([]);
+        setCities([]);
         return;
       }
 
@@ -71,6 +87,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
         const selected = districts.find((d) => String(d.id) === value);
         onChange({ target: { name: "district", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        setCities([]);
         return;
       }
 
@@ -83,31 +100,38 @@ const LocationStep = ({ formData, onChange }: Props) => {
   );
 
   const loadCountries = useCallback(async (search: string) => {
-    setLoadingCountries(true);
+    countriesAbortRef.current?.abort();
+    const ac = new AbortController();
+    countriesAbortRef.current = ac;
+    if (countriesRef.current.length === 0) setLoadingCountries(true);
     try {
-      const list = await withMinDuration(180, getCountries(search || undefined));
+      const list = await getCountries(search || undefined, ac.signal);
+      if (ac.signal.aborted) return;
       setCountries(list);
-    } catch {
-      setCountries([]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (!ac.signal.aborted) setCountries([]);
     } finally {
-      setLoadingCountries(false);
+      if (!ac.signal.aborted) setLoadingCountries(false);
     }
   }, []);
 
   const loadStates = useCallback(
     async (search: string) => {
       if (!countryId) return;
-      setLoadingStates(true);
+      statesAbortRef.current?.abort();
+      const ac = new AbortController();
+      statesAbortRef.current = ac;
+      if (statesRef.current.length === 0) setLoadingStates(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getStates(countryId, search || undefined),
-        );
+        const list = await getStates(countryId, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setStates(list);
-      } catch {
-        setStates([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setStates([]);
       } finally {
-        setLoadingStates(false);
+        if (!ac.signal.aborted) setLoadingStates(false);
       }
     },
     [countryId]
@@ -116,17 +140,19 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const loadDistricts = useCallback(
     async (search: string) => {
       if (!stateId) return;
-      setLoadingDistricts(true);
+      districtsAbortRef.current?.abort();
+      const ac = new AbortController();
+      districtsAbortRef.current = ac;
+      if (districtsRef.current.length === 0) setLoadingDistricts(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getDistricts(stateId, search || undefined),
-        );
+        const list = await getDistricts(stateId, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setDistricts(list);
-      } catch {
-        setDistricts([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setDistricts([]);
       } finally {
-        setLoadingDistricts(false);
+        if (!ac.signal.aborted) setLoadingDistricts(false);
       }
     },
     [stateId]
@@ -135,21 +161,67 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const loadCities = useCallback(
     async (search: string) => {
       if (!districtId) return;
-      setLoadingCities(true);
+      citiesAbortRef.current?.abort();
+      const ac = new AbortController();
+      citiesAbortRef.current = ac;
+      if (citiesRef.current.length === 0) setLoadingCities(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getCities(districtId, search || undefined),
-        );
+        const list = await getCities(districtId, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setCities(list);
-      } catch {
-        setCities([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setCities([]);
       } finally {
-        setLoadingCities(false);
+        if (!ac.signal.aborted) setLoadingCities(false);
       }
     },
     [districtId]
   );
+
+  useEffect(() => {
+    loadCountries("");
+    return () => countriesAbortRef.current?.abort();
+  }, [loadCountries]);
+
+  useEffect(() => {
+    if (!countryId) {
+      statesAbortRef.current?.abort();
+      setStates([]);
+      setLoadingStates(false);
+      return;
+    }
+    setStates([]);
+    setLoadingStates(true);
+    loadStates("");
+    return () => statesAbortRef.current?.abort();
+  }, [countryId, loadStates]);
+
+  useEffect(() => {
+    if (!stateId) {
+      districtsAbortRef.current?.abort();
+      setDistricts([]);
+      setLoadingDistricts(false);
+      return;
+    }
+    setDistricts([]);
+    setLoadingDistricts(true);
+    loadDistricts("");
+    return () => districtsAbortRef.current?.abort();
+  }, [stateId, loadDistricts]);
+
+  useEffect(() => {
+    if (!districtId) {
+      citiesAbortRef.current?.abort();
+      setCities([]);
+      setLoadingCities(false);
+      return;
+    }
+    setCities([]);
+    setLoadingCities(true);
+    loadCities("");
+    return () => citiesAbortRef.current?.abort();
+  }, [districtId, loadCities]);
 
   useEffect(() => {
     if (!hasHoroscope) return;
@@ -257,6 +329,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
 
         {countryId ? (
           <SearchableSelect
+            key={`state-${countryId}`}
             name="state_id"
             value={formData.state_id || ""}
             options={states}
@@ -271,6 +344,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
 
         {stateId ? (
           <SearchableSelect
+            key={`district-${stateId}`}
             name="district_id"
             value={formData.district_id || ""}
             options={districts}
@@ -285,6 +359,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
 
         {districtId ? (
           <SearchableSelect
+            key={`city-${districtId}`}
             name="city_id"
             value={formData.city_id || ""}
             options={cities}

@@ -1731,6 +1731,7 @@ function EditSectionForm({
           />
           {countryId > 0 ? (
             <SearchableSelect
+              key={`state-${countryId}`}
               name="state_id"
               value={data.state_id != null ? String(data.state_id) : ""}
               options={states}
@@ -1744,6 +1745,7 @@ function EditSectionForm({
           ) : null}
           {stateId > 0 ? (
             <SearchableSelect
+              key={`district-${stateId}`}
               name="district_id"
               value={data.district_id != null ? String(data.district_id) : ""}
               options={districts}
@@ -1757,6 +1759,7 @@ function EditSectionForm({
           ) : null}
           {districtId > 0 ? (
             <SearchableSelect
+              key={`city-${districtId}`}
               name="city_id"
               value={data.city_id != null ? String(data.city_id) : ""}
               options={cities}
@@ -2576,6 +2579,18 @@ const UserProfilePage = () => {
   const [locationStates, setLocationStates] = useState<State[]>([]);
   const [locationDistricts, setLocationDistricts] = useState<District[]>([]);
   const [locationCities, setLocationCities] = useState<City[]>([]);
+  const locationCountriesRef = useRef<Country[]>([]);
+  const locationStatesRef = useRef<State[]>([]);
+  const locationDistrictsRef = useRef<District[]>([]);
+  const locationCitiesRef = useRef<City[]>([]);
+  locationCountriesRef.current = locationCountries;
+  locationStatesRef.current = locationStates;
+  locationDistrictsRef.current = locationDistricts;
+  locationCitiesRef.current = locationCities;
+  const locationCountriesAbortRef = useRef<AbortController | null>(null);
+  const locationStatesAbortRef = useRef<AbortController | null>(null);
+  const locationDistrictsAbortRef = useRef<AbortController | null>(null);
+  const locationCitiesAbortRef = useRef<AbortController | null>(null);
   const [religionOptions, setReligionOptions] = useState<Religion[]>([]);
   const [casteOptions, setCasteOptions] = useState<Caste[]>([]);
   const [motherTongueOptions, setMotherTongueOptions] = useState<
@@ -2616,14 +2631,19 @@ const UserProfilePage = () => {
   const [loadingIncomeRanges, setLoadingIncomeRanges] = useState(false);
 
   const loadLocationCountries = useCallback(async (search: string) => {
-    setLoadingCountries(true);
+    locationCountriesAbortRef.current?.abort();
+    const ac = new AbortController();
+    locationCountriesAbortRef.current = ac;
+    if (locationCountriesRef.current.length === 0) setLoadingCountries(true);
     try {
-      const list = await withMinDuration(180, getCountries(search || undefined));
+      const list = await getCountries(search || undefined, ac.signal);
+      if (ac.signal.aborted) return;
       setLocationCountries(list);
-    } catch {
-      setLocationCountries([]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (!ac.signal.aborted) setLocationCountries([]);
     } finally {
-      setLoadingCountries(false);
+      if (!ac.signal.aborted) setLoadingCountries(false);
     }
   }, []);
 
@@ -2631,17 +2651,19 @@ const UserProfilePage = () => {
     async (search: string) => {
       const cid = profileData.country_id ?? 0;
       if (!cid) return;
-      setLoadingStates(true);
+      locationStatesAbortRef.current?.abort();
+      const ac = new AbortController();
+      locationStatesAbortRef.current = ac;
+      if (locationStatesRef.current.length === 0) setLoadingStates(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getStates(cid, search || undefined),
-        );
+        const list = await getStates(cid, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setLocationStates(list);
-      } catch {
-        setLocationStates([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setLocationStates([]);
       } finally {
-        setLoadingStates(false);
+        if (!ac.signal.aborted) setLoadingStates(false);
       }
     },
     [profileData.country_id],
@@ -2651,17 +2673,19 @@ const UserProfilePage = () => {
     async (search: string) => {
       const sid = profileData.state_id ?? 0;
       if (!sid) return;
-      setLoadingDistricts(true);
+      locationDistrictsAbortRef.current?.abort();
+      const ac = new AbortController();
+      locationDistrictsAbortRef.current = ac;
+      if (locationDistrictsRef.current.length === 0) setLoadingDistricts(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getDistricts(sid, search || undefined),
-        );
+        const list = await getDistricts(sid, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setLocationDistricts(list);
-      } catch {
-        setLocationDistricts([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setLocationDistricts([]);
       } finally {
-        setLoadingDistricts(false);
+        if (!ac.signal.aborted) setLoadingDistricts(false);
       }
     },
     [profileData.state_id],
@@ -2671,17 +2695,19 @@ const UserProfilePage = () => {
     async (search: string) => {
       const did = profileData.district_id ?? 0;
       if (!did) return;
-      setLoadingCities(true);
+      locationCitiesAbortRef.current?.abort();
+      const ac = new AbortController();
+      locationCitiesAbortRef.current = ac;
+      if (locationCitiesRef.current.length === 0) setLoadingCities(true);
       try {
-        const list = await withMinDuration(
-          180,
-          getCities(did, search || undefined),
-        );
+        const list = await getCities(did, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
         setLocationCities(list);
-      } catch {
-        setLocationCities([]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setLocationCities([]);
       } finally {
-        setLoadingCities(false);
+        if (!ac.signal.aborted) setLoadingCities(false);
       }
     },
     [profileData.district_id],
@@ -2840,19 +2866,43 @@ const UserProfilePage = () => {
   useEffect(() => {
     if (editingSection !== "Location") return;
     const cid = profileData.country_id ?? 0;
-    if (cid) loadLocationStates("");
+    if (!cid) {
+      locationStatesAbortRef.current?.abort();
+      setLocationStates([]);
+      setLoadingStates(false);
+      return;
+    }
+    setLocationStates([]);
+    setLoadingStates(true);
+    loadLocationStates("");
   }, [editingSection, profileData.country_id, loadLocationStates]);
 
   useEffect(() => {
     if (editingSection !== "Location") return;
     const sid = profileData.state_id ?? 0;
-    if (sid) loadLocationDistricts("");
+    if (!sid) {
+      locationDistrictsAbortRef.current?.abort();
+      setLocationDistricts([]);
+      setLoadingDistricts(false);
+      return;
+    }
+    setLocationDistricts([]);
+    setLoadingDistricts(true);
+    loadLocationDistricts("");
   }, [editingSection, profileData.state_id, loadLocationDistricts]);
 
   useEffect(() => {
     if (editingSection !== "Location") return;
     const did = profileData.district_id ?? 0;
-    if (did) loadLocationCities("");
+    if (!did) {
+      locationCitiesAbortRef.current?.abort();
+      setLocationCities([]);
+      setLoadingCities(false);
+      return;
+    }
+    setLocationCities([]);
+    setLoadingCities(true);
+    loadLocationCities("");
   }, [editingSection, profileData.district_id, loadLocationCities]);
 
   useEffect(() => {

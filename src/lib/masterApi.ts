@@ -188,33 +188,63 @@ export async function getCountriesPage(signal?: AbortSignal): Promise<Country[]>
 }
 
 /** GET v1/master/countries?search= */
-export async function getCountries(search?: string): Promise<Country[]> {
-  const path = "v1/master/countries";
-  const results = await getPaginated<Country>(path, search);
+export async function getCountries(
+  search?: string,
+  signal?: AbortSignal,
+): Promise<Country[]> {
+  const results = await fetchMasterPage<Country>("v1/master/countries", {
+    limit: 200,
+    search,
+    signal,
+  });
   debugLog("[masterApi] getCountries response:", { search, results });
   return results;
 }
 
 /** GET v1/master/states/?country_id=<id>&search= */
-export async function getStates(countryId: number, search?: string): Promise<State[]> {
-  const path = `v1/master/states/?country_id=${countryId}`;
-  const results = await getPaginated<State>(path, search);
+export async function getStates(
+  countryId: number,
+  search?: string,
+  signal?: AbortSignal,
+): Promise<State[]> {
+  const results = await fetchMasterPage<State>("v1/master/states/", {
+    limit: 200,
+    search,
+    signal,
+    query: { country_id: countryId },
+  });
   debugLog("[masterApi] getStates response:", { countryId, search, results });
   return results;
 }
 
 /** GET v1/master/districts/?state_id=<id>&search= */
-export async function getDistricts(stateId: number, search?: string): Promise<District[]> {
-  const path = `v1/master/districts/?state_id=${stateId}`;
-  const results = await getPaginated<District>(path, search);
+export async function getDistricts(
+  stateId: number,
+  search?: string,
+  signal?: AbortSignal,
+): Promise<District[]> {
+  const results = await fetchMasterPage<District>("v1/master/districts/", {
+    limit: 200,
+    search,
+    signal,
+    query: { state_id: stateId },
+  });
   debugLog("[masterApi] getDistricts response:", { stateId, search, results });
   return results;
 }
 
 /** GET v1/master/cities/?district_id=<id>&search= */
-export async function getCities(districtId: number, search?: string): Promise<City[]> {
-  const path = `v1/master/cities/?district_id=${districtId}`;
-  const results = await getPaginated<City>(path, search);
+export async function getCities(
+  districtId: number,
+  search?: string,
+  signal?: AbortSignal,
+): Promise<City[]> {
+  const results = await fetchMasterPage<City>("v1/master/cities/", {
+    limit: 200,
+    search,
+    signal,
+    query: { district_id: districtId },
+  });
   debugLog("[masterApi] getCities response:", { districtId, search, results });
   return results;
 }
@@ -223,11 +253,15 @@ export async function getCities(districtId: number, search?: string): Promise<Ci
 export async function getCitiesForDistricts(
   districtIds: number[],
   search?: string,
+  signal?: AbortSignal,
 ): Promise<City[]> {
   if (districtIds.length === 0) return [];
   const qs = districtIds.map((id) => `district_id=${id}`).join("&");
-  const path = `v1/master/cities/?${qs}`;
-  const results = await getPaginated<City>(path, search);
+  const results = await fetchMasterPage<City>(`v1/master/cities/?${qs}`, {
+    limit: 200,
+    search,
+    signal,
+  });
   debugLog("[masterApi] getCitiesForDistricts response:", { districtIds, search, results });
   return results;
 }
