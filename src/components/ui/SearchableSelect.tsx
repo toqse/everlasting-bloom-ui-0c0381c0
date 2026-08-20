@@ -19,6 +19,8 @@ interface SearchableSelectProps {
   placeholder: string;
   /** When value is set but options not yet loaded (e.g. prefill), show this until option is found. */
   initialDisplayLabel?: string;
+  /** Optional display formatter (e.g. strip parentheses from occupation names). */
+  formatOptionLabel?: (name: string) => string;
   disabled?: boolean;
   onSearch: (term: string) => void;
   onSelect: (name: string, value: string) => void;
@@ -32,6 +34,7 @@ export function SearchableSelect({
   label,
   placeholder,
   initialDisplayLabel,
+  formatOptionLabel,
   disabled,
   onSearch,
   onSelect,
@@ -89,8 +92,14 @@ export function SearchableSelect({
   }, [open, handleClickOutside]);
 
   const selectedOption = value ? options.find((o) => o.id === Number(value)) : null;
-  const displayLabel = selectedOption?.name ?? initialDisplayLabel ?? placeholder;
-  const hasDisplayValue = !!(selectedOption?.name || initialDisplayLabel);
+  const rawLabel = selectedOption?.name ?? initialDisplayLabel ?? "";
+  const formattedLabel = rawLabel
+    ? formatOptionLabel
+      ? formatOptionLabel(rawLabel)
+      : rawLabel
+    : "";
+  const displayLabel = formattedLabel || placeholder;
+  const hasDisplayValue = !!formattedLabel;
 
   const handleSelect = (option: SearchableOption) => {
     onSelect(name, String(option.id));
@@ -156,7 +165,7 @@ export function SearchableSelect({
                   : "hover:bg-primary/10"
               }`}
             >
-              {opt.name}
+              {formatOptionLabel ? formatOptionLabel(opt.name) : opt.name}
             </button>
           ))
         )}

@@ -14,6 +14,7 @@ interface SelectFieldProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   disabled?: boolean;
+  getOptionLabel?: (option: string) => string;
 }
 
 export const SelectField = ({
@@ -24,6 +25,7 @@ export const SelectField = ({
   value,
   onChange,
   disabled = false,
+  getOptionLabel,
 }: SelectFieldProps) => (
   <div>
     {label && (
@@ -46,7 +48,7 @@ export const SelectField = ({
         <option value="">Select {label || name}</option>
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {getOptionLabel ? getOptionLabel(o) : o}
           </option>
         ))}
       </select>

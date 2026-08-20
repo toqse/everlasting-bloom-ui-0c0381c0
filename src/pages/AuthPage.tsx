@@ -54,6 +54,7 @@ import EducationStep from "@/components/signup/steps/EducationStep";
 import AboutMeStep from "@/components/signup/steps/AboutMeStep";
 import PhotosStep from "@/components/signup/steps/PhotosStep";
 import { prefetchSignupEducationMaster } from "@/lib/signupEducationMasterCache";
+import { normalizeComplexionOption } from "@/constants/complexionOptions";
 
 type AuthMode = "login" | "signup";
 const SIGNUP_DRAFT_STORAGE_KEY = "matrimony_signup_draft_v1";
@@ -89,16 +90,6 @@ const MARITAL_OPTIONS = [
   "Divorced",
   "Widowed",
   "Separated",
-] as const;
-const COLOR_OPTIONS = [
-  "White",
-  "Medium",
-  "Black",
-  "Very Fair",
-  "Fair",
-  "Wheatish",
-  "Wheatish Brown",
-  "Dark",
 ] as const;
 const EMPLOYMENT_OPTIONS = [
   "Employed",
@@ -325,7 +316,7 @@ function mapProfileToFormData(
       }),
       ...((pers.complexion ?? pers.colour) != null &&
         String(pers.complexion ?? pers.colour) !== "" && {
-          skinTone: matchOption(pers.complexion ?? pers.colour, COLOR_OPTIONS),
+          skinTone: normalizeComplexionOption(pers.complexion ?? pers.colour),
         }),
       ...(pers.blood_group != null &&
         String(pers.blood_group) !== "" && {

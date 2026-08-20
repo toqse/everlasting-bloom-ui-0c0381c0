@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
-import { getMaritalStatuses } from "@/lib/masterApi";
+import { getComplexions, getMaritalStatuses } from "@/lib/masterApi";
+import {
+  complexionNamesFromMaster,
+  VALID_COMPLEXION_OPTIONS,
+} from "@/constants/complexionOptions";
 
 interface Props {
   formData: Record<string, string>;
@@ -17,38 +21,36 @@ const MARITAL_OPTIONS = [
   "Separated",
   "Widowed",
 ];
-const COLOR_OPTIONS = [
-  "White",
-  "Medium",
-  "Black",
-  "Very Fair",
-  "Fair",
-  "Wheatish",
-  "Wheatish Brown",
-  "Dark",
-];
+const COLOR_OPTIONS = [...VALID_COMPLEXION_OPTIONS];
 
 const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props) => {
   const [maritalOptions, setMaritalOptions] = useState<string[]>(MARITAL_OPTIONS);
+  const [colorOptions, setColorOptions] = useState<string[]>(COLOR_OPTIONS);
 
   useEffect(() => {
     let cancelled = false;
-    const loadMaritalStatuses = async () => {
+    const loadMasterOptions = async () => {
       try {
-        const statuses = await getMaritalStatuses();
-        console.log("[PersonalStep] marital status API response:", statuses);
+        const [statuses, complexions] = await Promise.all([
+          getMaritalStatuses(),
+          getComplexions(),
+        ]);
         if (cancelled) return;
-        const names = statuses
+        const maritalNames = statuses
           .map((status) => status?.name?.trim())
           .filter((name): name is string => !!name);
-        if (names.length > 0) {
-          setMaritalOptions(Array.from(new Set(names)));
+        if (maritalNames.length > 0) {
+          setMaritalOptions(Array.from(new Set(maritalNames)));
+        }
+        const complexionNames = complexionNamesFromMaster(complexions);
+        if (complexionNames.length > 0) {
+          setColorOptions(complexionNames);
         }
       } catch {
         // Keep fallback options if API fails.
       }
     };
-    void loadMaritalStatuses();
+    void loadMasterOptions();
     return () => {
       cancelled = true;
     };
@@ -112,7 +114,7 @@ const PersonalStep = ({ formData, onChange, hasChildren, setHasChildren }: Props
           <label className={labelClass}>Weight (kg) <span className="text-muted-foreground">(Optional)</span></label>
           <input type="number" name="weight" value={formData.weight} onChange={onChange} placeholder="e.g. 65" className={inputClass} />
         </div>
-        <SelectField label="Complexion / Color" name="skinTone" options={COLOR_OPTIONS} value={formData.skinTone} onChange={onChange} />
+        <SelectField label="Complexion / Color" name="skinTone" options={colorOptions} value={formData.skinTone} onChange={onChange} />
       </div>
     </>
   );

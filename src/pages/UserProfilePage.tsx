@@ -61,6 +61,7 @@ import {
   getOccupations,
   getIncomeRanges,
   getMaritalStatuses,
+  getComplexions,
 } from "@/lib/masterApi";
 import { withMinDuration } from "@/lib/withMinDuration";
 import type {
@@ -78,6 +79,7 @@ import type {
   IncomeRangeMaster,
 } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { displayOccupationName } from "@/lib/displayOccupationName";
 import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { BASE_URL } from "@/lib/config";
 import DemoPaymentDialog from "@/components/DemoPaymentDialog";
@@ -91,6 +93,11 @@ import {
   type HoroscopeProfileData,
 } from "@/lib/astrologyApi";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
+import {
+  complexionNamesFromMaster,
+  normalizeComplexionOption,
+  VALID_COMPLEXION_OPTIONS,
+} from "@/constants/complexionOptions";
 
 const PARENT_LIFE_STATUS_OPTIONS = ["Alive", "Late"];
 const PARTNER_RELIGION_OPTIONS = [
@@ -140,16 +147,7 @@ function showChildrenForMaritalStatus(status: string): boolean {
   );
 }
 
-const COLOR_OPTIONS = [
-  "White",
-  "Medium",
-  "Black",
-  "Very Fair",
-  "Fair",
-  "Wheatish",
-  "Wheatish Brown",
-  "Dark",
-];
+const COLOR_OPTIONS = [...VALID_COMPLEXION_OPTIONS];
 function normalizeDobForDateInput(value: string): string {
   const v = value.trim();
   if (!v) return "";
@@ -477,7 +475,7 @@ function mapProfileDataToForm(
           ? "yes"
           : "no",
     numberOfChildren: String(children),
-    color: raw(personal.complexion ?? personal.colour),
+    color: normalizeComplexionOption(personal.complexion ?? personal.colour),
     bloodGroup: raw(personal.blood_group ?? data.blood_group),
     fathersName: raw(family.father_name),
     fathersOccupation: raw(family.father_occupation),
@@ -713,6 +711,7 @@ function EditSectionForm({
   data,
   onChange,
   maritalStatusOptions,
+  complexionOptions,
   locationOptions,
   locationLoading,
   locationLoaders,
@@ -733,6 +732,7 @@ function EditSectionForm({
   data: ProfileFormData;
   onChange: (data: ProfileFormData) => void;
   maritalStatusOptions?: string[];
+  complexionOptions?: string[];
   locationOptions?: {
     countries: Country[];
     states: State[];
@@ -1565,6 +1565,7 @@ function EditSectionForm({
               label="Occupation / Job"
               placeholder="Select occupation"
               initialDisplayLabel={data.job || undefined}
+              formatOptionLabel={displayOccupationName}
               onSearch={loaders.loadOccupations}
               onSelect={handleOccupationSelect}
             />
@@ -1902,7 +1903,10 @@ function EditSectionForm({
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="">Select colour / complexion</option>
-              {COLOR_OPTIONS.map((o) => (
+              {(complexionOptions && complexionOptions.length > 0
+                ? complexionOptions
+                : COLOR_OPTIONS
+              ).map((o) => (
                 <option key={o} value={o}>
                   {o}
                 </option>
@@ -2593,6 +2597,7 @@ const UserProfilePage = () => {
   const [maritalStatusOptions, setMaritalStatusOptions] = useState<string[]>(
     MARITAL_STATUS_OPTIONS,
   );
+  const [colorOptions, setColorOptions] = useState<string[]>(COLOR_OPTIONS);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
@@ -2874,9 +2879,12 @@ const UserProfilePage = () => {
   useEffect(() => {
     if (editingSection !== "Personal") return;
     let cancelled = false;
-    const loadMaritalStatuses = async () => {
+    const loadPersonalMasterOptions = async () => {
       try {
-        const statuses = await withMinDuration(180, getMaritalStatuses());
+        const [statuses, complexions] = await Promise.all([
+          withMinDuration(180, getMaritalStatuses()),
+          getComplexions(),
+        ]);
         if (cancelled) return;
         const names = statuses
           .map((status) => status?.name?.trim())
@@ -2884,12 +2892,18 @@ const UserProfilePage = () => {
         if (names.length > 0) {
           setMaritalStatusOptions(Array.from(new Set(names)));
         }
+        const complexionNames = complexionNamesFromMaster(complexions);
+        if (complexionNames.length > 0) {
+          setColorOptions(complexionNames);
+        }
       } catch {
-        // Keep fallback options if API fails.
-        if (!cancelled) setMaritalStatusOptions(MARITAL_STATUS_OPTIONS);
+        if (!cancelled) {
+          setMaritalStatusOptions(MARITAL_STATUS_OPTIONS);
+          setColorOptions(COLOR_OPTIONS);
+        }
       }
     };
-    void loadMaritalStatuses();
+    void loadPersonalMasterOptions();
     return () => {
       cancelled = true;
     };
@@ -3408,6 +3422,9 @@ const UserProfilePage = () => {
                   onChange={setProfileData}
                   maritalStatusOptions={
                     editingSection === "Personal" ? maritalStatusOptions : undefined
+                  }
+                  complexionOptions={
+                    editingSection === "Personal" ? colorOptions : undefined
                   }
                   locationOptions={
                     editingSection === "Location"

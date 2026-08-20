@@ -83,6 +83,12 @@ export interface MaritalStatusMaster {
   is_active?: boolean;
 }
 
+export interface ComplexionMaster {
+  id: number;
+  name: string;
+  is_active?: boolean;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -311,5 +317,15 @@ export async function getMaritalStatuses(
   const path = "v1/master/marital-status/";
   const results = await getPaginated<MaritalStatusMaster>(path, search);
   debugLog("[masterApi] getMaritalStatuses response:", { search, results });
+  return results;
+}
+
+/** GET v1/master/complexions/ */
+export async function getComplexions(
+  search?: string,
+): Promise<ComplexionMaster[]> {
+  const path = "v1/master/complexions/";
+  const results = await getPaginated<ComplexionMaster>(path, search);
+  debugLog("[masterApi] getComplexions response:", { search, results });
   return results;
 }

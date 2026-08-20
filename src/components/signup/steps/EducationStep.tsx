@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   type EducationMaster,
 } from "@/lib/masterApi";
+import { displayOccupationName } from "@/lib/displayOccupationName";
 import {
   getFallbackEducations,
   loadEducationSubjectsForName,
@@ -479,6 +480,7 @@ const EducationStep = ({ formData, onChange }: Props) => {
           value={formData.occupation}
           onChange={onChange}
           disabled={loadingMaster}
+          getOptionLabel={displayOccupationName}
         />
         <SelectField
           label="Annual Income"
