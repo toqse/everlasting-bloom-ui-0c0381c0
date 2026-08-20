@@ -45,11 +45,22 @@ export function SearchableSelect({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const hasUserSearchedRef = useRef(false);
+  const optionsLenRef = useRef(options.length);
+  optionsLenRef.current = options.length;
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedTerm(searchTerm), DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [searchTerm]);
+
+  useEffect(() => {
+    if (searchTerm.trim()) hasUserSearchedRef.current = true;
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (!open) hasUserSearchedRef.current = false;
+  }, [open]);
 
   const updatePosition = useCallback(() => {
     const el = containerRef.current?.querySelector("button");
@@ -76,7 +87,11 @@ export function SearchableSelect({
   }, [open, updatePosition]);
 
   useLayoutEffect(() => {
-    if (open) onSearch(debouncedTerm);
+    if (!open) return;
+    if (!debouncedTerm.trim() && optionsLenRef.current > 0 && !hasUserSearchedRef.current) {
+      return;
+    }
+    onSearch(debouncedTerm);
   }, [open, debouncedTerm, onSearch]);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
@@ -129,7 +144,7 @@ export function SearchableSelect({
         />
       </div>
       <div className="max-h-56 overflow-y-auto p-1">
-        {loading ? (
+        {loading && options.length === 0 ? (
           <div
             className="flex flex-col items-center gap-3 py-7 px-3"
             role="status"
@@ -154,20 +169,25 @@ export function SearchableSelect({
         ) : options.length === 0 ? (
           <div className="py-6 text-center text-muted-foreground text-sm">No results</div>
         ) : (
-          options.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => handleSelect(opt)}
-              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                opt.id === Number(value)
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-primary/10"
-              }`}
-            >
-              {formatOptionLabel ? formatOptionLabel(opt.name) : opt.name}
-            </button>
-          ))
+          <>
+            {loading ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">Updating list…</p>
+            ) : null}
+            {options.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => handleSelect(opt)}
+                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                  opt.id === Number(value)
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-primary/10"
+                }`}
+              >
+                {formatOptionLabel ? formatOptionLabel(opt.name) : opt.name}
+              </button>
+            ))}
+          </>
         )}
       </div>
     </div>

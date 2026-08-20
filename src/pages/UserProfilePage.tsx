@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import PhotoCropDialog, {
   type PhotoCropDialogState,
@@ -58,7 +58,7 @@ import {
   getEducations,
   getEducationSubjects,
   getEmploymentStatuses,
-  getOccupations,
+  getOccupationsPage,
   getIncomeRanges,
   getMaritalStatuses,
   getComplexions,
@@ -2591,6 +2591,9 @@ const UserProfilePage = () => {
   const [occupationOptions, setOccupationOptions] = useState<OccupationMaster[]>(
     [],
   );
+  const occupationOptionsRef = useRef<OccupationMaster[]>([]);
+  occupationOptionsRef.current = occupationOptions;
+  const occupationsAbortRef = useRef<AbortController | null>(null);
   const [incomeRangeOptions, setIncomeRangeOptions] = useState<IncomeRangeMaster[]>(
     [],
   );
@@ -2779,14 +2782,24 @@ const UserProfilePage = () => {
   }, []);
 
   const loadOccupationsList = useCallback(async (search: string) => {
-    setLoadingOccupations(true);
+    occupationsAbortRef.current?.abort();
+    const ac = new AbortController();
+    occupationsAbortRef.current = ac;
+    if (occupationOptionsRef.current.length === 0) {
+      setLoadingOccupations(true);
+    }
     try {
-      const list = await withMinDuration(180, getOccupations(search || undefined));
+      const list = await getOccupationsPage({
+        search: search || undefined,
+        signal: ac.signal,
+      });
+      if (ac.signal.aborted) return;
       setOccupationOptions(list);
-    } catch {
-      setOccupationOptions([]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (!ac.signal.aborted) setOccupationOptions([]);
     } finally {
-      setLoadingOccupations(false);
+      if (!ac.signal.aborted) setLoadingOccupations(false);
     }
   }, []);
 

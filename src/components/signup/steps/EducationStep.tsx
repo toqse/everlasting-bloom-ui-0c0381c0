@@ -4,6 +4,7 @@ import { ChevronDown, Loader2, Search } from "lucide-react";
 import { SelectField, labelClass } from "../SignupFormFields";
 import { toast } from "sonner";
 import {
+  getOccupationsPage,
   type EducationMaster,
 } from "@/lib/masterApi";
 import { displayOccupationName } from "@/lib/displayOccupationName";
@@ -362,6 +363,221 @@ function SearchableSubjectSelect({
   );
 }
 
+function SearchableOccupationSelect({
+  value,
+  onChange,
+  options,
+  loading,
+  disabled,
+}: {
+  value: string;
+  onChange: Props["onChange"];
+  options: string[];
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [remote, setRemote] = useState<string[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!debouncedSearch) {
+      setRemote(null);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    const ac = new AbortController();
+    setSearching(true);
+    getOccupationsPage({ search: debouncedSearch, signal: ac.signal })
+      .then((list) => {
+        if (!cancelled) setRemote(list.map((o) => o.name));
+      })
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!cancelled) setRemote([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSearching(false);
+      });
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [open, debouncedSearch]);
+
+  const list = remote ?? options;
+  const filtered = useMemo(() => {
+    if (remote) return list;
+    if (!search.trim()) return list;
+    return list.filter((opt) => matchesMasterSearch(opt, search));
+  }, [list, remote, search]);
+
+  const updatePosition = useCallback(() => {
+    const btn = containerRef.current?.querySelector("button");
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      setPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    setSearch("");
+    setDebouncedSearch("");
+    setRemote(null);
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!containerRef.current?.contains(t) && !overlayRef.current?.contains(t)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const select = (label: string) => {
+    onChange({
+      target: { name: "occupation", value: label },
+    } as React.ChangeEvent<HTMLSelectElement>);
+    setOpen(false);
+    setSearch("");
+  };
+
+  const display = loading
+    ? "Loading occupations..."
+    : value && value.trim() !== ""
+      ? displayOccupationName(value)
+      : "Select occupation";
+  const inList = list.includes(value);
+  const busy = Boolean(loading || (searching && filtered.length === 0));
+
+  const dropdown =
+    open &&
+    !disabled &&
+    position.width > 0 &&
+    createPortal(
+      <div
+        ref={overlayRef}
+        className="fixed z-[100] rounded-2xl border-2 border-primary/10 bg-white shadow-xl flex flex-col overflow-hidden max-h-[min(320px,70vh)]"
+        style={{
+          top: position.top,
+          left: position.left,
+          width: Math.max(position.width, 240),
+          minWidth: 240,
+        }}
+      >
+        <div className="p-2 border-b border-primary/10 bg-muted/30 shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search occupation..."
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-primary/10 focus:border-primary focus:ring-1 focus:ring-primary/20 text-sm text-foreground placeholder:text-muted-foreground bg-white"
+              autoFocus
+              disabled={loading}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setOpen(false);
+              }}
+            />
+          </div>
+        </div>
+        <div className="overflow-y-auto p-1 flex-1 min-h-0 [scrollbar-width:thin]">
+          {busy ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Loading occupations...
+            </div>
+          ) : (
+            <>
+              {searching ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground border-b border-primary/5 mb-1">
+                  Updating occupation list…
+                </p>
+              ) : null}
+              {value && !inList && (
+                <button
+                  type="button"
+                  onClick={() => select(value)}
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-amber-50 text-amber-900 hover:bg-amber-100 mb-1"
+                >
+                  Current: {displayOccupationName(value)}
+                </button>
+              )}
+              {filtered.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No occupation matches your search
+                </div>
+              ) : (
+                filtered.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => select(opt)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      opt === value
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "hover:bg-primary/10 text-foreground"
+                    }`}
+                  >
+                    {displayOccupationName(opt)}
+                  </button>
+                ))
+              )}
+            </>
+          )}
+        </div>
+      </div>,
+      document.body,
+    );
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className={labelClass}>Occupation</label>
+      <button
+        type="button"
+        onClick={() => {
+          if (disabled || loading) return;
+          setOpen((o) => !o);
+        }}
+        className="w-full px-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors bg-white text-left flex items-center justify-between gap-2 text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={disabled || loading}
+      >
+        <span className={value && !loading ? "" : "text-muted-foreground"}>{display}</span>
+        {loading || (open && searching) ? (
+          <Loader2 className="w-5 h-5 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+        ) : (
+          <ChevronDown
+            className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </button>
+      {dropdown}
+    </div>
+  );
+}
+
 const EducationStep = ({ formData, onChange }: Props) => {
   const [educations, setEducations] = useState<EducationMaster[]>(() => getFallbackEducations());
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -473,14 +689,12 @@ const EducationStep = ({ formData, onChange }: Props) => {
           onChange={onChange}
           disabled={loadingMaster}
         />
-        <SelectField
-          label="Occupation"
-          name="occupation"
-          options={occupations}
+        <SearchableOccupationSelect
           value={formData.occupation}
           onChange={onChange}
+          options={occupations}
+          loading={loadingMaster}
           disabled={loadingMaster}
-          getOptionLabel={displayOccupationName}
         />
         <SelectField
           label="Annual Income"

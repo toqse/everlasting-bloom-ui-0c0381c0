@@ -163,8 +163,15 @@ export async function getEducationsPage(signal?: AbortSignal): Promise<Education
   return fetchMasterPage<EducationMaster>("v1/master/educations/", { limit: 200, signal });
 }
 
-export async function getOccupationsPage(signal?: AbortSignal): Promise<OccupationMaster[]> {
-  return fetchMasterPage<OccupationMaster>("v1/master/occupations/", { limit: 200, signal });
+export async function getOccupationsPage(opts?: {
+  signal?: AbortSignal;
+  search?: string;
+}): Promise<OccupationMaster[]> {
+  return fetchMasterPage<OccupationMaster>("v1/master/occupations/", {
+    limit: 200,
+    signal: opts?.signal,
+    search: opts?.search,
+  });
 }
 
 export async function getMaritalStatusesPage(

@@ -4,7 +4,7 @@ import {
   getEducationSubjects,
   getEmploymentStatuses,
   getIncomeRanges,
-  getOccupations,
+  getOccupationsPage,
   type EducationMaster,
 } from "@/lib/masterApi";
 
@@ -39,7 +39,7 @@ let inflight: Promise<SignupEducationMasterCache> | null = null;
 async function fetchSignupEducationMaster(): Promise<SignupEducationMasterCache> {
   const [eduRes, occRes, empRes, incRes] = await Promise.all([
     getEducations(),
-    getOccupations(),
+    getOccupationsPage(),
     getEmploymentStatuses(),
     getIncomeRanges(),
   ]);
