@@ -1,8 +1,9 @@
 import PhoneInput from "@/components/PhoneInput";
 import { SelectField, inputClass, labelClass } from "../SignupFormFields";
-
-const FAMILY_TYPES = ["Nuclear", "Joint", "Extended", "Other"];
-const FAMILY_STATUS_OPTIONS = ["Middle Class", "Upper Middle Class", "Rich", "Affluent", "Other"];
+import {
+  FAMILY_STATUS_OPTIONS,
+  FAMILY_TYPE_OPTIONS,
+} from "@/lib/familyOptions";
 
 interface Props {
   formData: Record<string, string>;
@@ -32,7 +33,13 @@ const FamilyDetailsStep = ({ formData, onChange, onFieldChange, hideTitle }: Pro
         </div>
       )}
       <div className="space-y-4">
-        <SelectField label="Family Type" name="familyType" options={FAMILY_TYPES} value={formData.familyType} onChange={onChange} />
+        <SelectField
+          label="Family Type"
+          name="familyType"
+          options={[...FAMILY_TYPE_OPTIONS]}
+          value={formData.familyType}
+          onChange={onChange}
+        />
         <div>
           <label className={labelClass}>Father&apos;s Name</label>
           <input type="text" name="fathersName" value={formData.fathersName} onChange={onChange} placeholder="e.g. Rajesh Kumar" className={inputClass} />
@@ -49,7 +56,13 @@ const FamilyDetailsStep = ({ formData, onChange, onFieldChange, hideTitle }: Pro
           <label className={labelClass}>Mother&apos;s Occupation</label>
           <input type="text" name="mothersOccupation" value={formData.mothersOccupation} onChange={onChange} placeholder="e.g. Homemaker" className={inputClass} />
         </div>
-        <SelectField label="Family Status" name="familyStatus" options={FAMILY_STATUS_OPTIONS} value={formData.familyStatus} onChange={onChange} />
+        <SelectField
+          label="Family Status"
+          name="familyStatus"
+          options={[...FAMILY_STATUS_OPTIONS]}
+          value={formData.familyStatus}
+          onChange={onChange}
+        />
         <div>
           <label className={labelClass}>No. of Brothers</label>
           <input type="number" name="numberOfBrothers" value={formData.numberOfBrothers} onChange={onChange} placeholder="0" min={0} className={inputClass} />

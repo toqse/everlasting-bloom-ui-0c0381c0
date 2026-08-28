@@ -21,6 +21,7 @@ import {
   MapPin,
   UserCircle,
   FileText,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/phone";
@@ -30,6 +31,12 @@ import {
   PROFILE_AGE_HINT,
   profileAgeError,
 } from "@/lib/profileAge";
+import {
+  FAMILY_STATUS_OPTIONS,
+  FAMILY_TYPE_OPTIONS,
+  normalizeFamilyStatus,
+  normalizeFamilyType,
+} from "@/lib/familyOptions";
 import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -506,8 +513,8 @@ function mapProfileDataToForm(
     brothersOccupation: raw(family.brother_occupation),
     sistersOccupation: raw(family.sister_occupation),
     aboutMyFamily: raw(family.about_family),
-    familyType: raw(family.family_type),
-    familyStatus: raw(family.family_status),
+    familyType: normalizeFamilyType(family.family_type),
+    familyStatus: normalizeFamilyStatus(family.family_status),
     familyContactNumber: digitsOnlyMobile(raw(family.family_contact)),
     familyContactNumber2: digitsOnlyMobile(raw(family.family_contact_2)),
     bio: raw(data.about_me),
@@ -989,7 +996,7 @@ function EditSectionForm({
             <Input
               id="email"
               type="email"
-              defaultValue=""
+              value={data.email}
               onChange={(e) => update("email", e.target.value)}
               placeholder="e.g. name@example.com"
             />
@@ -2087,21 +2094,35 @@ function EditSectionForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="familyType">Family Type</Label>
-            <Input
+            <select
               id="familyType"
               value={data.familyType}
               onChange={(e) => update("familyType", e.target.value)}
-              placeholder="e.g. Nuclear"
-            />
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Select family type</option>
+              {FAMILY_TYPE_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="familyStatus">Family Status</Label>
-            <Input
+            <select
               id="familyStatus"
               value={data.familyStatus}
               onChange={(e) => update("familyStatus", e.target.value)}
-              placeholder="e.g. Upper Middle Class"
-            />
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Select family status</option>
+              {FAMILY_STATUS_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="familyContactNumber">Family Contact Number 1 (Optional)</Label>
@@ -2467,6 +2488,7 @@ const UserProfilePage = () => {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingSection, setSavingSection] = useState(false);
   const [viewingSection, setViewingSection] = useState<SectionKey | null>(null);
   const [profileApiData, setProfileApiData] = useState<ProfileData | null>(
     null,
@@ -3081,8 +3103,10 @@ const UserProfilePage = () => {
             aboutMyFamily: String(
               family.about_family ?? prev.aboutMyFamily ?? "",
             ),
-            familyType: String(family.family_type ?? prev.familyType ?? ""),
-            familyStatus: String(
+            familyType: normalizeFamilyType(
+              family.family_type ?? prev.familyType ?? "",
+            ),
+            familyStatus: normalizeFamilyStatus(
               family.family_status ?? prev.familyStatus ?? "",
             ),
             familyContactNumber: digitsOnlyMobile(
@@ -3190,20 +3214,74 @@ const UserProfilePage = () => {
 
   const handleSaveSection = async () => {
     const section = editingSection;
-    if (!section) return;
+    if (!section || savingSection) return;
     setSaveError(null);
+
+    if (section === "Basic Info") {
+      if (!profileData.dob.trim()) {
+        setSaveError("Date of birth is required.");
+        return;
+      }
+      const ageErr = profileAgeError(profileData.dob);
+      if (ageErr) {
+        setSaveError(ageErr);
+        return;
+      }
+    }
+
+    if (section === "Religion") {
+      const ageFrom = profileData.partner_age_from;
+      const ageTo = profileData.partner_age_to;
+      if (
+        ageFrom != null &&
+        (!Number.isInteger(ageFrom) || ageFrom < 18 || ageFrom > 80)
+      ) {
+        setSaveError("Partner age from must be between 18 and 80");
+        return;
+      }
+      if (
+        ageTo != null &&
+        (!Number.isInteger(ageTo) || ageTo < 18 || ageTo > 80)
+      ) {
+        setSaveError("Partner age to must be between 18 and 80");
+        return;
+      }
+      if (ageFrom != null && ageTo != null && ageFrom > ageTo) {
+        setSaveError("Partner age from cannot be greater than age to");
+        return;
+      }
+    }
+
+    if (
+      section === "Personal" &&
+      isDivorcedMaritalStatus(profileData.maritalStatus) &&
+      !profileData.reasonForDivorce.trim()
+    ) {
+      setSaveError("Reason for divorce is required when marital status is Divorced.");
+      return;
+    }
+
+    if (section === "Family") {
+      if (
+        profileData.familyContactNumber &&
+        profileData.familyContactNumber.length !== 10
+      ) {
+        setSaveError("Family contact number must be a 10-digit mobile number.");
+        return;
+      }
+      if (
+        profileData.familyContactNumber2 &&
+        profileData.familyContactNumber2.length !== 10
+      ) {
+        setSaveError("Family contact number 2 must be a 10-digit mobile number.");
+        return;
+      }
+    }
+
+    setSavingSection(true);
     try {
       switch (section) {
-        case "Basic Info": {
-          if (!profileData.dob.trim()) {
-            setSaveError("Date of birth is required.");
-            return;
-          }
-          const ageErr = profileAgeError(profileData.dob);
-          if (ageErr) {
-            setSaveError(ageErr);
-            return;
-          }
+        case "Basic Info":
           await patchBasic({
             name: profileData.name,
             gender: profileData.gender.trim().toLowerCase(),
@@ -3220,42 +3298,13 @@ const UserProfilePage = () => {
             });
           }
           break;
-        }
         case "Location":
           await patchLocation(buildLocationBody());
           break;
-        case "Religion": {
-          const ageFrom = profileData.partner_age_from;
-          const ageTo = profileData.partner_age_to;
-          if (
-            ageFrom != null &&
-            (!Number.isInteger(ageFrom) || ageFrom < 18 || ageFrom > 80)
-          ) {
-            setSaveError("Partner age from must be between 18 and 80");
-            return;
-          }
-          if (
-            ageTo != null &&
-            (!Number.isInteger(ageTo) || ageTo < 18 || ageTo > 80)
-          ) {
-            setSaveError("Partner age to must be between 18 and 80");
-            return;
-          }
-          if (ageFrom != null && ageTo != null && ageFrom > ageTo) {
-            setSaveError("Partner age from cannot be greater than age to");
-            return;
-          }
+        case "Religion":
           await patchReligion(buildReligionBody());
           break;
-        }
         case "Personal":
-          if (
-            isDivorcedMaritalStatus(profileData.maritalStatus) &&
-            !profileData.reasonForDivorce.trim()
-          ) {
-            setSaveError("Reason for divorce is required when marital status is Divorced.");
-            return;
-          }
           await patchPersonal(buildPersonalBody());
           break;
         case "Education":
@@ -3264,24 +3313,9 @@ const UserProfilePage = () => {
         case "About Me":
           await patchAbout({ about_me: profileData.bio || "" });
           break;
-        case "Family": {
-          if (
-            profileData.familyContactNumber &&
-            profileData.familyContactNumber.length !== 10
-          ) {
-            setSaveError("Family contact number must be a 10-digit mobile number.");
-            return;
-          }
-          if (
-            profileData.familyContactNumber2 &&
-            profileData.familyContactNumber2.length !== 10
-          ) {
-            setSaveError("Family contact number 2 must be a 10-digit mobile number.");
-            return;
-          }
+        case "Family":
           await patchFamily(buildFamilyBody());
           break;
-        }
         case "Photos": {
           const body: {
             profile_photo?: File;
@@ -3323,6 +3357,8 @@ const UserProfilePage = () => {
       setEditingSection(null);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSavingSection(false);
     }
   };
 
@@ -3464,6 +3500,7 @@ const UserProfilePage = () => {
             <ResponsiveModal
               open={!!editingSection}
               onOpenChange={(o) => {
+                if (savingSection) return;
                 if (!o) {
                   if (editingSection === "Photos") setPhotoFiles({});
                   setEditingSection(null);
@@ -3477,6 +3514,7 @@ const UserProfilePage = () => {
                   <Button
                     variant="outline"
                     type="button"
+                    disabled={savingSection}
                     onClick={() => {
                       if (editingSection === "Photos") setPhotoFiles({});
                       setEditingSection(null);
@@ -3488,8 +3526,17 @@ const UserProfilePage = () => {
                     variant="hero"
                     type="button"
                     onClick={handleSaveSection}
+                    disabled={savingSection}
+                    className="gap-2"
                   >
-                    Save
+                    {savingSection ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      "Save"
+                    )}
                   </Button>
                 </>
               }

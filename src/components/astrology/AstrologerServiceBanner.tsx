@@ -1,6 +1,8 @@
+"use client";
+
 import { ArrowRight, Check, MessageCircle, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ASTROLOGER_PHONE } from "@/components/astrology/AstrologerServicesCallLink";
+import { triggerAstrologerCall } from "@/components/astrology/AstrologerServicesCallLink";
 
 const FEATURES = [
   "Highly Accurate",
@@ -63,8 +65,9 @@ export function AstrologerServiceBanner({
           </div>
         </div>
 
-        <a
-          href={`tel:${ASTROLOGER_PHONE}`}
+        <button
+          type="button"
+          onClick={triggerAstrologerCall}
           className={cn(
             "group relative inline-flex w-full shrink-0 items-center justify-center gap-3 overflow-hidden",
             "rounded-xl bg-gradient-to-r from-[#8A1D5D] to-[#C83B85] px-6 py-3.5",
@@ -76,12 +79,12 @@ export function AstrologerServiceBanner({
         >
           <span
             aria-hidden
-            className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
           />
           <MessageCircle className="relative h-4 w-4 shrink-0" />
           <span className="relative font-serif">Book Consultation</span>
           <ArrowRight className="relative h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5" />
-        </a>
+        </button>
       </div>
     </div>
   );

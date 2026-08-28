@@ -1,8 +1,16 @@
+import Link from "next/link";
 import { FileText, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { AstrologerServiceBanner } from "@/components/astrology/AstrologerServiceBanner";
 import { HoroscopeCtaCard } from "@/components/astrology/HoroscopeCtaCard";
 import { cn } from "@/lib/utils";
+
+const CONTACT_ADMIN_PATTERN =
+  /not been generated|contact the administrator/i;
+
+function isHoroscopeContactAdminMessage(message: string): boolean {
+  return CONTACT_ADMIN_PATTERN.test(message);
+}
 
 type MyHoroscopeSectionProps = {
   onViewHoroscope: () => void;
@@ -74,9 +82,17 @@ export function MyHoroscopeSection({
         />
       </div>
 
-      {horoscopeError && (
-        <p className="mt-4 text-sm text-destructive">{horoscopeError}</p>
-      )}
+      {horoscopeError &&
+        (isHoroscopeContactAdminMessage(horoscopeError) ? (
+          <Link
+            href="/contact"
+            className="mt-4 block text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
+          >
+            {horoscopeError}
+          </Link>
+        ) : (
+          <p className="mt-4 text-sm text-destructive">{horoscopeError}</p>
+        ))}
 
       <div className="mt-6">
         <AstrologerServiceBanner />
