@@ -115,7 +115,7 @@ const AboutPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Banner with wedding background */}
-      <section className="pt-28 pb-20 relative overflow-hidden min-h-[400px] flex items-center">
+      <section className="pt-28 pb-16 relative overflow-hidden min-h-[400px] flex items-center">
         <div className="absolute inset-0">
           <img
             src={"/images/" + encodeURIComponent("image about.webp")}
@@ -165,9 +165,9 @@ const AboutPage = () => {
       </section>
 
       {/* Features */}
-      <section className="py-16">
+      <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 -mt-16 relative z-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
             {features.map((f, i) => (
               <motion.div
                 key={f.title}
@@ -175,10 +175,10 @@ const AboutPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.15 }}
-                className="bg-card rounded-3xl p-8 shadow-card hover-lift text-center border border-primary/10"
+                className="bg-card rounded-3xl p-8 shadow-card hover-lift text-center border border-primary/10 h-full flex flex-col items-center"
               >
                 <div
-                  className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-b ${f.ringClass} flex items-center justify-center mb-4 shadow-inner`}
+                  className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-b ${f.ringClass} flex items-center justify-center mb-4 shadow-inner shrink-0`}
                 >
                   <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-soft">
                     <f.icon className="w-8 h-8 text-primary" />
@@ -187,7 +187,9 @@ const AboutPage = () => {
                 <h3 className="font-serif text-xl font-bold text-foreground mb-2">
                   {f.title}
                 </h3>
-                <p className="text-muted-foreground text-sm">{f.description}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed flex-1">
+                  {f.description}
+                </p>
               </motion.div>
             ))}
           </div>
