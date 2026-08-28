@@ -112,7 +112,7 @@ export async function getChatList(): Promise<ChatListResponse> {
 
 function unwrapMessagesBlock(raw: unknown): Record<string, unknown> | null {
   const top = raw as { data?: Record<string, unknown> };
-  let block = top?.data;
+  const block = top?.data;
   if (!block || typeof block !== "object") return null;
   const inner = block.data as Record<string, unknown> | undefined;
   if (inner && Array.isArray(inner.messages)) return inner;
@@ -120,23 +120,46 @@ function unwrapMessagesBlock(raw: unknown): Record<string, unknown> | null {
   return null;
 }
 
-export async function getChatMessages(conversationId: number, page = 1, limit = 50): Promise<ChatMessagesResponse> {
+export async function getChatMessages(
+  conversationId: number,
+  page = 1,
+  limit = 50,
+): Promise<ChatMessagesResponse> {
   const path = `${CHAT_BASE}/messages/${conversationId}/?page=${page}&limit=${limit}`;
   const raw = await authedFetch<unknown>(path, { method: "GET" });
   const block = unwrapMessagesBlock(raw);
-  const messages = (block?.messages as ChatMessage[]) ?? [];
-  const ou = block?.other_user as ChatOtherUser | undefined;
+  if (!block) {
+    throw new Error("Chat history response was missing messages.");
+  }
+  const messages = block.messages as ChatMessage[];
+  const ou = block.other_user as ChatOtherUser | undefined;
   return {
     success: true,
     data: {
-      conversation_id: Number(block?.conversation_id) || conversationId,
-      total: Number(block?.total) ?? messages.length,
-      page: Number(block?.page) || page,
-      limit: Number(block?.limit) || limit,
+      conversation_id: Number(block.conversation_id) || conversationId,
+      total: Number(block.total) ?? messages.length,
+      page: Number(block.page) || page,
+      limit: Number(block.limit) || limit,
       messages,
       ...(ou && typeof ou === "object" ? { other_user: ou } : {}),
     },
   };
+}
+
+export async function sendChatMessage(
+  conversationId: number,
+  text: string,
+): Promise<ChatMessage> {
+  const path = `${CHAT_BASE}/messages/${conversationId}/`;
+  const raw = await authedFetch<{ success?: boolean; data?: ChatMessage }>(
+    path,
+    { method: "POST", body: JSON.stringify({ message: text }) },
+  );
+  const msg = raw?.data;
+  if (!msg || typeof msg.id !== "number" || !String(msg.text ?? "").trim()) {
+    throw new Error("Failed to send message.");
+  }
+  return msg;
 }
 
 /** Build websocket URL from BASE_URL like http://host:8000/api/ → ws://host:8000/ws/chat/{id}/?token=... */

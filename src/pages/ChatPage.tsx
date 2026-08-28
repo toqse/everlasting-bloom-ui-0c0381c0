@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import {
   buildChatWebSocketUrl,
   getChatMessages,
+  sendChatMessage,
   type ChatMessage,
   type ChatOtherUser,
 } from "@/lib/chatApi";
@@ -65,10 +66,11 @@ const ChatPage = () => {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optimisticIdSeqRef = useRef(0);
+  const seenMessageIdsRef = useRef<Set<number>>(new Set());
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wsStatus, setWsStatus] = useState<
     "connecting" | "open" | "error"
@@ -97,8 +99,7 @@ const ChatPage = () => {
 
     let cancelled = false;
     const wsRef = { current: null as WebSocket | null };
-    /** IDs already shown (from GET or WS) — skip WS echoes / history replay / double sockets */
-    const seenMessageIds = new Set<number>();
+    seenMessageIdsRef.current = new Set();
 
     const connect = async () => {
       setLoading(true);
@@ -112,7 +113,9 @@ const ChatPage = () => {
         const res = await getChatMessages(idNum, 1, 100);
         if (cancelled) return;
         const list = res.data.messages ?? [];
-        list.forEach((m) => seenMessageIds.add(m.id));
+        list.forEach((m) => {
+          if (typeof m.id === "number") seenMessageIdsRef.current.add(m.id);
+        });
         setMessages(list);
         if (res.data.other_user) setOtherUser(res.data.other_user);
         apiSucceeded = true;
@@ -128,7 +131,7 @@ const ChatPage = () => {
 
       if (cancelled || !apiSucceeded) return;
 
-      // Step 2: API succeeded — now open the websocket.
+      // Step 2: API succeeded — now open the websocket for live incoming frames.
       const url = buildChatWebSocketUrl(idNum);
       if (!url) {
         setWsStatus("error");
@@ -138,7 +141,6 @@ const ChatPage = () => {
 
       const socket = new WebSocket(url);
       wsRef.current = socket;
-      setWs(socket);
 
       socket.onopen = () => {
         if (!cancelled) {
@@ -165,36 +167,37 @@ const ChatPage = () => {
         if (cancelled) return;
         try {
           const payload = JSON.parse(event.data) as {
-            message_id: number;
-            sender_id: string;
-            sender_matri_id: string;
-            sender_name: string;
-            text: string;
-            created_at: string;
+            type?: string;
+            error?: string;
+            message_id?: number;
+            sender_id?: string;
+            sender_matri_id?: string;
+            sender_name?: string;
+            text?: string;
+            created_at?: string;
           };
-          const mid = payload.message_id;
-          if (seenMessageIds.has(mid)) return;
-          seenMessageIds.add(mid);
+          if (payload.type === "presence" || payload.error) return;
+          const mid = Number(payload.message_id);
+          if (!Number.isFinite(mid) || mid <= 0) return;
+          const echoText = (payload.text ?? "").trim();
+          if (!echoText) return;
+          if (seenMessageIdsRef.current.has(mid)) return;
+          seenMessageIdsRef.current.add(mid);
 
           const msg: ChatMessage = {
             id: mid,
-            sender_id: payload.sender_id,
-            sender_matri_id: payload.sender_matri_id,
-            sender_name: payload.sender_name,
-            text: payload.text,
-            created_at: payload.created_at,
+            sender_id: payload.sender_id ?? "",
+            sender_matri_id: payload.sender_matri_id ?? "",
+            sender_name: payload.sender_name ?? "",
+            text: payload.text ?? "",
+            created_at: payload.created_at ?? new Date().toISOString(),
             read_at: null,
           };
 
           const ourMatri = useAuthStore.getState().user?.matriId;
-          const echoText = (payload.text ?? "").trim();
           setMessages((prev) => {
             let base = prev;
-            if (
-              ourMatri &&
-              payload.sender_matri_id === ourMatri &&
-              echoText.length > 0
-            ) {
+            if (ourMatri && payload.sender_matri_id === ourMatri) {
               const dropIdx = base.findIndex(
                 (m) =>
                   m.id < 0 &&
@@ -205,6 +208,7 @@ const ChatPage = () => {
                 base = [...base.slice(0, dropIdx), ...base.slice(dropIdx + 1)];
               }
             }
+            if (base.some((m) => m.id === mid)) return base;
             return [...base, msg];
           });
         } catch {
@@ -219,7 +223,6 @@ const ChatPage = () => {
       cancelled = true;
       wsRef.current?.close();
       wsRef.current = null;
-      setWs(null);
     };
   }, [conversationId, reconnectKey]);
 
@@ -232,7 +235,6 @@ const ChatPage = () => {
     setReconnectKey((k) => k + 1);
   };
 
-  const isConnected = wsStatus === "open";
   const connectionLost = wsStatus === "error" || isReconnecting;
 
   const handleViewOtherProfile = async () => {
@@ -287,28 +289,43 @@ const ChatPage = () => {
     );
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const trimmed = newMessage.trim();
-    if (!trimmed) return;
+    if (!trimmed || sending || loading) return;
+    const idNum = Number(conversationId);
+    if (!idNum) return;
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const user = useAuthStore.getState().user;
-      const matriId = user?.matriId ?? "";
-      const optimistic: ChatMessage = {
-        id: nextOptimisticMessageId(optimisticIdSeqRef),
-        sender_id: (user?.phone || user?.email || "").trim(),
-        sender_matri_id: matriId,
-        sender_name: user?.name?.trim() || "You",
-        text: trimmed,
-        created_at: new Date().toISOString(),
-        read_at: null,
-      };
-      setMessages((prev) => [...prev, optimistic]);
-      ws.send(JSON.stringify({ message: trimmed }));
-      setNewMessage("");
-      setEmojiOpen(false);
-    } else {
-      toast.error("Chat connection is not active. Please try again.");
+    const user = useAuthStore.getState().user;
+    const matriId = user?.matriId ?? "";
+    const optimisticId = nextOptimisticMessageId(optimisticIdSeqRef);
+    const optimistic: ChatMessage = {
+      id: optimisticId,
+      sender_id: (user?.phone || user?.email || "").trim(),
+      sender_matri_id: matriId,
+      sender_name: user?.name?.trim() || "You",
+      text: trimmed,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setNewMessage("");
+    setEmojiOpen(false);
+    setSending(true);
+    try {
+      const saved = await sendChatMessage(idNum, trimmed);
+      seenMessageIdsRef.current.add(saved.id);
+      setMessages((prev) => {
+        const withoutOptimistic = prev.filter((m) => m.id !== optimisticId);
+        if (withoutOptimistic.some((m) => m.id === saved.id)) {
+          return withoutOptimistic;
+        }
+        return [...withoutOptimistic, saved];
+      });
+    } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+      toast.error(getDisplayErrorMessage(e));
+    } finally {
+      setSending(false);
     }
   };
 
@@ -406,53 +423,37 @@ const ChatPage = () => {
         </div>
       </motion.header>
 
-      {/* Connection lost popup — blocks chat input until reconnected */}
+      {/* Live connection status — sending uses REST and still works */}
       <AnimatePresence>
         {connectionLost && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="fixed top-[calc(var(--testing-banner-height,0px)+4.5rem)] left-0 right-0 z-[60] flex justify-center px-4"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 12 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 12 }}
-              transition={{ duration: 0.2 }}
-              role="alertdialog"
-              aria-modal="true"
-              className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-elevated"
+            <div
+              role="status"
+              className="flex max-w-lg items-center gap-3 rounded-xl border border-destructive/20 bg-white/95 px-4 py-2 shadow-soft"
             >
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-                <WifiOff className="h-7 w-7 text-destructive" />
-              </div>
-              <h3 className="font-serif text-lg font-bold text-foreground">
-                Network error. Connection lost.
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                You can&apos;t send messages while disconnected. Retry the
-                connection or refresh the page to continue chatting.
+              <WifiOff className="h-4 w-4 shrink-0 text-destructive" />
+              <p className="text-xs text-muted-foreground">
+                Live updates paused. You can still send messages.
               </p>
               <Button
                 variant="hero"
+                size="sm"
                 onClick={handleRetryConnection}
                 disabled={isReconnecting}
-                className="mt-5 w-full gap-2"
+                className="h-8 shrink-0 gap-1 px-3"
               >
                 {isReconnecting ? (
-                  <>
-                    <RotateCw className="h-4 w-4 animate-spin" />
-                    Reconnecting...
-                  </>
+                  <RotateCw className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <>
-                    <RotateCw className="h-4 w-4" />
-                    Retry
-                  </>
+                  "Retry"
                 )}
               </Button>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -541,18 +542,14 @@ const ChatPage = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder={
-                  isConnected
-                    ? "Type a message..."
-                    : "Connection lost. Reconnect to chat..."
-                }
-                disabled={!isConnected}
+                placeholder="Type a message..."
+                disabled={sending || loading}
                 className="w-full px-4 py-3 bg-accent-rose/30 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:cursor-not-allowed disabled:opacity-60"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                disabled={!isConnected}
+                disabled={sending || loading}
                 className="absolute right-1 top-1/2 -translate-y-1/2 hover:bg-accent-rose/50"
                 onClick={() => setEmojiOpen((v) => !v)}
               >
@@ -642,7 +639,7 @@ const ChatPage = () => {
                 variant="hero"
                 size="icon"
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || !isConnected}
+                disabled={!newMessage.trim() || sending || loading}
                 className="rounded-full w-12 h-12"
               >
                 <Send className="w-5 h-5" />
