@@ -90,6 +90,15 @@ export interface ProfileData {
     income_range_id?: number;
   };
   about_me?: string;
+  /** Horoscope birth inputs (own profile GET includes contact-level fields). */
+  horoscope_details?: {
+    has_horoscope?: boolean;
+    time_of_birth?: string | null;
+    place_of_birth?: string | null;
+    birth_latitude?: number | null;
+    birth_longitude?: number | null;
+    birth_timezone?: number | null;
+  };
   /** Flattened height/weight keys occasionally returned on the profile root. */
   height_cm?: string;
   height?: string;
@@ -103,10 +112,14 @@ export interface ProfileResponse {
   data: ProfileData;
 }
 
-/** GET/POST v1/profile/birth-details/ */
+/** GET/POST/PATCH v1/profile/birth-details/ */
 export interface BirthDetailsData {
-  time_of_birth?: string;
-  place_of_birth?: string;
+  has_horoscope?: boolean;
+  time_of_birth?: string | null;
+  place_of_birth?: string | null;
+  birth_latitude?: number | null;
+  birth_longitude?: number | null;
+  birth_timezone?: number | null;
 }
 
 export interface BirthDetailsGetResponse {
@@ -123,6 +136,12 @@ export interface BirthDetailsPostResponse {
 export interface BirthDetailsBody {
   time_of_birth: string;
   place_of_birth: string;
+  has_horoscope?: boolean;
+  birth_time?: string;
+  birth_place?: string;
+  birth_latitude?: number;
+  birth_longitude?: number;
+  birth_timezone?: number;
 }
 
 export interface LocationBody {

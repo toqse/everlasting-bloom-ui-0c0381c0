@@ -24,6 +24,17 @@ export function isUsableProfilePhotoUrl(url: string | null | undefined): boolean
   return true;
 }
 
+/** Append a version query so browsers refetch after a photo overwrite. */
+export function withMediaCacheBust(
+  url: string,
+  version?: number | null,
+): string {
+  const t = typeof url === "string" ? url.trim() : "";
+  if (!t || !version) return t;
+  const sep = t.includes("?") ? "&" : "?";
+  return `${t}${sep}v=${version}`;
+}
+
 /** Parse API / ISO / numeric epoch (seconds or ms) into a local `Date`. */
 export function parseApiDate(input: unknown): Date | null {
   if (input instanceof Date)

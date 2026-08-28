@@ -10,18 +10,35 @@ export const metadata: Metadata = {
   title: "Aiswarya Matrimony",
   description: "Aiswarya Matrimony - Find Your Perfect Match",
   authors: [{ name: "Aiswarya Matrimony" }],
-  icons: [{ rel: "icon", type: "image/svg+xml", url: "/favicon.svg" }],
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: "/favicon.ico",
+  },
   openGraph: {
     title: "Aiswarya Matrimony",
     description: "Aiswarya Matrimony - Find Your Perfect Match",
     type: "website",
-    images: ["/favicon.svg"],
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aiswarya Matrimony",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Aiswarya Matrimony",
     description: "Aiswarya Matrimony - Find Your Perfect Match",
-    images: ["/favicon.svg"],
+    images: ["/og-image.png"],
   },
 };
 

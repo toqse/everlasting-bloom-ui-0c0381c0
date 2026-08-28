@@ -15,7 +15,8 @@ import {
   type InterestPermission,
 } from "@/lib/settingsApi";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
-import { isUsableProfilePhotoUrl } from "@/lib/utils";
+import { isUsableProfilePhotoUrl, withMediaCacheBust } from "@/lib/utils";
+import ShimmerImage from "@/components/ShimmerImage";
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ function StatusBadge({
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
-  const { user, logout, accessToken } = useAuthStore();
+  const { user, logout, accessToken, photoCacheKey } = useAuthStore();
   const router = useRouter();
 
   // ── Server state ──
@@ -136,7 +137,7 @@ const SettingsPage = () => {
   const displayName = settings?.name || user?.name || "—";
   const displayPhotoRaw = (settings?.profile_photo || user?.avatar || "").trim();
   const displayPhoto = isUsableProfilePhotoUrl(displayPhotoRaw)
-    ? displayPhotoRaw
+    ? withMediaCacheBust(displayPhotoRaw, photoCacheKey)
     : null;
   const displayPlan = settings?.plan || user?.plan || "—";
   const displayLocation = settings?.location || user?.location || "—";
@@ -175,12 +176,12 @@ const SettingsPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {loading ? (
-                <div className="w-14 h-14 rounded-full bg-gray-100 animate-pulse" />
+                <div className="h-14 w-14 rounded-full shimmer-block" />
               ) : displayPhoto ? (
-                <img
+                <ShimmerImage
                   src={displayPhoto}
                   alt={displayName}
-                  className="h-14 w-14 rounded-full border-2 border-primary/20 object-cover"
+                  className="h-14 w-14 rounded-full border-2 border-primary/20"
                 />
               ) : (
                 <div
@@ -193,8 +194,8 @@ const SettingsPage = () => {
               <div>
                 {loading ? (
                   <div className="space-y-1">
-                    <div className="h-4 w-28 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-3 w-40 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-4 w-28 rounded shimmer-block" />
+                    <div className="h-3 w-40 rounded shimmer-block" />
                   </div>
                 ) : (
                   <>

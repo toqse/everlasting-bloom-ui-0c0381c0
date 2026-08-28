@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef, Suspense, memo } from "react";
 import { Button } from "@/components/ui/button";
-import { cn, formatDateDdMmYyyy, parseApiDate } from "@/lib/utils";
+import { cn, formatDateDdMmYyyy, parseApiDate, withMediaCacheBust } from "@/lib/utils";
+import ShimmerImage from "@/components/ShimmerImage";
 import {
   Send,
   Clock,
@@ -369,6 +370,7 @@ const MatchesPage = () => {
   const [casteApiFallback, setCasteApiFallback] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const me = useAuthStore((s) => s.user);
+  const photoCacheKey = useAuthStore((s) => s.photoCacheKey);
   const [ageRange, setAgeRange] = useState<[number, number]>(DEFAULT_AGE_RANGE);
   const [heightRange, setHeightRange] = useState<[number, number]>(
     DEFAULT_HEIGHT_RANGE,
@@ -1577,10 +1579,10 @@ const MatchesPage = () => {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   >
                     {hasPhotoUrl(me.avatar) ? (
-                      <img
-                        src={me.avatar!.trim()}
+                      <ShimmerImage
+                        src={withMediaCacheBust(me.avatar.trim(), photoCacheKey)}
                         alt={me.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full"
                       />
                     ) : (
                       <User

@@ -1,13 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, MapPin } from "lucide-react";
 import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
 import type { Country, State, District, City } from "@/lib/masterApi";
-import { searchPlaces, type GeocodeResult } from "@/lib/geocode";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import { inputClass, labelClass } from "../SignupFormFields";
-import { BirthTimePicker } from "../BirthTimePicker";
-
-const PLACE_DEBOUNCE_MS = 450;
+import { labelClass } from "../SignupFormFields";
+import { HoroscopeBirthFields } from "../HoroscopeBirthFields";
 
 interface Props {
   formData: Record<string, string>;
@@ -35,14 +31,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const statesAbortRef = useRef<AbortController | null>(null);
   const districtsAbortRef = useRef<AbortController | null>(null);
   const citiesAbortRef = useRef<AbortController | null>(null);
-
-  const [placeQuery, setPlaceQuery] = useState(formData.birth_place || "");
-  const [placeResults, setPlaceResults] = useState<GeocodeResult[]>([]);
-  const [placeLoading, setPlaceLoading] = useState(false);
-  const [placeOpen, setPlaceOpen] = useState(false);
-  const placeWrapRef = useRef<HTMLDivElement>(null);
-  const placeAbortRef = useRef<AbortController | null>(null);
-  const skipNextSearchRef = useRef(false);
 
   const countryId = formData.country_id ? Number(formData.country_id) : 0;
   const stateId = formData.state_id ? Number(formData.state_id) : 0;
@@ -223,48 +211,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
     return () => citiesAbortRef.current?.abort();
   }, [districtId, loadCities]);
 
-  useEffect(() => {
-    if (!hasHoroscope) return;
-    if (skipNextSearchRef.current) {
-      skipNextSearchRef.current = false;
-      return;
-    }
-    const q = placeQuery.trim();
-    if (q.length < 3) {
-      setPlaceResults([]);
-      setPlaceLoading(false);
-      return;
-    }
-    setPlaceLoading(true);
-    const handle = setTimeout(async () => {
-      placeAbortRef.current?.abort();
-      const controller = new AbortController();
-      placeAbortRef.current = controller;
-      const results = await searchPlaces(q, { signal: controller.signal });
-      if (controller.signal.aborted) return;
-      setPlaceResults(results);
-      setPlaceLoading(false);
-      setPlaceOpen(true);
-    }, PLACE_DEBOUNCE_MS);
-    return () => clearTimeout(handle);
-  }, [placeQuery, hasHoroscope]);
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (!placeWrapRef.current?.contains(e.target as Node)) setPlaceOpen(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
-
-  useEffect(() => {
-    if (formData.birth_place && !placeQuery) {
-      skipNextSearchRef.current = true;
-      setPlaceQuery(formData.birth_place);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.birth_place]);
-
   const handleToggleHoroscope = useCallback(
     (checked: boolean) => {
       emit("has_horoscope", checked ? "true" : "");
@@ -274,38 +220,11 @@ const LocationStep = ({ formData, onChange }: Props) => {
         emit("birth_latitude", "");
         emit("birth_longitude", "");
         emit("birth_timezone", "");
-        setPlaceQuery("");
-        setPlaceResults([]);
-        setPlaceOpen(false);
       } else if (!formData.birth_timezone) {
         emit("birth_timezone", "5.5");
       }
     },
     [emit, formData.birth_timezone]
-  );
-
-  const handleSelectPlace = useCallback(
-    (place: GeocodeResult) => {
-      skipNextSearchRef.current = true;
-      setPlaceQuery(place.label);
-      emit("birth_place", place.label);
-      emit("birth_latitude", String(place.latitude));
-      emit("birth_longitude", String(place.longitude));
-      if (!formData.birth_timezone) emit("birth_timezone", "5.5");
-      setPlaceOpen(false);
-      setPlaceResults([]);
-    },
-    [emit, formData.birth_timezone]
-  );
-
-  const handlePlaceInput = useCallback(
-    (value: string) => {
-      setPlaceQuery(value);
-      emit("birth_place", value);
-      emit("birth_latitude", "");
-      emit("birth_longitude", "");
-    },
-    [emit]
   );
 
   return (
@@ -404,59 +323,15 @@ const LocationStep = ({ formData, onChange }: Props) => {
           </label>
 
           {hasHoroscope ? (
-            <div className="space-y-4 mt-4">
-              <div>
-                <label className={labelClass}>Birth Time</label>
-                <BirthTimePicker
-                  value={formData.birth_time || ""}
-                  onChange={(v) => emit("birth_time", v)}
-                />
-              </div>
-
-              <div ref={placeWrapRef} className="relative">
-                <label className={labelClass}>Birth Place</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={placeQuery}
-                    onChange={(e) => handlePlaceInput(e.target.value)}
-                    onFocus={() => {
-                      if (placeResults.length) setPlaceOpen(true);
-                    }}
-                    placeholder="Search city or town…"
-                    autoComplete="off"
-                    className={`${inputClass} pr-10`}
-                  />
-                  {placeLoading ? (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-primary/55" />
-                  ) : (
-                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  )}
-
-                  {placeOpen && placeResults.length > 0 ? (
-                    <div className="absolute z-50 mt-1 w-full rounded-2xl border-2 border-primary/10 bg-white shadow-xl overflow-hidden">
-                      <div className="max-h-56 overflow-y-auto p-1">
-                        {placeResults.map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => handleSelectPlace(p)}
-                            className="w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-primary/10"
-                          >
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-                {formData.birth_latitude && formData.birth_longitude ? (
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    Coordinates: {Number(formData.birth_latitude).toFixed(4)},{" "}
-                    {Number(formData.birth_longitude).toFixed(4)}
-                  </p>
-                ) : null}
-              </div>
+            <div className="mt-4">
+              <HoroscopeBirthFields
+                birthTime={formData.birth_time || ""}
+                birthPlace={formData.birth_place || ""}
+                birthLatitude={formData.birth_latitude || ""}
+                birthLongitude={formData.birth_longitude || ""}
+                birthTimezone={formData.birth_timezone || ""}
+                onChange={(name, value) => emit(name, value)}
+              />
             </div>
           ) : null}
         </div>

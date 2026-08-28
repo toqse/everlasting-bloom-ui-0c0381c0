@@ -21,7 +21,8 @@ import {
   Receipt,
   Star,
 } from "lucide-react";
-import { cn, isUsableProfilePhotoUrl, withoutTrailingSlash } from "@/lib/utils";
+import { cn, isUsableProfilePhotoUrl, withoutTrailingSlash, withMediaCacheBust } from "@/lib/utils";
+import ShimmerImage from "@/components/ShimmerImage";
 import { stableUnit } from "@/lib/stableRandom";
 import {
   AlertDialog,
@@ -147,6 +148,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const logout = useAuthStore((s) => s.logout);
   const accessToken = useAuthStore((s) => s.accessToken);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const photoCacheKey = useAuthStore((s) => s.photoCacheKey);
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -323,10 +325,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="flex flex-col items-center mb-6">
                 <div className="relative flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-rose/30 shadow-card ring-4 ring-primary/15">
                   {isUsableProfilePhotoUrl(user?.avatar) ? (
-                    <img
-                      src={user?.avatar?.trim() ?? ""}
+                    <ShimmerImage
+                      src={withMediaCacheBust(
+                        user?.avatar?.trim() ?? "",
+                        photoCacheKey,
+                      )}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="h-full w-full rounded-full"
                     />
                   ) : (
                     <User

@@ -22,6 +22,7 @@ import {
   UserCircle,
   FileText,
   Loader2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/phone";
@@ -52,6 +53,8 @@ import {
   patchFamily,
   getProfileFamily,
   postPhotos,
+  syncMeProfileToStore,
+  updateBirthDetails,
   type ProfileData,
   type LocationBody,
   type ReligionBody,
@@ -59,7 +62,9 @@ import {
   type EducationBody,
   type FamilyBody,
 } from "@/lib/profileApi";
-import { cn, formatDateDdMmYyyy } from "@/lib/utils";
+import { HoroscopeBirthFields } from "@/components/signup/HoroscopeBirthFields";
+import { cn, formatDateDdMmYyyy, withMediaCacheBust } from "@/lib/utils";
+import ShimmerImage from "@/components/ShimmerImage";
 import {
   getCountries,
   getStates,
@@ -249,6 +254,11 @@ const allProfileSections: {
     icon: MapPin,
   },
   {
+    title: "Horoscope",
+    description: "Birth time and place for horoscope matching",
+    icon: Sparkles,
+  },
+  {
     title: "Personal",
     description:
       "Marital Status, Children, Height, Weight, Colour, Blood Group",
@@ -332,9 +342,46 @@ interface ProfileFormData {
   familyContactNumber: string;
   familyContactNumber2: string;
   bio: string;
-  rashi: string;
-  nakshatra: string;
-  manglikStatus: string;
+  hasHoroscope: boolean;
+  birthTime: string;
+  birthPlace: string;
+  birthLatitude: string;
+  birthLongitude: string;
+  birthTimezone: string;
+}
+
+function toHhMm(value: unknown): string {
+  const s = value != null ? String(value).trim() : "";
+  const m = /^(\d{1,2}):(\d{2})/.exec(s);
+  if (!m) return "";
+  return `${m[1].padStart(2, "0")}:${m[2]}`;
+}
+
+function formatBirthTimeDisplay(hhmm: string): string {
+  const parsed = toHhMm(hhmm);
+  if (!parsed) return "";
+  const [hStr, min] = parsed.split(":");
+  let h = Number(hStr);
+  const period = h >= 12 ? "PM" : "AM";
+  h %= 12;
+  if (h === 0) h = 12;
+  return `${h}:${min} ${period}`;
+}
+
+function hasHoroscopeBirthDetails(data: ProfileFormData): boolean {
+  return Boolean(
+    data.hasHoroscope || data.birthTime.trim() || data.birthPlace.trim(),
+  );
+}
+
+function savedHoroscopeExists(data: ProfileData | null): boolean {
+  const h = data?.horoscope_details;
+  if (!h) return false;
+  return Boolean(
+    h.has_horoscope ||
+      (typeof h.time_of_birth === "string" && h.time_of_birth.trim()) ||
+      (typeof h.place_of_birth === "string" && h.place_of_birth.trim()),
+  );
 }
 
 /** Map GET v1/profile/ data to form state (including ids for PATCH). */
@@ -518,9 +565,21 @@ function mapProfileDataToForm(
     familyContactNumber: digitsOnlyMobile(raw(family.family_contact)),
     familyContactNumber2: digitsOnlyMobile(raw(family.family_contact_2)),
     bio: raw(data.about_me),
-    rashi: "",
-    nakshatra: "",
-    manglikStatus: "",
+    hasHoroscope: Boolean(data.horoscope_details?.has_horoscope),
+    birthTime: toHhMm(data.horoscope_details?.time_of_birth),
+    birthPlace: raw(data.horoscope_details?.place_of_birth),
+    birthLatitude:
+      data.horoscope_details?.birth_latitude != null
+        ? String(data.horoscope_details.birth_latitude)
+        : "",
+    birthLongitude:
+      data.horoscope_details?.birth_longitude != null
+        ? String(data.horoscope_details.birth_longitude)
+        : "",
+    birthTimezone:
+      data.horoscope_details?.birth_timezone != null
+        ? String(data.horoscope_details.birth_timezone)
+        : "5.5",
   };
 }
 
@@ -580,9 +639,12 @@ const defaultProfileData = (
   familyContactNumber: "",
   familyContactNumber2: "",
   bio: "",
-  rashi: "",
-  nakshatra: "",
-  manglikStatus: "",
+  hasHoroscope: false,
+  birthTime: "",
+  birthPlace: "",
+  birthLatitude: "",
+  birthLongitude: "",
+  birthTimezone: "5.5",
 });
 
 function ProfileSectionCard({
@@ -689,6 +751,7 @@ function PhotoSlotPreview({
   label: string;
   aspect?: number;
 }) {
+  const photoCacheKey = useAuthStore((s) => s.photoCacheKey);
   const [objectUrl, setObjectUrl] = useState("");
   useEffect(() => {
     if (!file) {
@@ -702,20 +765,17 @@ function PhotoSlotPreview({
   const previewUrl = file
     ? objectUrl
     : existingPath
-      ? getMediaUrl(existingPath)
+      ? withMediaCacheBust(getMediaUrl(existingPath), photoCacheKey)
       : "";
   if (!previewUrl) return null;
   return (
-    <div
+    <ShimmerImage
+      src={previewUrl}
+      alt={label}
       className="rounded-xl overflow-hidden border border-border bg-muted/30 w-full max-w-[200px]"
       style={{ aspectRatio: aspect ? String(aspect) : "3 / 4" }}
-    >
-      <img
-        src={previewUrl}
-        alt={label}
-        className="w-full h-full object-cover object-center"
-      />
-    </div>
+      imgClassName="object-center"
+    />
   );
 }
 
@@ -2175,35 +2235,27 @@ function EditSectionForm({
       return (
         <div className="grid gap-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Jathagam details are used for Porutham matching (Hindu users).
+            Birth time and place are used to generate your horoscope for
+            Porutham matching. Rasi and nakshatra are calculated after
+            generation.
           </p>
-          <div className="grid gap-2">
-            <Label htmlFor="rashi">Rashi</Label>
-            <Input
-              id="rashi"
-              value={data.rashi}
-              onChange={(e) => update("rashi", e.target.value)}
-              placeholder="e.g. Meena (Pisces)"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="nakshatra">Nakshatra</Label>
-            <Input
-              id="nakshatra"
-              value={data.nakshatra}
-              onChange={(e) => update("nakshatra", e.target.value)}
-              placeholder="e.g. Revati"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="manglikStatus">Manglik Status</Label>
-            <Input
-              id="manglikStatus"
-              value={data.manglikStatus}
-              onChange={(e) => update("manglikStatus", e.target.value)}
-              placeholder="e.g. Non-Manglik"
-            />
-          </div>
+          <HoroscopeBirthFields
+            birthTime={data.birthTime}
+            birthPlace={data.birthPlace}
+            birthLatitude={data.birthLatitude}
+            birthLongitude={data.birthLongitude}
+            birthTimezone={data.birthTimezone}
+            onChange={(name, value) => {
+              const fieldMap = {
+                birth_time: "birthTime",
+                birth_place: "birthPlace",
+                birth_latitude: "birthLatitude",
+                birth_longitude: "birthLongitude",
+                birth_timezone: "birthTimezone",
+              } as const;
+              onChange({ ...data, [fieldMap[name]]: value });
+            }}
+          />
         </div>
       );
     default:
@@ -2273,12 +2325,14 @@ function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
       return data.bio
         ? `${data.bio.slice(0, 80)}${data.bio.length > 80 ? "…" : ""}`
         : "—";
-    case "Horoscope":
+    case "Horoscope": {
+      if (!hasHoroscopeBirthDetails(data)) return "Not added yet";
       return (
-        [data.rashi, data.nakshatra, data.manglikStatus]
+        [formatBirthTimeDisplay(data.birthTime), data.birthPlace]
           .filter(Boolean)
-          .join(" · ") || "—"
+          .join(" · ") || "Added"
       );
+    }
     default:
       return "";
   }
@@ -2301,6 +2355,7 @@ function ViewSectionContent({
   data: ProfileFormData;
   photos?: Record<string, string | null>;
 }) {
+  const photoCacheKey = useAuthStore((s) => s.photoCacheKey);
   const row = (label: string, value: string) => {
     const renderedValue =
       value != null && String(value).trim() !== "" ? String(value).trim() : "N/A";
@@ -2393,25 +2448,29 @@ function ViewSectionContent({
       }
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {entries.map(([key, path]) => (
-            <div key={key} className="flex flex-col gap-2">
-              <span className="font-medium text-muted-foreground text-sm">
-                {PHOTO_LABELS[key] ?? key.replace(/_/g, " ")}
-              </span>
-              <a
-                href={getMediaUrl(path)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl overflow-hidden border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <img
-                  src={getMediaUrl(path)}
-                  alt={PHOTO_LABELS[key] ?? key}
-                  className="w-full h-48 object-cover object-center"
-                />
-              </a>
-            </div>
-          ))}
+          {entries.map(([key, path]) => {
+            const src = withMediaCacheBust(getMediaUrl(path), photoCacheKey);
+            return (
+              <div key={`${key}-${photoCacheKey}`} className="flex flex-col gap-2">
+                <span className="font-medium text-muted-foreground text-sm">
+                  {PHOTO_LABELS[key] ?? key.replace(/_/g, " ")}
+                </span>
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-xl overflow-hidden border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <ShimmerImage
+                    src={src}
+                    alt={PHOTO_LABELS[key] ?? key}
+                    className="h-48 w-full"
+                    imgClassName="object-center"
+                  />
+                </a>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -2468,9 +2527,25 @@ function ViewSectionContent({
     case "Horoscope":
       return (
         <div className="space-y-0">
-          {row("Rashi", data.rashi)}
-          {row("Nakshatra", data.nakshatra)}
-          {row("Manglik Status", data.manglikStatus)}
+          {hasHoroscopeBirthDetails(data) ? (
+            <>
+              {row(
+                "Time of Birth",
+                formatBirthTimeDisplay(data.birthTime) || data.birthTime,
+              )}
+              {row("Place of Birth", data.birthPlace)}
+              {data.birthLatitude && data.birthLongitude
+                ? row(
+                    "Coordinates",
+                    `${Number(data.birthLatitude).toFixed(4)}, ${Number(data.birthLongitude).toFixed(4)}`,
+                  )
+                : null}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground py-1.5">
+              Not added yet. Use Edit to add your birth time and place.
+            </p>
+          )}
         </div>
       );
     default:
@@ -2507,6 +2582,26 @@ const UserProfilePage = () => {
   const [demoPaymentOpen, setDemoPaymentOpen] = useState(false);
   const [demoDownloadUrl, setDemoDownloadUrl] = useState("");
   const [demoPaymentAmount, setDemoPaymentAmount] = useState(20);
+
+  const refreshHoroscopeGenerated = useCallback(async () => {
+    try {
+      const res = await getMyHoroscopeProfile("south");
+      const profile = res.data;
+      const hasProfile =
+        !!profile && profile.exists !== false && profile.id != null;
+      setIsHoroscopeGenerated(hasProfile);
+      setHoroscopeError(
+        hasProfile
+          ? null
+          : "No horoscope found yet. Please update your birth details first.",
+      );
+    } catch (e) {
+      setIsHoroscopeGenerated(false);
+      setHoroscopeError(
+        e instanceof Error ? e.message : "Horoscope not available.",
+      );
+    }
+  }, []);
 
   const handleFetchMyHoroscope = async () => {
     setHoroscopeLoading(true);
@@ -2872,22 +2967,15 @@ const UserProfilePage = () => {
     }
   }, []);
 
-  const updateAvatarFromProfile = useCallback((data: ProfileData) => {
-    const profilePhoto = data.photos?.profile_photo ?? null;
-    if (!profilePhoto) return;
-    const url = getMediaUrl(profilePhoto);
-    if (!url) return;
-    useAuthStore.setState((state) =>
-      state.user
-        ? {
-            user: {
-              ...state.user,
-              avatar: url,
-            },
-          }
-        : state,
-    );
-  }, []);
+  const updateAvatarFromProfile = useCallback(
+    (data: ProfileData, cacheBust = false) => {
+      syncMeProfileToStore(data);
+      if (cacheBust) {
+        useAuthStore.getState().bumpPhotoCache();
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (editingSection !== "Location") return;
@@ -3004,26 +3092,8 @@ const UserProfilePage = () => {
   }, [editingSection]);
 
   useEffect(() => {
-    let cancelled = false;
-    getMyHoroscopeProfile("south")
-      .then(() => {
-        if (!cancelled) {
-          setIsHoroscopeGenerated(true);
-          setHoroscopeError(null);
-        }
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setIsHoroscopeGenerated(false);
-          setHoroscopeError(
-            e instanceof Error ? e.message : "Horoscope not available.",
-          );
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void refreshHoroscopeGenerated();
+  }, [refreshHoroscopeGenerated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3278,7 +3348,19 @@ const UserProfilePage = () => {
       }
     }
 
+    if (section === "Horoscope") {
+      if (!profileData.birthTime.trim()) {
+        setSaveError("Birth time is required.");
+        return;
+      }
+      if (!profileData.birthPlace.trim()) {
+        setSaveError("Place of birth is required.");
+        return;
+      }
+    }
+
     setSavingSection(true);
+    let bustPhotoCache = false;
     try {
       switch (section) {
         case "Basic Info":
@@ -3331,19 +3413,30 @@ const UserProfilePage = () => {
           });
           if (Object.keys(body).length > 0) {
             await postPhotos(body);
-            const res = await getProfile();
-            if (res.success && res.data) {
-              setProfileApiData(res.data);
-              setProfileData(mapProfileDataToForm(res.data, user));
-            }
+            bustPhotoCache = true;
           }
           setPhotoFiles({});
-          setEditingSection(null);
-          return;
+          break;
         }
-        case "Horoscope":
-          setEditingSection(null);
-          return;
+        case "Horoscope": {
+          const lat = parseFloat(profileData.birthLatitude);
+          const lon = parseFloat(profileData.birthLongitude);
+          const tz = parseFloat(profileData.birthTimezone || "5.5");
+          const coordsUsable =
+            Number.isFinite(lat) &&
+            Number.isFinite(lon) &&
+            !(lat === 0 && lon === 0);
+          await updateBirthDetails({
+            time_of_birth: profileData.birthTime.trim(),
+            place_of_birth: profileData.birthPlace.trim(),
+            has_horoscope: true,
+            ...(coordsUsable
+              ? { birth_latitude: lat, birth_longitude: lon }
+              : {}),
+            ...(Number.isFinite(tz) ? { birth_timezone: tz } : {}),
+          });
+          break;
+        }
         default:
           setEditingSection(null);
           return;
@@ -3352,7 +3445,10 @@ const UserProfilePage = () => {
       if (res.success && res.data) {
         setProfileApiData(res.data);
         setProfileData(mapProfileDataToForm(res.data, user));
-        updateAvatarFromProfile(res.data);
+        updateAvatarFromProfile(res.data, bustPhotoCache);
+      }
+      if (section === "Horoscope") {
+        void refreshHoroscopeGenerated();
       }
       setEditingSection(null);
     } catch (e) {
@@ -3375,7 +3471,23 @@ const UserProfilePage = () => {
         )}
 
         {profileLoading ? (
-          <p className="text-muted-foreground">Loading profile…</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-primary/10 bg-card p-4 shadow-card"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl shimmer-block" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-4 w-28 rounded-md shimmer-block" />
+                    <div className="h-3 w-full max-w-[220px] rounded-md shimmer-block" />
+                    <div className="h-3 w-16 rounded-md shimmer-block" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -3506,7 +3618,15 @@ const UserProfilePage = () => {
                   setEditingSection(null);
                 }
               }}
-              title={editingSection ? `Edit ${editingSection}` : undefined}
+              title={
+                editingSection === "Horoscope"
+                  ? savedHoroscopeExists(profileApiData)
+                    ? "Update Horoscope Details"
+                    : "Add Horoscope Details"
+                  : editingSection
+                    ? `Edit ${editingSection}`
+                    : undefined
+              }
               contentClassName="max-w-3xl lg:max-w-4xl"
               bodyClassName="[&_input]:bg-white [&_select]:bg-white [&_textarea]:bg-white [&_input]:border-border [&_select]:border-border [&_textarea]:border-border"
               footer={

@@ -110,6 +110,9 @@ interface AuthState {
   hasPaidPlan: () => boolean;
   /** True if user religion is Hindu (Horoscope/Jathagam visible, post-pay redirect to Jathagam). */
   isHindu: () => boolean;
+  /** Bumped after photo upload so avatars refetch instead of showing a cached file. */
+  photoCacheKey: number;
+  bumpPhotoCache: () => void;
   /** Horoscope/contact view credits: used this period (resets on plan renewal). */
   horoscopeCreditsUsed: number;
   /** Quota per plan: Silver 6, Gold 15, Diamond 30, etc. */
@@ -150,7 +153,9 @@ export const useAuthStore = create<AuthState>()(
       profileNextStep: null,
       profilePrefill: null,
       demoReligionOverride: null,
+      photoCacheKey: 0,
       horoscopeCreditsUsed: 0,
+      bumpPhotoCache: () => set({ photoCacheKey: Date.now() }),
       login: () => {
         set({ isLoggedIn: true, user: { ...defaultUser } });
       },
@@ -228,6 +233,7 @@ export const useAuthStore = create<AuthState>()(
           profileNextStep: null,
           profilePrefill: null,
           demoReligionOverride: null,
+          photoCacheKey: 0,
         });
       },
       isProfileComplete: () => {
