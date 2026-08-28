@@ -106,8 +106,14 @@ export interface ChatMessagesResponse {
 
 const CHAT_BASE = "v1/chat";
 
-export async function getChatList(): Promise<ChatListResponse> {
-  return authedFetch<ChatListResponse>(`${CHAT_BASE}/list/`, { method: "GET" });
+export async function getChatList(
+  page = 1,
+  limit = 100,
+): Promise<ChatListResponse> {
+  return authedFetch<ChatListResponse>(
+    `${CHAT_BASE}/list/?page=${page}&limit=${limit}`,
+    { method: "GET" },
+  );
 }
 
 function unwrapMessagesBlock(raw: unknown): Record<string, unknown> | null {

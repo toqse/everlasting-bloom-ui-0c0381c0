@@ -1421,6 +1421,30 @@ const MatchesPage = () => {
                   <div className="py-12 text-center text-muted-foreground">
                     Loading matches…
                   </div>
+                ) : !error && profiles.length === 0 ? (
+                  <div className="rounded-2xl border border-primary/10 bg-card p-10 text-center">
+                    <Users className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+                    <p className="font-semibold text-foreground">
+                      No matches found
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {hasActiveFilters
+                        ? "Try adjusting or clearing your filters to see more profiles."
+                        : "There are no matching profiles right now. Check back later."}
+                    </p>
+                    {hasActiveFilters ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-4 gap-1.5"
+                        onClick={clearAllFilters}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Clear all filters
+                      </Button>
+                    ) : null}
+                  </div>
                 ) : (
                   <motion.div
                     initial={{ opacity: 0 }}

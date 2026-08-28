@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -17,6 +17,7 @@ import {
   Check,
   WifiOff,
   RotateCw,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -60,15 +61,32 @@ const nextOptimisticMessageId = (seq: { current: number }) => {
   return -seq.current;
 };
 
+/** Newest window first; scroll-up loads the next older page. Backend max is 100. */
+const MESSAGE_PAGE_SIZE = 50;
+const NEAR_BOTTOM_PX = 120;
+
 const ChatPage = () => {
   const searchParams = useSearchParams();
   const conversationId = searchParams?.get("id") ?? undefined;
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const optimisticIdSeqRef = useRef(0);
   const seenMessageIdsRef = useRef<Set<number>>(new Set());
+  const oldestPageRef = useRef(1);
+  const totalMessagesRef = useRef(0);
+  const loadingOlderRef = useRef(false);
+  const stickToBottomRef = useRef(true);
+  const restoreScrollRef = useRef<{ height: number; top: number } | null>(
+    null,
+  );
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [oldestPage, setOldestPage] = useState(1);
+  const [totalMessages, setTotalMessages] = useState(0);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,10 +106,75 @@ const ChatPage = () => {
   const visibleMessages = messages.filter(
     (m) => (m.text ?? "").trim().length > 0,
   );
+  const persistedCount = messages.filter((m) => m.id > 0).length;
+  const hasMoreOlder = persistedCount < totalMessages;
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  useLayoutEffect(() => {
+    const el = messagesScrollRef.current;
+    const restore = restoreScrollRef.current;
+    if (restore && el) {
+      el.scrollTop = restore.top + (el.scrollHeight - restore.height);
+      restoreScrollRef.current = null;
+      return;
+    }
+    if (stickToBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
   }, [visibleMessages.length]);
+
+  const loadOlderMessages = useCallback(async () => {
+    const idNum = Number(conversationId);
+    if (!idNum || loadingOlderRef.current) return;
+    if (
+      totalMessagesRef.current > 0 &&
+      seenMessageIdsRef.current.size >= totalMessagesRef.current
+    ) {
+      return;
+    }
+
+    const el = messagesScrollRef.current;
+    loadingOlderRef.current = true;
+    stickToBottomRef.current = false;
+    restoreScrollRef.current = el
+      ? { height: el.scrollHeight, top: el.scrollTop }
+      : null;
+    setLoadingOlder(true);
+    try {
+      const nextPage = oldestPageRef.current + 1;
+      const res = await getChatMessages(idNum, nextPage, MESSAGE_PAGE_SIZE);
+      const older = res.data.messages ?? [];
+      oldestPageRef.current = nextPage;
+      totalMessagesRef.current = res.data.total ?? totalMessagesRef.current;
+      if (older.length === 0) {
+        totalMessagesRef.current = seenMessageIdsRef.current.size;
+        setOldestPage(nextPage);
+        setTotalMessages(totalMessagesRef.current);
+        restoreScrollRef.current = null;
+        loadingOlderRef.current = false;
+        setLoadingOlder(false);
+        return;
+      }
+      older.forEach((m) => {
+        if (typeof m.id === "number") seenMessageIdsRef.current.add(m.id);
+      });
+      setOldestPage(nextPage);
+      setTotalMessages(totalMessagesRef.current);
+      setMessages((prev) => {
+        const ids = new Set(prev.map((m) => m.id));
+        const unique = older.filter((m) => !ids.has(m.id));
+        return unique.length ? [...unique, ...prev] : prev;
+      });
+    } catch {
+      restoreScrollRef.current = null;
+      window.setTimeout(() => {
+        loadingOlderRef.current = false;
+      }, 2000);
+      setLoadingOlder(false);
+      return;
+    }
+    loadingOlderRef.current = false;
+    setLoadingOlder(false);
+  }, [conversationId]);
 
   useEffect(() => {
     const idNum = Number(conversationId);
@@ -100,6 +183,12 @@ const ChatPage = () => {
     let cancelled = false;
     const wsRef = { current: null as WebSocket | null };
     seenMessageIdsRef.current = new Set();
+    oldestPageRef.current = 1;
+    totalMessagesRef.current = 0;
+    stickToBottomRef.current = true;
+    restoreScrollRef.current = null;
+    setOldestPage(1);
+    setTotalMessages(0);
 
     const connect = async () => {
       setLoading(true);
@@ -110,12 +199,16 @@ const ChatPage = () => {
       // Step 1: call the messages API first. Only connect the socket on success.
       let apiSucceeded = false;
       try {
-        const res = await getChatMessages(idNum, 1, 100);
+        const res = await getChatMessages(idNum, 1, MESSAGE_PAGE_SIZE);
         if (cancelled) return;
         const list = res.data.messages ?? [];
         list.forEach((m) => {
           if (typeof m.id === "number") seenMessageIdsRef.current.add(m.id);
         });
+        oldestPageRef.current = 1;
+        totalMessagesRef.current = res.data.total ?? list.length;
+        setOldestPage(1);
+        setTotalMessages(totalMessagesRef.current);
         setMessages(list);
         if (res.data.other_user) setOtherUser(res.data.other_user);
         apiSucceeded = true;
@@ -226,6 +319,33 @@ const ChatPage = () => {
     };
   }, [conversationId, reconnectKey]);
 
+  useEffect(() => {
+    const root = messagesScrollRef.current;
+    const target = topSentinelRef.current;
+    if (!root || !target || loading || !hasMoreOlder) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadOlderMessages();
+        }
+      },
+      { root, rootMargin: "160px 0px 0px 0px", threshold: 0 },
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, [conversationId, loading, hasMoreOlder, oldestPage, loadOlderMessages]);
+
+  const handleMessagesScroll = () => {
+    const el = messagesScrollRef.current;
+    if (!el) return;
+    stickToBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+    if (el.scrollTop < 96) {
+      void loadOlderMessages();
+    }
+  };
+
   const handleRetryConnection = () => {
     if (isReconnecting) return;
     setIsReconnecting(true);
@@ -307,6 +427,7 @@ const ChatPage = () => {
       created_at: new Date().toISOString(),
       read_at: null,
     };
+    stickToBottomRef.current = true;
     setMessages((prev) => [...prev, optimistic]);
     setNewMessage("");
     setEmojiOpen(false);
@@ -326,6 +447,9 @@ const ChatPage = () => {
       toast.error(getDisplayErrorMessage(e));
     } finally {
       setSending(false);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     }
   };
 
@@ -459,27 +583,31 @@ const ChatPage = () => {
       </AnimatePresence>
 
       {/* Messages Area */}
-      <div className="flex-1 min-h-0 pt-24 pb-28 overflow-y-auto overscroll-y-contain">
+      <div
+        ref={messagesScrollRef}
+        onScroll={handleMessagesScroll}
+        className="flex-1 min-h-0 pt-24 pb-28 overflow-y-auto overscroll-y-contain"
+      >
         <div className="container mx-auto px-4 py-6">
-          {/* Date Separator */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="px-4 py-1.5 bg-white/70 backdrop-blur-sm rounded-full text-xs text-muted-foreground shadow-soft">
-              Today
+          <div ref={topSentinelRef} className="h-px w-full" />
+          {loadingOlder && (
+            <div className="flex items-center justify-center gap-2 mb-4 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Loading earlier messages…
             </div>
-          </div>
+          )}
 
           {/* Messages */}
           <div className="space-y-4">
             <AnimatePresence>
-              {visibleMessages.map((message, index) => {
+              {visibleMessages.map((message) => {
                 const isOwn =
                   message.sender_matri_id ===
                   useAuthStore.getState().user?.matriId;
-                const messageKey = `${message.id}-${message.created_at}-${index}`;
 
                 return (
                   <motion.div
-                    key={messageKey}
+                    key={message.id}
                     initial={{ opacity: 0, y: 12, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.2 }}
@@ -538,12 +666,18 @@ const ChatPage = () => {
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
               <input
+                ref={inputRef}
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleSendMessage();
+                  }
+                }}
                 placeholder="Type a message..."
-                disabled={sending || loading}
+                disabled={loading}
                 className="w-full px-4 py-3 bg-accent-rose/30 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:cursor-not-allowed disabled:opacity-60"
               />
               <Button
@@ -638,6 +772,7 @@ const ChatPage = () => {
               <Button
                 variant="hero"
                 size="icon"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending || loading}
                 className="rounded-full w-12 h-12"

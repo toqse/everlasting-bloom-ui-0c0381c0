@@ -622,7 +622,7 @@ export async function getBirthDetailCandidates(params?: {
   return authedFetch<BirthDetailCandidatesResponse>(path, { method: "GET" });
 }
 
-/** POST /api/v1/astrology/porutham/ — matri_id + partner_matri_id; consumes horoscope quota */
+/** POST /api/v1/astrology/porutham/ — matri_id + partner_matri_id; consumes quota on first match of a pair */
 export async function postPoruthamMatch(
   body: PoruthamMatchBody,
 ): Promise<PoruthamMatchResponse> {

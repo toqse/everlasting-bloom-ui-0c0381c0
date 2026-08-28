@@ -72,6 +72,8 @@ const typeConfig: Record<
     isCredit: false,
   },
   refund: { icon: ArrowDownLeft, label: "Refund", isCredit: true },
+  jathakam_pdf: { icon: CreditCard, label: "Jathakam PDF", isCredit: false },
+  thalakuri_pdf: { icon: CreditCard, label: "Thalakuri PDF", isCredit: false },
 };
 
 /** Display-only: no leading minus (API may send negative amounts for debits). */

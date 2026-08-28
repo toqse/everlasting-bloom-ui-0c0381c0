@@ -126,8 +126,10 @@ const buildFeatures = (plan: AvailablePlan) => {
     list.push(`Up to ${plan.horoscope_match_limit} horoscope matches`);
   if (plan.contact_view_limit > 0)
     list.push(`${plan.contact_view_limit} Up to Contact View`);
-  if (plan.interest_limit > 0) list.push("Send interests to profiles");
-  if (plan.chat_limit > 0) list.push("Chat with matches");
+  if (plan.interest_limit > 0)
+    list.push(`${plan.interest_limit} Send interests to profiles`);
+  if (plan.chat_limit > 0)
+    list.push(`${plan.chat_limit} Chat with matches`);
   list.push("Profile visibility");
   return list;
 };

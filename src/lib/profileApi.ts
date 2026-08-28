@@ -1,5 +1,6 @@
 import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
+import { compressProfileUploadFile } from "@/lib/compressImage";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -210,12 +211,20 @@ export interface AboutBody {
   about_me: string;
 }
 
-/** PATCH v1/profile/basic/ — name, gender, dob, email only */
+/** PATCH v1/profile/basic/ — name, gender, dob, email; optional horoscope birth inputs */
 export interface BasicBody {
   name: string;
   gender: string;
   dob: string;
   email: string;
+  has_horoscope?: boolean;
+  time_of_birth?: string;
+  place_of_birth?: string;
+  birth_time?: string;
+  birth_place?: string;
+  birth_latitude?: number;
+  birth_longitude?: number;
+  birth_timezone?: number;
 }
 
 /** PATCH v1/profile/family/ */
@@ -800,13 +809,23 @@ export async function getPartnerPreference(): Promise<PartnerPreferenceResponse>
 export async function postPhotos(body: PhotosBody): Promise<unknown> {
   const url = `${BASE_URL}v1/profile/photos/`;
   const formData = new FormData();
+  const photoKeys = [
+    "profile_photo",
+    "full_photo",
+    "selfie_photo",
+    "family_photo",
+    "aadhaar_front",
+    "aadhaar_back",
+  ] as const;
 
-  if (body.profile_photo) formData.append("profile_photo", body.profile_photo);
-  if (body.full_photo) formData.append("full_photo", body.full_photo);
-  if (body.selfie_photo) formData.append("selfie_photo", body.selfie_photo);
-  if (body.family_photo) formData.append("family_photo", body.family_photo);
-  if (body.aadhaar_front) formData.append("aadhaar_front", body.aadhaar_front);
-  if (body.aadhaar_back) formData.append("aadhaar_back", body.aadhaar_back);
+  await Promise.all(
+    photoKeys.map(async (key) => {
+      const file = body[key];
+      if (!file) return;
+      const compressed = await compressProfileUploadFile(key, file);
+      formData.append(key, compressed);
+    }),
+  );
 
   const path = "v1/profile/photos/";
   const bodyLog = {

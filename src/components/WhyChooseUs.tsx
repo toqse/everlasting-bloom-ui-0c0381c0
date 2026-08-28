@@ -178,13 +178,8 @@ const WhyChooseUs = () => {
               reader will be distracted by the readable content of a page when
               looking at its layout.
             </p>
-            <p className="mb-4">
-              <span className="text-primary font-semibold cursor-pointer hover:underline">
-                Click here to{" "}
-              </span>
-              <span className="text-muted-foreground">
-                Start your matrimony service now.
-              </span>
+            <p className="mb-4 text-muted-foreground">
+              Start your matrimony service now.
             </p>
 
             <div className="border-t border-border my-6" />

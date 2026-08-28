@@ -16,7 +16,7 @@ declare global {
       handler: (response: RazorpayPaymentResponse) => void;
       prefill?: { name?: string; email?: string; contact?: string };
       theme?: { color?: string };
-      modal?: { ondismiss?: () => void };
+      modal?: { ondismiss?: () => void; escape?: boolean; backdropclose?: boolean };
     }) => { open: () => void };
   }
 }
@@ -39,6 +39,70 @@ export async function ensureRazorpayScript(): Promise<boolean> {
   return razorpayScriptPromise;
 }
 
+/**
+ * Radix Dialog / react-remove-scroll sets `pointer-events: none` on <body>.
+ * Razorpay's checkout iframe is a body child, so only the outer overlay receives
+ * clicks. Unlock the page and lift Razorpay above our modals while checkout is open.
+ */
+function enableRazorpayInteraction(): () => void {
+  if (typeof document === "undefined") return () => undefined;
+
+  const body = document.body;
+  const html = document.documentElement;
+  const previousBody = {
+    value: body.style.getPropertyValue("pointer-events"),
+    priority: body.style.getPropertyPriority("pointer-events"),
+  };
+  const previousHtml = {
+    value: html.style.getPropertyValue("pointer-events"),
+    priority: html.style.getPropertyPriority("pointer-events"),
+  };
+
+  body.setAttribute("data-razorpay-open", "true");
+  body.style.setProperty("pointer-events", "auto", "important");
+  html.style.setProperty("pointer-events", "auto", "important");
+
+  const style = document.createElement("style");
+  style.setAttribute("data-razorpay-interaction-fix", "true");
+  style.textContent = `
+    body[data-razorpay-open] {
+      pointer-events: auto !important;
+    }
+    body[data-razorpay-open] [data-radix-dialog-overlay],
+    body[data-razorpay-open] [data-radix-dialog-content],
+    body[data-razorpay-open] [data-radix-alert-dialog-overlay],
+    body[data-razorpay-open] [data-radix-alert-dialog-content] {
+      pointer-events: none !important;
+    }
+    .razorpay-container,
+    .razorpay-backdrop,
+    iframe.razorpay-checkout-frame,
+    iframe[src*="razorpay"] {
+      pointer-events: auto !important;
+      z-index: 2147483646 !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  let restored = false;
+  return () => {
+    if (restored) return;
+    restored = true;
+    style.remove();
+    body.removeAttribute("data-razorpay-open");
+    if (previousBody.value) {
+      body.style.setProperty("pointer-events", previousBody.value, previousBody.priority);
+    } else {
+      body.style.removeProperty("pointer-events");
+    }
+    if (previousHtml.value) {
+      html.style.setProperty("pointer-events", previousHtml.value, previousHtml.priority);
+    } else {
+      html.style.removeProperty("pointer-events");
+    }
+  };
+}
+
 export type OpenRazorpayCheckoutOptions = {
   keyId: string;
   orderId: string;
@@ -58,33 +122,42 @@ export async function openRazorpayCheckout(opts: OpenRazorpayCheckoutOptions): P
     throw new Error("Could not load Razorpay checkout.");
   }
 
+  const restoreInteraction = enableRazorpayInteraction();
   const RazorpayCtor = window.Razorpay;
 
-  await new Promise<void>((resolve, reject) => {
-    const rz = new RazorpayCtor({
-      key: opts.keyId,
-      amount: opts.amount,
-      currency: opts.currency,
-      order_id: opts.orderId,
-      name: opts.name ?? "Aiswarya Matrimony",
-      description: opts.description,
-      prefill: opts.prefill,
-      theme: { color: opts.themeColor ?? "#8d1b5b" },
-      handler: async (payment) => {
-        try {
-          await opts.onSuccess(payment);
-          resolve();
-        } catch (e) {
-          reject(e instanceof Error ? e : new Error("Payment verification failed."));
-        }
-      },
-      modal: {
-        ondismiss: () => {
-          opts.onDismiss?.();
-          reject(new Error("Payment cancelled."));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const rz = new RazorpayCtor({
+        key: opts.keyId,
+        amount: opts.amount,
+        currency: opts.currency,
+        order_id: opts.orderId,
+        name: opts.name ?? "Aiswarya Matrimony",
+        description: opts.description,
+        prefill: opts.prefill,
+        theme: { color: opts.themeColor ?? "#8d1b5b" },
+        handler: async (payment) => {
+          restoreInteraction();
+          try {
+            await opts.onSuccess(payment);
+            resolve();
+          } catch (e) {
+            reject(e instanceof Error ? e : new Error("Payment verification failed."));
+          }
         },
-      },
+        modal: {
+          escape: true,
+          backdropclose: true,
+          ondismiss: () => {
+            restoreInteraction();
+            opts.onDismiss?.();
+            reject(new Error("Payment cancelled."));
+          },
+        },
+      });
+      rz.open();
     });
-    rz.open();
-  });
+  } finally {
+    restoreInteraction();
+  }
 }

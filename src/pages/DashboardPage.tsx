@@ -15,7 +15,6 @@ import {
   Loader2,
   AlertCircle,
   Search,
-  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -183,9 +182,6 @@ const RecommendedCard = ({
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <h3 className="flex items-center gap-1 font-serif text-base font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
           <span className="truncate">{profile.name}</span>
-          {profile.is_verified && (
-            <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />
-          )}
         </h3>
         {detailChips.length > 0 && (
           <p className="truncate text-xs text-muted-foreground">
@@ -325,6 +321,11 @@ const DashboardPage = () => {
     try {
       const res = await sendInterest(matriId);
       toast.success(res.message || "Interest sent!");
+      setPreviewData((prev) =>
+        prev?.matri_id === matriId
+          ? { ...prev, interest_status: "sent", is_interest_sent: true }
+          : prev,
+      );
     } catch (err) {
       const msg = getDisplayErrorMessage(err);
       if ((err as { status?: number }).status === 403) {

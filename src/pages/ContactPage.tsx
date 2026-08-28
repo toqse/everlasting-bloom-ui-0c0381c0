@@ -1,63 +1,134 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Phone, Mail, MapPin, Clock, Send, Sparkles } from "lucide-react";
+import { MapPin, Clock, Send, Sparkles, Loader2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import PhoneInput from "@/components/PhoneInput";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
+import {
+  branchDetailLines,
+  getWebsiteBranches,
+  submitWebsiteEnquiry,
+} from "@/lib/websiteContactApi";
+import { formatPhoneForApi, isValidIndianMobile } from "@/lib/phone";
+
+type ContactCard = {
+  icon: LucideIcon;
+  title: string;
+  details: string[];
+};
+
+const FALLBACK_CARDS: ContactCard[] = [
+  {
+    icon: MapPin,
+    title: "Head Office",
+    details: [
+      "Aiswarya Marriage Bureau",
+      "Near Private Bus Stand",
+      "Cherthala – 688524",
+      "Customer Care: 7907240062",
+    ],
+  },
+  {
+    icon: MapPin,
+    title: "Email",
+    details: ["aiswarya@aiswaryamatrimonials.com"],
+  },
+  {
+    icon: MapPin,
+    title: "Branch Office",
+    details: [
+      "Pothanicad",
+      "Moovattupuzha, Ernakulam",
+      "Branch Contact: 6282857276",
+    ],
+  },
+];
+
+const WORKING_HOURS: ContactCard = {
+  icon: Clock,
+  title: "Working Hours",
+  details: ["Mon - Sat: 9:00 AM - 5:00 PM", "Sunday: Closed"],
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  subject: "",
+  message: "",
+};
 
 const ContactPage = () => {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  });
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [contactCards, setContactCards] = useState<ContactCard[]>(FALLBACK_CARDS);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    let cancelled = false;
+    getWebsiteBranches()
+      .then((branches) => {
+        if (cancelled || branches.length === 0) return;
+        setContactCards(
+          branches.map((branch) => ({
+            icon: MapPin,
+            title: branch.name,
+            details: branchDetailLines(branch),
+          })),
+        );
+      })
+      .catch(() => {
+        /* keep hardcoded fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const subject = form.subject.trim();
+    const message = form.message.trim();
+
+    if (!name || !email || !form.phone || !message) {
       toast.error("Please fill in all required fields");
       return;
     }
-    toast.success("Message sent successfully! 💕", {
-      description: "We'll get back to you shortly.",
-    });
-    setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    if (!EMAIL_RE.test(email)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    if (!isValidIndianMobile(form.phone)) {
+      toast.error("Enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const successMessage = await submitWebsiteEnquiry({
+        name,
+        phone: formatPhoneForApi(form.phone),
+        email,
+        subject: subject || undefined,
+        message,
+      });
+      toast.success(successMessage);
+      setForm(emptyForm);
+    } catch (err) {
+      toast.error(getDisplayErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const contactInfo = [
-    {
-      icon: MapPin,
-      title: "Head Office",
-      details: [
-        "Aiswarya Marriage Bureau",
-        "Near Private Bus Stand",
-        "Cherthala – 688524",
-        "Customer Care: 7907240062",
-      ],
-    },
-    {
-      icon: Mail,
-      title: "Email",
-      details: ["aiswarya@aiswaryamatrimonials.com"],
-    },
-    {
-      icon: MapPin,
-      title: "Branch Office",
-      details: [
-        "Pothanicad",
-        "Moovattupuzha, Ernakulam",
-        "Branch Contact: 6282857276",
-      ],
-    },
-    {
-      icon: Clock,
-      title: "Working Hours",
-      details: ["Mon - Sat: 9:00 AM - 5:00 PM", "Sunday: Closed"],
-    },
-  ];
+  const cards = [...contactCards, WORKING_HOURS];
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,9 +175,9 @@ const ContactPage = () => {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div className="space-y-4">
-              {contactInfo.map((info, i) => (
+              {cards.map((info, i) => (
                 <motion.div
-                  key={info.title}
+                  key={`${info.title}-${i}`}
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -145,55 +216,66 @@ const ContactPage = () => {
                     type="text"
                     placeholder="Your Name *"
                     value={form.name}
+                    disabled={submitting}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white disabled:opacity-70"
                   />
                   <input
                     type="email"
                     placeholder="Your Email *"
                     value={form.email}
+                    disabled={submitting}
                     onChange={(e) =>
                       setForm({ ...form, email: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white disabled:opacity-70"
                   />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <input
-                    type="tel"
-                    placeholder="Phone Number"
+                  <PhoneInput
+                    placeholder="Phone Number *"
                     value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
+                    disabled={submitting}
+                    onChange={(v) => setForm({ ...form, phone: v })}
+                    inputClassName="py-3"
                   />
                   <input
                     type="text"
                     placeholder="Subject"
                     value={form.subject}
+                    disabled={submitting}
                     onChange={(e) =>
                       setForm({ ...form, subject: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white disabled:opacity-70"
                   />
                 </div>
                 <textarea
                   placeholder="Your Message *"
                   value={form.message}
                   rows={5}
+                  disabled={submitting}
                   onChange={(e) =>
                     setForm({ ...form, message: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white resize-none disabled:opacity-70"
                 />
                 <Button
                   type="submit"
                   variant="hero"
                   size="lg"
                   className="gap-2 group"
+                  disabled={submitting}
                 >
-                  <Send className="w-5 h-5" /> Send Message
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Sending…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" /> Send Message
+                    </>
+                  )}
                 </Button>
               </form>
             </motion.div>
@@ -231,7 +313,6 @@ const ContactPage = () => {
           </motion.div>
         </div>
       </section>
-
     </div>
   );
 };

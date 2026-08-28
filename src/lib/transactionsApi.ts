@@ -34,7 +34,12 @@ async function authedGet<T>(path: string): Promise<T> {
 
 // ---- Types ----
 
-export type TransactionType = "plan_purchase" | "profile_boost" | "refund";
+export type TransactionType =
+  | "plan_purchase"
+  | "profile_boost"
+  | "refund"
+  | "jathakam_pdf"
+  | "thalakuri_pdf";
 export type TransactionStatus = "success" | "failed" | "pending" | "refunded";
 export type PaymentMethod = "razorpay" | "stripe" | "upi" | "manual";
 

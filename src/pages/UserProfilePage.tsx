@@ -22,7 +22,6 @@ import {
   UserCircle,
   FileText,
   Loader2,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/phone";
@@ -54,7 +53,6 @@ import {
   getProfileFamily,
   postPhotos,
   syncMeProfileToStore,
-  updateBirthDetails,
   type ProfileData,
   type LocationBody,
   type ReligionBody,
@@ -225,8 +223,7 @@ type SectionKey =
   | "Location"
   | "Personal"
   | "Family"
-  | "About Me"
-  | "Horoscope";
+  | "About Me";
 
 const allProfileSections: {
   title: SectionKey;
@@ -235,7 +232,7 @@ const allProfileSections: {
 }[] = [
   {
     title: "Basic Info",
-    description: "Name, Gender, DOB, Phone, Email",
+    description: "Name, Gender, DOB, Phone, Email, Horoscope",
     icon: User,
   },
   {
@@ -257,11 +254,6 @@ const allProfileSections: {
     title: "Location",
     description: "Country, State, District, City, Address",
     icon: MapPin,
-  },
-  {
-    title: "Horoscope",
-    description: "Birth time and place for horoscope matching",
-    icon: Sparkles,
   },
   {
     title: "Personal",
@@ -386,16 +378,6 @@ function pendingHoroscopeMessage(data: ProfileFormData): string {
   const base =
     "Birth details saved. Your horoscope will appear after it is generated.";
   return saved ? `${base} Saved: ${saved}` : base;
-}
-
-function savedHoroscopeExists(data: ProfileData | null): boolean {
-  const h = data?.horoscope_details;
-  if (!h) return false;
-  return Boolean(
-    h.has_horoscope ||
-      (typeof h.time_of_birth === "string" && h.time_of_birth.trim()) ||
-      (typeof h.place_of_birth === "string" && h.place_of_birth.trim()),
-  );
 }
 
 /** Map GET v1/profile/ data to form state (including ids for PATCH). */
@@ -1084,6 +1066,40 @@ function EditSectionForm({
               value={data.email}
               onChange={(e) => update("email", e.target.value)}
               placeholder="e.g. name@example.com"
+            />
+          </div>
+          <div className="grid gap-4 pt-2 border-t border-border/60">
+            <p className="text-sm text-muted-foreground">
+              Birth time and place are used to generate your horoscope for
+              Porutham matching. Rasi and nakshatra are calculated after
+              generation.
+            </p>
+            <HoroscopeBirthFields
+              birthTime={data.birthTime}
+              birthPlace={data.birthPlace}
+              birthLatitude={data.birthLatitude}
+              birthLongitude={data.birthLongitude}
+              birthTimezone={data.birthTimezone}
+              onChange={(updates) => {
+                onChange((prev) => ({
+                  ...prev,
+                  ...(updates.birth_time !== undefined
+                    ? { birthTime: updates.birth_time }
+                    : {}),
+                  ...(updates.birth_place !== undefined
+                    ? { birthPlace: updates.birth_place }
+                    : {}),
+                  ...(updates.birth_latitude !== undefined
+                    ? { birthLatitude: updates.birth_latitude }
+                    : {}),
+                  ...(updates.birth_longitude !== undefined
+                    ? { birthLongitude: updates.birth_longitude }
+                    : {}),
+                  ...(updates.birth_timezone !== undefined
+                    ? { birthTimezone: updates.birth_timezone }
+                    : {}),
+                }));
+              }}
             />
           </div>
         </div>
@@ -2256,43 +2272,6 @@ function EditSectionForm({
           </div>
         </div>
       );
-    case "Horoscope":
-      return (
-        <div className="grid gap-4 py-2">
-          <p className="text-sm text-muted-foreground">
-            Birth time and place are used to generate your horoscope for
-            Porutham matching. Rasi and nakshatra are calculated after
-            generation.
-          </p>
-          <HoroscopeBirthFields
-            birthTime={data.birthTime}
-            birthPlace={data.birthPlace}
-            birthLatitude={data.birthLatitude}
-            birthLongitude={data.birthLongitude}
-            birthTimezone={data.birthTimezone}
-            onChange={(updates) => {
-              onChange((prev) => ({
-                ...prev,
-                ...(updates.birth_time !== undefined
-                  ? { birthTime: updates.birth_time }
-                  : {}),
-                ...(updates.birth_place !== undefined
-                  ? { birthPlace: updates.birth_place }
-                  : {}),
-                ...(updates.birth_latitude !== undefined
-                  ? { birthLatitude: updates.birth_latitude }
-                  : {}),
-                ...(updates.birth_longitude !== undefined
-                  ? { birthLongitude: updates.birth_longitude }
-                  : {}),
-                ...(updates.birth_timezone !== undefined
-                  ? { birthTimezone: updates.birth_timezone }
-                  : {}),
-              }));
-            }}
-          />
-        </div>
-      );
     default:
       return null;
   }
@@ -2304,12 +2283,18 @@ function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
       const dobDisplay = data.dob.trim()
         ? formatDateDdMmYyyy(data.dob)
         : "";
+      const horoDisplay = hasHoroscopeBirthDetails(data)
+        ? [formatBirthTimeDisplay(data.birthTime), data.birthPlace.trim()]
+            .filter(Boolean)
+            .join(" · ")
+        : "";
       return (
         [
           data.name,
           data.gender ? formatGenderLabel(data.gender) : "",
           dobDisplay,
           data.email,
+          horoDisplay,
         ]
           .filter(Boolean)
           .join(" · ") || "—"
@@ -2360,14 +2345,6 @@ function getSectionSummary(section: SectionKey, data: ProfileFormData): string {
       return data.bio
         ? `${data.bio.slice(0, 80)}${data.bio.length > 80 ? "…" : ""}`
         : "—";
-    case "Horoscope": {
-      if (!hasHoroscopeBirthDetails(data)) return "Not added yet";
-      return (
-        [formatBirthTimeDisplay(data.birthTime), data.birthPlace]
-          .filter(Boolean)
-          .join(" · ") || "Added"
-      );
-    }
     default:
       return "";
   }
@@ -2437,6 +2414,23 @@ function ViewSectionContent({
           )}
           {row("Phone", formatPhoneDisplay(data.phone))}
           {row("Email", data.email)}
+          {hasHoroscopeBirthDetails(data) ? (
+            <>
+              {row(
+                "Time of Birth",
+                formatBirthTimeDisplay(data.birthTime) || data.birthTime,
+              )}
+              {row("Place of Birth", data.birthPlace)}
+              {data.birthLatitude && data.birthLongitude
+                ? row(
+                    "Coordinates",
+                    `${Number(data.birthLatitude).toFixed(4)}, ${Number(data.birthLongitude).toFixed(4)}`,
+                  )
+                : null}
+            </>
+          ) : (
+            row("Horoscope", "Not added yet")
+          )}
         </div>
       );
     case "Religion":
@@ -2527,7 +2521,10 @@ function ViewSectionContent({
           {row("Marital Status", data.maritalStatus)}
           {isDivorced && row("Reason for Divorce", data.reasonForDivorce)}
           {showChildren && row("Has Children", data.hasChildren === "yes" ? "Yes" : "No")}
-          {showChildren && row("Number of Children", data.numberOfChildren)}
+          {showChildren &&
+            data.hasChildren === "yes" &&
+            Number(data.numberOfChildren) > 0 &&
+            row("Number of Children", data.numberOfChildren)}
           {row("Height (cm)", data.height)}
           {row("Weight (kg)", data.weight)}
           {row("Colour / Complexion", data.color)}
@@ -2559,30 +2556,6 @@ function ViewSectionContent({
       );
     case "About Me":
       return <div className="space-y-0">{row("Bio", data.bio)}</div>;
-    case "Horoscope":
-      return (
-        <div className="space-y-0">
-          {hasHoroscopeBirthDetails(data) ? (
-            <>
-              {row(
-                "Time of Birth",
-                formatBirthTimeDisplay(data.birthTime) || data.birthTime,
-              )}
-              {row("Place of Birth", data.birthPlace)}
-              {data.birthLatitude && data.birthLongitude
-                ? row(
-                    "Coordinates",
-                    `${Number(data.birthLatitude).toFixed(4)}, ${Number(data.birthLongitude).toFixed(4)}`,
-                  )
-                : null}
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground py-1.5">
-              Not added yet. Use Edit to add your birth time and place.
-            </p>
-          )}
-        </div>
-      );
     default:
       return null;
   }
@@ -3424,14 +3397,18 @@ const UserProfilePage = () => {
       }
     }
 
-    if (section === "Horoscope") {
-      if (!profileData.birthTime.trim()) {
-        setSaveError("Birth time is required.");
-        return;
-      }
-      if (!profileData.birthPlace.trim()) {
-        setSaveError("Place of birth is required.");
-        return;
+    if (section === "Basic Info") {
+      const hasTime = Boolean(profileData.birthTime.trim());
+      const hasPlace = Boolean(profileData.birthPlace.trim());
+      if (hasTime || hasPlace) {
+        if (!hasTime) {
+          setSaveError("Birth time is required.");
+          return;
+        }
+        if (!hasPlace) {
+          setSaveError("Place of birth is required.");
+          return;
+        }
       }
     }
 
@@ -3439,12 +3416,33 @@ const UserProfilePage = () => {
     let bustPhotoCache = false;
     try {
       switch (section) {
-        case "Basic Info":
+        case "Basic Info": {
+          const lat = parseFloat(profileData.birthLatitude);
+          const lon = parseFloat(profileData.birthLongitude);
+          const tz = parseFloat(profileData.birthTimezone || "5.5");
+          const coordsUsable =
+            Number.isFinite(lat) &&
+            Number.isFinite(lon) &&
+            !(lat === 0 && lon === 0);
+          const sendHoroscope =
+            Boolean(profileData.birthTime.trim()) ||
+            Boolean(profileData.birthPlace.trim());
           await patchBasic({
             name: profileData.name,
             gender: profileData.gender.trim().toLowerCase(),
             dob: normalizeDobForApi(profileData.dob),
             email: profileData.email,
+            ...(sendHoroscope
+              ? {
+                  has_horoscope: true,
+                  time_of_birth: profileData.birthTime.trim(),
+                  place_of_birth: profileData.birthPlace.trim(),
+                  ...(coordsUsable
+                    ? { birth_latitude: lat, birth_longitude: lon }
+                    : {}),
+                  ...(Number.isFinite(tz) ? { birth_timezone: tz } : {}),
+                }
+              : {}),
           });
           if (user) {
             useAuthStore.setState({
@@ -3456,6 +3454,7 @@ const UserProfilePage = () => {
             });
           }
           break;
+        }
         case "Location":
           await patchLocation(buildLocationBody());
           break;
@@ -3494,25 +3493,6 @@ const UserProfilePage = () => {
           setPhotoFiles({});
           break;
         }
-        case "Horoscope": {
-          const lat = parseFloat(profileData.birthLatitude);
-          const lon = parseFloat(profileData.birthLongitude);
-          const tz = parseFloat(profileData.birthTimezone || "5.5");
-          const coordsUsable =
-            Number.isFinite(lat) &&
-            Number.isFinite(lon) &&
-            !(lat === 0 && lon === 0);
-          await updateBirthDetails({
-            time_of_birth: profileData.birthTime.trim(),
-            place_of_birth: profileData.birthPlace.trim(),
-            has_horoscope: true,
-            ...(coordsUsable
-              ? { birth_latitude: lat, birth_longitude: lon }
-              : {}),
-            ...(Number.isFinite(tz) ? { birth_timezone: tz } : {}),
-          });
-          break;
-        }
         default:
           setEditingSection(null);
           return;
@@ -3523,7 +3503,7 @@ const UserProfilePage = () => {
         setProfileData(mapProfileDataToForm(res.data, user));
         updateAvatarFromProfile(res.data, bustPhotoCache);
       }
-      if (section === "Horoscope") {
+      if (section === "Basic Info") {
         setHoroscopeData(null);
         setIsHoroscopeGenerated(false);
         setHoroscopeError(null);
@@ -3723,13 +3703,7 @@ const UserProfilePage = () => {
                 }
               }}
               title={
-                editingSection === "Horoscope"
-                  ? savedHoroscopeExists(profileApiData)
-                    ? "Update Horoscope Details"
-                    : "Add Horoscope Details"
-                  : editingSection
-                    ? `Edit ${editingSection}`
-                    : undefined
+                editingSection ? `Edit ${editingSection}` : undefined
               }
               contentClassName="max-w-3xl lg:max-w-4xl"
               bodyClassName="[&_input]:bg-white [&_select]:bg-white [&_textarea]:bg-white [&_input]:border-border [&_select]:border-border [&_textarea]:border-border"

@@ -20,6 +20,7 @@ import {
   Users,
   Receipt,
   Star,
+  ArrowLeft,
 } from "lucide-react";
 import { cn, isUsableProfilePhotoUrl, withoutTrailingSlash, withMediaCacheBust } from "@/lib/utils";
 import ShimmerImage from "@/components/ShimmerImage";
@@ -320,6 +321,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              <Link
+                href="/"
+                prefetch
+                onClick={() => setSidebarOpen(false)}
+                className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-accent-rose/30 px-3 py-2.5 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-accent-rose/50"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                Back to Website
+              </Link>
 
               {/* User photo + name from GET v1/profile */}
               <div className="flex flex-col items-center mb-6">

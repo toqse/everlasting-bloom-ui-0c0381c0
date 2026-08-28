@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
   Star,
@@ -8,11 +9,15 @@ import {
   Phone,
   Mail,
   Heart,
-  MapPin,
   UserCheck,
   ShieldCheck,
   Infinity,
+  User,
 } from "lucide-react";
+import {
+  getWebsiteTestimonials,
+  resolveTestimonialAvatarUrl,
+} from "@/lib/testimonialsApi";
 
 const features = [
   {
@@ -42,36 +47,6 @@ const stats = [
   { value: "4000+", label: "REGISTERED USERS", icon: Users },
   { value: "1600+", label: "MENS", icon: Users },
   { value: "2000+", label: "WOMENS", icon: Users },
-];
-
-const testimonials = [
-  {
-    name: "John Smith",
-    role: "IT Professional",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    review:
-      "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The service is amazing!",
-    rating: 5,
-  },
-  {
-    name: "Julia Ann",
-    role: "Teacher",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-    review:
-      "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. Highly recommended!",
-    rating: 5,
-  },
-  {
-    name: "William Son",
-    role: "Government Staff",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-    review:
-      "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. Excellent platform!",
-    rating: 5,
-  },
 ];
 
 const teamContacts = [
@@ -112,6 +87,14 @@ const teamIconColors = [
 ];
 
 const AboutPage = () => {
+  const { data: testimonials = [] } = useQuery({
+    queryKey: ["website", "testimonials"],
+    queryFn: async () => {
+      const res = await getWebsiteTestimonials();
+      return res.data.testimonials ?? [];
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Banner with wedding background */}
@@ -339,6 +322,7 @@ const AboutPage = () => {
       </section>
 
       {/* Testimonials */}
+      {testimonials.length > 0 && (
       <section className="py-16 bg-gradient-romantic">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -347,9 +331,12 @@ const AboutPage = () => {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
+            {testimonials.map((t, i) => {
+              const avatarUrl = resolveTestimonialAvatarUrl(t.avatar);
+              const stars = Math.min(5, Math.max(1, t.rating || 5));
+              return (
               <motion.div
-                key={t.name}
+                key={t.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -357,25 +344,28 @@ const AboutPage = () => {
                 className="bg-card rounded-3xl p-6 shadow-card hover-lift"
               >
                 <div className="flex gap-1 mb-3">
-                  {[...Array(t.rating)].map((_, j) => (
+                  {[...Array(stars)].map((_, j) => (
                     <Star
                       key={j}
                       className="w-4 h-4 text-secondary fill-secondary"
                     />
                   ))}
-                  <span className="text-xs text-muted-foreground ml-2">
-                    (50 Reviews)
-                  </span>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4 italic">
                   "{t.review}"
                 </p>
                 <div className="flex items-center gap-3">
-                  <img
-                    src={t.avatar}
-                    alt={t.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={t.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary/60" />
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-serif font-bold text-foreground text-sm">
                       {t.name}
@@ -384,10 +374,12 @@ const AboutPage = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
+      )}
 
       {/* Team */}
       <section className="py-16">

@@ -4,28 +4,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Inbox,
   Hourglass,
   Send,
   Clock,
-  SlidersHorizontal,
   MapPin,
   CalendarDays,
   GraduationCap,
   Briefcase,
   Check,
   X,
-  ChevronDown,
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,8 +39,6 @@ import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { formatDateTimeDdMmYyyy } from "@/lib/utils";
 
 type Tab = "received" | "sent";
-type SortOrder = "newest" | "oldest";
-type StatusFilter = "all" | InterestCard["status"];
 
 const STATUS_CONFIG: Record<
   InterestCard["status"],
@@ -75,14 +61,6 @@ const STATUS_CONFIG: Record<
     className: "bg-slate-100 text-slate-600 border-slate-200",
   },
 };
-
-const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "pending", label: "Pending" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Declined" },
-  { value: "cancelled", label: "Cancelled" },
-];
 
 const DEFAULT_PHOTO =
   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=260&fit=crop&crop=face";
@@ -107,8 +85,6 @@ const DashboardInterests = () => {
   );
   const [previewCanChat, setPreviewCanChat] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -259,17 +235,12 @@ const DashboardInterests = () => {
         ? receivedInterests.map((i) => ({ interest: i, isReceived: true }))
         : sentInterests.map((i) => ({ interest: i, isReceived: false }));
 
-    const byStatus =
-      statusFilter === "all"
-        ? base
-        : base.filter(({ interest }) => interest.status === statusFilter);
-
-    return [...byStatus].sort((a, b) => {
+    return [...base].sort((a, b) => {
       const ta = new Date(a.interest.created_at).getTime() || 0;
       const tb = new Date(b.interest.created_at).getTime() || 0;
-      return sortOrder === "newest" ? tb - ta : ta - tb;
+      return tb - ta;
     });
-  }, [activeTab, receivedInterests, sentInterests, statusFilter, sortOrder]);
+  }, [activeTab, receivedInterests, sentInterests]);
 
   const handleAccept = async (id: number, name: string) => {
     setBusyId(id);
@@ -357,14 +328,10 @@ const DashboardInterests = () => {
     },
   ];
 
-  const activeFilterLabel =
-    FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label ?? "All statuses";
-
   return (
     <div className="space-y-4 lg:space-y-6">
         {/* Page header */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div>
             <h1 className="font-serif text-2xl md:text-3xl font-bold text-secondary">
               Interest requests
             </h1>
@@ -372,37 +339,6 @@ const DashboardInterests = () => {
               Manage and respond to interest requests from potential candidates.
             </p>
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 rounded-full border-primary/20"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                Filter
-                {statusFilter !== "all" && (
-                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-              >
-                {FILTER_OPTIONS.map((opt) => (
-                  <DropdownMenuRadioItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
@@ -448,8 +384,8 @@ const DashboardInterests = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-3xl shadow-card p-4 sm:p-6"
         >
-          {/* Tabs + sort */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          {/* Tabs */}
+          <div className="flex flex-wrap items-center gap-3 mb-5">
             <div className="flex gap-1.5 p-1 rounded-full bg-rose-50/80 border border-primary/5">
               {tabs.map((tab) => (
                 <button
@@ -467,29 +403,6 @@ const DashboardInterests = () => {
                 </button>
               ))}
             </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Sort by:{" "}
-                  <span className="font-semibold text-foreground">
-                    {sortOrder === "newest" ? "Newest first" : "Oldest first"}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortOrder("newest")}>
-                  Newest first
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOrder("oldest")}>
-                  Oldest first
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           <div className="space-y-3">
@@ -504,11 +417,7 @@ const DashboardInterests = () => {
                   <Inbox className="w-7 h-7 text-primary/40" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  No {activeTab}
-                  {statusFilter !== "all"
-                    ? ` ${activeFilterLabel.toLowerCase()}`
-                    : ""}{" "}
-                  interests at the moment.
+                  No {activeTab} interests at the moment.
                 </p>
               </div>
             ) : (
@@ -554,15 +463,12 @@ const DashboardInterests = () => {
                       exit={{ opacity: 0, scale: 0.98 }}
                       className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4 rounded-2xl border border-primary/10 bg-card p-4 hover:shadow-card transition-shadow"
                     >
-                      <div className="relative flex-shrink-0 self-center sm:self-start">
+                      <div className="flex-shrink-0 self-center sm:self-start">
                         <img
                           src={interest.profile_photo || DEFAULT_PHOTO}
                           alt={interest.name}
                           className="w-28 h-32 rounded-xl object-cover"
                         />
-                        <span className="absolute bottom-1.5 left-1.5 right-1.5 text-center text-[10px] font-bold px-1 py-1 rounded-md bg-primary/90 text-primary-foreground backdrop-blur">
-                          MEMBER
-                        </span>
                       </div>
 
                       <div className="flex-1 min-w-0">

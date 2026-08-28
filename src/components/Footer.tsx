@@ -21,12 +21,7 @@ const Footer = () => {
       { name: "Membership", href: "/membership" },
       { name: "Contact", href: "/contact" },
     ],
-    services: [
-      { name: "Matrimony Services", href: "/search" },
-      { name: "Wedding Services", href: "/" },
-      { name: "Astrology Match", href: "/" },
-      { name: "Premium Matchmaking", href: "/membership" },
-    ],
+    services: [{ name: "Premium Matchmaking", href: "/membership" }],
   };
 
   const socialLinks = [

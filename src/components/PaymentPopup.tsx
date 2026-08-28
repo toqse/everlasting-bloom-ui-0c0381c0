@@ -111,8 +111,29 @@ const PaymentPopup = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-3xl p-0 gap-0 border-0 shadow-elevated">
+    <Dialog
+      open={open}
+      modal={!submitting}
+      onOpenChange={(next) => {
+        if (submitting && !next) return;
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent
+        className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-3xl p-0 gap-0 border-0 shadow-elevated"
+        onPointerDownOutside={(e) => {
+          if (submitting) e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          if (submitting) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (submitting) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (submitting) e.preventDefault();
+        }}
+      >
         <DialogHeader className="p-6 pb-4 border-b border-primary/10">
           <DialogTitle className="font-serif text-xl font-bold text-secondary">
             Complete your purchase

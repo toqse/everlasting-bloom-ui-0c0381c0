@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Heart, Eye, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Heart, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ProfileViewDrawer from "@/components/ProfileViewDrawer";
@@ -277,21 +277,6 @@ const DashboardFavoritesPage = () => {
                         onClick={() => handleRemoveWishlist(p.matri_id)}
                       >
                         Remove
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/jathagam?profile=${encodeURIComponent(
-                              p.matri_id,
-                            )}`,
-                          )
-                        }
-                      >
-                        <Sparkles className="mr-1 h-4 w-4" />
-                        Check Match
                       </Button>
                     </div>
                   </div>

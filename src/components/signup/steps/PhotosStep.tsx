@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
-import { Image as ImageIcon, IdCard, Smartphone, Users, PlusCircle, Check, FileImage } from "lucide-react";
+import { Image as ImageIcon, IdCard, Smartphone, Users, PlusCircle, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import PhotoCropDialog, {
   type PhotoCropDialogState,
@@ -315,14 +315,6 @@ const PhotosStep = ({
               )}
             </label>
           ))}
-        </div>
-        <div className="mt-3 flex items-start gap-2">
-          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-green-500">
-            <Check className="h-3 w-3 text-white" strokeWidth={3} />
-          </div>
-          {/* <p className="text-sm text-muted-foreground">
-            Verified badge shown on your profile. Stored securely in app memory.
-          </p> */}
         </div>
       </div>
     </>

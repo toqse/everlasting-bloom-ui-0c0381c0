@@ -62,9 +62,43 @@ function chunkLongToken(token: string, maxLen: number): string[] {
   return chunks;
 }
 
+function na(value: unknown): string {
+  if (value == null) return "NA";
+  const s = String(value).trim();
+  if (
+    !s ||
+    s === "—" ||
+    s === "-" ||
+    s.toLowerCase() === "n/a" ||
+    s.toLowerCase() === "null" ||
+    s.toLowerCase() === "undefined"
+  ) {
+    return "NA";
+  }
+  return s;
+}
+
+function isNeverMarried(status: unknown): boolean {
+  return String(status ?? "").trim().toLowerCase() === "never married";
+}
+
+function shouldShowChildrenCount(maritalStatus: unknown, count: unknown): boolean {
+  if (isNeverMarried(maritalStatus)) return false;
+  const numeric = Number(count);
+  if (Number.isFinite(numeric) && numeric <= 0) return false;
+  const s = String(count ?? "").trim();
+  return !!s && s !== "0" && s !== "—" && s !== "-" && s.toLowerCase() !== "na";
+}
+
+const HIDDEN_FAMILY_KEYS = new Set([
+  "family_values",
+  "native_place",
+  "family_location",
+]);
+
 function formatAddressForDisplay(raw: string, maxLen = 42): string {
   const text = String(raw ?? "").trim();
-  if (!text || text === "—") return "—";
+  if (!text || text === "—" || text === "-") return "NA";
 
   const parts = text
     .split(",")
@@ -485,18 +519,34 @@ const ProfileViewDrawer = ({
   const stateStr = loc?.state != null ? String(loc.state).trim() : "";
   const districtStr = loc?.district != null ? String(loc.district).trim() : "";
   const locationFieldRows: { label: string; value: string }[] = [
-    {
-      label: "Country",
-      value: loc?.country != null ? String(loc.country) : "—",
-    },
+    { label: "Country", value: na(loc?.country) },
     ...(stateStr && districtStr && stateStr === districtStr
-      ? [{ label: "State & District", value: stateStr }]
+      ? [{ label: "State & District", value: na(stateStr) }]
       : [
-          { label: "State", value: stateStr || "—" },
-          { label: "District", value: districtStr || "—" },
+          { label: "State", value: na(stateStr) },
+          { label: "District", value: na(districtStr) },
         ]),
-    { label: "City", value: loc?.city != null ? String(loc.city) : "—" },
+    { label: "City", value: na(loc?.city) },
   ];
+  const childrenCount = per?.children_count ?? per?.number_of_children;
+  const personalDetailItems: FieldItem[] = [
+    { label: "Marital status", value: na(per?.marital_status) },
+    ...(shouldShowChildrenCount(per?.marital_status, childrenCount)
+      ? [{ label: "Children", value: na(childrenCount) }]
+      : []),
+    { label: "Height", value: na(per?.height_cm) },
+    { label: "Weight", value: na(per?.weight_kg) },
+    { label: "Colour", value: na(per?.colour) },
+    { label: "Blood group", value: na(per?.blood_group) },
+  ];
+  const familyDetailItems: FieldItem[] = fam
+    ? Object.entries(fam)
+        .filter(([k]) => !HIDDEN_FAMILY_KEYS.has(k.toLowerCase().replace(/\s+/g, "_")))
+        .map(([k, v]) => ({
+          label: k.replace(/_/g, " "),
+          value: na(v),
+        }))
+    : [];
 
   /** When full API profile is expanded, structured fields live in "Full Profile Details" only. */
   const hideSummaryGrids = !!(expandedFull && fullRawProfile);
@@ -880,14 +930,12 @@ const ProfileViewDrawer = ({
                       items={[
                         {
                           label: "Matri ID",
-                          value: String(fullRawProfile.matri_id ?? "—"),
+                          value: na(fullRawProfile.matri_id),
                         },
-                        { label: "Gender", value: String(bd?.gender ?? "—") },
+                        { label: "Gender", value: na(bd?.gender) },
                         {
                           label: "DOB",
-                          value: bd?.dob
-                            ? formatDateDdMmYyyy(bd.dob)
-                            : "—",
+                          value: na(bd?.dob ? formatDateDdMmYyyy(bd.dob) : ""),
                           wide: true,
                         },
                       ]}
@@ -896,31 +944,7 @@ const ProfileViewDrawer = ({
 
                   <div>
                     <SubsectionTitle>Personal</SubsectionTitle>
-                    <ProfileFieldGrid
-                      items={[
-                        {
-                          label: "Marital status",
-                          value: String(per?.marital_status ?? "—"),
-                        },
-                        {
-                          label: "Children",
-                          value: String(per?.children_count ?? "—"),
-                        },
-                        {
-                          label: "Height",
-                          value: String(per?.height_cm ?? "—"),
-                        },
-                        {
-                          label: "Weight",
-                          value: String(per?.weight_kg ?? "—"),
-                        },
-                        { label: "Colour", value: String(per?.colour ?? "—") },
-                        {
-                          label: "Blood group",
-                          value: String(per?.blood_group ?? "—"),
-                        },
-                      ]}
-                    />
+                    <ProfileFieldGrid items={personalDetailItems} />
                   </div>
                 </div>
 
@@ -931,11 +955,11 @@ const ProfileViewDrawer = ({
                       items={[
                         ...locationFieldRows.map((d) => ({
                           label: d.label,
-                          value: String(d.value),
+                          value: na(d.value),
                         })),
                         {
                           label: "Address",
-                          value: formatAddressForDisplay(String(loc?.address ?? "—")),
+                          value: formatAddressForDisplay(String(loc?.address ?? "")),
                           wide: true,
                         },
                       ]}
@@ -948,23 +972,23 @@ const ProfileViewDrawer = ({
                       items={[
                         {
                           label: "Education",
-                          value: String(edu?.highest_education ?? "—"),
+                          value: na(edu?.highest_education),
                         },
                         {
                           label: "Subject",
-                          value: String(edu?.education_subject ?? "—"),
+                          value: na(edu?.education_subject),
                         },
                         {
                           label: "Employment",
-                          value: String(edu?.employment_status ?? "—"),
+                          value: na(edu?.employment_status),
                         },
                         {
                           label: "Occupation",
-                          value: String(edu?.occupation ?? "—"),
+                          value: na(edu?.occupation),
                         },
                         {
                           label: "Annual income",
-                          value: String(edu?.annual_income ?? "—"),
+                          value: na(edu?.annual_income),
                           wide: true,
                         },
                       ]}
@@ -979,12 +1003,12 @@ const ProfileViewDrawer = ({
                       items={[
                         {
                           label: "Religion",
-                          value: String(rel?.religion ?? "—"),
+                          value: na(rel?.religion),
                         },
-                        { label: "Caste", value: String(rel?.caste ?? "—") },
+                        { label: "Caste", value: na(rel?.caste) },
                         {
                           label: "Mother tongue",
-                          value: String(rel?.mother_tongue ?? "—"),
+                          value: na(rel?.mother_tongue),
                           wide: true,
                         },
                       ]}
@@ -994,13 +1018,8 @@ const ProfileViewDrawer = ({
                   <div>
                     <SubsectionTitle>Family</SubsectionTitle>
                     <div className="rounded-lg border border-border/60 bg-muted/10 px-4 py-4">
-                      {fam && Object.keys(fam).length ? (
-                        <ProfileFieldGrid
-                          items={Object.entries(fam).map(([k, v]) => ({
-                            label: k.replace(/_/g, " "),
-                            value: String(v ?? "—"),
-                          }))}
-                        />
+                      {familyDetailItems.length ? (
+                        <ProfileFieldGrid items={familyDetailItems} />
                       ) : (
                         <p className="text-sm text-muted-foreground">
                           No family details provided.
@@ -1047,7 +1066,10 @@ const ProfileViewDrawer = ({
           open={!!photoPreviewUrl}
           onOpenChange={(o) => !o && setPhotoPreviewUrl(null)}
         >
-          <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden rounded-2xl border-0">
+          <DialogContent
+            hideCloseButton
+            className="max-w-4xl w-[95vw] p-0 overflow-hidden rounded-2xl border-0"
+          >
             <DialogTitle className="sr-only">Photo preview</DialogTitle>
             <DialogDescription className="sr-only">
               Preview photo
