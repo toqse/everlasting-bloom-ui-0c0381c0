@@ -14,13 +14,18 @@ export type HoroscopeBirthFieldKey =
   | "birth_longitude"
   | "birth_timezone";
 
+export type HoroscopeBirthUpdates = Partial<
+  Record<HoroscopeBirthFieldKey, string>
+>;
+
 export interface HoroscopeBirthFieldsProps {
   birthTime: string;
   birthPlace: string;
   birthLatitude: string;
   birthLongitude: string;
   birthTimezone?: string;
-  onChange: (name: HoroscopeBirthFieldKey, value: string) => void;
+  /** Apply one or more fields in a single update so parent state does not drop siblings. */
+  onChange: (updates: HoroscopeBirthUpdates) => void;
 }
 
 /**
@@ -87,10 +92,13 @@ export function HoroscopeBirthFields({
     (place: GeocodeResult) => {
       skipNextSearchRef.current = true;
       setPlaceQuery(place.label);
-      onChange("birth_place", place.label);
-      onChange("birth_latitude", String(place.latitude));
-      onChange("birth_longitude", String(place.longitude));
-      if (!birthTimezone) onChange("birth_timezone", DEFAULT_TIMEZONE);
+      const updates: HoroscopeBirthUpdates = {
+        birth_place: place.label,
+        birth_latitude: String(place.latitude),
+        birth_longitude: String(place.longitude),
+      };
+      if (!birthTimezone) updates.birth_timezone = DEFAULT_TIMEZONE;
+      onChange(updates);
       setPlaceOpen(false);
       setPlaceResults([]);
     },
@@ -100,9 +108,11 @@ export function HoroscopeBirthFields({
   const handlePlaceInput = useCallback(
     (value: string) => {
       setPlaceQuery(value);
-      onChange("birth_place", value);
-      onChange("birth_latitude", "");
-      onChange("birth_longitude", "");
+      onChange({
+        birth_place: value,
+        birth_latitude: "",
+        birth_longitude: "",
+      });
     },
     [onChange],
   );
@@ -113,7 +123,7 @@ export function HoroscopeBirthFields({
         <label className={labelClass}>Birth Time</label>
         <BirthTimePicker
           value={birthTime || ""}
-          onChange={(v) => onChange("birth_time", v)}
+          onChange={(v) => onChange({ birth_time: v })}
         />
       </div>
 

@@ -18,6 +18,8 @@ type MyHoroscopeSectionProps = {
   horoscopeLoading?: boolean;
   loadingThalakuri?: boolean;
   horoscopeError?: string | null;
+  /** When true, horoscopeError is informational (waiting for EXE generation). */
+  horoscopePending?: boolean;
   /** When false, Thalakuri purchase/download is blocked until EXE generates the horoscope. */
   thalakuriEnabled?: boolean;
   className?: string;
@@ -29,6 +31,7 @@ export function MyHoroscopeSection({
   horoscopeLoading = false,
   loadingThalakuri = false,
   horoscopeError = null,
+  horoscopePending = false,
   thalakuriEnabled = true,
   className,
 }: MyHoroscopeSectionProps) {
@@ -83,7 +86,9 @@ export function MyHoroscopeSection({
       </div>
 
       {horoscopeError &&
-        (isHoroscopeContactAdminMessage(horoscopeError) ? (
+        (horoscopePending ? (
+          <p className="mt-4 text-sm text-muted-foreground">{horoscopeError}</p>
+        ) : isHoroscopeContactAdminMessage(horoscopeError) ? (
           <Link
             href="/contact"
             className="mt-4 block text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"

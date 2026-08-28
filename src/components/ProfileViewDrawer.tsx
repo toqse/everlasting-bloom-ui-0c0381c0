@@ -267,6 +267,13 @@ const ProfileViewDrawer = ({
 
   const displayName =
     (fd?.name && fd.name.trim()) || activePreview?.name || profile?.name || "";
+  const displayMatriId =
+    (typeof activePreview?.matri_id === "string" &&
+      activePreview.matri_id.trim()) ||
+    (fullRawProfile?.matri_id != null
+      ? String(fullRawProfile.matri_id).trim()
+      : "") ||
+    "";
   const displayAge =
     fd && fd.age > 0 ? fd.age : (activePreview?.age ?? profile?.age ?? 0);
   const displayLocationFull =
@@ -309,16 +316,6 @@ const ProfileViewDrawer = ({
     fd?.mother_tongue?.trim() || activePreview?.mother_tongue || "Malayalam";
   const displayAnnualIncome =
     fd?.annual_income?.trim() || activePreview?.annual_income || "₹5–8 Lakhs";
-  const displayEmployment =
-    (fd?.employment && fd.employment.trim() && fd.employment !== "—"
-      ? fd.employment
-      : null) || "Employed - Private";
-  const displayField =
-    displayOccupation && /engineer|it|software/i.test(displayOccupation)
-      ? "Engineering / IT"
-      : displayOccupation
-        ? "Professional"
-        : "—";
 
   const headerPhoto =
     fd?.profile_photo || activePreview?.profile_photo || profile?.image || null;
@@ -508,6 +505,9 @@ const ProfileViewDrawer = ({
   /** Header shows age + religion/caste chips; omit fields repeated in Basic Details & badges. */
   const basicDetailItems: FieldItem[] = [
     { label: "Location", value: displayLocationFormatted, wide: true },
+    ...(displayMatriId
+      ? [{ label: "Matri ID", value: displayMatriId }]
+      : []),
     { label: "Education", value: displayEducation },
     { label: "Marital status", value: displayMaritalStatus },
     { label: "Height", value: displayHeight },
@@ -516,9 +516,7 @@ const ProfileViewDrawer = ({
 
   const careerDetailItems: FieldItem[] = [
     { label: "Occupation", value: displayOccupation || "—" },
-    { label: "Employment", value: displayEmployment },
     { label: "Annual income", value: displayAnnualIncome },
-    { label: "Field", value: displayField },
   ];
 
   const horoscopeInfo = [
@@ -605,6 +603,11 @@ const ProfileViewDrawer = ({
               <h2 className="font-serif text-2xl font-semibold tracking-tight md:text-3xl">
                 {displayName}
               </h2>
+              {displayMatriId ? (
+                <p className="mt-1 text-sm font-medium tracking-wide text-white/80">
+                  ID: {displayMatriId}
+                </p>
+              ) : null}
               <p className="mt-1.5 text-sm text-white/85">
                 {displayAge} yrs
                 {displayOccupation ? ` · ${displayOccupation}` : ""}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import PhotoCropDialog, {
   type PhotoCropDialogState,
@@ -372,6 +372,15 @@ function hasHoroscopeBirthDetails(data: ProfileFormData): boolean {
   return Boolean(
     data.hasHoroscope || data.birthTime.trim() || data.birthPlace.trim(),
   );
+}
+
+function pendingHoroscopeMessage(data: ProfileFormData): string {
+  const saved = [formatBirthTimeDisplay(data.birthTime), data.birthPlace.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const base =
+    "Birth details saved. Your horoscope will appear after it is generated.";
+  return saved ? `${base} Saved: ${saved}` : base;
 }
 
 function savedHoroscopeExists(data: ProfileData | null): boolean {
@@ -803,7 +812,7 @@ function EditSectionForm({
 }: {
   section: SectionKey;
   data: ProfileFormData;
-  onChange: (data: ProfileFormData) => void;
+  onChange: Dispatch<SetStateAction<ProfileFormData>>;
   maritalStatusOptions?: string[];
   complexionOptions?: string[];
   locationOptions?: {
@@ -2245,15 +2254,25 @@ function EditSectionForm({
             birthLatitude={data.birthLatitude}
             birthLongitude={data.birthLongitude}
             birthTimezone={data.birthTimezone}
-            onChange={(name, value) => {
-              const fieldMap = {
-                birth_time: "birthTime",
-                birth_place: "birthPlace",
-                birth_latitude: "birthLatitude",
-                birth_longitude: "birthLongitude",
-                birth_timezone: "birthTimezone",
-              } as const;
-              onChange({ ...data, [fieldMap[name]]: value });
+            onChange={(updates) => {
+              onChange((prev) => ({
+                ...prev,
+                ...(updates.birth_time !== undefined
+                  ? { birthTime: updates.birth_time }
+                  : {}),
+                ...(updates.birth_place !== undefined
+                  ? { birthPlace: updates.birth_place }
+                  : {}),
+                ...(updates.birth_latitude !== undefined
+                  ? { birthLatitude: updates.birth_latitude }
+                  : {}),
+                ...(updates.birth_longitude !== undefined
+                  ? { birthLongitude: updates.birth_longitude }
+                  : {}),
+                ...(updates.birth_timezone !== undefined
+                  ? { birthTimezone: updates.birth_timezone }
+                  : {}),
+              }));
             }}
           />
         </div>
@@ -2589,17 +2608,18 @@ const UserProfilePage = () => {
       const profile = res.data;
       const hasProfile =
         !!profile && profile.exists !== false && profile.id != null;
-      setIsHoroscopeGenerated(hasProfile);
-      setHoroscopeError(
-        hasProfile
-          ? null
-          : "No horoscope found yet. Please update your birth details first.",
-      );
-    } catch (e) {
+      if (hasProfile) {
+        setIsHoroscopeGenerated(true);
+        setHoroscopeError(null);
+        return;
+      }
+      setHoroscopeData(null);
       setIsHoroscopeGenerated(false);
-      setHoroscopeError(
-        e instanceof Error ? e.message : "Horoscope not available.",
-      );
+      setHoroscopeError(null);
+    } catch {
+      setHoroscopeData(null);
+      setIsHoroscopeGenerated(false);
+      setHoroscopeError(null);
     }
   }, []);
 
@@ -2614,21 +2634,29 @@ const UserProfilePage = () => {
       if (!hasProfile) {
         setHoroscopeData(null);
         setIsHoroscopeGenerated(false);
-        setHoroscopeError(
-          "No horoscope found yet. Please update your birth details first.",
-        );
+        if (hasHoroscopeBirthDetails(profileData)) {
+          setHoroscopeOpen(true);
+        } else {
+          setHoroscopeError(
+            "No horoscope found yet. Please update your birth details first.",
+          );
+        }
         return;
       }
       setHoroscopeData(profile);
       setIsHoroscopeGenerated(true);
       setHoroscopeError(null);
       setHoroscopeOpen(true);
-    } catch (e) {
+    } catch {
       setHoroscopeData(null);
       setIsHoroscopeGenerated(false);
-      setHoroscopeError(
-        e instanceof Error ? e.message : "Could not load horoscope.",
-      );
+      if (hasHoroscopeBirthDetails(profileData)) {
+        setHoroscopeOpen(true);
+      } else {
+        setHoroscopeError(
+          "No horoscope found yet. Please update your birth details first.",
+        );
+      }
     } finally {
       setHoroscopeLoading(false);
     }
@@ -3448,6 +3476,9 @@ const UserProfilePage = () => {
         updateAvatarFromProfile(res.data, bustPhotoCache);
       }
       if (section === "Horoscope") {
+        setHoroscopeData(null);
+        setIsHoroscopeGenerated(false);
+        setHoroscopeError(null);
         void refreshHoroscopeGenerated();
       }
       setEditingSection(null);
@@ -3457,6 +3488,12 @@ const UserProfilePage = () => {
       setSavingSection(false);
     }
   };
+
+  const horoscopePending =
+    isHoroscopeGenerated !== true && hasHoroscopeBirthDetails(profileData);
+  const horoscopeSectionMessage = horoscopePending
+    ? pendingHoroscopeMessage(profileData)
+    : horoscopeError;
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -3508,7 +3545,8 @@ const UserProfilePage = () => {
               onDownloadThalakuri={handleThalakuriPurchase}
               horoscopeLoading={horoscopeLoading}
               loadingThalakuri={loadingThalakuri}
-              horoscopeError={horoscopeError}
+              horoscopeError={horoscopeSectionMessage}
+              horoscopePending={horoscopePending}
               thalakuriEnabled={isHoroscopeGenerated === true}
             />
 
@@ -3526,7 +3564,7 @@ const UserProfilePage = () => {
                 </Button>
               }
             >
-              {horoscopeData && (
+              {horoscopeData ? (
                 <div className="space-y-3">
                   {(horoscopeData.star_display ||
                     horoscopeData.charts?.star?.name) && (
@@ -3581,7 +3619,25 @@ const UserProfilePage = () => {
                     </p>
                   )}
                 </div>
-              )}
+              ) : horoscopePending ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-foreground">
+                    {pendingHoroscopeMessage(profileData)}
+                  </p>
+                  {(profileData.birthTime || profileData.birthPlace) && (
+                    <p className="text-sm text-muted-foreground">
+                      {[
+                        formatBirthTimeDisplay(profileData.birthTime) &&
+                          `Time: ${formatBirthTimeDisplay(profileData.birthTime)}`,
+                        profileData.birthPlace &&
+                          `Place: ${profileData.birthPlace}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </ResponsiveModal>
 
             <ResponsiveModal

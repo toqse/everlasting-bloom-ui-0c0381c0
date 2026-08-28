@@ -3,8 +3,8 @@
 export const PROFILE_AGE_ERROR =
   "Age must be greater than 18 and less than 80 years";
 
-export const PROFILE_AGE_HINT =
-  "Must be older than 18 and younger than 80";
+//export const PROFILE_AGE_HINT =
+//  "Must be older than 18 and younger than 80";
 
 function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());

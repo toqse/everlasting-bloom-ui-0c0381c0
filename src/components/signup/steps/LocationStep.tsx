@@ -330,7 +330,12 @@ const LocationStep = ({ formData, onChange }: Props) => {
                 birthLatitude={formData.birth_latitude || ""}
                 birthLongitude={formData.birth_longitude || ""}
                 birthTimezone={formData.birth_timezone || ""}
-                onChange={(name, value) => emit(name, value)}
+                onChange={(updates) => {
+                  for (const [name, value] of Object.entries(updates)) {
+                    if (value === undefined) continue;
+                    emit(name, value);
+                  }
+                }}
               />
             </div>
           ) : null}
