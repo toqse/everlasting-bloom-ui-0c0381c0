@@ -30,18 +30,18 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-[var(--testing-banner-height,0px)] left-0 right-0 z-50 bg-white shadow-soft py-2">
-      <div className="container mx-auto px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14">
+      <div className="relative container mx-auto px-3 sm:px-4 flex items-center justify-end lg:justify-between h-12 sm:h-14">
         <Link
           href="/"
           onClick={() => setIsMobileMenuOpen(false)}
-          className="flex flex-col items-start justify-center shrink-0 min-w-0 h-full"
+          className="flex flex-col items-center justify-center shrink-0 min-w-0 h-full absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
         >
           <img
             src="/images/WhatsApp_Image_2026-03-04_at_10.28.26_AM-removebg-preview.png"
             alt="Aiswarya Matrimony"
-            className="block h-7 sm:h-8 lg:h-9 w-auto object-contain object-left"
+            className="block h-7 sm:h-8 lg:h-9 w-auto object-contain"
           />
-          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wider leading-none ml-3 sm:ml-4 mt-0.5">
+          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wider leading-none mt-0.5">
             Since 1989
           </span>
         </Link>
