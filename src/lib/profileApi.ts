@@ -174,7 +174,7 @@ export interface ReligionBody {
     | "open_to_all"
     | "specific_religions";
   partner_religion_ids?: number[];
-  partner_caste_preferences?: Record<string, number[]>;
+  partner_caste_preferences?: Record<string, Array<number | string>>;
   partner_age_from?: number | null;
   partner_age_to?: number | null;
 }

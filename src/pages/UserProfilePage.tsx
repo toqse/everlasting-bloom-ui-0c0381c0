@@ -65,6 +65,7 @@ import {
 import {
   partnerCastePreferencesEqual,
   toPartnerCastePreferenceIds,
+  toPartnerCastePreferencesForApi,
 } from "@/lib/partnerCastePreferences";
 import { HoroscopeBirthFields } from "@/components/signup/HoroscopeBirthFields";
 import { cn, formatDateDdMmYyyy, withMediaCacheBust } from "@/lib/utils";
@@ -3277,7 +3278,7 @@ const UserProfilePage = () => {
     partner_religion_ids: (profileData.partner_religion_ids ?? [])
       .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
       .filter((id): id is number => Number.isFinite(id) && id > 0),
-    partner_caste_preferences: toPartnerCastePreferenceIds(
+    partner_caste_preferences: toPartnerCastePreferencesForApi(
       profileData.partner_caste_preferences,
       {
         religionId: profileData.religion_id,
