@@ -62,6 +62,10 @@ import {
   type EducationBody,
   type FamilyBody,
 } from "@/lib/profileApi";
+import {
+  partnerCastePreferencesEqual,
+  toPartnerCastePreferenceIds,
+} from "@/lib/partnerCastePreferences";
 import { HoroscopeBirthFields } from "@/components/signup/HoroscopeBirthFields";
 import { cn, formatDateDdMmYyyy, withMediaCacheBust } from "@/lib/utils";
 import ShimmerImage from "@/components/ShimmerImage";
@@ -454,6 +458,9 @@ function mapProfileDataToForm(
   const partnerReligionNames = Array.from(
     new Set([...namesFromPreference, ...namesFromIds]),
   );
+  const partnerReligionIds = (religion.partner_religion_ids ?? [])
+    .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
+    .filter((id): id is number => Number.isFinite(id) && id > 0);
 
   const preferenceType =
     (religion.partner_preference_type as ProfileFormData["partner_preference_type"]) ||
@@ -480,15 +487,23 @@ function mapProfileDataToForm(
       preferenceLabelMap[preferenceType] ||
       raw(religion.partner_preference_type).replace(/_/g, " "),
     partner_preference_type: preferenceType,
-    partner_religion_ids: (religion.partner_religion_ids ?? [])
-      .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
-      .filter((id): id is number => Number.isFinite(id) && id > 0),
+    partner_religion_ids: partnerReligionIds,
     partner_religion_names: partnerReligionNames,
-    partner_caste_preferences:
-      religion.partner_caste_preferences &&
-      typeof religion.partner_caste_preferences === "object"
-        ? religion.partner_caste_preferences
-        : {},
+    partner_caste_preferences: toPartnerCastePreferenceIds(
+      religion.partner_caste_preferences,
+      {
+        religionId:
+          typeof religion.religion_id === "number"
+            ? religion.religion_id
+            : undefined,
+        religionName: raw(religion.religion),
+        casteId:
+          typeof religion.caste_id === "number" ? religion.caste_id : undefined,
+        casteName: raw(religion.caste),
+        partnerReligionIds,
+        partnerReligionNames,
+      },
+    ),
     partner_age_from: religion.partner_age_from ?? null,
     partner_age_to: religion.partner_age_to ?? null,
     qualification: raw(education.highest_education),
@@ -3066,6 +3081,26 @@ const UserProfilePage = () => {
   }, [editingSection, profileData.religion_id, loadCastesList]);
 
   useEffect(() => {
+    if (editingSection !== "Religion") return;
+    setProfileData((prev) => {
+      const next = toPartnerCastePreferenceIds(prev.partner_caste_preferences, {
+        religionId: prev.religion_id,
+        religionName: prev.religion,
+        casteId: prev.caste_id,
+        casteName: prev.caste,
+        partnerReligionIds: prev.partner_religion_ids,
+        partnerReligionNames: prev.partner_religion_names,
+        religions: religionOptions,
+        castes: casteOptions,
+      });
+      if (partnerCastePreferencesEqual(prev.partner_caste_preferences, next)) {
+        return prev;
+      }
+      return { ...prev, partner_caste_preferences: next };
+    });
+  }, [editingSection, religionOptions, casteOptions]);
+
+  useEffect(() => {
     if (editingSection !== "Education") return;
     loadEducationsList("");
     loadEmploymentStatusesList("");
@@ -3242,7 +3277,19 @@ const UserProfilePage = () => {
     partner_religion_ids: (profileData.partner_religion_ids ?? [])
       .map((item) => (typeof item === "number" ? item : (item?.id ?? 0)))
       .filter((id): id is number => Number.isFinite(id) && id > 0),
-    partner_caste_preferences: profileData.partner_caste_preferences ?? {},
+    partner_caste_preferences: toPartnerCastePreferenceIds(
+      profileData.partner_caste_preferences,
+      {
+        religionId: profileData.religion_id,
+        religionName: profileData.religion,
+        casteId: profileData.caste_id,
+        casteName: profileData.caste,
+        partnerReligionIds: profileData.partner_religion_ids,
+        partnerReligionNames: profileData.partner_religion_names,
+        religions: religionOptions,
+        castes: casteOptions,
+      },
+    ),
     partner_age_from: profileData.partner_age_from ?? null,
     partner_age_to: profileData.partner_age_to ?? null,
   });

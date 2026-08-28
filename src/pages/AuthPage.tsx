@@ -28,6 +28,7 @@ import {
 } from "@/lib/authApi";
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
 import { profileAgeError } from "@/lib/profileAge";
+import { toPartnerCastePreferenceIds } from "@/lib/partnerCastePreferences";
 import { ApiError, getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   postLocation,
@@ -153,19 +154,17 @@ const normalizeNumberForInput = (value: unknown): string => {
 
 const parsePartnerCastePreferences = (
   raw: string | undefined,
+  lookup?: {
+    religionId?: number;
+    religionName?: string;
+    casteId?: number;
+    casteName?: string;
+    partnerReligionIds?: number[];
+  },
 ): Record<string, number[]> => {
   if (!raw?.trim()) return {};
   try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const out: Record<string, number[]> = {};
-    for (const [key, value] of Object.entries(parsed)) {
-      if (!Array.isArray(value)) continue;
-      const ids = value
-        .map((id) => Number(id))
-        .filter((id) => Number.isFinite(id) && id > 0);
-      if (ids.length > 0) out[String(key)] = ids;
-    }
-    return out;
+    return toPartnerCastePreferenceIds(JSON.parse(raw), lookup);
   } catch {
     return {};
   }
@@ -292,7 +291,24 @@ function mapProfileToFormData(
         typeof rel === "object" &&
         "partner_caste_preferences" in (rel as Record<string, unknown>) && {
           partner_caste_preferences: JSON.stringify(
-            (rel as Record<string, unknown>).partner_caste_preferences ?? {},
+            toPartnerCastePreferenceIds(
+              (rel as Record<string, unknown>).partner_caste_preferences,
+              {
+                religionId: rel.religion_id,
+                religionName: rel.religion,
+                casteId: rel.caste_id,
+                casteName: rel.caste,
+                partnerReligionIds: rel.partner_religion_ids as
+                  | number[]
+                  | undefined,
+                partnerReligionNames: Array.isArray(
+                  (rel as Record<string, unknown>).partner_religion_names,
+                )
+                  ? ((rel as Record<string, unknown>)
+                      .partner_religion_names as string[])
+                  : undefined,
+              },
+            ),
           ),
         }),
       ...(rel?.partner_age_from != null && {
@@ -601,9 +617,25 @@ const AuthPage = () => {
             .map((id) => String(id))
             .join(","),
           partner_caste_preferences: JSON.stringify(
-            partnerData.partner_caste_preferences ??
+            toPartnerCastePreferenceIds(
               religionData.partner_caste_preferences ??
-              {},
+                partnerData.partner_caste_preferences ??
+                {},
+              {
+                religionId: religionData.religion_id,
+                religionName: religionData.religion,
+                casteId: religionData.caste_id,
+                casteName: religionData.caste,
+                partnerReligionIds: (
+                  religionData.partner_religion_ids ??
+                  partnerData.partner_religion_ids ??
+                  []
+                ).map((id) => Number(id)),
+                partnerReligionNames:
+                  religionData.partner_religion_names ??
+                  partnerData.partner_religion_names,
+              },
+            ),
           ),
           partner_age_from: String(
             partnerData.partner_age_from ??
@@ -1139,6 +1171,13 @@ const AuthPage = () => {
           .filter((n) => Number.isFinite(n) && n > 0) ?? [];
       const rawCastePreferences = parsePartnerCastePreferences(
         formData.partner_caste_preferences,
+        {
+          religionId,
+          religionName: formData.religion,
+          casteId,
+          casteName: formData.caste,
+          partnerReligionIds: selectedPartnerReligionIds,
+        },
       );
 
       let partnerReligionIds: number[] | undefined;

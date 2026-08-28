@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { withMinDuration } from "@/lib/withMinDuration";
 import { getReligions, getCastes, getMotherTongues, type Religion, type Caste, type MotherTongue } from "@/lib/masterApi";
+import { toPartnerCastePreferenceIds } from "@/lib/partnerCastePreferences";
 
 interface Props {
   formData: Record<string, string>;
@@ -133,22 +134,39 @@ const ReligiousStep = ({ formData, onChange }: Props) => {
       return;
     }
     try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const normalized: Record<string, number[]> = {};
-      for (const [key, value] of Object.entries(parsed)) {
-        if (!Array.isArray(value)) continue;
-        const ids = value
-          .map((id) => Number(id))
-          .filter((id) => Number.isFinite(id) && id > 0);
-        if (ids.length) normalized[String(key)] = ids;
-      }
+      const parsed = JSON.parse(raw) as unknown;
+      const allCastes = [
+        ...castes,
+        ...Object.values(partnerCastesByReligion).flat(),
+      ];
+      const normalized = toPartnerCastePreferenceIds(parsed, {
+        religionId: formData.religion_id ? Number(formData.religion_id) : undefined,
+        religionName: formData.religion,
+        casteId: formData.caste_id ? Number(formData.caste_id) : undefined,
+        casteName: formData.caste,
+        partnerReligionIds: (formData.partner_religion_ids || "")
+          .split(",")
+          .map((v) => Number(v.trim())),
+        religions,
+        castes: allCastes,
+      });
       setPartnerCastePreferences(normalized);
       setPartnerCasteAllByReligion({});
     } catch {
       setPartnerCastePreferences({});
       setPartnerCasteAllByReligion({});
     }
-  }, [formData.partner_caste_preferences]);
+  }, [
+    formData.partner_caste_preferences,
+    formData.religion_id,
+    formData.religion,
+    formData.caste_id,
+    formData.caste,
+    formData.partner_religion_ids,
+    religions,
+    castes,
+    partnerCastesByReligion,
+  ]);
 
   useEffect(() => {
     if (prefKey !== "specific" || partnerReligionIds.length === 0) {
