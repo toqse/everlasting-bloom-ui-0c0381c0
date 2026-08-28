@@ -1,6 +1,7 @@
 import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
+import { neverMarriedFirst } from "./masterApi";
 
 type ApiErrorPayload = {
   success?: boolean;
@@ -245,10 +246,14 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
 export async function getMatchFilters(
   signal?: AbortSignal,
 ): Promise<MatchFiltersResponse> {
-  return authedFetch<MatchFiltersResponse>(`${MATCHES_BASE}/filters/`, {
+  const res = await authedFetch<MatchFiltersResponse>(`${MATCHES_BASE}/filters/`, {
     method: "GET",
     signal,
   });
+  if (res?.data?.marital_status) {
+    res.data.marital_status = neverMarriedFirst(res.data.marital_status);
+  }
+  return res;
 }
 
 export async function getProfilePreview(matriId: string): Promise<ProfilePreviewResponse> {

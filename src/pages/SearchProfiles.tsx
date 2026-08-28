@@ -17,7 +17,7 @@ const allProfiles: Profile[] = [
   { id: 9, name: "Divya Nair", age: 24, profession: "Fashion Designer", education: "B.Des, Pearl Academy", location: "Mumbai, Maharashtra", image: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop", isVerified: true, isPremium: false, compatibility: 84 },
 ];
 
-const maritalStatuses = ["Divorced", "Marriage Dropped", "Separated", "Single", "Waiting for Legal Divorce", "Widowed"];
+const maritalStatuses = ["Never Married", "Divorced", "Marriage Dropped", "Separated", "Single", "Waiting for Legal Divorce", "Widowed"];
 const educationOptions = ["Aviation Degree", "B.A.", "B.A.M.S.", "B.Arch", "B.Com.", "B.Des", "B.E.", "B.Tech", "BBA", "BCA", "M.A.", "M.B.A.", "M.Com.", "M.D.", "M.E.", "M.Tech", "MBBS", "MCA", "Ph.D", "Other"];
 const occupationOptions = ["Accounts/Finance Professional", "Administrative Professional", "Advertising / PR Professional", "Adviser", "Agriculture & Farming Professional", "Architect", "Business Owner", "Civil Services", "Doctor", "Engineer", "IT Professional", "Lawyer", "Teacher/Professor", "Other"];
 

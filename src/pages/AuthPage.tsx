@@ -27,6 +27,7 @@ import {
   type VerifyMobileProfile,
 } from "@/lib/authApi";
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
+import { profileAgeError } from "@/lib/profileAge";
 import { ApiError, getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   postLocation,
@@ -84,8 +85,8 @@ const PROFILE_STEP_ORDER: string[] = [
   "photos",
 ];
 const MARITAL_OPTIONS = [
-  "Awaiting Divorce",
   "Never Married",
+  "Awaiting Divorce",
   "Married",
   "Divorced",
   "Widowed",
@@ -867,6 +868,12 @@ const AuthPage = () => {
     }
     if (!formData.dob?.trim()) {
       toast.error("Please enter date of birth");
+      return;
+    }
+    const ageErr = profileAgeError(formData.dob);
+    if (ageErr) {
+      setSignupErrors({ dob: ageErr });
+      toast.error(ageErr);
       return;
     }
     if (!formData.gender?.trim()) {

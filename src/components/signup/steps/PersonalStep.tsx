@@ -14,10 +14,10 @@ interface Props {
 }
 
 const MARITAL_OPTIONS = [
+  "Never Married",
   "Awaiting Divorce",
   "Divorced",
   "Married",
-  "Never Married",
   "Separated",
   "Widowed",
 ];

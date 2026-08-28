@@ -4,6 +4,7 @@ import PhoneInput from "@/components/PhoneInput";
 import { SelectField } from "../SignupFormFields";
 import { Button } from "@/components/ui/button";
 import { getGenderFromProfileFor } from "@/lib/profileForGender";
+import { dobInputMax, dobInputMin, PROFILE_AGE_HINT } from "@/lib/profileAge";
 
 interface Props {
   profileFor: string;
@@ -143,9 +144,12 @@ const BasicInfoStep = ({
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-            <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+          <div>
+            <div className="relative">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
+              <input type="date" name="dob" min={dobInputMin()} max={dobInputMax()} value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+            </div>
+            <p className="mt-1 pl-1 text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
           </div>
           <SelectField
             label="Gender"
@@ -219,9 +223,12 @@ const BasicInfoStep = ({
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
             <input type="email" name="email" value={formData.email} onChange={onChange} placeholder="Email (optional)" className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
           </div>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
-            <input type="date" name="dob" value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+          <div>
+            <div className="relative">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/50" />
+              <input type="date" name="dob" min={dobInputMin()} max={dobInputMax()} value={formData.dob} onChange={onChange} className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-primary/10 focus:border-primary focus:ring-0 transition-colors bg-white" />
+            </div>
+            <p className="mt-1 pl-1 text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
           </div>
           <SelectField
             label="Gender"

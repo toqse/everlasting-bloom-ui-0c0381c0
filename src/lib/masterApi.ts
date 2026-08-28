@@ -1,6 +1,16 @@
 import { debugLog } from "./debugLog";
 import { BASE_URL } from "./config";
 
+/** Keep Never Married at the top of dropdowns; leave other statuses in API order. */
+export function neverMarriedFirst<T extends { name?: string | null }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const aNever = (a.name ?? "").trim().toLowerCase() === "never married";
+    const bNever = (b.name ?? "").trim().toLowerCase() === "never married";
+    if (aNever === bNever) return 0;
+    return aNever ? -1 : 1;
+  });
+}
+
 export interface Country {
   id: number;
   name: string;
@@ -177,10 +187,11 @@ export async function getOccupationsPage(opts?: {
 export async function getMaritalStatusesPage(
   signal?: AbortSignal,
 ): Promise<MaritalStatusMaster[]> {
-  return fetchMasterPage<MaritalStatusMaster>("v1/master/marital-statuses/", {
+  const results = await fetchMasterPage<MaritalStatusMaster>("v1/master/marital-statuses/", {
     limit: 200,
     signal,
   });
+  return neverMarriedFirst(results);
 }
 
 export async function getCountriesPage(signal?: AbortSignal): Promise<Country[]> {
@@ -358,7 +369,7 @@ export async function getMaritalStatuses(
   const path = "v1/master/marital-status/";
   const results = await getPaginated<MaritalStatusMaster>(path, search);
   debugLog("[masterApi] getMaritalStatuses response:", { search, results });
-  return results;
+  return neverMarriedFirst(results);
 }
 
 /** GET v1/master/complexions/ */

@@ -24,6 +24,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/phone";
+import {
+  dobInputMax,
+  dobInputMin,
+  PROFILE_AGE_HINT,
+  profileAgeError,
+} from "@/lib/profileAge";
 import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -959,9 +965,12 @@ function EditSectionForm({
             <Input
               id="dob"
               type="date"
+              min={dobInputMin()}
+              max={dobInputMax()}
               value={data.dob}
               onChange={(e) => update("dob", e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone</Label>
@@ -3185,7 +3194,16 @@ const UserProfilePage = () => {
     setSaveError(null);
     try {
       switch (section) {
-        case "Basic Info":
+        case "Basic Info": {
+          if (!profileData.dob.trim()) {
+            setSaveError("Date of birth is required.");
+            return;
+          }
+          const ageErr = profileAgeError(profileData.dob);
+          if (ageErr) {
+            setSaveError(ageErr);
+            return;
+          }
           await patchBasic({
             name: profileData.name,
             gender: profileData.gender.trim().toLowerCase(),
@@ -3202,6 +3220,7 @@ const UserProfilePage = () => {
             });
           }
           break;
+        }
         case "Location":
           await patchLocation(buildLocationBody());
           break;
