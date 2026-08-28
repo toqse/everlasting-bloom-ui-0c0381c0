@@ -320,9 +320,9 @@ const PhotosStep = ({
           <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-green-500">
             <Check className="h-3 w-3 text-white" strokeWidth={3} />
           </div>
-          <p className="text-sm text-muted-foreground">
+          {/* <p className="text-sm text-muted-foreground">
             Verified badge shown on your profile. Stored securely in app memory.
-          </p>
+          </p> */}
         </div>
       </div>
     </>

@@ -175,9 +175,9 @@ const DashboardFavoritesPage = () => {
               {total} saved
             </span>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
+          {/* <p className="mt-2 text-sm text-muted-foreground">
             Wishlist profiles from `v1/wishlist/`
-          </p>
+          </p> */}
         </motion.div>
 
         {error ? (
