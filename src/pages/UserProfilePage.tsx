@@ -225,6 +225,11 @@ type SectionKey =
   | "Family"
   | "About Me";
 
+function sectionDisplayTitle(section: SectionKey): string {
+  if (section === "Basic Info") return "Basic & Horoscope Info";
+  return section;
+}
+
 const allProfileSections: {
   title: SectionKey;
   description: string;
@@ -3559,7 +3564,7 @@ const UserProfilePage = () => {
               {profileSections.map((section) => (
                 <ProfileSectionCard
                   key={section.title}
-                  title={section.title}
+                  title={sectionDisplayTitle(section.title)}
                   icon={section.icon}
                   summary={getSectionSummary(section.title, profileData)}
                   onView={() => handleViewSection(section.title)}
@@ -3673,7 +3678,11 @@ const UserProfilePage = () => {
               onOpenChange={(o) => {
                 if (!o) setViewingSection(null);
               }}
-              title={viewingSection ?? undefined}
+              title={
+                viewingSection
+                  ? sectionDisplayTitle(viewingSection)
+                  : undefined
+              }
               footer={
                 <Button
                   variant="outline"
@@ -3703,7 +3712,9 @@ const UserProfilePage = () => {
                 }
               }}
               title={
-                editingSection ? `Edit ${editingSection}` : undefined
+                editingSection
+                  ? `Edit ${sectionDisplayTitle(editingSection)}`
+                  : undefined
               }
               contentClassName="max-w-3xl lg:max-w-4xl"
               bodyClassName="[&_input]:bg-white [&_select]:bg-white [&_textarea]:bg-white [&_input]:border-border [&_select]:border-border [&_textarea]:border-border"

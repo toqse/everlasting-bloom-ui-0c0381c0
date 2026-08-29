@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { MessageCircle } from "lucide-react";
 import { getChatList, type ChatListItem } from "@/lib/chatApi";
 import { chatUrl } from "@/lib/chatRoutes";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
@@ -18,32 +19,70 @@ function getAvatarUrl(path: string | null | undefined): string {
   return `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
+function isPlanRequiredError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : "";
+  return /active plan|purchase a plan|plan expired/i.test(msg);
+}
+
 const ChatListPage = () => {
   const router = useRouter();
   const [conversations, setConversations] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  const loadConversations = useCallback(async (opts?: { showLoading?: boolean }) => {
+    if (opts?.showLoading) setLoading(true);
+    setError(null);
+    try {
+      const res = await getChatList();
+      if (!mountedRef.current) return;
+      setConversations(res.data.conversations);
+    } catch (e) {
+      if (!mountedRef.current) return;
+      if (isPlanRequiredError(e)) {
+        setConversations([]);
+      } else {
+        setError(getDisplayErrorMessage(e));
+      }
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getChatList();
-        if (mounted) setConversations(res.data.conversations);
-      } catch (e) {
-        if (mounted)
-          setError(getDisplayErrorMessage(e));
-      } finally {
-        if (mounted) setLoading(false);
-      }
+    mountedRef.current = true;
+    void loadConversations({ showLoading: true });
+
+    const onVisible = () => {
+      void loadConversations();
     };
-    load();
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) onVisible();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") onVisible();
+    };
+
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      mounted = false;
+      mountedRef.current = false;
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [loadConversations]);
+
+  const openConversation = (conversationId: number) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.conversation_id === conversationId ? { ...c, unread_count: 0 } : c,
+      ),
+    );
+    router.push(chatUrl(conversationId));
+  };
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -67,8 +106,12 @@ const ChatListPage = () => {
               Loading conversations…
             </div>
           ) : conversations.length === 0 ? (
-            <div className="px-6 py-8 text-sm text-muted-foreground">
-              No conversations yet.
+            <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <MessageCircle className="mb-3 h-9 w-9 text-muted-foreground" />
+              <p className="font-semibold text-foreground">No conversations yet.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                When you start chatting with matches, they will appear here.
+              </p>
             </div>
           ) : (
             conversations.map((chat, index) => (
@@ -77,7 +120,7 @@ const ChatListPage = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => router.push(chatUrl(chat.conversation_id))}
+                onClick={() => openConversation(chat.conversation_id)}
                 className="flex items-center gap-4 px-6 py-5 border-b border-primary/5 last:border-0 cursor-pointer hover:bg-accent-rose/30 transition-colors"
               >
                 <div className="relative flex-shrink-0">
