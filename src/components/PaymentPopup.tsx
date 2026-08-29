@@ -105,6 +105,9 @@ const PaymentPopup = ({
       if (msg !== "Payment cancelled.") {
         toast.error(msg);
       }
+      if (/already have an active .+ plan/i.test(msg)) {
+        onOpenChange(false);
+      }
     } finally {
       setSubmitting(false);
     }

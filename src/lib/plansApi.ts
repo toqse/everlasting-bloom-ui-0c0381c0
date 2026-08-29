@@ -4,7 +4,7 @@ import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
 
 type ApiErrorPayload = {
   success?: boolean;
-  error?: { code?: number; message?: string; details?: unknown };
+  error?: { code?: number | string; message?: string; details?: unknown };
   detail?: string | string[];
   message?: string;
   [key: string]: unknown;
@@ -68,6 +68,7 @@ async function authedFetch<T>(path: string, opts: { method: string; body?: strin
 /** GET /api/v1/my/plan/ — current subscription & remaining quotas */
 export interface MyPlanDetails {
   is_plan_active: boolean;
+  plan_id?: number | null;
   plan_name: string | null;
   valid_until: string | null;
   profile_views_remaining: number;

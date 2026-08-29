@@ -219,7 +219,9 @@ const PlanCard = ({ plan, style, myPlan, onChoose }: PlanCardProps) => {
   const hasActivePlan = Boolean(myPlan?.is_plan_active && myPlan.plan_name);
   const isCurrentPlan =
     hasActivePlan &&
-    plan.name.toLowerCase() === (myPlan?.plan_name ?? "").toLowerCase();
+    (myPlan?.plan_id != null
+      ? myPlan.plan_id === plan.id
+      : plan.name.toLowerCase() === (myPlan?.plan_name ?? "").toLowerCase());
   const serviceChargePaid = myPlan?.service_charge_paid ?? 0;
   const serviceChargeRemaining = myPlan?.service_charge_remaining ?? 0;
   const showPersonalizedServiceCharge =
@@ -597,8 +599,8 @@ const PlanPage = () => {
           Plans &amp; Pricing
         </h1>
         <p className="text-sm text-muted-foreground max-lg:mb-0 max-lg:mt-0 lg:-mt-4 mb-2">
-          Your purchased plan and usage are loaded from your account. Upgrade or
-          renew anytime below.
+          Your purchased plan and usage are loaded from your account. Upgrade to
+          a different plan anytime below.
         </p>
 
         {myPlanError && (
