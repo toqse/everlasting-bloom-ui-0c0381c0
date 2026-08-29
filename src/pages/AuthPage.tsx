@@ -129,12 +129,11 @@ const normalizeDateForInput = (value: unknown): string => {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
-    const [dd, mm, yyyy] = raw.split("-");
-    return `${yyyy}-${mm}-${dd}`;
+  // Day-first: 6/3/2000, 06-03-2000 — never US Date() MM/DD swap.
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(raw);
+  if (dmy) {
+    return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
   }
-  const parsed = new Date(raw);
-  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
   return "";
 };
 

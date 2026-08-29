@@ -1,3 +1,5 @@
+import { parseApiDate } from "./utils";
+
 /**
  * Maps GET /api/v1/profiles/{matri_id}/full/ `data.profile` (same section shape as GET /profile/)
  * into fields used by ProfileViewDrawer.
@@ -25,12 +27,12 @@ export type FullProfileDrawerDisplay = {
 };
 
 function ageFromDob(dob: unknown): number {
-  if (dob == null || typeof dob !== "string") return 0;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return 0;
-  let age = new Date().getFullYear() - d.getFullYear();
-  const m = new Date().getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && new Date().getDate() < d.getDate())) age--;
+  const d = parseApiDate(dob);
+  if (!d) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
   return Math.max(0, age);
 }
 

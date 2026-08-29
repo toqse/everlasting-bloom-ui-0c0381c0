@@ -174,8 +174,10 @@ function normalizeDobForDateInput(value: string): string {
   if (!v) return "";
   const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
   if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
-  const dmy = /^(\d{2})-(\d{2})-(\d{4})$/.exec(v);
-  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(v);
+  if (dmy) {
+    return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+  }
   return v;
 }
 
@@ -184,8 +186,10 @@ function normalizeDobForApi(value: string): string {
   if (!v) return "";
   const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
   if (ymd) return `${ymd[3]}-${ymd[2]}-${ymd[1]}`;
-  const dmy = /^(\d{2})-(\d{2})-(\d{4})$/.exec(v);
-  if (dmy) return `${dmy[1]}-${dmy[2]}-${dmy[3]}`;
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(v);
+  if (dmy) {
+    return `${dmy[1].padStart(2, "0")}-${dmy[2].padStart(2, "0")}-${dmy[3]}`;
+  }
   return v;
 }
 

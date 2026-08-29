@@ -36,7 +36,7 @@ import {
   type ProfilePreviewData,
 } from "@/lib/matchesApi";
 import { BASE_URL } from "@/lib/config";
-import { cn } from "@/lib/utils";
+import { cn, formatDateDdMmYyyy } from "@/lib/utils";
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 
 /** In-session cache so returning to /dashboard does not blank the whole UI while refetching. */
@@ -80,13 +80,8 @@ function getMediaUrl(path: string | null | undefined): string {
 
 function formatPlanDate(value: string | null | undefined): string {
   if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const formatted = formatDateDdMmYyyy(value);
+  return formatted === "—" ? value : formatted;
 }
 
 function getInitials(name: string): string {

@@ -66,17 +66,33 @@ export function parseApiDate(input: unknown): Date | null {
       const mo = Number(isoDate[2]) - 1;
       const day = Number(isoDate[3]);
       const d = new Date(y, mo, day);
-      return Number.isNaN(d.getTime()) ? null : d;
+      if (
+        Number.isNaN(d.getTime()) ||
+        d.getFullYear() !== y ||
+        d.getMonth() !== mo ||
+        d.getDate() !== day
+      ) {
+        return null;
+      }
+      return d;
     }
 
-    // Kerala / API DOB: DD-MM-YYYY or DD/MM/YYYY (day first — not US MM/DD).
-    const dmy = /^(\d{2})[/-](\d{2})[/-](\d{4})$/.exec(s);
+    // Kerala / API DOB: D-M-YYYY or DD/MM/YYYY (day first — not US MM/DD).
+    const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s);
     if (dmy) {
       const day = Number(dmy[1]);
       const mo = Number(dmy[2]) - 1;
       const y = Number(dmy[3]);
       const d = new Date(y, mo, day);
-      return Number.isNaN(d.getTime()) ? null : d;
+      if (
+        Number.isNaN(d.getTime()) ||
+        d.getFullYear() !== y ||
+        d.getMonth() !== mo ||
+        d.getDate() !== day
+      ) {
+        return null;
+      }
+      return d;
     }
 
     let normalized = s.replace(" ", "T");
