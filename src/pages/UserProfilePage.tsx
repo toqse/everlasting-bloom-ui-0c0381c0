@@ -79,7 +79,7 @@ import {
   getEducations,
   getEducationSubjects,
   getEmploymentStatuses,
-  getOccupationsPage,
+  getOccupations,
   getIncomeRanges,
   getMaritalStatuses,
   getComplexions,
@@ -2967,10 +2967,7 @@ const UserProfilePage = () => {
       setLoadingOccupations(true);
     }
     try {
-      const list = await getOccupationsPage({
-        search: search || undefined,
-        signal: ac.signal,
-      });
+      const list = await getOccupations(search || undefined, ac.signal);
       if (ac.signal.aborted) return;
       setOccupationOptions(list);
     } catch (e) {

@@ -106,7 +106,7 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
+async function getPaginated<T>(path: string, search?: string, signal?: AbortSignal): Promise<T[]> {
   const base = path.startsWith("http") ? path : `${BASE_URL}${path.replace(/^\//, "")}`;
   const perPageLimit = 50;
   const maxPages = 40;
@@ -123,7 +123,7 @@ async function getPaginated<T>(path: string, search?: string): Promise<T[]> {
     if (search != null && search.trim() !== "") {
       url.searchParams.set("search", search.trim());
     }
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), signal ? { signal } : undefined);
     const data = (await res.json().catch(() => ({}))) as PaginatedResponse<T>;
     if (!res.ok)
       throw new Error((data as { detail?: string })?.detail ?? "Request failed");
@@ -335,9 +335,10 @@ export async function getEducationSubjects(
 /** GET v1/master/occupations/ */
 export async function getOccupations(
   search?: string,
+  signal?: AbortSignal,
 ): Promise<OccupationMaster[]> {
   const path = "v1/master/occupations/";
-  const results = await getPaginated<OccupationMaster>(path, search);
+  const results = await getPaginated<OccupationMaster>(path, search, signal);
   debugLog("[masterApi] getOccupations response:", { search, results });
   return results;
 }
