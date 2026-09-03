@@ -191,12 +191,20 @@ const Footer = () => {
             <p className="flex items-center gap-1 font-bold">
               © 2026 Aiswarya Matrimony. All rights reserved.
             </p>
-            <Link
-              href="/terms-conditions"
-              className="font-medium text-foreground hover:text-primary transition-colors"
-            >
-              Terms and Conditions
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <Link
+                href="/terms-conditions"
+                className="font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Terms and Conditions
+              </Link>
+              <Link
+                href="/privacy-policy"
+                className="font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Privacy Policy
+              </Link>
+            </div>
             <div className="flex items-center gap-3">
               <span className="text-foreground font-medium">Follow Us:</span>
               <div className="flex gap-2">

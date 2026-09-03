@@ -172,7 +172,10 @@ const BasicInfoStep = ({
               <Link href="/terms-conditions" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
-              and Privacy Policy
+              and{" "}
+              <Link href="/privacy-policy" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
+                Privacy Policy
+              </Link>
             </label>
           </div>
           {registerApiMessage && apiErrorBanner(registerApiMessage)}
@@ -251,7 +254,10 @@ const BasicInfoStep = ({
               <Link href="/terms-conditions" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
                 Terms & Conditions
               </Link>{" "}
-              and Privacy Policy
+              and{" "}
+              <Link href="/privacy-policy" onClick={(e) => { e.stopPropagation(); onTermsClick?.(); }} className="text-primary font-medium underline hover:no-underline">
+                Privacy Policy
+              </Link>
             </label>
           </div>
           {registerApiMessage && apiErrorBanner(registerApiMessage)}
