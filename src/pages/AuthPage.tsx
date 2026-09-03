@@ -38,6 +38,7 @@ import {
   getGenerateAbout,
   postAbout,
   postPhotos,
+  postProfileComplete,
   fetchAndSyncMeProfile,
   getProfileReligion,
   getPartnerPreferences,
@@ -1385,6 +1386,12 @@ const AuthPage = () => {
             aadhaar_back: photos.aadhaar_back?.file,
           });
           toast.success("Photos uploaded successfully");
+        }
+
+        try {
+          await postProfileComplete();
+        } catch (completeErr) {
+          console.warn("[signup] profile complete:", completeErr);
         }
 
         const { loginWithProfile, clearProfileIncomplete } =

@@ -852,3 +852,8 @@ export async function postPhotos(body: PhotosBody): Promise<unknown> {
 
   return data;
 }
+
+/** Mark signup profile registration complete (triggers registration WhatsApp when MSG live). */
+export async function postProfileComplete(): Promise<unknown> {
+  return authedPost("v1/profile/complete/", {});
+}
