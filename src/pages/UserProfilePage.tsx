@@ -101,6 +101,7 @@ import type {
   IncomeRangeMaster,
 } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { CityCombobox } from "@/components/ui/CityCombobox";
 import { displayOccupationName } from "@/lib/displayOccupationName";
 import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { BASE_URL } from "@/lib/config";
@@ -320,6 +321,8 @@ interface ProfileFormData {
   state_id?: number;
   district_id?: number;
   city_id?: number;
+  city_name?: string;
+  city_source?: string | null;
   religion_id?: number;
   caste_id?: number | null;
   mother_tongue_id?: number;
@@ -470,7 +473,7 @@ function mapProfileDataToForm(
   return {
     name: raw(basic.name) || (user?.name ?? ""),
     phone: raw(basic.phone) || (user?.phone ?? ""),
-    email: raw(basic.email) || (user?.email ?? ""),
+    email: raw(basic.email),
     dob: normalizeDobForDateInput(raw(basic.dob)),
     gender: normalizeGenderValue(raw(basic.gender)),
     religion: raw(religion.religion),
@@ -526,13 +529,15 @@ function mapProfileDataToForm(
         : undefined,
     country: raw(location.country),
     state: raw(location.state),
-    city: raw(location.city),
+    city: raw(location.city_name ?? location.city),
     district: raw(location.district),
     address: raw(location.address),
     country_id: location.country_id,
     state_id: location.state_id,
     district_id: location.district_id,
     city_id: location.city_id,
+    city_name: raw(location.city_name ?? location.city),
+    city_source: (location.city_source as string | null | undefined) ?? null,
     religion_id: religion.religion_id,
     caste_id: religion.caste_id ?? null,
     mother_tongue_id: religion.mother_tongue_id,
@@ -1796,7 +1801,6 @@ function EditSectionForm({
       const countries = locationOptions?.countries ?? [];
       const states = locationOptions?.states ?? [];
       const districts = locationOptions?.districts ?? [];
-      const cities = locationOptions?.cities ?? [];
       const loading = locationLoading ?? {
         countries: false,
         states: false,
@@ -1821,6 +1825,8 @@ function EditSectionForm({
             district: "",
             city_id: undefined,
             city: "",
+            city_name: "",
+            city_source: null,
           });
         } else if (name === "state_id") {
           const nameStr = states.find((s) => s.id === id)?.name ?? "";
@@ -1831,6 +1837,8 @@ function EditSectionForm({
             district: "",
             city_id: undefined,
             city: "",
+            city_name: "",
+            city_source: null,
           });
         } else if (name === "district_id") {
           const nameStr = districts.find((d) => d.id === id)?.name ?? "";
@@ -1839,10 +1847,9 @@ function EditSectionForm({
             district: nameStr,
             city_id: undefined,
             city: "",
+            city_name: "",
+            city_source: null,
           });
-        } else if (name === "city_id") {
-          const nameStr = cities.find((c) => c.id === id)?.name ?? "";
-          onLocationChange({ city_id: id, city: nameStr });
         }
       };
 
@@ -1895,17 +1902,19 @@ function EditSectionForm({
             />
           ) : null}
           {districtId > 0 ? (
-            <SearchableSelect
+            <CityCombobox
               key={`city-${districtId}`}
-              name="city_id"
-              value={data.city_id != null ? String(data.city_id) : ""}
-              options={cities}
-              loading={loading.cities}
-              label="City"
-              placeholder="Select City"
-              initialDisplayLabel={data.city || undefined}
-              onSearch={loaders.loadCities}
-              onSelect={handleLocationSelect}
+              districtId={districtId}
+              cityId={data.city_id != null ? String(data.city_id) : ""}
+              cityName={data.city_name || data.city || ""}
+              onChange={(next) => {
+                onLocationChange?.({
+                  city_id: next.cityId ?? undefined,
+                  city: next.cityName,
+                  city_name: next.cityName,
+                  city_source: next.source,
+                });
+              }}
             />
           ) : null}
           <div className="grid gap-2">
@@ -2390,7 +2399,7 @@ function ViewSectionContent({
   const photoCacheKey = useAuthStore((s) => s.photoCacheKey);
   const row = (label: string, value: string) => {
     const renderedValue =
-      value != null && String(value).trim() !== "" ? String(value).trim() : "N/A";
+      value != null && String(value).trim() !== "" ? String(value).trim() : "NA";
     return (
       <div
         key={label}
@@ -3251,13 +3260,19 @@ const UserProfilePage = () => {
     setPhotoFiles((prev) => ({ ...prev, [key]: file }));
   }, []);
 
-  const buildLocationBody = (): LocationBody => ({
-    country_id: profileData.country_id ?? 0,
-    state_id: profileData.state_id ?? 0,
-    district_id: profileData.district_id ?? 0,
-    city_id: profileData.city_id ?? 0,
-    address: profileData.address ?? "",
-  });
+  const buildLocationBody = (): LocationBody => {
+    const cityId = profileData.city_id ?? 0;
+    const cityName = (profileData.city_name || profileData.city || "").trim();
+    return {
+      country_id: profileData.country_id ?? 0,
+      state_id: profileData.state_id ?? 0,
+      district_id: profileData.district_id ?? 0,
+      ...(cityId
+        ? { city_id: cityId, city_name: cityName || undefined }
+        : { city_id: null, city_name: cityName }),
+      address: profileData.address ?? "",
+    };
+  };
 
   const buildReligionBody = (): ReligionBody => ({
     religion_id: profileData.religion_id ?? 0,
@@ -3466,7 +3481,7 @@ const UserProfilePage = () => {
               user: {
                 ...user,
                 name: profileData.name || user.name,
-                email: profileData.email || user.email,
+                email: (profileData.email ?? "").trim(),
               },
             });
           }

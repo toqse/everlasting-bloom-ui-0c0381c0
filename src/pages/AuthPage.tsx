@@ -262,7 +262,12 @@ function mapProfileToFormData(
       ...(loc?.district != null &&
         loc.district !== "" && { district: loc.district }),
       ...(loc?.city_id != null && { city_id: String(loc.city_id) }),
-      ...(loc?.city != null && loc.city !== "" && { city: loc.city }),
+      ...((loc?.city_name || loc?.city) != null &&
+        (loc?.city_name || loc?.city) !== "" && {
+          city: String(loc?.city_name || loc?.city),
+          city_name: String(loc?.city_name || loc?.city),
+        }),
+      ...(loc?.city_source != null && { city_source: String(loc.city_source) }),
       ...(loc?.address != null &&
         loc.address !== "" && { address: loc.address }),
       ...(rel?.religion_id != null && { religion_id: String(rel.religion_id) }),
@@ -454,6 +459,8 @@ const AuthPage = () => {
     state_id: "",
     district_id: "",
     city_id: "",
+    city_name: "",
+    city_source: "",
     has_horoscope: "",
     birth_time: "",
     birth_place: "",
@@ -714,6 +721,9 @@ const AuthPage = () => {
         state_id: "",
         district_id: "",
         city_id: "",
+        city_name: "",
+        city: "",
+        city_source: "",
       }));
       return;
     }
@@ -723,11 +733,21 @@ const AuthPage = () => {
         state_id: value,
         district_id: "",
         city_id: "",
+        city_name: "",
+        city: "",
+        city_source: "",
       }));
       return;
     }
     if (name === "district_id") {
-      setFormData((prev) => ({ ...prev, district_id: value, city_id: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        district_id: value,
+        city_id: "",
+        city_name: "",
+        city: "",
+        city_source: "",
+      }));
       return;
     }
     if (
@@ -1047,7 +1067,8 @@ const AuthPage = () => {
       const sid = formData.state_id ? Number(formData.state_id) : 0;
       const did = formData.district_id ? Number(formData.district_id) : 0;
       const cityId = formData.city_id ? Number(formData.city_id) : 0;
-      if (!cid || !sid || !did || !cityId) {
+      const cityName = (formData.city_name || formData.city || "").trim();
+      if (!cid || !sid || !did || (!cityId && !cityName)) {
         toast.error("Please select Country, State, District and City");
         return;
       }
@@ -1088,7 +1109,9 @@ const AuthPage = () => {
           country_id: cid,
           state_id: sid,
           district_id: did,
-          city_id: cityId,
+          ...(cityId
+            ? { city_id: cityId, city_name: cityName || undefined }
+            : { city_id: null, city_name: cityName }),
           address: formData.address.trim(),
           ...(hasHoroscope && {
             has_horoscope: true,

@@ -149,7 +149,8 @@ export interface LocationBody {
   country_id: number;
   state_id: number;
   district_id: number;
-  city_id: number;
+  city_id?: number | null;
+  city_name?: string;
   address: string;
 
   /** Optional horoscope fields (persisted only when has_horoscope is true). */
@@ -528,7 +529,10 @@ export function syncMeProfileToStore(profile: ProfileData): void {
       user: {
         ...u,
         name: displayName || u.name,
-        email: (b?.email && String(b.email).trim()) || u.email,
+        email:
+          b?.email != null && String(b.email).trim()
+            ? String(b.email).trim()
+            : "",
         phone: (b?.phone && String(b.phone).trim()) || u.phone,
         matriId: matriId || u.matriId,
         location,

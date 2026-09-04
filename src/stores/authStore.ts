@@ -130,9 +130,18 @@ const HOROSCOPE_QUOTA: Record<string, number> = {
   premium: 70,
 };
 
+/** Legacy demo placeholder — never display; treat as missing email. */
+const PLACEHOLDER_EMAIL = "rahul@gmail.com";
+
+function sanitizeUserEmail(email: string | null | undefined): string {
+  const trimmed = (email ?? "").trim();
+  if (!trimmed || trimmed.toLowerCase() === PLACEHOLDER_EMAIL) return "";
+  return trimmed;
+}
+
 const defaultUser: User = {
   name: "Rahul",
-  email: "rahul@gmail.com",
+  email: "",
   phone: "+91 98765 43210",
   avatar: "",
   plan: "Premium",
@@ -165,7 +174,7 @@ export const useAuthStore = create<AuthState>()(
           user: {
             ...defaultUser,
             name: profile.name ?? defaultUser.name,
-            email: profile.email ?? defaultUser.email,
+            email: sanitizeUserEmail(profile.email),
             phone: profile.phone ?? defaultUser.phone,
             location: profile.location ?? defaultUser.location,
             religion: profile.religion ?? "",
@@ -185,6 +194,7 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: data.refresh_token,
           user: {
             ...defaultUser,
+            email: "",
             phone: mobile,
             name: data.matri_id,
             matriId: data.matri_id,
@@ -336,15 +346,11 @@ export const useAuthStore = create<AuthState>()(
           profileNextStep?: string | null;
           profilePrefill?: VerifyMobileProfile | null;
         };
-        const user = p?.user ?? null;
-        if (user?.name === "Anna Jaslin") {
-          return {
-            ...current,
-            ...p,
-            user: user ? { ...user, name: "Rahul", email: user.email === "anna.jaslin@gmail.com" ? "rahul@gmail.com" : user.email } : null,
-          };
-        }
-        return { ...current, ...p, user: p?.user ?? current.user };
+        const rawUser = p?.user ?? current.user ?? null;
+        const user = rawUser
+          ? { ...rawUser, email: sanitizeUserEmail(rawUser.email) }
+          : null;
+        return { ...current, ...p, user };
       },
     }
   )

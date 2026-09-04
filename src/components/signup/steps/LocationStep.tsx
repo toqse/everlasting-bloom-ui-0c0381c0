@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
-import type { Country, State, District, City } from "@/lib/masterApi";
+import { getCountries, getStates, getDistricts } from "@/lib/masterApi";
+import type { Country, State, District } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { CityCombobox } from "@/components/ui/CityCombobox";
 import { labelClass } from "../SignupFormFields";
 import { HoroscopeBirthFields } from "../HoroscopeBirthFields";
 
@@ -14,23 +15,18 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
-  const [loadingCities, setLoadingCities] = useState(false);
   const countriesRef = useRef<Country[]>([]);
   const statesRef = useRef<State[]>([]);
   const districtsRef = useRef<District[]>([]);
-  const citiesRef = useRef<City[]>([]);
   countriesRef.current = countries;
   statesRef.current = states;
   districtsRef.current = districts;
-  citiesRef.current = cities;
   const countriesAbortRef = useRef<AbortController | null>(null);
   const statesAbortRef = useRef<AbortController | null>(null);
   const districtsAbortRef = useRef<AbortController | null>(null);
-  const citiesAbortRef = useRef<AbortController | null>(null);
 
   const countryId = formData.country_id ? Number(formData.country_id) : 0;
   const stateId = formData.state_id ? Number(formData.state_id) : 0;
@@ -45,6 +41,13 @@ const LocationStep = ({ formData, onChange }: Props) => {
     [onChange]
   );
 
+  const clearCity = useCallback(() => {
+    onChange({ target: { name: "city_id", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+    onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+    onChange({ target: { name: "city_name", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+    onChange({ target: { name: "city_source", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+  }, [onChange]);
+
   const handleSelect = useCallback(
     (name: string, value: string) => {
       onChange({ target: { name, value } } as React.ChangeEvent<HTMLSelectElement>);
@@ -54,10 +57,9 @@ const LocationStep = ({ formData, onChange }: Props) => {
         onChange({ target: { name: "country", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "state", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
-        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        clearCity();
         setStates([]);
         setDistricts([]);
-        setCities([]);
         return;
       }
 
@@ -65,26 +67,19 @@ const LocationStep = ({ formData, onChange }: Props) => {
         const selected = states.find((s) => String(s.id) === value);
         onChange({ target: { name: "state", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
         onChange({ target: { name: "district", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
-        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+        clearCity();
         setDistricts([]);
-        setCities([]);
         return;
       }
 
       if (name === "district_id") {
         const selected = districts.find((d) => String(d.id) === value);
         onChange({ target: { name: "district", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
-        onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
-        setCities([]);
+        clearCity();
         return;
       }
-
-      if (name === "city_id") {
-        const selected = cities.find((c) => String(c.id) === value);
-        onChange({ target: { name: "city", value: selected?.name ?? "" } } as React.ChangeEvent<HTMLSelectElement>);
-      }
     },
-    [cities, countries, districts, onChange, states]
+    [clearCity, countries, districts, onChange, states]
   );
 
   const loadCountries = useCallback(async (search: string) => {
@@ -146,27 +141,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
     [stateId]
   );
 
-  const loadCities = useCallback(
-    async (search: string) => {
-      if (!districtId) return;
-      citiesAbortRef.current?.abort();
-      const ac = new AbortController();
-      citiesAbortRef.current = ac;
-      if (citiesRef.current.length === 0) setLoadingCities(true);
-      try {
-        const list = await getCities(districtId, search || undefined, ac.signal);
-        if (ac.signal.aborted) return;
-        setCities(list);
-      } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        if (!ac.signal.aborted) setCities([]);
-      } finally {
-        if (!ac.signal.aborted) setLoadingCities(false);
-      }
-    },
-    [districtId]
-  );
-
   useEffect(() => {
     loadCountries("");
     return () => countriesAbortRef.current?.abort();
@@ -197,19 +171,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
     loadDistricts("");
     return () => districtsAbortRef.current?.abort();
   }, [stateId, loadDistricts]);
-
-  useEffect(() => {
-    if (!districtId) {
-      citiesAbortRef.current?.abort();
-      setCities([]);
-      setLoadingCities(false);
-      return;
-    }
-    setCities([]);
-    setLoadingCities(true);
-    loadCities("");
-    return () => citiesAbortRef.current?.abort();
-  }, [districtId, loadCities]);
 
   const handleToggleHoroscope = useCallback(
     (checked: boolean) => {
@@ -277,17 +238,17 @@ const LocationStep = ({ formData, onChange }: Props) => {
         ) : null}
 
         {districtId ? (
-          <SearchableSelect
+          <CityCombobox
             key={`city-${districtId}`}
-            name="city_id"
-            value={formData.city_id || ""}
-            options={cities}
-            loading={loadingCities}
-            label="City"
-            placeholder="Select City"
-            initialDisplayLabel={formData.city || undefined}
-            onSearch={loadCities}
-            onSelect={handleSelect}
+            districtId={districtId}
+            cityId={formData.city_id || ""}
+            cityName={formData.city_name || formData.city || ""}
+            onChange={(next) => {
+              emit("city_id", next.cityId != null ? String(next.cityId) : "");
+              emit("city", next.cityName);
+              emit("city_name", next.cityName);
+              emit("city_source", next.source ?? "");
+            }}
           />
         ) : null}
 
