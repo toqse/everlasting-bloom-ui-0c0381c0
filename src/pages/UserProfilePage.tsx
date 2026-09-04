@@ -28,6 +28,7 @@ import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/p
 import {
   dobInputMax,
   dobInputMin,
+  PROFILE_AGE_ERROR,
   PROFILE_AGE_HINT,
   profileAgeError,
 } from "@/lib/profileAge";
@@ -1013,7 +1014,8 @@ function EditSectionForm({
   ]);
 
   switch (section) {
-    case "Basic Info":
+    case "Basic Info": {
+      const dobError = profileAgeError(data.dob);
       return (
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
@@ -1052,8 +1054,16 @@ function EditSectionForm({
               max={dobInputMax()}
               value={data.dob}
               onChange={(e) => update("dob", e.target.value)}
+              aria-invalid={Boolean(dobError)}
+              className={cn(
+                dobError && "border-destructive focus-visible:ring-destructive",
+              )}
             />
-            <p className="text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
+            {dobError ? (
+              <p className="text-xs text-destructive">{dobError}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
+            )}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="phone">Phone</Label>
@@ -1113,6 +1123,7 @@ function EditSectionForm({
           </div>
         </div>
       );
+    }
     case "Religion": {
       const religions = religionOptions?.religions ?? [];
       const castes = religionOptions?.castes ?? [];
@@ -3344,12 +3355,12 @@ const UserProfilePage = () => {
 
     if (section === "Basic Info") {
       if (!profileData.dob.trim()) {
+        document.getElementById("dob")?.focus();
         setSaveError("Date of birth is required.");
         return;
       }
-      const ageErr = profileAgeError(profileData.dob);
-      if (ageErr) {
-        setSaveError(ageErr);
+      if (profileAgeError(profileData.dob)) {
+        document.getElementById("dob")?.focus();
         return;
       }
     }
@@ -3517,7 +3528,12 @@ const UserProfilePage = () => {
       }
       setEditingSection(null);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Save failed");
+      const msg = e instanceof Error ? e.message : "Save failed";
+      if (msg === PROFILE_AGE_ERROR || msg.includes(PROFILE_AGE_ERROR)) {
+        document.getElementById("dob")?.focus();
+        return;
+      }
+      setSaveError(msg);
     } finally {
       setSavingSection(false);
     }
@@ -3751,7 +3767,7 @@ const UserProfilePage = () => {
                 </>
               }
             >
-              {saveError && (
+              {saveError && saveError !== PROFILE_AGE_ERROR && (
                 <p className="text-sm text-destructive mb-4">{saveError}</p>
               )}
               {editingSection && (
