@@ -6,7 +6,7 @@ import { RELIGION_CASTE_MAP } from "@/data/religionCaste";
 import { toast } from "sonner";
 import PhoneInput from "@/components/PhoneInput";
 import { isValidIndianMobile } from "@/lib/phone";
-import { dobInputMax, dobInputMin, PROFILE_AGE_HINT } from "@/lib/profileAge";
+import { dobInputMax, dobInputMin, PROFILE_AGE_HINT, profileAgeError } from "@/lib/profileAge";
 
 const selectClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all appearance-none cursor-pointer text-sm";
 const inputClass = "w-full px-3 py-3 rounded-xl border-2 border-primary/10 bg-white focus:border-primary focus:ring-0 transition-all text-sm";
@@ -30,6 +30,7 @@ const SearchFilters = () => {
   const [regDob, setRegDob] = useState("");
   const [regReligion, setRegReligion] = useState("");
   const [regCaste, setRegCaste] = useState("");
+  const regDobError = profileAgeError(regDob);
 
   const minAge = lookingFor === "Bride" ? 18 : 21;
   const maxAge = 60;
@@ -222,8 +223,12 @@ const SearchFilters = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-foreground mb-1.5">Date of Birth</label>
-                    <input type="date" min={dobInputMin()} max={dobInputMax()} value={regDob} onChange={e => setRegDob(e.target.value)} className={inputClass} />
-                    <p className="mt-1 text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
+                    <input type="date" min={dobInputMin()} max={dobInputMax()} value={regDob} onChange={e => setRegDob(e.target.value)} className={inputClass} aria-invalid={Boolean(regDobError)} />
+                    {regDobError ? (
+                      <p className="mt-1 text-xs text-destructive">{regDobError}</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted-foreground">{PROFILE_AGE_HINT}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">

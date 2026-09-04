@@ -28,8 +28,8 @@ import { formatPhoneDisplay, formatPhoneForApi, digitsOnlyMobile } from "@/lib/p
 import {
   dobInputMax,
   dobInputMin,
-  PROFILE_AGE_ERROR,
   PROFILE_AGE_HINT,
+  isProfileAgeLimitError,
   profileAgeError,
 } from "@/lib/profileAge";
 import {
@@ -3529,7 +3529,7 @@ const UserProfilePage = () => {
       setEditingSection(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Save failed";
-      if (msg === PROFILE_AGE_ERROR || msg.includes(PROFILE_AGE_ERROR)) {
+      if (isProfileAgeLimitError(msg)) {
         document.getElementById("dob")?.focus();
         return;
       }
@@ -3767,7 +3767,7 @@ const UserProfilePage = () => {
                 </>
               }
             >
-              {saveError && saveError !== PROFILE_AGE_ERROR && (
+              {saveError && !isProfileAgeLimitError(saveError) && (
                 <p className="text-sm text-destructive mb-4">{saveError}</p>
               )}
               {editingSection && (

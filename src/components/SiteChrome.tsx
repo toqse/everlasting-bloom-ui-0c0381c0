@@ -16,8 +16,14 @@ function shouldShowMarketingChrome(pathname: string | null): boolean {
   if (p === "/auth" || p.startsWith("/auth/")) return false;
   if (isDashboardPath(p)) return false;
   if (p === "/chat" || p.startsWith("/chat/")) return false;
-  // Legal pages: content only (no navbar / footer)
-  if (p === "/terms-conditions" || p === "/privacy-policy") return false;
+  // Legal / account pages: content only (no navbar / footer)
+  if (
+    p === "/terms-conditions" ||
+    p === "/privacy-policy" ||
+    p === "/delete-my-account"
+  ) {
+    return false;
+  }
   return true;
 }
 

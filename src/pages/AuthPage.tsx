@@ -905,7 +905,6 @@ const AuthPage = () => {
     const ageErr = profileAgeError(formData.dob);
     if (ageErr) {
       setSignupErrors({ dob: ageErr });
-      toast.error(ageErr);
       return;
     }
     if (!formData.gender?.trim()) {
