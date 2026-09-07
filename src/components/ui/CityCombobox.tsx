@@ -11,10 +11,10 @@ import { labelClass } from "@/components/signup/SignupFormFields";
 
 const DEBOUNCE_MS = 300;
 
-export type CitySelection =
-  | { source: "master"; cityId: number; cityName: string }
-  | { source: "user"; cityId: null; cityName: string }
-  | { source: null; cityId: null; cityName: string };
+export type CitySelection = {
+  cityId: number | null;
+  cityName: string;
+};
 
 interface Props {
   districtId: number;
@@ -120,11 +120,8 @@ export function CityCombobox({
   const contains = ranked.rest;
   const query = sanitizeCityName(input);
   const hasExact = exact.length > 0;
-  const showManual =
-    !!query &&
-    !hasExact &&
-    !loading &&
-    (!!loadError || (fuzzy.length === 0 && contains.length === 0) || districtEmpty);
+  // Always offer manual entry when typed text has no exact master match.
+  const showManual = !!query && !hasExact;
 
   type Row =
     | { kind: "exact"; city: City }
@@ -147,7 +144,7 @@ export function CityCombobox({
 
   const commitMaster = (city: City) => {
     committedRef.current = true;
-    onChange({ source: "master", cityId: city.id, cityName: city.name });
+    onChange({ cityId: city.id, cityName: city.name });
     setInput(city.name);
     setOpen(false);
   };
@@ -156,20 +153,19 @@ export function CityCombobox({
     const cleaned = sanitizeCityName(name);
     if (!cleaned) return;
     committedRef.current = true;
-    onChange({ source: "user", cityId: null, cityName: cleaned });
+    onChange({ cityId: null, cityName: cleaned });
     setInput(cleaned);
     setOpen(false);
   };
 
   const clear = () => {
     committedRef.current = false;
-    onChange({ source: null, cityId: null, cityName: "" });
+    onChange({ cityId: null, cityName: "" });
     setInput("");
     setOpen(false);
   };
 
   const handleBlurCommit = () => {
-    // If user typed something and left without selecting, allow manual if no exact master.
     const cleaned = sanitizeCityName(input);
     if (!cleaned) {
       if (cityId || cityName) clear();
@@ -182,7 +178,6 @@ export function CityCombobox({
     }
     if (!cityId && cityName === cleaned) return;
     if (!committedRef.current || cityName !== cleaned || cityId) {
-      // Prefer explicit "Use as city" — but if they tab away with unknown text, keep as manual.
       commitManual(cleaned);
     }
   };
@@ -220,7 +215,10 @@ export function CityCombobox({
     } else if (e.key === "Enter") {
       e.preventDefault();
       const row = rows[highlight];
-      if (!row) return;
+      if (!row) {
+        if (query && !hasExact) commitManual(query);
+        return;
+      }
       if (row.kind === "manual") commitManual(row.name);
       else commitMaster(row.city);
     }
@@ -336,7 +334,7 @@ export function CityCombobox({
 
           {showManual && query ? (
             <>
-              {!loadError && !districtEmpty ? (
+              {fuzzy.length + contains.length === 0 && !loadError && !districtEmpty ? (
                 <div className="px-3 pt-2 text-xs text-muted-foreground">
                   No matching city found.
                 </div>
@@ -385,7 +383,8 @@ export function CityCombobox({
             const v = e.target.value;
             committedRef.current = false;
             setInput(v);
-            onChange({ source: null, cityId: null, cityName: "" });
+            // Keep draft city_name so Continue can save without an extra click.
+            onChange({ cityId: null, cityName: sanitizeCityName(v) });
             setOpen(true);
             scheduleSearch(v);
           }}

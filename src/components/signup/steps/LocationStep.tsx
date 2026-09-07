@@ -45,7 +45,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
     onChange({ target: { name: "city_id", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
     onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
     onChange({ target: { name: "city_name", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
-    onChange({ target: { name: "city_source", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
   }, [onChange]);
 
   const handleSelect = useCallback(
@@ -247,7 +246,6 @@ const LocationStep = ({ formData, onChange }: Props) => {
               emit("city_id", next.cityId != null ? String(next.cityId) : "");
               emit("city", next.cityName);
               emit("city_name", next.cityName);
-              emit("city_source", next.source ?? "");
             }}
           />
         ) : null}

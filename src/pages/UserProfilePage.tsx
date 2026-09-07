@@ -322,7 +322,6 @@ interface ProfileFormData {
   district_id?: number;
   city_id?: number;
   city_name?: string;
-  city_source?: string | null;
   religion_id?: number;
   caste_id?: number | null;
   mother_tongue_id?: number;
@@ -537,7 +536,6 @@ function mapProfileDataToForm(
     district_id: location.district_id,
     city_id: location.city_id,
     city_name: raw(location.city_name ?? location.city),
-    city_source: (location.city_source as string | null | undefined) ?? null,
     religion_id: religion.religion_id,
     caste_id: religion.caste_id ?? null,
     mother_tongue_id: religion.mother_tongue_id,
@@ -1826,7 +1824,6 @@ function EditSectionForm({
             city_id: undefined,
             city: "",
             city_name: "",
-            city_source: null,
           });
         } else if (name === "state_id") {
           const nameStr = states.find((s) => s.id === id)?.name ?? "";
@@ -1838,7 +1835,6 @@ function EditSectionForm({
             city_id: undefined,
             city: "",
             city_name: "",
-            city_source: null,
           });
         } else if (name === "district_id") {
           const nameStr = districts.find((d) => d.id === id)?.name ?? "";
@@ -1848,7 +1844,6 @@ function EditSectionForm({
             city_id: undefined,
             city: "",
             city_name: "",
-            city_source: null,
           });
         }
       };
@@ -1912,7 +1907,6 @@ function EditSectionForm({
                   city_id: next.cityId ?? undefined,
                   city: next.cityName,
                   city_name: next.cityName,
-                  city_source: next.source,
                 });
               }}
             />

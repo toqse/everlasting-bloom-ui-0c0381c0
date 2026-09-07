@@ -267,7 +267,6 @@ function mapProfileToFormData(
           city: String(loc?.city_name || loc?.city),
           city_name: String(loc?.city_name || loc?.city),
         }),
-      ...(loc?.city_source != null && { city_source: String(loc.city_source) }),
       ...(loc?.address != null &&
         loc.address !== "" && { address: loc.address }),
       ...(rel?.religion_id != null && { religion_id: String(rel.religion_id) }),
@@ -460,7 +459,6 @@ const AuthPage = () => {
     district_id: "",
     city_id: "",
     city_name: "",
-    city_source: "",
     has_horoscope: "",
     birth_time: "",
     birth_place: "",
@@ -723,7 +721,6 @@ const AuthPage = () => {
         city_id: "",
         city_name: "",
         city: "",
-        city_source: "",
       }));
       return;
     }
@@ -735,7 +732,6 @@ const AuthPage = () => {
         city_id: "",
         city_name: "",
         city: "",
-        city_source: "",
       }));
       return;
     }
@@ -746,7 +742,6 @@ const AuthPage = () => {
         city_id: "",
         city_name: "",
         city: "",
-        city_source: "",
       }));
       return;
     }
