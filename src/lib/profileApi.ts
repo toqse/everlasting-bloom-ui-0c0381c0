@@ -60,6 +60,7 @@ export interface ProfileData {
     district?: string;
     city_id?: number;
     city?: string;
+    city_name?: string;
     address?: string;
   };
   family_details?: Record<string, unknown> & {

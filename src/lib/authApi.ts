@@ -242,6 +242,7 @@ export interface VerifyMobileProfile {
     district?: string;
     city_id?: number;
     city?: string;
+    city_name?: string;
     address?: string;
   };
   religion_details?: Record<string, unknown> & {

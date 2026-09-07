@@ -6,6 +6,7 @@ import {
   isExactCityMatch,
   rankCitySuggestions,
   sanitizeCityName,
+  type CityOption,
 } from "@/lib/cityMatch";
 import { labelClass } from "@/components/signup/SignupFormFields";
 
@@ -124,9 +125,9 @@ export function CityCombobox({
   const showManual = !!query && !hasExact;
 
   type Row =
-    | { kind: "exact"; city: City }
-    | { kind: "fuzzy"; city: City }
-    | { kind: "match"; city: City }
+    | { kind: "exact"; city: CityOption }
+    | { kind: "fuzzy"; city: CityOption }
+    | { kind: "match"; city: CityOption }
     | { kind: "manual"; name: string };
 
   const rows: Row[] = [
@@ -142,7 +143,7 @@ export function CityCombobox({
     setHighlight(0);
   }, [input, cities, loadError]);
 
-  const commitMaster = (city: City) => {
+  const commitMaster = (city: CityOption) => {
     committedRef.current = true;
     onChange({ cityId: city.id, cityName: city.name });
     setInput(city.name);
