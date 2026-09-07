@@ -64,8 +64,8 @@ export default function UseCreditDialog({
         <div className="space-y-4 pt-2">
           {isExhausted && (
             <p className="text-sm text-muted-foreground">
-              You&apos;ve used all {quota} {label(variant)}. Upgrade your plan to
-              continue.
+              You&apos;ve used all {quota} {label(variant)}. Buy the same plan
+              again or upgrade to continue.
             </p>
           )}
           {isLow && !isExhausted && (
@@ -90,7 +90,7 @@ export default function UseCreditDialog({
               size="sm"
               onClick={handleUpgrade}
             >
-              {isExhausted ? "Upgrade plan" : "Upgrade"}
+              {isExhausted ? "Buy more credits" : "Upgrade"}
             </Button>
             {!isExhausted && !isLow && (
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>

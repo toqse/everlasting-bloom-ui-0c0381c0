@@ -173,7 +173,6 @@ const MembershipPage = () => {
                   `${plan.contact_view_limit} Up to Contact View`,
                   `${plan.interest_limit} Send interests`,
                   `${plan.chat_limit} Chat with matches`,
-                  `${plan.profile_view_limit} Profile visibility`,
                 ];
                 return (
                   <div

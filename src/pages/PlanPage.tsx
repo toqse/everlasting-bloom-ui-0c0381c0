@@ -15,6 +15,7 @@ import {
   Eye,
   Heart,
   MessageCircle,
+  Phone,
 } from "lucide-react";
 import PaymentPopup from "@/components/PaymentPopup";
 import {
@@ -130,7 +131,6 @@ const buildFeatures = (plan: AvailablePlan) => {
     list.push(`${plan.interest_limit} Send interests to profiles`);
   if (plan.chat_limit > 0)
     list.push(`${plan.chat_limit} Chat with matches`);
-  list.push("Profile visibility");
   return list;
 };
 
@@ -229,7 +229,7 @@ const PlanCard = ({ plan, style, myPlan, onChoose }: PlanCardProps) => {
 
   return (
     <div
-      className={`relative rounded-3xl border-2 p-5 flex flex-col gap-3 shadow-card hover-lift transition-all duration-300 ${style.cardBg} ${style.cardBorder} ${style.badge === "best-value" ? "mt-4" : ""}`}
+      className={`relative rounded-3xl border-2 p-5 flex flex-col gap-3 shadow-card hover-lift transition-all duration-300 ${style.cardBg} ${style.cardBorder} ${style.badge === "best-value" ? "mt-4" : ""} ${isCurrentPlan ? "ring-2 ring-primary/30" : ""}`}
     >
       {style.badge === "special" && <SpecialOfferBadge />}
       {style.badge === "best-value" && <BestValueBadge />}
@@ -247,6 +247,11 @@ const PlanCard = ({ plan, style, myPlan, onChoose }: PlanCardProps) => {
         <h2 className={`font-serif text-xl font-bold ${style.titleColor}`}>
           {plan.name}
         </h2>
+        {isCurrentPlan && (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mt-0.5">
+            Your current plan
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">{plan.description}</p>
       </div>
 
@@ -326,16 +331,16 @@ const PlanCard = ({ plan, style, myPlan, onChoose }: PlanCardProps) => {
         variant="hero"
         className="w-full gap-2 group/btn border-0 text-white"
         style={{
-          background: isCurrentPlan ? "#94a3b8" : "#b23272",
-          boxShadow: isCurrentPlan
-            ? "none"
-            : "0 4px 14px -2px rgba(178,50,114,0.35)",
+          background: "#b23272",
+          boxShadow: "0 4px 14px -2px rgba(178,50,114,0.35)",
         }}
-        disabled={isCurrentPlan}
         onClick={() => onChoose(plan)}
       >
         {isCurrentPlan ? (
-          "Current plan"
+          <>
+            Buy again
+            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </>
         ) : hasActivePlan ? (
           <>
             Upgrade
@@ -377,6 +382,11 @@ const CurrentPlanCard = ({
     },
     { icon: Heart, label: "Interests left", value: my.interests_remaining },
     { icon: MessageCircle, label: "Chats left", value: my.chat_remaining },
+    {
+      icon: Phone,
+      label: "Contact views left",
+      value: my.contact_view_remaining,
+    },
     {
       icon: Sparkles,
       label: "Horoscope matches left",
@@ -423,7 +433,7 @@ const CurrentPlanCard = ({
 
       {active && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4">
             {rows.map(({ icon: Icon, label, value }) => (
               <div
                 key={label}

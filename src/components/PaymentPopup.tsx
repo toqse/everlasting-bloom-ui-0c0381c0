@@ -30,7 +30,6 @@ const formatPrice = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
 
 const buildApiFeatures = (plan: AvailablePlan): string[] => {
   const list: string[] = [];
-  if (plan.profile_view_limit > 0) list.push(`${plan.profile_view_limit} Profile Views`);
   if (plan.interest_limit > 0) list.push(`${plan.interest_limit} Interest Sends`);
   if (plan.contact_view_limit > 0) list.push(`${plan.contact_view_limit} Contact Views`);
   if (plan.chat_limit > 0) list.push(`${plan.chat_limit} Chat Starts`);
@@ -104,9 +103,6 @@ const PaymentPopup = ({
       const msg = e instanceof Error ? e.message : "Failed to purchase plan";
       if (msg !== "Payment cancelled.") {
         toast.error(msg);
-      }
-      if (/already have an active .+ plan/i.test(msg)) {
-        onOpenChange(false);
       }
     } finally {
       setSubmitting(false);

@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Heart,
   Eye,
   RotateCcw,
@@ -101,6 +102,39 @@ const FilterSection = ({
   </Collapsible>
 );
 
+const FilterShowMoreFooter = ({
+  remaining,
+  showAll,
+  onToggle,
+}: {
+  remaining: number;
+  showAll: boolean;
+  onToggle: () => void;
+}) => {
+  if (remaining <= 0) return null;
+  return (
+    <div className="sticky bottom-0 z-10 bg-background pt-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary/10 py-2 px-3 text-sm font-semibold text-primary hover:bg-primary/15"
+      >
+        {showAll ? (
+          <>
+            Show less
+            <ChevronUp className="h-4 w-4 shrink-0" />
+          </>
+        ) : (
+          <>
+            Show more ({remaining})
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
 /** Single-select searchable list by id/name (API filter options) */
 const SearchableIdSelect = ({
   placeholder,
@@ -124,7 +158,7 @@ const SearchableIdSelect = ({
     o.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
   const displayList = showAll ? filtered : filtered.slice(0, initialVisible);
-  const hasMore = !showAll && filtered.length > initialVisible;
+  const remaining = filtered.length - initialVisible;
   return (
     <div className="space-y-2">
       <Input
@@ -133,7 +167,7 @@ const SearchableIdSelect = ({
         onChange={(e) => onSearchChange(e.target.value)}
         className="h-9 text-sm rounded-lg border-primary/10"
       />
-      <div className="max-h-40 overflow-y-auto space-y-1">
+      <div className="max-h-40 overflow-y-auto space-y-1 pt-1">
         <label className="flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-accent/50 text-sm">
           <Checkbox
             checked={valueId === null}
@@ -155,16 +189,12 @@ const SearchableIdSelect = ({
             <span className="text-muted-foreground">{item.name}</span>
           </label>
         ))}
+        <FilterShowMoreFooter
+          remaining={remaining}
+          showAll={showAll}
+          onToggle={() => setShowAll((open) => !open)}
+        />
       </div>
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="text-xs text-primary font-medium hover:underline"
-        >
-          More
-        </button>
-      )}
     </div>
   );
 };
@@ -192,7 +222,7 @@ const SearchableMultiIdSelect = ({
     o.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
   const displayList = showAll ? filtered : filtered.slice(0, initialVisible);
-  const hasMore = !showAll && filtered.length > initialVisible;
+  const remaining = filtered.length - initialVisible;
   const valueSet = useMemo(() => new Set(valueIds), [valueIds]);
 
   const toggle = (id: number) => {
@@ -238,7 +268,7 @@ const SearchableMultiIdSelect = ({
           )}
         </div>
       )}
-      <div className="max-h-40 overflow-y-auto space-y-1">
+      <div className="max-h-40 overflow-y-auto space-y-1 pt-1">
         {displayList.map((item) => (
           <label
             key={item.id}
@@ -254,16 +284,12 @@ const SearchableMultiIdSelect = ({
         {displayList.length === 0 && (
           <p className="px-2 py-1 text-xs text-muted-foreground">No options found.</p>
         )}
+        <FilterShowMoreFooter
+          remaining={remaining}
+          showAll={showAll}
+          onToggle={() => setShowAll((open) => !open)}
+        />
       </div>
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="text-xs text-primary font-medium hover:underline"
-        >
-          More
-        </button>
-      )}
     </div>
   );
 };
