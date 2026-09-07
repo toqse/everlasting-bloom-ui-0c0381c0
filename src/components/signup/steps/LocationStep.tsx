@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getCountries, getStates, getDistricts } from "@/lib/masterApi";
-import type { Country, State, District } from "@/lib/masterApi";
+import { getCountries, getStates, getDistricts, getCities } from "@/lib/masterApi";
+import type { Country, State, District, City } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import { CityCombobox } from "@/components/ui/CityCombobox";
 import { labelClass } from "../SignupFormFields";
 import { HoroscopeBirthFields } from "../HoroscopeBirthFields";
 
@@ -15,18 +14,23 @@ const LocationStep = ({ formData, onChange }: Props) => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
   const countriesRef = useRef<Country[]>([]);
   const statesRef = useRef<State[]>([]);
   const districtsRef = useRef<District[]>([]);
+  const citiesRef = useRef<City[]>([]);
   countriesRef.current = countries;
   statesRef.current = states;
   districtsRef.current = districts;
+  citiesRef.current = cities;
   const countriesAbortRef = useRef<AbortController | null>(null);
   const statesAbortRef = useRef<AbortController | null>(null);
   const districtsAbortRef = useRef<AbortController | null>(null);
+  const citiesAbortRef = useRef<AbortController | null>(null);
 
   const countryId = formData.country_id ? Number(formData.country_id) : 0;
   const stateId = formData.state_id ? Number(formData.state_id) : 0;
@@ -45,6 +49,7 @@ const LocationStep = ({ formData, onChange }: Props) => {
     onChange({ target: { name: "city_id", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
     onChange({ target: { name: "city", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
     onChange({ target: { name: "city_name", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+    setCities([]);
   }, [onChange]);
 
   const handleSelect = useCallback(
@@ -77,8 +82,24 @@ const LocationStep = ({ formData, onChange }: Props) => {
         clearCity();
         return;
       }
+
+      if (name === "city_id") {
+        const selected = cities.find((c) => String(c.id) === value);
+        const cityName = selected?.name ?? "";
+        onChange({ target: { name: "city", value: cityName } } as React.ChangeEvent<HTMLSelectElement>);
+        onChange({ target: { name: "city_name", value: cityName } } as React.ChangeEvent<HTMLSelectElement>);
+      }
     },
-    [clearCity, countries, districts, onChange, states]
+    [cities, clearCity, countries, districts, onChange, states]
+  );
+
+  const handleCustomCity = useCallback(
+    (_name: string, customText: string) => {
+      onChange({ target: { name: "city_id", value: "" } } as React.ChangeEvent<HTMLSelectElement>);
+      onChange({ target: { name: "city", value: customText } } as React.ChangeEvent<HTMLSelectElement>);
+      onChange({ target: { name: "city_name", value: customText } } as React.ChangeEvent<HTMLSelectElement>);
+    },
+    [onChange]
   );
 
   const loadCountries = useCallback(async (search: string) => {
@@ -140,6 +161,27 @@ const LocationStep = ({ formData, onChange }: Props) => {
     [stateId]
   );
 
+  const loadCities = useCallback(
+    async (search: string) => {
+      if (!districtId) return;
+      citiesAbortRef.current?.abort();
+      const ac = new AbortController();
+      citiesAbortRef.current = ac;
+      if (citiesRef.current.length === 0) setLoadingCities(true);
+      try {
+        const list = await getCities(districtId, search || undefined, ac.signal);
+        if (ac.signal.aborted) return;
+        setCities(list);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (!ac.signal.aborted) setCities([]);
+      } finally {
+        if (!ac.signal.aborted) setLoadingCities(false);
+      }
+    },
+    [districtId]
+  );
+
   useEffect(() => {
     loadCountries("");
     return () => countriesAbortRef.current?.abort();
@@ -171,6 +213,19 @@ const LocationStep = ({ formData, onChange }: Props) => {
     return () => districtsAbortRef.current?.abort();
   }, [stateId, loadDistricts]);
 
+  useEffect(() => {
+    if (!districtId) {
+      citiesAbortRef.current?.abort();
+      setCities([]);
+      setLoadingCities(false);
+      return;
+    }
+    setCities([]);
+    setLoadingCities(true);
+    loadCities("");
+    return () => citiesAbortRef.current?.abort();
+  }, [districtId, loadCities]);
+
   const handleToggleHoroscope = useCallback(
     (checked: boolean) => {
       emit("has_horoscope", checked ? "true" : "");
@@ -186,6 +241,8 @@ const LocationStep = ({ formData, onChange }: Props) => {
     },
     [emit, formData.birth_timezone]
   );
+
+  const cityDisplay = formData.city_name || formData.city || "";
 
   return (
     <>
@@ -237,16 +294,20 @@ const LocationStep = ({ formData, onChange }: Props) => {
         ) : null}
 
         {districtId ? (
-          <CityCombobox
+          <SearchableSelect
             key={`city-${districtId}`}
-            districtId={districtId}
-            cityId={formData.city_id || ""}
-            cityName={formData.city_name || formData.city || ""}
-            onChange={(next) => {
-              emit("city_id", next.cityId != null ? String(next.cityId) : "");
-              emit("city", next.cityName);
-              emit("city_name", next.cityName);
-            }}
+            name="city_id"
+            value={formData.city_id || ""}
+            options={cities}
+            loading={loadingCities}
+            label="City"
+            placeholder="Select City"
+            initialDisplayLabel={cityDisplay || undefined}
+            onSearch={loadCities}
+            onSelect={handleSelect}
+            allowCustom
+            customNoun="city"
+            onCustomSelect={handleCustomCity}
           />
         ) : null}
 

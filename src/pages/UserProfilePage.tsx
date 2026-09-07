@@ -101,7 +101,6 @@ import type {
   IncomeRangeMaster,
 } from "@/lib/masterApi";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import { CityCombobox } from "@/components/ui/CityCombobox";
 import { displayOccupationName } from "@/lib/displayOccupationName";
 import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { BASE_URL } from "@/lib/config";
@@ -1799,6 +1798,7 @@ function EditSectionForm({
       const countries = locationOptions?.countries ?? [];
       const states = locationOptions?.states ?? [];
       const districts = locationOptions?.districts ?? [];
+      const cities = locationOptions?.cities ?? [];
       const loading = locationLoading ?? {
         countries: false,
         states: false,
@@ -1844,6 +1844,13 @@ function EditSectionForm({
             city_id: undefined,
             city: "",
             city_name: "",
+          });
+        } else if (name === "city_id") {
+          const nameStr = cities.find((c) => c.id === id)?.name ?? "";
+          onLocationChange({
+            city_id: id,
+            city: nameStr,
+            city_name: nameStr,
           });
         }
       };
@@ -1897,16 +1904,24 @@ function EditSectionForm({
             />
           ) : null}
           {districtId > 0 ? (
-            <CityCombobox
+            <SearchableSelect
               key={`city-${districtId}`}
-              districtId={districtId}
-              cityId={data.city_id != null ? String(data.city_id) : ""}
-              cityName={data.city_name || data.city || ""}
-              onChange={(next) => {
+              name="city_id"
+              value={data.city_id != null ? String(data.city_id) : ""}
+              options={cities}
+              loading={loading.cities}
+              label="City"
+              placeholder="Select City"
+              initialDisplayLabel={data.city_name || data.city || undefined}
+              onSearch={loaders.loadCities}
+              onSelect={handleLocationSelect}
+              allowCustom
+              customNoun="city"
+              onCustomSelect={(_name, customText) => {
                 onLocationChange?.({
-                  city_id: next.cityId ?? undefined,
-                  city: next.cityName,
-                  city_name: next.cityName,
+                  city_id: undefined,
+                  city: customText,
+                  city_name: customText,
                 });
               }}
             />

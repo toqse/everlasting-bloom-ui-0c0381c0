@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react
 import { createPortal } from "react-dom";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { labelClass } from "@/components/signup/SignupFormFields";
+import { sanitizeCityName } from "@/lib/cityMatch";
 
 const DEBOUNCE_MS = 300;
 
@@ -24,6 +25,15 @@ interface SearchableSelectProps {
   disabled?: boolean;
   onSearch: (term: string) => void;
   onSelect: (name: string, value: string) => void;
+  /**
+   * When true, empty / non-matching search can be committed as a custom string
+   * via onCustomSelect (used for City free-text fallback).
+   */
+  allowCustom?: boolean;
+  /** Called when user chooses to use typed text that is not in options. */
+  onCustomSelect?: (name: string, customText: string) => void;
+  /** Noun used in the custom action, e.g. "city". */
+  customNoun?: string;
 }
 
 export function SearchableSelect({
@@ -38,6 +48,9 @@ export function SearchableSelect({
   disabled,
   onSearch,
   onSelect,
+  allowCustom = false,
+  onCustomSelect,
+  customNoun = "value",
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,8 +129,22 @@ export function SearchableSelect({
   const displayLabel = formattedLabel || placeholder;
   const hasDisplayValue = !!formattedLabel;
 
+  const customText = sanitizeCityName(searchTerm);
+  const exactInOptions = customText
+    ? options.some((o) => o.name.trim().toLowerCase() === customText.toLowerCase())
+    : false;
+  const showCustomAction =
+    allowCustom && !!onCustomSelect && !!customText && !exactInOptions && !loading;
+
   const handleSelect = (option: SearchableOption) => {
     onSelect(name, String(option.id));
+    setOpen(false);
+    setSearchTerm("");
+  };
+
+  const handleCustom = () => {
+    if (!onCustomSelect || !customText) return;
+    onCustomSelect(name, customText);
     setOpen(false);
     setSearchTerm("");
   };
@@ -138,7 +165,13 @@ export function SearchableSelect({
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && showCustomAction && options.length === 0) {
+              e.preventDefault();
+              handleCustom();
+            }
+          }}
+          placeholder={allowCustom ? "Search or enter city..." : "Search..."}
           className="w-full px-3 py-2 rounded-xl border border-primary/10 focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
           autoFocus
         />
@@ -166,7 +199,7 @@ export function SearchableSelect({
               ))}
             </div>
           </div>
-        ) : options.length === 0 ? (
+        ) : options.length === 0 && !showCustomAction ? (
           <div className="py-6 text-center text-muted-foreground text-sm">No results</div>
         ) : (
           <>
@@ -187,6 +220,25 @@ export function SearchableSelect({
                 {formatOptionLabel ? formatOptionLabel(opt.name) : opt.name}
               </button>
             ))}
+            {showCustomAction ? (
+              <>
+                {options.length === 0 ? (
+                  <div className="px-3 pt-2 text-xs text-muted-foreground">
+                    No matching {customNoun} found.
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleCustom}
+                  className="w-full text-left px-3 py-2.5 mt-1 rounded-xl text-sm font-medium text-primary hover:bg-primary/10"
+                >
+                  + Use &quot;{customText}&quot; as {customNoun}
+                </button>
+                <p className="px-3 pb-2 pt-1 text-xs text-muted-foreground">
+                  Please check the spelling before continuing.
+                </p>
+              </>
+            ) : null}
           </>
         )}
       </div>
@@ -222,6 +274,12 @@ export function SearchableSelect({
           />
         )}
       </button>
+      {allowCustom && !value && formattedLabel ? (
+        <p className="mt-1.5 text-xs text-amber-700/90">
+          {customNoun.charAt(0).toUpperCase() + customNoun.slice(1)} not found in our list.
+          Please check the spelling before continuing.
+        </p>
+      ) : null}
 
       {typeof document !== "undefined" && createPortal(dropdownContent, document.body)}
     </div>
