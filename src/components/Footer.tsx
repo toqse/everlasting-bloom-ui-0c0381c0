@@ -204,6 +204,12 @@ const Footer = () => {
               >
                 Privacy Policy
               </Link>
+              <Link
+                href="/child-safety"
+                className="font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Child Safety
+              </Link>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-foreground font-medium">Follow Us:</span>
