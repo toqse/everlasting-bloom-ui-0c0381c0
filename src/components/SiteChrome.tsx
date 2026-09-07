@@ -20,6 +20,7 @@ function shouldShowMarketingChrome(pathname: string | null): boolean {
   if (
     p === "/terms-conditions" ||
     p === "/privacy-policy" ||
+    p === "/child-safety" ||
     p === "/delete-my-account"
   ) {
     return false;
