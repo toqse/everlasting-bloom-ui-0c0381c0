@@ -1,49 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  type LucideIcon,
-  X,
-  Heart,
-  Sparkles,
-  Lock,
-  User,
-  Briefcase,
-  ClipboardList,
-  Users,
-  Moon,
-  Phone,
-  Eye,
-  Loader2,
-  MessageCircle,
-  Ban,
-  Flag,
-} from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
-import { formatPhoneDisplay } from "@/lib/phone";
-import { useAuthStore } from "@/stores/authStore";
-import { useInterestStore } from "@/stores/interestStore";
-import { toast } from "sonner";
-import UseCreditDialog, {
-  type CreditDialogVariant,
-} from "@/components/UseCreditDialog";
-import type { ProfilePreviewData } from "@/lib/matchesApi";
-import { getProfilePreview, unlockContactDetails } from "@/lib/matchesApi";
-import { blockUser, unblockUser } from "@/lib/blocksApi";
-import { reportUser } from "@/lib/profileReportsApi";
-import { getDisplayErrorMessage } from "@/lib/apiErrors";
-import {
-  mapFullProfileToDrawerDisplay,
-  type FullProfileDrawerDisplay,
-} from "@/lib/profileFullMapper";
-import { useRouter } from "next/navigation";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn, formatDateDdMmYyyy } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -53,6 +8,50 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import UseCreditDialog, {
+  type CreditDialogVariant,
+} from "@/components/UseCreditDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
+import { blockUser, unblockUser } from "@/lib/blocksApi";
+import type { ProfilePreviewData } from "@/lib/matchesApi";
+import { getProfilePreview, unlockContactDetails } from "@/lib/matchesApi";
+import { formatPhoneDisplay } from "@/lib/phone";
+import {
+  mapFullProfileToDrawerDisplay,
+  type FullProfileDrawerDisplay,
+} from "@/lib/profileFullMapper";
+import { reportUser } from "@/lib/profileReportsApi";
+import { cn, formatDateDdMmYyyy } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
+import { useInterestStore } from "@/stores/interestStore";
+import {
+  Ban,
+  Briefcase,
+  ClipboardList,
+  Eye,
+  Flag,
+  Heart,
+  Loader2,
+  Lock,
+  MessageCircle,
+  Moon,
+  Phone,
+  Sparkles,
+  User,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 /** KYC / ID slots — omit from the profile gallery (API may still return URLs). */
 function isHiddenProfilePhotoKey(key: string): boolean {
@@ -93,10 +92,17 @@ function na(value: unknown): string {
 }
 
 function isNeverMarried(status: unknown): boolean {
-  return String(status ?? "").trim().toLowerCase() === "never married";
+  return (
+    String(status ?? "")
+      .trim()
+      .toLowerCase() === "never married"
+  );
 }
 
-function shouldShowChildrenCount(maritalStatus: unknown, count: unknown): boolean {
+function shouldShowChildrenCount(
+  maritalStatus: unknown,
+  count: unknown,
+): boolean {
   if (isNeverMarried(maritalStatus)) return false;
   const numeric = Number(count);
   if (Number.isFinite(numeric) && numeric <= 0) return false;
@@ -643,7 +649,10 @@ const ProfileViewDrawer = ({
   ];
   const familyDetailItems: FieldItem[] = fam
     ? Object.entries(fam)
-        .filter(([k]) => !HIDDEN_FAMILY_KEYS.has(k.toLowerCase().replace(/\s+/g, "_")))
+        .filter(
+          ([k]) =>
+            !HIDDEN_FAMILY_KEYS.has(k.toLowerCase().replace(/\s+/g, "_")),
+        )
         .map(([k, v]) => ({
           label: k.replace(/_/g, " "),
           value: na(v),
@@ -657,9 +666,7 @@ const ProfileViewDrawer = ({
   /** Header shows age + religion/caste chips; omit fields repeated in Basic Details & badges. */
   const basicDetailItems: FieldItem[] = [
     { label: "Location", value: displayLocationFormatted, wide: true },
-    ...(displayMatriId
-      ? [{ label: "Matri ID", value: displayMatriId }]
-      : []),
+    ...(displayMatriId ? [{ label: "Matri ID", value: displayMatriId }] : []),
     { label: "Education", value: displayEducation },
     { label: "Marital status", value: displayMaritalStatus },
     { label: "Height", value: displayHeight },
@@ -678,122 +685,255 @@ const ProfileViewDrawer = ({
     { label: "MANGAL DOSHA", value: "No" },
   ];
 
-  const horoscopeBlock =
-    hasPaidPlan() ? (
-      <div className={cn(hideSummaryGrids ? "mt-8" : "mt-6")}>
-        <SectionTitle icon={Moon}>Horoscope</SectionTitle>
-        {horoscopeRevealed ? (
-          <ProfileFieldGrid
-            items={horoscopeInfo.map((d) => ({
-              label: d.label,
-              value: d.value,
-            }))}
-          />
-        ) : (
-          <Button
-            variant="outline"
-            className="w-full gap-2 border-border/80"
-            type="button"
-            onClick={handleCheckHoroscopeClick}
-          >
-            <Sparkles className="h-4 w-4" /> View horoscope details
-          </Button>
-        )}
-      </div>
-    ) : null;
+  const horoscopeBlock = hasPaidPlan() ? (
+    <div className={cn(hideSummaryGrids ? "mt-8" : "mt-6")}>
+      <SectionTitle icon={Moon}>Horoscope</SectionTitle>
+      {horoscopeRevealed ? (
+        <ProfileFieldGrid
+          items={horoscopeInfo.map((d) => ({
+            label: d.label,
+            value: d.value,
+          }))}
+        />
+      ) : (
+        <Button
+          variant="outline"
+          className="w-full gap-2 border-border/80"
+          type="button"
+          onClick={handleCheckHoroscopeClick}
+        >
+          <Sparkles className="h-4 w-4" /> View horoscope details
+        </Button>
+      )}
+    </div>
+  ) : null;
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        mobileSheet
-        className={cn(
-          "flex flex-col gap-0 overflow-hidden border border-border/50 bg-card p-0 shadow-2xl",
-          isMobile
-            ? "max-h-[92vh] w-full max-w-none rounded-b-none rounded-t-2xl"
-            : "max-h-[min(92vh,1200px)] w-[min(96vw,1280px)] max-w-5xl rounded-xl",
-        )}
-      >
-        <DialogTitle className="sr-only">{displayName}</DialogTitle>
-        <DialogDescription className="sr-only">
-          Profile preview and contact details
-        </DialogDescription>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          hideCloseButton
+          mobileSheet
+          className={cn(
+            "flex flex-col gap-0 overflow-hidden border border-border/50 bg-card p-0 shadow-2xl",
+            isMobile
+              ? "max-h-[92vh] w-full max-w-none rounded-b-none rounded-t-2xl"
+              : "max-h-[min(92vh,1200px)] w-[min(96vw,1280px)] max-w-5xl rounded-xl",
+          )}
+        >
+          <DialogTitle className="sr-only">{displayName}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Profile preview and contact details
+          </DialogDescription>
 
-        {isMobile && (
-          <div className="absolute left-1/2 top-2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/50" />
-        )}
+          {isMobile && (
+            <div className="absolute left-1/2 top-2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/50" />
+          )}
 
-        {/* Header */}
-        <div className="relative shrink-0 bg-gradient-to-br from-primary via-primary to-primary-dark px-6 py-6 text-primary-foreground md:px-8 md:py-7">
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 rounded-md border border-white/25 bg-white/10 p-2 text-primary-foreground transition-colors hover:bg-white/20"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {/* Header */}
+          <div className="relative shrink-0 bg-gradient-to-br from-primary via-primary to-primary-dark px-6 py-6 text-primary-foreground md:px-8 md:py-7">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="absolute right-4 top-4 rounded-md border border-white/25 bg-white/10 p-2 text-primary-foreground transition-colors hover:bg-white/20"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-white/25 bg-white/10 shadow-lg md:h-[7.25rem] md:w-[7.25rem]">
-              {headerPhoto ? (
-                <img
-                  src={headerPhoto}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center font-serif text-2xl font-semibold text-white/90">
-                  {displayName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1 pr-10">
-              <h2 className="font-serif text-2xl font-semibold tracking-tight md:text-3xl">
-                {displayName}
-              </h2>
-              {displayMatriId ? (
-                <p className="mt-1 text-sm font-medium tracking-wide text-white/80">
-                  ID: {displayMatriId}
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-white/25 bg-white/10 shadow-lg md:h-[7.25rem] md:w-[7.25rem]">
+                {headerPhoto ? (
+                  <img
+                    src={headerPhoto}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center font-serif text-2xl font-semibold text-white/90">
+                    {displayName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1 pr-10">
+                <h2 className="font-serif text-2xl font-semibold tracking-tight md:text-3xl">
+                  {displayName}
+                </h2>
+                {displayMatriId ? (
+                  <p className="mt-1 text-sm font-medium tracking-wide text-white/80">
+                    ID: {displayMatriId}
+                  </p>
+                ) : null}
+                <p className="mt-1.5 text-sm text-white/85">
+                  {displayAge} yrs
+                  {displayOccupation ? ` · ${displayOccupation}` : ""}
                 </p>
-              ) : null}
-              <p className="mt-1.5 text-sm text-white/85">
-                {displayAge} yrs
-                {displayOccupation ? ` · ${displayOccupation}` : ""}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                  {displayReligion}
-                </span>
-                <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                  {displayCaste}
-                </span>
-                {hasPaidPlan() && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                    <Sparkles className="h-3 w-3 opacity-90" />
-                    Jathagam available
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                    {displayReligion}
                   </span>
-                )}
-                {isPreviewMode && (fullDisplay || isViewedByMe) && (
-                  <span className="inline-flex items-center rounded-md border border-emerald-400/50 bg-emerald-600/35 px-2.5 py-1 text-xs font-medium text-white">
-                    Full profile loaded
+                  <span className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                    {displayCaste}
                   </span>
-                )}
+                  {hasPaidPlan() && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                      <Sparkles className="h-3 w-3 opacity-90" />
+                      Jathagam available
+                    </span>
+                  )}
+                  {isPreviewMode && (fullDisplay || isViewedByMe) && (
+                    <span className="inline-flex items-center rounded-md border border-emerald-400/50 bg-emerald-600/35 px-2.5 py-1 text-xs font-medium text-white">
+                      Full profile loaded
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Body — scrolls; footer stays visible */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-          <div className="space-y-8 px-6 py-6 md:px-8 md:py-8">
-            {!hideSummaryGrids ? (
-              <>
-                <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+          {/* Body — scrolls; footer stays visible */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+            <div className="space-y-8 px-6 py-6 md:px-8 md:py-8">
+              {!hideSummaryGrids ? (
+                <>
+                  <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                    <div>
+                      <SectionTitle icon={User}>About</SectionTitle>
+                      <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
+                        <p className="text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]">
+                          {displayAbout || "No description provided."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <SectionTitle icon={Briefcase}>
+                        Career & education
+                      </SectionTitle>
+                      <ProfileFieldGrid items={careerDetailItems} />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+                    <div>
+                      <SectionTitle icon={ClipboardList}>
+                        Basic details
+                      </SectionTitle>
+                      <ProfileFieldGrid items={basicDetailItems} />
+                    </div>
+
+                    <div>
+                      <SectionTitle icon={Phone}>Contact</SectionTitle>
+                      <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-6">
+                        {isPreviewMode ? (
+                          <>
+                            {!fullDisplay && !isViewedByMe && (
+                              <div className="flex flex-col items-center justify-center gap-4 text-center">
+                                <div className="blur-sm select-none pointer-events-none opacity-50">
+                                  <p className="text-sm text-foreground">
+                                    +91 ••••• •••••
+                                  </p>
+                                  <p className="mt-1 text-sm text-foreground">
+                                    ••••••••@••••.com
+                                  </p>
+                                </div>
+                                <p className="max-w-sm text-sm text-muted-foreground">
+                                  Phone and email may require unlocking based on
+                                  your plan quota.
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="hero"
+                                  className="gap-2"
+                                  disabled={unlockLoading}
+                                  onClick={handleUnlockContactApi}
+                                >
+                                  {unlockLoading ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                      Unlocking…
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Phone className="h-4 w-4" /> View contact
+                                      details
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+
+                            {fullDisplay && !contactVisiblePreview && (
+                              <div className="flex flex-col items-center justify-center gap-3 text-center">
+                                <Lock className="h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Phone and email are not included in this
+                                  profile view. Unlock contact details using
+                                  your plan quota.
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="hero"
+                                  className="gap-2"
+                                  disabled={unlockLoading}
+                                  onClick={handleUnlockContactApi}
+                                >
+                                  {unlockLoading ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                                      Unlocking…
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Phone className="h-4 w-4" /> View contact
+                                      details
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+
+                            {contactVisiblePreview && (
+                              <p className="text-center text-sm text-muted-foreground">
+                                Phone and email are listed in the Contact
+                                section below.
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center gap-4 text-center">
+                            {!hasPaidPlan() ? (
+                              <p className="text-sm text-muted-foreground">
+                                Upgrade your plan to view contact details. See
+                                the Contact section below.
+                              </p>
+                            ) : !contactRevealed ? (
+                              <Button
+                                type="button"
+                                variant="hero"
+                                className="gap-2"
+                                onClick={handleViewContactClick}
+                              >
+                                <Eye className="h-4 w-4" /> View contact details
+                              </Button>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                Contact details are shown in the section below.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {horoscopeBlock}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
                   <div>
                     <SectionTitle icon={User}>About</SectionTitle>
                     <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
@@ -802,220 +942,86 @@ const ProfileViewDrawer = ({
                       </p>
                     </div>
                   </div>
+                  {horoscopeBlock}
+                </>
+              )}
 
-                  <div>
-                    <SectionTitle icon={Briefcase}>
-                      Career & education
-                    </SectionTitle>
-                    <ProfileFieldGrid items={careerDetailItems} />
-                  </div>
-                </div>
-
-                <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-                  <div>
-                    <SectionTitle icon={ClipboardList}>
-                      Basic details
-                    </SectionTitle>
-                    <ProfileFieldGrid items={basicDetailItems} />
-                  </div>
-
-                  <div>
-                    <SectionTitle icon={Phone}>Contact</SectionTitle>
-                    <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-6">
-                      {isPreviewMode ? (
-                        <>
-                          {!fullDisplay && !isViewedByMe && (
-                            <div className="flex flex-col items-center justify-center gap-4 text-center">
-                              <div className="blur-sm select-none pointer-events-none opacity-50">
-                                <p className="text-sm text-foreground">
-                                  +91 ••••• •••••
-                                </p>
-                                <p className="mt-1 text-sm text-foreground">
-                                  ••••••••@••••.com
-                                </p>
-                              </div>
-                              <p className="max-w-sm text-sm text-muted-foreground">
-                                Phone and email may require unlocking based on
-                                your plan quota.
-                              </p>
-                              <Button
-                                type="button"
-                                variant="hero"
-                                className="gap-2"
-                                disabled={unlockLoading}
-                                onClick={handleUnlockContactApi}
-                              >
-                                {unlockLoading ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
-                                    Unlocking…
-                                  </>
-                                ) : (
-                                  <>
-                                    <Phone className="h-4 w-4" /> View contact
-                                    details
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          )}
-
-                          {fullDisplay && !contactVisiblePreview && (
-                            <div className="flex flex-col items-center justify-center gap-3 text-center">
-                              <Lock className="h-8 w-8 text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground">
-                                Phone and email are not included in this profile
-                                view. Unlock contact details using your plan
-                                quota.
-                              </p>
-                              <Button
-                                type="button"
-                                variant="hero"
-                                className="gap-2"
-                                disabled={unlockLoading}
-                                onClick={handleUnlockContactApi}
-                              >
-                                {unlockLoading ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
-                                    Unlocking…
-                                  </>
-                                ) : (
-                                  <>
-                                    <Phone className="h-4 w-4" /> View contact
-                                    details
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          )}
-
-                          {contactVisiblePreview && (
-                            <p className="text-center text-sm text-muted-foreground">
-                              Phone and email are listed in the Contact section
-                              below.
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center gap-4 text-center">
-                          {!hasPaidPlan() ? (
-                            <p className="text-sm text-muted-foreground">
-                              Upgrade your plan to view contact details. See the
-                              Contact section below.
-                            </p>
-                          ) : !contactRevealed ? (
-                            <Button
-                              type="button"
-                              variant="hero"
-                              className="gap-2"
-                              onClick={handleViewContactClick}
-                            >
-                              <Eye className="h-4 w-4" /> View contact details
-                            </Button>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              Contact details are shown in the section below.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {horoscopeBlock}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
+              {/* Preview: unlock CTA lives in the column above; here only show phone/email once unlocked. */}
+              {isPreviewMode && contactVisiblePreview ? (
                 <div>
-                  <SectionTitle icon={User}>About</SectionTitle>
-                  <div className="rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
-                    <p className="text-sm leading-relaxed text-foreground/90 [overflow-wrap:anywhere]">
-                      {displayAbout || "No description provided."}
-                    </p>
-                  </div>
-                </div>
-                {horoscopeBlock}
-              </>
-            )}
-
-            {/* Preview: unlock CTA lives in the column above; here only show phone/email once unlocked. */}
-            {isPreviewMode && contactVisiblePreview ? (
-              <div>
-                <SectionTitle icon={Phone}>Contact details</SectionTitle>
-                <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
-                  <div className="space-y-2">
-                    {phoneShown ? (
-                      <p className="text-sm font-medium text-foreground">
-                        <span className="font-normal text-muted-foreground">
-                          Phone:{" "}
-                        </span>
-                        {formatPhoneDisplay(phoneShown)}
-                      </p>
-                    ) : null}
-                    {emailShown ? (
-                      <p className="break-all text-sm font-medium text-foreground">
-                        <span className="font-normal text-muted-foreground">
-                          Email:{" "}
-                        </span>
-                        {emailShown}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {!isPreviewMode ? (
-              <div>
-                <SectionTitle icon={Phone}>Contact</SectionTitle>
-                <div className="relative min-h-[100px] rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
-                  <div
-                    className={
-                      hasPaidPlan() && contactRevealed
-                        ? ""
-                        : "blur-sm select-none pointer-events-none"
-                    }
-                  >
-                    <p className="text-sm text-foreground">+91 98765 43210</p>
-                    <p className="text-sm text-foreground mt-1">
-                      {displayName.toLowerCase().replace(/\s/g, "")}@gmail.com
-                    </p>
-                  </div>
-                  {!hasPaidPlan() ? (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 backdrop-blur-[2px]">
-                      <div className="flex items-center justify-center gap-2 px-2 text-center">
-                        <Lock className="h-4 w-4 shrink-0 text-secondary" />
-                        <p className="text-sm font-semibold text-secondary">
-                          Upgrade to Gold or Diamond plan to view contact
+                  <SectionTitle icon={Phone}>Contact details</SectionTitle>
+                  <div className="rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
+                    <div className="space-y-2">
+                      {phoneShown ? (
+                        <p className="text-sm font-medium text-foreground">
+                          <span className="font-normal text-muted-foreground">
+                            Phone:{" "}
+                          </span>
+                          {formatPhoneDisplay(phoneShown)}
                         </p>
-                      </div>
+                      ) : null}
+                      {emailShown ? (
+                        <p className="break-all text-sm font-medium text-foreground">
+                          <span className="font-normal text-muted-foreground">
+                            Email:{" "}
+                          </span>
+                          {emailShown}
+                        </p>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {hasPaidPlan() && !contactRevealed && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-[2px]">
-                      <Button
-                        variant="hero"
-                        className="gap-2"
-                        type="button"
-                        onClick={handleViewContactClick}
-                      >
-                        <Eye className="h-4 w-4" /> View Contact
-                      </Button>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {expandedFull && fullRawProfile ? (
-              <div className="space-y-8 border-t border-border/50 pt-8">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
-                  <h3 className="font-serif text-lg font-semibold tracking-tight text-foreground">
-                    Full profile
-                  </h3>
-                  {/* <Button
+              {!isPreviewMode ? (
+                <div>
+                  <SectionTitle icon={Phone}>Contact</SectionTitle>
+                  <div className="relative min-h-[100px] rounded-lg border border-border/60 bg-muted/15 px-5 py-4">
+                    <div
+                      className={
+                        hasPaidPlan() && contactRevealed
+                          ? ""
+                          : "blur-sm select-none pointer-events-none"
+                      }
+                    >
+                      <p className="text-sm text-foreground">+91 98765 43210</p>
+                      <p className="text-sm text-foreground mt-1">
+                        {displayName.toLowerCase().replace(/\s/g, "")}@gmail.com
+                      </p>
+                    </div>
+                    {!hasPaidPlan() ? (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 backdrop-blur-[2px]">
+                        <div className="flex items-center justify-center gap-2 px-2 text-center">
+                          <Lock className="h-4 w-4 shrink-0 text-secondary" />
+                          <p className="text-sm font-semibold text-secondary">
+                            Upgrade to Gold or Diamond plan to view contact
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                    {hasPaidPlan() && !contactRevealed && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-[2px]">
+                        <Button
+                          variant="hero"
+                          className="gap-2"
+                          type="button"
+                          onClick={handleViewContactClick}
+                        >
+                          <Eye className="h-4 w-4" /> View Contact
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {expandedFull && fullRawProfile ? (
+                <div className="space-y-8 border-t border-border/50 pt-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
+                    <h3 className="font-serif text-lg font-semibold tracking-tight text-foreground">
+                      Full profile
+                    </h3>
+                    {/* <Button
                     type="button"
                     variant="outline"
                     size="sm"
@@ -1024,312 +1030,318 @@ const ProfileViewDrawer = ({
                   >
                     Collapse
                   </Button> */}
-                </div>
-
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div>
-                    <SubsectionTitle>Basic</SubsectionTitle>
-                    <ProfileFieldGrid
-                      items={[
-                        {
-                          label: "Matri ID",
-                          value: na(fullRawProfile.matri_id),
-                        },
-                        { label: "Gender", value: na(bd?.gender) },
-                        {
-                          label: "DOB",
-                          value: na(bd?.dob ? formatDateDdMmYyyy(bd.dob) : ""),
-                          wide: true,
-                        },
-                      ]}
-                    />
                   </div>
 
-                  <div>
-                    <SubsectionTitle>Personal</SubsectionTitle>
-                    <ProfileFieldGrid items={personalDetailItems} />
-                  </div>
-                </div>
+                  <div className="grid gap-8 lg:grid-cols-2">
+                    <div>
+                      <SubsectionTitle>Basic</SubsectionTitle>
+                      <ProfileFieldGrid
+                        items={[
+                          {
+                            label: "Matri ID",
+                            value: na(fullRawProfile.matri_id),
+                          },
+                          { label: "Gender", value: na(bd?.gender) },
+                          {
+                            label: "DOB",
+                            value: na(
+                              bd?.dob ? formatDateDdMmYyyy(bd.dob) : "",
+                            ),
+                            wide: true,
+                          },
+                        ]}
+                      />
+                    </div>
 
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div>
-                    <SubsectionTitle>Location</SubsectionTitle>
-                    <ProfileFieldGrid
-                      items={[
-                        ...locationFieldRows.map((d) => ({
-                          label: d.label,
-                          value: na(d.value),
-                        })),
-                        {
-                          label: "Address",
-                          value: formatAddressForDisplay(String(loc?.address ?? "")),
-                          wide: true,
-                        },
-                      ]}
-                    />
-                  </div>
-
-                  <div>
-                    <SubsectionTitle>Education & work</SubsectionTitle>
-                    <ProfileFieldGrid
-                      items={[
-                        {
-                          label: "Education",
-                          value: na(edu?.highest_education),
-                        },
-                        {
-                          label: "Subject",
-                          value: na(edu?.education_subject),
-                        },
-                        {
-                          label: "Employment",
-                          value: na(edu?.employment_status),
-                        },
-                        {
-                          label: "Occupation",
-                          value: na(edu?.occupation),
-                        },
-                        {
-                          label: "Annual income",
-                          value: na(edu?.annual_income),
-                          wide: true,
-                        },
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div>
-                    <SubsectionTitle>Religion</SubsectionTitle>
-                    <ProfileFieldGrid
-                      items={[
-                        {
-                          label: "Religion",
-                          value: na(rel?.religion),
-                        },
-                        { label: "Caste", value: na(rel?.caste) },
-                        {
-                          label: "Mother tongue",
-                          value: na(rel?.mother_tongue),
-                          wide: true,
-                        },
-                      ]}
-                    />
-                  </div>
-
-                  <div>
-                    <SubsectionTitle>Family</SubsectionTitle>
-                    <div className="rounded-lg border border-border/60 bg-muted/10 px-4 py-4">
-                      {familyDetailItems.length ? (
-                        <ProfileFieldGrid items={familyDetailItems} />
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No family details provided.
-                        </p>
-                      )}
+                    <div>
+                      <SubsectionTitle>Personal</SubsectionTitle>
+                      <ProfileFieldGrid items={personalDetailItems} />
                     </div>
                   </div>
-                </div>
 
-                {photoEntriesVisible && photoEntriesVisible.length ? (
-                  <div>
-                    <SubsectionTitle>Photos</SubsectionTitle>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {photoEntriesVisible.map(([k, v]) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => setPhotoPreviewUrl(String(v))}
-                          className="overflow-hidden rounded-lg border border-border/60 bg-card text-left transition-colors hover:border-primary/30 hover:shadow-md"
-                        >
-                          <div className="border-b border-border/50 px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                              {k.replace(/_/g, " ")}
-                            </p>
-                          </div>
-                          <div className="aspect-[4/3] bg-muted">
-                            <img
-                              src={String(v)}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        </button>
-                      ))}
+                  <div className="grid gap-8 lg:grid-cols-2">
+                    <div>
+                      <SubsectionTitle>Location</SubsectionTitle>
+                      <ProfileFieldGrid
+                        items={[
+                          ...locationFieldRows.map((d) => ({
+                            label: d.label,
+                            value: na(d.value),
+                          })),
+                          {
+                            label: "Address",
+                            value: formatAddressForDisplay(
+                              String(loc?.address ?? ""),
+                            ),
+                            wide: true,
+                          },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <SubsectionTitle>Education & work</SubsectionTitle>
+                      <ProfileFieldGrid
+                        items={[
+                          {
+                            label: "Education",
+                            value: na(edu?.highest_education),
+                          },
+                          {
+                            label: "Subject",
+                            value: na(edu?.education_subject),
+                          },
+                          {
+                            label: "Employment",
+                            value: na(edu?.employment_status),
+                          },
+                          {
+                            label: "Occupation",
+                            value: na(edu?.occupation),
+                          },
+                          {
+                            label: "Annual income",
+                            value: na(edu?.annual_income),
+                            wide: true,
+                          },
+                        ]}
+                      />
                     </div>
                   </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
 
-        <Dialog
-          open={!!photoPreviewUrl}
-          onOpenChange={(o) => !o && setPhotoPreviewUrl(null)}
-        >
-          <DialogContent
-            hideCloseButton
-            className="max-w-4xl w-[95vw] p-0 overflow-hidden rounded-2xl border-0"
-          >
-            <DialogTitle className="sr-only">Photo preview</DialogTitle>
-            <DialogDescription className="sr-only">
-              Preview photo
-            </DialogDescription>
-            <div className="relative bg-black">
-              <button
-                type="button"
-                onClick={() => setPhotoPreviewUrl(null)}
-                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              {photoPreviewUrl ? (
-                <img
-                  src={photoPreviewUrl}
-                  alt=""
-                  className="w-full max-h-[80vh] object-contain"
-                />
+                  <div className="grid gap-8 lg:grid-cols-2">
+                    <div>
+                      <SubsectionTitle>Religion</SubsectionTitle>
+                      <ProfileFieldGrid
+                        items={[
+                          {
+                            label: "Religion",
+                            value: na(rel?.religion),
+                          },
+                          { label: "Caste", value: na(rel?.caste) },
+                          {
+                            label: "Mother tongue",
+                            value: na(rel?.mother_tongue),
+                            wide: true,
+                          },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <SubsectionTitle>Family</SubsectionTitle>
+                      <div className="rounded-lg border border-border/60 bg-muted/10 px-4 py-4">
+                        {familyDetailItems.length ? (
+                          <ProfileFieldGrid items={familyDetailItems} />
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No family details provided.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {photoEntriesVisible && photoEntriesVisible.length ? (
+                    <div>
+                      <SubsectionTitle>Photos</SubsectionTitle>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {photoEntriesVisible.map(([k, v]) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setPhotoPreviewUrl(String(v))}
+                            className="overflow-hidden rounded-lg border border-border/60 bg-card text-left transition-colors hover:border-primary/30 hover:shadow-md"
+                          >
+                            <div className="border-b border-border/50 px-3 py-2">
+                              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                {k.replace(/_/g, " ")}
+                              </p>
+                            </div>
+                            <div className="aspect-[4/3] bg-muted">
+                              <img
+                                src={String(v)}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
 
-        <UseCreditDialog
-          open={creditDialogOpen}
-          onOpenChange={setCreditDialogOpen}
-          remaining={getHoroscopeRemaining()}
-          quota={getHoroscopeQuota()}
-          variant={creditDialogVariant}
-          onConfirm={handleCreditConfirm}
-          onUpgrade={() => onOpenPlanModal?.()}
-        />
+          <Dialog
+            open={!!photoPreviewUrl}
+            onOpenChange={(o) => !o && setPhotoPreviewUrl(null)}
+          >
+            <DialogContent
+              hideCloseButton
+              className="max-w-4xl w-[95vw] p-0 overflow-hidden rounded-2xl border-0"
+            >
+              <DialogTitle className="sr-only">Photo preview</DialogTitle>
+              <DialogDescription className="sr-only">
+                Preview photo
+              </DialogDescription>
+              <div className="relative bg-black">
+                <button
+                  type="button"
+                  onClick={() => setPhotoPreviewUrl(null)}
+                  className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                {photoPreviewUrl ? (
+                  <img
+                    src={photoPreviewUrl}
+                    alt=""
+                    className="w-full max-h-[80vh] object-contain"
+                  />
+                ) : null}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-        <div className="flex shrink-0 flex-nowrap items-stretch gap-1.5 border-t border-border/60 bg-muted/15 px-3 py-3 sm:gap-2 sm:px-6 sm:py-4 md:px-8">
-          {showInterestAccepted ? (
-            <Button
-              variant="outline"
-              type="button"
-              aria-disabled="true"
-              title="Interest accepted"
-              onClick={(e) => e.stopPropagation()}
-              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
-            >
-              <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
-              <span className="line-clamp-2 text-center">Interest Accepted</span>
-            </Button>
-          ) : showInterestSent ? (
-            <Button
-              variant="outline"
-              type="button"
-              aria-disabled="true"
-              title="Interest sent"
-              onClick={(e) => e.stopPropagation()}
-              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
-            >
-              <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
-              <span className="line-clamp-2 text-center">Interest Sent</span>
-            </Button>
-          ) : showSendInterestButton ? (
-            <Button
-              variant="hero"
-              type="button"
-              onClick={handleSendInterest}
-              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
-            >
-              <Heart className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-              <span className="line-clamp-2 text-center">Send interest</span>
-            </Button>
-          ) : null}
-          {onChat ? (
-            <Button
-              variant="default"
-              type="button"
-              disabled={!canChat}
-              title={
-                !canChat ? "Not available on your current plan" : undefined
-              }
-              onClick={onChat}
-              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
-            >
-              <MessageCircle className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-              <span className="text-center">
-                <span className="sm:hidden">Chat</span>
-                <span className="hidden sm:inline">Chat now</span>
-              </span>
-            </Button>
-          ) : null}
-          {showMatchHoroscope ? (
-            <Button
-              variant="outline"
-              type="button"
-              onClick={onMatchHoroscope}
-              title="Match horoscope"
-              className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/40 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-primary sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
-            >
-              <Sparkles className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-              <span className="text-center">
-                <span className="sm:hidden">Match</span>
-                <span className="hidden sm:inline">Match Horoscope</span>
-              </span>
-            </Button>
-          ) : null}
-          {isPreviewMode && blockMatriId ? (
-            isBlockedByMe ? (
+          <UseCreditDialog
+            open={creditDialogOpen}
+            onOpenChange={setCreditDialogOpen}
+            remaining={getHoroscopeRemaining()}
+            quota={getHoroscopeQuota()}
+            variant={creditDialogVariant}
+            onConfirm={handleCreditConfirm}
+            onUpgrade={() => onOpenPlanModal?.()}
+          />
+
+          <div className="flex shrink-0 flex-nowrap items-stretch gap-1.5 border-t border-border/60 bg-muted/15 px-3 py-3 sm:gap-2 sm:px-6 sm:py-4 md:px-8">
+            {showInterestAccepted ? (
               <Button
                 variant="outline"
                 type="button"
-                disabled={blockLoading}
-                onClick={() => void handleUnblock()}
-                title="Unblock"
+                aria-disabled="true"
+                title="Interest accepted"
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+              >
+                <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
+                <span className="line-clamp-2 text-center">
+                  Interest Accepted
+                </span>
+              </Button>
+            ) : showInterestSent ? (
+              <Button
+                variant="outline"
+                type="button"
+                aria-disabled="true"
+                title="Interest sent"
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-foreground sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+              >
+                <Heart className="h-4 w-4 shrink-0 fill-secondary text-secondary sm:h-5 sm:w-5" />
+                <span className="line-clamp-2 text-center">Interest Sent</span>
+              </Button>
+            ) : showSendInterestButton ? (
+              <Button
+                variant="hero"
+                type="button"
+                onClick={handleSendInterest}
+                className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+              >
+                <Heart className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                <span className="line-clamp-2 text-center">Send interest</span>
+              </Button>
+            ) : null}
+            {onChat ? (
+              <Button
+                variant="default"
+                type="button"
+                disabled={!canChat}
+                title={
+                  !canChat ? "Not available on your current plan" : undefined
+                }
+                onClick={onChat}
+                className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] font-semibold leading-tight sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                <span className="text-center">
+                  <span className="sm:hidden">Chat</span>
+                  <span className="hidden sm:inline">Chat now</span>
+                </span>
+              </Button>
+            ) : null}
+            {showMatchHoroscope ? (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onMatchHoroscope}
+                title="Match horoscope"
+                className="flex h-auto min-h-[2.75rem] min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 border-primary/40 px-1.5 py-1.5 text-[10px] font-semibold leading-tight text-primary sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm md:min-h-[3rem] md:text-base"
+              >
+                <Sparkles className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                <span className="text-center">
+                  <span className="sm:hidden">Match</span>
+                  <span className="hidden sm:inline">Match Horoscope</span>
+                </span>
+              </Button>
+            ) : null}
+            {isPreviewMode && blockMatriId ? (
+              isBlockedByMe ? (
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={blockLoading}
+                  onClick={() => void handleUnblock()}
+                  title="Unblock"
+                  className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+                >
+                  {blockLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Ban className="h-4 w-4 shrink-0" />
+                  )}
+                  <span>Unblock</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={blockLoading}
+                  onClick={() => setBlockConfirmOpen(true)}
+                  title="Block user"
+                  className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-red-200 px-2.5 py-1.5 text-[10px] font-semibold leading-tight text-red-700 hover:bg-red-50 sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+                >
+                  <Ban className="h-4 w-4 shrink-0" />
+                  <span>Block</span>
+                </Button>
+              )
+            ) : null}
+            {isPreviewMode && blockMatriId ? (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setReportOpen(true)}
+                title="Report user"
                 className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
               >
-                {blockLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Ban className="h-4 w-4 shrink-0" />
-                )}
-                <span>Unblock</span>
+                <Flag className="h-4 w-4 shrink-0" />
+                <span>Report</span>
               </Button>
-            ) : (
-              <Button
-                variant="outline"
-                type="button"
-                disabled={blockLoading}
-                onClick={() => setBlockConfirmOpen(true)}
-                title="Block user"
-                className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-red-200 px-2.5 py-1.5 text-[10px] font-semibold leading-tight text-red-700 hover:bg-red-50 sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
-              >
-                <Ban className="h-4 w-4 shrink-0" />
-                <span>Block</span>
-              </Button>
-            )
-          ) : null}
-          {isPreviewMode && blockMatriId ? (
+            ) : null}
             <Button
               variant="outline"
               type="button"
-              onClick={() => setReportOpen(true)}
-              title="Report user"
-              className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+              onClick={() => onOpenChange(false)}
+              className="h-auto min-h-[2.75rem] shrink-0 px-2.5 py-1.5 text-xs font-semibold sm:min-w-[4.5rem] sm:px-4 sm:text-sm md:min-h-[3rem]"
             >
-              <Flag className="h-4 w-4 shrink-0" />
-              <span>Report</span>
+              Close
             </Button>
-          ) : null}
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="h-auto min-h-[2.75rem] shrink-0 px-2.5 py-1.5 text-xs font-semibold sm:min-w-[4.5rem] sm:px-4 sm:text-sm md:min-h-[3rem]"
-          >
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
         <AlertDialogContent className="rounded-2xl sm:rounded-2xl">
@@ -1391,7 +1403,9 @@ const ProfileViewDrawer = ({
               onClick={() => void handleSubmitReport()}
               className="gap-1.5"
             >
-              {reportLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {reportLoading && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
               Submit report
             </Button>
           </AlertDialogFooter>

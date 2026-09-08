@@ -1,6 +1,6 @@
-import { debugLog } from "./debugLog";
-import { BASE_URL } from "./config";
 import { memberFetchWithAuthRetry } from "@/lib/memberAuthedFetch";
+import { BASE_URL } from "./config";
+import { debugLog } from "./debugLog";
 import { neverMarriedFirst } from "./masterApi";
 
 type ApiErrorPayload = {
@@ -11,16 +11,27 @@ type ApiErrorPayload = {
   [key: string]: unknown;
 };
 
-function getErrorMessage(data: ApiErrorPayload | unknown, fallback: string): string {
+function getErrorMessage(
+  data: ApiErrorPayload | unknown,
+  fallback: string,
+): string {
   const payload = (data ?? {}) as ApiErrorPayload;
   if (payload.error?.message) return payload.error.message;
-  if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
-  if (typeof payload.detail === "string" && payload.detail.trim()) return payload.detail;
-  if (Array.isArray(payload.detail) && payload.detail[0]) return String(payload.detail[0]);
+  if (typeof payload.message === "string" && payload.message.trim())
+    return payload.message;
+  if (typeof payload.detail === "string" && payload.detail.trim())
+    return payload.detail;
+  if (Array.isArray(payload.detail) && payload.detail[0])
+    return String(payload.detail[0]);
   return fallback;
 }
 
-function logApi(endpoint: string, method: string, body?: unknown, response?: { status: number; data: unknown }) {
+function logApi(
+  endpoint: string,
+  method: string,
+  body?: unknown,
+  response?: { status: number; data: unknown },
+) {
   // Lightweight console logger similar to profile/auth APIs
   // Example: [matchesApi] GET v1/matches/?page=1 { ...response }
   try {
@@ -37,7 +48,7 @@ function logApi(endpoint: string, method: string, body?: unknown, response?: { s
 
 async function authedFetch<T>(
   path: string,
-  opts: { method: string; body?: string; signal?: AbortSignal }
+  opts: { method: string; body?: string; signal?: AbortSignal },
 ): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
@@ -55,7 +66,9 @@ async function authedFetch<T>(
   logApi(path, opts.method, undefined, { status: res.status, data });
 
   if (!res.ok) {
-    const error = new Error(getErrorMessage(data, "Request failed")) as Error & { status?: number };
+    const error = new Error(
+      getErrorMessage(data, "Request failed"),
+    ) as Error & { status?: number };
     error.status = res.status;
     throw error;
   }
@@ -180,8 +193,8 @@ export interface ProfilePreviewResponse {
   data: ProfilePreviewData;
 }
 
-export type { SendInterestResponse } from "./interestsApi";
 export { sendInterest } from "./interestsApi";
+export type { SendInterestResponse } from "./interestsApi";
 
 export interface ChatStartResponse {
   success: boolean;
@@ -205,16 +218,21 @@ const PROFILES_BASE = "v1/profiles";
 const CHAT_BASE = "v1/chat";
 const WISHLIST_BASE = "v1/wishlist";
 
-export async function getMatches(params: MatchesParams = {}): Promise<MatchesResponse> {
+export async function getMatches(
+  params: MatchesParams = {},
+): Promise<MatchesResponse> {
   const sp = new URLSearchParams();
   if (params.page != null) sp.set("page", String(params.page));
   if (params.limit != null) sp.set("limit", String(params.limit));
   if (params.search) sp.set("search", params.search);
   if (params.age_min != null) sp.set("age_min", String(params.age_min));
   if (params.age_max != null) sp.set("age_max", String(params.age_max));
-  if (params.height_min != null) sp.set("height_min", String(params.height_min));
-  if (params.height_max != null) sp.set("height_max", String(params.height_max));
-  if (params.religion_id != null) sp.set("religion_id", String(params.religion_id));
+  if (params.height_min != null)
+    sp.set("height_min", String(params.height_min));
+  if (params.height_max != null)
+    sp.set("height_max", String(params.height_max));
+  if (params.religion_id != null)
+    sp.set("religion_id", String(params.religion_id));
   if (params.caste_ids != null && params.caste_ids.length > 0) {
     sp.set("caste_ids", params.caste_ids.join(","));
   }
@@ -224,10 +242,13 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
   if (params.occupation_ids != null && params.occupation_ids.length > 0) {
     sp.set("occupation_ids", params.occupation_ids.join(","));
   }
-  if (params.marital_status != null) sp.set("marital_status", String(params.marital_status));
-  if (params.country_id != null) sp.set("country_id", String(params.country_id));
+  if (params.marital_status != null)
+    sp.set("marital_status", String(params.marital_status));
+  if (params.country_id != null)
+    sp.set("country_id", String(params.country_id));
   if (params.state_id != null) sp.set("state_id", String(params.state_id));
-  if (params.district_id != null) sp.set("district_id", String(params.district_id));
+  if (params.district_id != null)
+    sp.set("district_id", String(params.district_id));
   if (params.city_id != null) sp.set("city_id", String(params.city_id));
   if (params.district_ids != null && params.district_ids.length > 0) {
     sp.set("district_ids", params.district_ids.join(","));
@@ -237,7 +258,10 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
   }
   if (params.profile_with_photo !== undefined) {
     const v = params.profile_with_photo;
-    sp.set("profile_with_photo", v === true || v === 1 || v === "true" || v === "yes" ? "1" : "0");
+    sp.set(
+      "profile_with_photo",
+      v === true || v === 1 || v === "true" || v === "yes" ? "1" : "0",
+    );
   }
   if (params.sort_by) sp.set("sort_by", params.sort_by);
 
@@ -249,17 +273,22 @@ export async function getMatches(params: MatchesParams = {}): Promise<MatchesRes
 export async function getMatchFilters(
   signal?: AbortSignal,
 ): Promise<MatchFiltersResponse> {
-  const res = await authedFetch<MatchFiltersResponse>(`${MATCHES_BASE}/filters/`, {
-    method: "GET",
-    signal,
-  });
+  const res = await authedFetch<MatchFiltersResponse>(
+    `${MATCHES_BASE}/filters/`,
+    {
+      method: "GET",
+      signal,
+    },
+  );
   if (res?.data?.marital_status) {
     res.data.marital_status = neverMarriedFirst(res.data.marital_status);
   }
   return res;
 }
 
-export async function getProfilePreview(matriId: string): Promise<ProfilePreviewResponse> {
+export async function getProfilePreview(
+  matriId: string,
+): Promise<ProfilePreviewResponse> {
   const path = `${PROFILES_BASE}/${encodeURIComponent(matriId)}/preview/`;
   return authedFetch<ProfilePreviewResponse>(path, { method: "GET" });
 }
@@ -277,7 +306,9 @@ export interface ProfileFullResponse {
   };
 }
 
-export async function getProfileFull(matriId: string): Promise<ProfileFullResponse> {
+export async function getProfileFull(
+  matriId: string,
+): Promise<ProfileFullResponse> {
   const path = `${PROFILES_BASE}/${encodeURIComponent(matriId)}/full/`;
   return authedFetch<ProfileFullResponse>(path, { method: "GET" });
 }
@@ -287,7 +318,10 @@ export async function unlockContactDetails(matriId: string): Promise<{
   success: boolean;
   data: { phone: string; email: string };
 }> {
-  return authedFetch<{ success: boolean; data: { phone: string; email: string } }>("v1/contact/unlock/", {
+  return authedFetch<{
+    success: boolean;
+    data: { phone: string; email: string };
+  }>("v1/contact/unlock/", {
     method: "POST",
     body: JSON.stringify({ matri_id: matriId }),
   });
@@ -300,21 +334,33 @@ export async function startChat(matriId: string): Promise<ChatStartResponse> {
   });
 }
 
-export async function getChatPermission(matriId: string): Promise<ChatPermissionResponse> {
+export async function getChatPermission(
+  matriId: string,
+): Promise<ChatPermissionResponse> {
   const path = `${CHAT_BASE}/permission/${encodeURIComponent(matriId)}/`;
   return authedFetch<ChatPermissionResponse>(path, { method: "GET" });
 }
 
-export async function wishlistToggle(matriId: string): Promise<WishlistToggleResponse> {
+export async function wishlistToggle(
+  matriId: string,
+): Promise<WishlistToggleResponse> {
   return authedFetch<WishlistToggleResponse>(`${WISHLIST_BASE}/toggle/`, {
     method: "POST",
     body: JSON.stringify({ matri_id: matriId }),
   });
 }
 
-export async function getWishlist(params?: { page?: number; limit?: number }): Promise<{
+export async function getWishlist(params?: {
+  page?: number;
+  limit?: number;
+}): Promise<{
   success: boolean;
-  data: { total: number; page: number; limit: number; profiles: MatchProfile[] };
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    profiles: MatchProfile[];
+  };
 }> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
