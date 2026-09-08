@@ -21,6 +21,8 @@ import {
   Eye,
   Loader2,
   MessageCircle,
+  Ban,
+  Flag,
 } from "lucide-react";
 import { Profile } from "@/components/FeaturedProfiles";
 import { formatPhoneDisplay } from "@/lib/phone";
@@ -32,6 +34,9 @@ import UseCreditDialog, {
 } from "@/components/UseCreditDialog";
 import type { ProfilePreviewData } from "@/lib/matchesApi";
 import { getProfilePreview, unlockContactDetails } from "@/lib/matchesApi";
+import { blockUser, unblockUser } from "@/lib/blocksApi";
+import { reportUser } from "@/lib/profileReportsApi";
+import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import {
   mapFullProfileToDrawerDisplay,
   type FullProfileDrawerDisplay,
@@ -39,6 +44,15 @@ import {
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatDateDdMmYyyy } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /** KYC / ID slots — omit from the profile gallery (API may still return URLs). */
 function isHiddenProfilePhotoKey(key: string): boolean {
@@ -195,6 +209,8 @@ interface Props {
   onMatchHoroscope?: () => void;
   /** When credits are exhausted or user clicks Upgrade in credit dialog */
   onOpenPlanModal?: () => void;
+  /** Called after block/unblock succeeds so parents can refresh lists. */
+  onBlockedChange?: (matriId: string, isBlocked: boolean) => void;
 }
 
 const ProfileViewDrawer = ({
@@ -207,6 +223,7 @@ const ProfileViewDrawer = ({
   onChat,
   onMatchHoroscope,
   onOpenPlanModal,
+  onBlockedChange,
 }: Props) => {
   const hasPaidPlan = useAuthStore((s) => s.hasPaidPlan);
   const sendInterest = useInterestStore((s) => s.sendInterest);
@@ -239,6 +256,15 @@ const ProfileViewDrawer = ({
   );
   const [expandedFull, setExpandedFull] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [isBlockedByMe, setIsBlockedByMe] = useState(
+    !!preview?.is_blocked_by_me,
+  );
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const activePreview = livePreview ?? preview ?? null;
   const isPreviewMode = !!activePreview;
@@ -254,6 +280,7 @@ const ProfileViewDrawer = ({
   );
   const showMatchHoroscope =
     !!onMatchHoroscope && !!activePreview?.can_horoscope_match;
+  const blockMatriId = (activePreview?.matri_id || "").trim();
 
   useEffect(() => {
     if (!open) {
@@ -266,12 +293,20 @@ const ProfileViewDrawer = ({
       setLivePreview(preview ?? null);
       setExpandedFull(false);
       setPhotoPreviewUrl(null);
+      setIsBlockedByMe(!!preview?.is_blocked_by_me);
+      setBlockConfirmOpen(false);
+      setBlockLoading(false);
+      setReportOpen(false);
+      setReportMessage("");
+      setReportLoading(false);
+      setReportError(null);
     }
   }, [open, profile?.id, preview]);
 
   useEffect(() => {
     if (!open) return;
     setLivePreview(preview ?? null);
+    setIsBlockedByMe(!!preview?.is_blocked_by_me);
   }, [open, preview]);
 
   // If preview already grants access to full details (is_viewed_by_me),
@@ -368,6 +403,73 @@ const ProfileViewDrawer = ({
     } else {
       onSendInterest?.();
       onOpenChange(false);
+    }
+  };
+
+  const handleConfirmBlock = async () => {
+    if (!blockMatriId || blockLoading) return;
+    setBlockLoading(true);
+    try {
+      await blockUser(blockMatriId);
+      setIsBlockedByMe(true);
+      setLivePreview((prev) =>
+        prev ? { ...prev, is_blocked_by_me: true } : prev,
+      );
+      toast.success("User blocked");
+      onBlockedChange?.(blockMatriId, true);
+      setBlockConfirmOpen(false);
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(getDisplayErrorMessage(e));
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleUnblock = async () => {
+    if (!blockMatriId || blockLoading) return;
+    setBlockLoading(true);
+    try {
+      await unblockUser(blockMatriId);
+      setIsBlockedByMe(false);
+      setLivePreview((prev) =>
+        prev ? { ...prev, is_blocked_by_me: false } : prev,
+      );
+      toast.success("User unblocked");
+      onBlockedChange?.(blockMatriId, false);
+    } catch (e) {
+      toast.error(getDisplayErrorMessage(e));
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleReportDialogChange = (nextOpen: boolean) => {
+    setReportOpen(nextOpen);
+    if (!nextOpen) {
+      setReportMessage("");
+      setReportError(null);
+      setReportLoading(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!blockMatriId || reportLoading) return;
+    const msg = reportMessage.trim();
+    if (!msg) {
+      setReportError("Please enter a message.");
+      return;
+    }
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      await reportUser(blockMatriId, msg);
+      toast.success("Report submitted. Our team will review it.");
+      handleReportDialogChange(false);
+    } catch (e) {
+      setReportError(getDisplayErrorMessage(e));
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -601,6 +703,7 @@ const ProfileViewDrawer = ({
     ) : null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
@@ -1173,6 +1276,49 @@ const ProfileViewDrawer = ({
               </span>
             </Button>
           ) : null}
+          {isPreviewMode && blockMatriId ? (
+            isBlockedByMe ? (
+              <Button
+                variant="outline"
+                type="button"
+                disabled={blockLoading}
+                onClick={() => void handleUnblock()}
+                title="Unblock"
+                className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+              >
+                {blockLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Ban className="h-4 w-4 shrink-0" />
+                )}
+                <span>Unblock</span>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                type="button"
+                disabled={blockLoading}
+                onClick={() => setBlockConfirmOpen(true)}
+                title="Block user"
+                className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-red-200 px-2.5 py-1.5 text-[10px] font-semibold leading-tight text-red-700 hover:bg-red-50 sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+              >
+                <Ban className="h-4 w-4 shrink-0" />
+                <span>Block</span>
+              </Button>
+            )
+          ) : null}
+          {isPreviewMode && blockMatriId ? (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setReportOpen(true)}
+              title="Report user"
+              className="flex h-auto min-h-[2.75rem] shrink-0 flex-col items-center justify-center gap-0.5 border-primary/25 px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:min-w-[4.5rem] sm:flex-row sm:gap-2 sm:px-3 sm:text-sm md:min-h-[3rem]"
+            >
+              <Flag className="h-4 w-4 shrink-0" />
+              <span>Report</span>
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             type="button"
@@ -1184,6 +1330,74 @@ const ProfileViewDrawer = ({
         </div>
       </DialogContent>
     </Dialog>
+
+      <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
+        <AlertDialogContent className="rounded-2xl sm:rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block this profile?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will no longer appear in your matches, and you will not be
+              able to send interest or chat with each other. You can unblock
+              them later from Blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" disabled={blockLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={blockLoading}
+              onClick={() => void handleConfirmBlock()}
+              className="gap-1.5"
+            >
+              {blockLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Block
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reportOpen} onOpenChange={handleReportDialogChange}>
+        <AlertDialogContent className="rounded-2xl sm:rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Report this profile?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tell us what is wrong. Our team will review your message. This
+              does not block the profile — use Block separately if you want to
+              stop seeing them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <textarea
+            value={reportMessage}
+            onChange={(e) => setReportMessage(e.target.value)}
+            placeholder="Describe the issue…"
+            rows={4}
+            maxLength={2000}
+            disabled={reportLoading}
+            className="w-full resize-y rounded-xl border border-primary/15 bg-white px-3 py-2 text-sm disabled:opacity-50"
+          />
+          {reportError ? (
+            <p className="text-sm text-red-600">{reportError}</p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" disabled={reportLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={reportLoading || !reportMessage.trim()}
+              onClick={() => void handleSubmitReport()}
+              className="gap-1.5"
+            >
+              {reportLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Submit report
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

@@ -1607,6 +1607,13 @@ const MatchesPage = () => {
           viewPreview ? () => handleCheckMatch(viewPreview.matri_id) : undefined
         }
         onOpenPlanModal={() => setPlanModalOpen(true)}
+        onBlockedChange={(matriId, isBlocked) => {
+          if (isBlocked) {
+            setProfiles((prev) => prev.filter((p) => p.matri_id !== matriId));
+            setViewPreview(null);
+            setMatchPreviewCanChat(false);
+          }
+        }}
       />
 
       {/* Horoscope Match modal – groom fixed on left, browse up to 10 bride profiles on right */}

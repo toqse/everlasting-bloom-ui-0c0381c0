@@ -161,6 +161,9 @@ export interface ProfilePreviewData {
   contact_locked: boolean;
   is_interest_sent?: boolean;
   interest_status?: string;
+  is_wishlisted?: boolean;
+  /** True when the viewer has blocked this profile (member peer block). */
+  is_blocked_by_me?: boolean;
   /** When true, the viewer is allowed to run a horoscope (porutham) match with this profile. */
   can_horoscope_match?: boolean;
   /**

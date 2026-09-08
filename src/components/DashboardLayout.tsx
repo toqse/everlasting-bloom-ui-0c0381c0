@@ -21,6 +21,7 @@ import {
   Receipt,
   Star,
   ArrowLeft,
+  Ban,
 } from "lucide-react";
 import { cn, isUsableProfilePhotoUrl, withoutTrailingSlash, withMediaCacheBust } from "@/lib/utils";
 import ShimmerImage from "@/components/ShimmerImage";
@@ -46,6 +47,7 @@ const baseSidebarLinks = [
   //{ name: "Horoscope", href: "/dashboard/jathagam", icon: Sparkles },
   { name: "Plans and Pricing", href: "/dashboard/plan", icon: Crown },
   { name: "Transactions", href: "/dashboard/transactions", icon: Receipt },
+  { name: "Blocked", href: "/dashboard/blocked", icon: Ban },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

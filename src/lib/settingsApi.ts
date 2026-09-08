@@ -138,6 +138,20 @@ export async function updateAccount(body: AccountUpdateBody): Promise<void> {
   });
 }
 
+/** DELETE /api/v1/settings/account/ — soft-delete own account */
+export async function deleteAccount(): Promise<{
+  matri_id: string;
+  soft_deleted: boolean;
+}> {
+  return request<{ matri_id: string; soft_deleted: boolean }>(
+    v1("settings/account/"),
+    {
+      method: "DELETE",
+      headers: authHeaders(),
+    }
+  );
+}
+
 /** POST /api/v1/settings/change-password/ */
 export async function changePassword(body: ChangePasswordBody): Promise<void> {
   await request<unknown>(v1("settings/change-password/"), {

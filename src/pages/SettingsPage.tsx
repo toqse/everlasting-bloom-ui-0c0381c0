@@ -4,12 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
-import { LogOut, Loader2, Check, AlertCircle, User } from "lucide-react";
+import { LogOut, Loader2, Check, AlertCircle, User, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   getSettingsProfile,
   updateProfileVisibility,
   updateInterestPermission,
+  deleteAccount,
   type SettingsProfile,
   type ProfileVisibility,
   type InterestPermission,
@@ -17,6 +18,15 @@ import {
 import { getDisplayErrorMessage } from "@/lib/apiErrors";
 import { isUsableProfilePhotoUrl, withMediaCacheBust } from "@/lib/utils";
 import ShimmerImage from "@/components/ShimmerImage";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -78,6 +88,12 @@ const SettingsPage = () => {
     "saving" | "saved" | "error" | null
   >(null);
 
+  // ── Delete account ──
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // ── Debounce timers ──
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   function clearSavedAfterDelay(setter: (v: null) => void) {
@@ -133,6 +149,29 @@ const SettingsPage = () => {
     router.push("/");
   };
 
+  const handleDeleteDialogChange = (open: boolean) => {
+    setDeleteOpen(open);
+    if (!open) {
+      setDeleteConfirmText("");
+      setDeleteError(null);
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim().toUpperCase() !== "DELETE") return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      logout();
+      router.push("/");
+    } catch (err: unknown) {
+      setDeleteError(getDisplayErrorMessage(err));
+      setDeleting(false);
+    }
+  };
+
   // ── Derived display values ──
   const displayName = settings?.name || user?.name || "—";
   const displayPhotoRaw = (settings?.profile_photo || user?.avatar || "").trim();
@@ -141,6 +180,7 @@ const SettingsPage = () => {
     : null;
   const displayPlan = settings?.plan || user?.plan || "—";
   const displayLocation = settings?.location || user?.location || "—";
+  const canConfirmDelete = deleteConfirmText.trim().toUpperCase() === "DELETE";
 
   const visibilityOptions: { value: ProfileVisibility; label: string }[] = [
     { value: "all_users", label: "All users" },
@@ -284,6 +324,74 @@ const SettingsPage = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* ── Danger zone ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white rounded-3xl shadow-card p-6 border border-red-100"
+        >
+          <h3 className="font-serif font-bold text-red-700 mb-1">
+            Delete account
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Permanently deactivate your account. You will lose access to your
+            profile, matches, and messages. This cannot be undone from the app.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 gap-1.5"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete my account
+          </Button>
+        </motion.div>
+
+        <AlertDialog open={deleteOpen} onOpenChange={handleDeleteDialogChange}>
+          <AlertDialogContent className="rounded-2xl sm:rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This deactivates your account and removes your profile from
+                search. Type <span className="font-semibold text-foreground">DELETE</span>{" "}
+                to confirm.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              autoComplete="off"
+              disabled={deleting}
+              className="w-full border border-primary/15 rounded-xl px-3 py-2 text-sm bg-white disabled:opacity-50"
+            />
+            {deleteError && (
+              <p className="text-sm text-red-600 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                {deleteError}
+              </p>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel type="button" disabled={deleting}>
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={!canConfirmDelete || deleting}
+                onClick={() => void handleDeleteAccount()}
+                className="rounded-md gap-1.5"
+              >
+                {deleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {deleting ? "Deleting…" : "Delete account"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 };
