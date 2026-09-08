@@ -28,14 +28,24 @@ const DashboardBlockedPage = () => {
   const [previewCanChat, setPreviewCanChat] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / DEFAULT_LIMIT));
+  const rangeStart = total === 0 ? 0 : (page - 1) * DEFAULT_LIMIT + 1;
+  const rangeEnd = Math.min(page * DEFAULT_LIMIT, total);
+  const showPagination = !loading && total > 0;
 
   const fetchBlocked = useCallback(async (nextPage: number) => {
     setLoading(true);
     setError(null);
     try {
       const res = await getBlockedList({ page: nextPage, limit: DEFAULT_LIMIT });
+      const nextTotal = res.data.total;
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / DEFAULT_LIMIT));
+      // If current page is past the end (e.g. after unblock), load the last page.
+      if (nextTotal > 0 && nextPage > nextTotalPages) {
+        setPage(nextTotalPages);
+        return;
+      }
       setProfiles(res.data.profiles);
-      setTotal(res.data.total);
+      setTotal(nextTotal);
     } catch (e) {
       setError(getDisplayErrorMessage(e));
       setProfiles([]);
@@ -97,19 +107,19 @@ const DashboardBlockedPage = () => {
       try {
         await unblockUser(matriId);
         toast.success("User unblocked");
-        setProfiles((prev) => prev.filter((p) => p.matri_id !== matriId));
-        setTotal((t) => Math.max(0, t - 1));
         if (preview?.matri_id === matriId) {
           setPreview(null);
           setPreviewCanChat(false);
         }
+        // Refetch so pagination / page contents stay in sync with the server.
+        await fetchBlocked(page);
       } catch (e) {
         toast.error(getDisplayErrorMessage(e));
       } finally {
         setActionLoading(null);
       }
     },
-    [preview?.matri_id],
+    [preview?.matri_id, fetchBlocked, page],
   );
 
   return (
@@ -216,27 +226,34 @@ const DashboardBlockedPage = () => {
           </div>
         )}
 
-        {!loading && total > DEFAULT_LIMIT ? (
-          <div className="flex items-center justify-end gap-2 border-t border-primary/10 pt-4">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {showPagination ? (
+          <div className="flex flex-col gap-3 border-t border-primary/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {rangeStart}–{rangeEnd} of {total}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-1">Previous</span>
+              </Button>
+              <span className="min-w-[7rem] text-center text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                <span className="sr-only sm:not-sr-only sm:mr-1">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -254,10 +271,9 @@ const DashboardBlockedPage = () => {
         canChat={previewCanChat}
         onBlockedChange={(matriId, isBlocked) => {
           if (!isBlocked) {
-            setProfiles((prev) => prev.filter((p) => p.matri_id !== matriId));
-            setTotal((t) => Math.max(0, t - 1));
             setPreview(null);
             setPreviewCanChat(false);
+            void fetchBlocked(page);
           }
         }}
       />
