@@ -21,6 +21,10 @@ const maritalStatuses = ["Never Married", "Divorced", "Marriage Dropped", "Separ
 const educationOptions = ["Aviation Degree", "B.A.", "B.A.M.S.", "B.Arch", "B.Com.", "B.Des", "B.E.", "B.Tech", "BBA", "BCA", "M.A.", "M.B.A.", "M.Com.", "M.D.", "M.E.", "M.Tech", "MBBS", "MCA", "Ph.D", "Other"];
 const occupationOptions = ["Accounts/Finance Professional", "Administrative Professional", "Advertising / PR Professional", "Adviser", "Agriculture & Farming Professional", "Architect", "Business Owner", "Civil Services", "Doctor", "Engineer", "IT Professional", "Lawyer", "Teacher/Professor", "Other"];
 
+function matchesCi(value: string, query: string) {
+  return value.toLowerCase().includes(query.trim().toLowerCase());
+}
+
 const SearchProfiles = () => {
   const router = useRouter();
   const [likedProfiles, setLikedProfiles] = useState<number[]>([]);
@@ -36,6 +40,13 @@ const SearchProfiles = () => {
   });
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     age: true, height: true, maritalStatus: true, religion: true, caste: true, education: false, occupation: false,
+  });
+  const [optionSearch, setOptionSearch] = useState({
+    maritalStatus: "",
+    religion: "",
+    caste: "",
+    education: "",
+    occupation: "",
   });
 
   const toggleLike = (id: number) => {
@@ -53,10 +64,22 @@ const SearchProfiles = () => {
     });
   };
 
-  const religions = Object.keys(RELIGION_CASTE_MAP);
-  const castes = filters.religion.length > 0
+  const religions = Object.keys(RELIGION_CASTE_MAP).filter((r) =>
+    matchesCi(r, optionSearch.religion),
+  );
+  const castes = (filters.religion.length > 0
     ? [...new Set(filters.religion.flatMap(r => RELIGION_CASTE_MAP[r] || []))]
-    : [];
+    : []
+  ).filter((c) => matchesCi(c, optionSearch.caste));
+  const visibleMaritalStatuses = maritalStatuses.filter((s) =>
+    matchesCi(s, optionSearch.maritalStatus),
+  );
+  const visibleEducation = educationOptions.filter((e) =>
+    matchesCi(e, optionSearch.education),
+  );
+  const visibleOccupation = occupationOptions.filter((o) =>
+    matchesCi(o, optionSearch.occupation),
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,9 +144,9 @@ const SearchProfiles = () => {
 
                 {/* Marital Status */}
                 <FilterSection title="Marital Status" icon={<Heart className="w-4 h-4" />} expanded={expandedSections.maritalStatus} onToggle={() => toggleSection("maritalStatus")}>
-                  <input type="text" placeholder="Search marital status.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
+                  <input type="text" value={optionSearch.maritalStatus} onChange={e => setOptionSearch(prev => ({ ...prev, maritalStatus: e.target.value }))} placeholder="Search marital status.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
                   <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {maritalStatuses.map(s => (
+                    {visibleMaritalStatuses.map(s => (
                       <label key={s} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
                         <input type="checkbox" checked={filters.maritalStatus.includes(s)} onChange={() => toggleFilterArray("maritalStatus", s)} className="accent-primary rounded" />
                         <span className="text-muted-foreground">{s}</span>
@@ -134,7 +157,7 @@ const SearchProfiles = () => {
 
                 {/* Religion */}
                 <FilterSection title="Religion" icon={<Sparkles className="w-4 h-4" />} expanded={expandedSections.religion} onToggle={() => toggleSection("religion")}>
-                  <input type="text" placeholder="Search religion.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
+                  <input type="text" value={optionSearch.religion} onChange={e => setOptionSearch(prev => ({ ...prev, religion: e.target.value }))} placeholder="Search religion.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
                   {filters.religion.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2">
                       {filters.religion.map(r => (
@@ -157,7 +180,7 @@ const SearchProfiles = () => {
 
                 {/* Caste */}
                 <FilterSection title="Caste" icon={<Users className="w-4 h-4" />} expanded={expandedSections.caste} onToggle={() => toggleSection("caste")}>
-                  <input type="text" placeholder="Search caste.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
+                  <input type="text" value={optionSearch.caste} onChange={e => setOptionSearch(prev => ({ ...prev, caste: e.target.value }))} placeholder="Search caste.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
                   <div className="space-y-1 max-h-40 overflow-y-auto">
                     {castes.length > 0 ? castes.map(c => (
                       <label key={c} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
@@ -170,9 +193,9 @@ const SearchProfiles = () => {
 
                 {/* Education */}
                 <FilterSection title="Education" icon={<GraduationCap className="w-4 h-4" />} expanded={expandedSections.education} onToggle={() => toggleSection("education")}>
-                  <input type="text" placeholder="Search education.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
+                  <input type="text" value={optionSearch.education} onChange={e => setOptionSearch(prev => ({ ...prev, education: e.target.value }))} placeholder="Search education.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
                   <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {educationOptions.map(e => (
+                    {visibleEducation.map(e => (
                       <label key={e} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
                         <input type="checkbox" checked={filters.education.includes(e)} onChange={() => toggleFilterArray("education", e)} className="accent-primary rounded" />
                         <span className="text-muted-foreground">{e}</span>
@@ -183,9 +206,9 @@ const SearchProfiles = () => {
 
                 {/* Occupation */}
                 <FilterSection title="Occupation" icon={<Briefcase className="w-4 h-4" />} expanded={expandedSections.occupation} onToggle={() => toggleSection("occupation")}>
-                  <input type="text" placeholder="Search occupation.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
+                  <input type="text" value={optionSearch.occupation} onChange={e => setOptionSearch(prev => ({ ...prev, occupation: e.target.value }))} placeholder="Search occupation.." className="w-full px-3 py-1.5 rounded-lg border border-primary/10 text-xs mb-2 bg-background" />
                   <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {occupationOptions.map(o => (
+                    {visibleOccupation.map(o => (
                       <label key={o} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
                         <input type="checkbox" checked={filters.occupation.includes(o)} onChange={() => toggleFilterArray("occupation", o)} className="accent-primary rounded" />
                         <span className="text-muted-foreground">{o}</span>
